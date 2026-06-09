@@ -1,0 +1,99 @@
+/* ============================================================
+   OTR LMS · DESIGN TOKENS
+   Theme hijo de Boost (Moodle). Estos tokens mapean 1:1 a
+   variables SCSS del theme. Tema CLARO por defecto.
+   ============================================================ */
+:root{
+  /* ---- Brand palette (estricta) ---- */
+  --otr-white:#FFFFFF;
+  --otr-offwhite:#F3F7FC;
+  --otr-navy:#0C2340;     /* autoridad / texto */
+  --otr-ink:#0A1A2F;      /* texto más profundo */
+  --otr-sky:#4FA9E8;      /* acción / acento */
+  --otr-sky-hi:#7FC8F2;   /* gradiente claro */
+  --otr-sky-lo:#2E8BD0;   /* gradiente / hover acción */
+  --otr-pale:#DCEEFB;     /* tintes / cards / hover */
+
+  /* ---- Neutrals (derivados, baja saturación azulada) ---- */
+  --n-0:#FFFFFF;
+  --n-25:#F7FAFD;
+  --n-50:#F3F7FC;
+  --n-100:#E9F0F7;
+  --n-150:#DDE7F1;
+  --n-200:#CBD8E6;
+  --n-300:#AEC0D4;
+  --n-400:#8499B2;
+  --n-500:#5F7390;
+  --n-600:#46586F;
+  --n-700:#314256;
+  --n-800:#1B2C40;
+  --n-900:#0C2340;
+
+  /* ---- Semantic ---- */
+  --bg:var(--otr-white);
+  --bg-sunken:var(--otr-offwhite);
+  --bg-raised:var(--otr-white);
+  --surface:var(--otr-white);
+  --surface-2:var(--n-25);
+  --surface-tint:var(--otr-pale);
+  --border:var(--n-150);
+  --border-strong:var(--n-200);
+  --text:var(--otr-navy);
+  --text-2:var(--n-600);
+  --text-3:var(--n-500);
+  --text-on-navy:#EAF2FB;
+
+  --action:var(--otr-sky-lo);
+  --action-hover:#236FB0;
+  --action-soft:var(--otr-pale);
+  --focus:var(--otr-sky);
+  --link:var(--otr-sky-lo);
+
+  /* ---- Status ---- */
+  --ok:#1F8A5B; --ok-soft:#DBF1E6;
+  --warn:#B0791F; --warn-soft:#F6ECD6;   /* ámbar tenue, NO naranja de marca */
+  --danger:#C2453C; --danger-soft:#F7E0DE;
+  --info:var(--otr-sky-lo); --info-soft:var(--otr-pale);
+
+  /* ---- Niveles (competencias) ---- */
+  --lvl-novato:#8499B2;
+  --lvl-jv:#4FA9E8;
+  --lvl-varsity:#2E8BD0;
+  --lvl-elite:#0C2340;
+
+  /* ---- Typography ---- */
+  --font-ui:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --font-brand:'Archivo Expanded','Inter',system-ui,sans-serif;
+  --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+
+  /* compact scale */
+  --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-14:14px;
+  --fs-15:15px; --fs-16:16px; --fs-18:18px; --fs-20:20px;
+  --fs-24:24px; --fs-28:28px; --fs-34:34px; --fs-44:44px;
+  --lh-tight:1.2; --lh:1.45;
+
+  /* ---- Spacing (4pt, compacto) ---- */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px;
+  --s-6:24px; --s-8:32px; --s-10:40px; --s-12:48px; --s-16:64px;
+
+  /* ---- Radii ---- */
+  --r-xs:5px; --r-sm:7px; --r-md:10px; --r-lg:14px; --r-xl:18px; --r-pill:999px;
+
+  /* ---- Elevation (suaves, azuladas) ---- */
+  --sh-1:0 1px 2px rgba(12,35,64,.06), 0 1px 1px rgba(12,35,64,.04);
+  --sh-2:0 2px 8px -2px rgba(12,35,64,.10), 0 1px 2px rgba(12,35,64,.06);
+  --sh-3:0 10px 28px -10px rgba(12,35,64,.20);
+  --sh-pop:0 14px 40px -12px rgba(12,35,64,.26);
+  --ring:0 0 0 3px rgba(79,169,232,.35);
+
+  /* ---- Layout ---- */
+  --sidebar-w:248px;
+  --sidebar-mini:64px;
+  --topbar-h:56px;
+  --ctrl-h:36px;
+  --ctrl-h-sm:30px;
+  --row-h:44px;
+  --maxw:1320px;
+
+  --ease:cubic-bezier(.2,.7,.2,1);
+}

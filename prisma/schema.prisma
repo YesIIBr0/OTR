@@ -1,0 +1,242 @@
+// ============================================================
+//  OTR LMS · Esquema de base de datos
+//  Local: SQLite · Producción (Hostinger): cambiar provider a
+//  "postgresql" y DATABASE_URL — el resto del código es idéntico.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Hostinger producción: "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String
+  email         String       @unique
+  role          String       @default("STUDENT") // STUDENT | TEACHER | ADMIN
+  initials      String
+  level         String       @default("Novato")  // Novato | JV | Varsity | Elite
+  xp            Int          @default(0)
+  streak        Int          @default(0)
+  passwordHash  String?
+  coursesTaught Course[]     @relation("CourseTeacher")
+  enrollments   Enrollment[]
+}
+
+model Level {
+  id       String @id @default(cuid())
+  name     String @unique
+  range    String
+  color    String
+  startXp  Int    @default(0)
+  position Int    @default(0)
+}
+
+model Course {
+  id           String       @id @default(cuid())
+  code         String       @unique
+  name         String
+  coachName    String
+  color        String       @default("#2E8BD0")
+  next         String       @default("")
+  lessonsCount Int          @default(0)
+  studentsCount Int         @default(0)
+  priceCents   Int          @default(0)
+  published    Boolean      @default(true)
+  position     Int          @default(0)
+  teacherId    String?
+  teacher      User?        @relation("CourseTeacher", fields: [teacherId], references: [id])
+  modules      Module[]
+  enrollments  Enrollment[]
+}
+
+model Module {
+  id       String   @id @default(cuid())
+  courseId String
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title    String
+  position Int      @default(0)
+  done     Boolean  @default(false)
+  locked   Boolean  @default(false)
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id       String  @id @default(cuid())
+  moduleId String
+  module   Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title    String
+  type     String  @default("lesson") // video | lesson | quiz | assign | mic
+  position Int     @default(0)
+  done     Boolean @default(false)
+  locked   Boolean @default(false)
+  grade    String?
+  dur      String?
+  due      String?
+  videoKind   String  @default("none") // none | youtube | cloudflare
+  videoSrc    String?                   // youtube: ID; cloudflare: UID (normalizado en servidor)
+  contentHtml String?                   // contenido de la lección (HTML ya sanitizado)
+}
+
+model Enrollment {
+  id         String  @id @default(cuid())
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status     String  @default("ACTIVE")  // ACTIVE | PENDING | EXPIRED
+  source     String  @default("MANUAL")  // PAID | MANUAL | FREE
+  progress   Int     @default(0)
+  due        Int     @default(0)
+  grade      Int     @default(0)
+  attendance Int     @default(0)
+  engagement String  @default("Medio")   // Alto | Medio | Bajo
+  trend      String  @default("flat")    // up | down | flat
+  risk       Boolean @default(false)
+  lastAccess String  @default("")
+
+  @@unique([userId, courseId])
+}
+
+model GradeCell {
+  id          String @id @default(cuid())
+  studentName String
+  studentInit String
+  studentPos  Int    @default(0)
+  colName     String
+  colPos      Int    @default(0)
+  value       String @default("—")
+}
+
+model Competency {
+  id       String @id @default(cuid())
+  name     String
+  score    Int
+  position Int    @default(0)
+}
+
+model Badge {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  got         Boolean @default(false)
+  icon        String
+  tone        String
+  position    Int     @default(0)
+}
+
+model Notification {
+  id       String  @id @default(cuid())
+  userId   String? // null = global; si tiene valor, es para ese usuario
+  icon     String
+  tone     String
+  title    String
+  detail   String
+  whenLabel String
+  unread   Boolean @default(true)
+  position Int     @default(0)
+
+  @@index([userId])
+}
+
+model QuizAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  userName    String
+  lessonTitle String
+  score       Int
+  total       Int
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+model EventItem {
+  id        String @id @default(cuid())
+  title     String
+  course    String
+  whenLabel String
+  tone      String
+  position  Int    @default(0)
+}
+
+model ActivityItem {
+  id        String @id @default(cuid())
+  who       String
+  action    String
+  target    String
+  whenLabel String
+  position  Int    @default(0)
+}
+
+model ForumThread {
+  id        String      @id @default(cuid())
+  title     String
+  author    String
+  initials  String
+  tag       String
+  replies   Int         @default(0)
+  views     Int         @default(0)
+  pinned    Boolean     @default(false)
+  lastLabel String
+  excerpt   String
+  position  Int         @default(0)
+  posts     ForumPost[]
+}
+
+model ForumPost {
+  id        String      @id @default(cuid())
+  threadId  String
+  thread    ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author    String
+  initials  String
+  role      String
+  whenLabel String
+  op        Boolean     @default(false)
+  body      String
+  position  Int         @default(0)
+}
+
+model Conversation {
+  id        String        @id @default(cuid())
+  initials  String
+  name      String
+  lastLabel String
+  whenLabel String
+  unread    Int           @default(0)
+  online    Boolean       @default(false)
+  navy      Boolean       @default(false)
+  position  Int           @default(0)
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  me             Boolean      @default(false)
+  body           String
+  timeLabel      String
+  position       Int          @default(0)
+}
+
+model Submission {
+  id           String  @id @default(cuid())
+  userId       String
+  userName     String
+  courseCode   String  @default("PF-101")
+  activity     String
+  kind         String  @default("audio") // audio | video | file | text
+  status       String  @default("SUBMITTED") // SUBMITTED | GRADED
+  grade        Int?
+  feedback     String?
+  createdLabel String  @default("ahora")
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([status])
+}
