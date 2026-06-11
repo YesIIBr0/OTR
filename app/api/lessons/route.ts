@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { teacherOwnsModule } from "../../lib/authz";
-import { normalizeKind, normalizeVideoSrc, sanitizeHtml } from "../../lib/video";
+import { normalizeKind, normalizeVideoSrc } from "../../lib/video";
+import { sanitizeHtml } from "../../lib/sanitize";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();

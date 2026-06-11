@@ -19,9 +19,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!(await teacherOwnsCourse(id, user))) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   const body = await req.json();
   // allowlist explícita — nunca el body crudo (evita mass-assignment de teacherId/priceCents/published)
-  const data: Record<string, string> = {};
-  for (const k of ["name", "color", "next"]) {
-    if (typeof body[k] === "string") data[k] = body[k].slice(0, 200);
+  const data: Record<string, unknown> = {};
+  for (const k of ["name", "color", "next", "format", "summary"]) {
+    if (typeof body[k] === "string") data[k] = body[k].slice(0, 600);
+  }
+  if (typeof body.modality === "string" && ["online", "presencial", "híbrido"].includes(body.modality)) data.modality = body.modality;
+  if (body.capacity !== undefined) {
+    const n = Number(body.capacity);
+    data.capacity = body.capacity === "" || Number.isNaN(n) ? null : n;
   }
   const course = await db.course.update({ where: { id }, data });
   return NextResponse.json({ ok: true, course });
