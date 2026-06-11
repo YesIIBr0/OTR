@@ -267,6 +267,95 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* reveal */
-.rise{opacity:0;transform:translateY(8px);animation:rise .5s var(--ease) forwards}
-@keyframes rise{to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.rise{animation:none;opacity:1;transform:none}.skeleton,.spinner{animation:none}}
+.rise{animation:riseIn .5s var(--ease)}
+@keyframes riseIn{from{transform:translateY(8px)}}
+
+/* ============================================================
+   OTR · SISTEMA DE MOVIMIENTO + ELEVACIÓN  (premium, sobrio)
+   Tokens: --ease, --sh-1..3/pop, --r-*, --otr-navy/sky.
+   Regla clave: las ENTRADAS nunca llevan opacity:0 como estado
+   BASE — solo dentro del @keyframes from — para que el contenido
+   siga visible si la animación no corre.
+   ============================================================ */
+
+/* 1) Entrada fade-up reutilizable -------------------------------------- */
+@keyframes otrFadeUp{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:none}
+}
+/* Sin opacity:0 en la clase base, a propósito (ver regla clave). */
+.fade-up{animation:otrFadeUp .55s var(--ease) both}
+
+/* 2) Stagger manual: <el class="fade-up" style="--d:N"> ----------------- */
+.fade-up{animation-delay:calc(var(--d,0) * 55ms)}
+
+/* 3) Entrada GLOBAL automática de pantallas ----------------------------
+   El SPA inyecta cada pantalla en  #content > .page  (ver app/lib/shell.ts:
+   <div class="content" id="content"><div class="page rise">…</div></div>).
+   Animamos los HIJOS DIRECTOS de .page con un leve stagger por nth-child,
+   reusando otrFadeUp. Así cada cambio de pantalla hace un fade-up elegante
+   SIN tocar ninguna screen. El `both` mantiene la visibilidad final aunque
+   la animación se cancele; no hay opacity:0 como estado base. */
+.content > .page > *{animation:otrFadeUp .5s var(--ease) both}
+.content > .page > *:nth-child(1){animation-delay:0ms}
+.content > .page > *:nth-child(2){animation-delay:45ms}
+.content > .page > *:nth-child(3){animation-delay:90ms}
+.content > .page > *:nth-child(4){animation-delay:135ms}
+.content > .page > *:nth-child(5){animation-delay:180ms}
+.content > .page > *:nth-child(6){animation-delay:225ms}
+.content > .page > *:nth-child(7){animation-delay:270ms}
+.content > .page > *:nth-child(8){animation-delay:315ms}
+/* del 9º en adelante entran juntos: stagger largo = poco premium */
+.content > .page > *:nth-child(n+9){animation-delay:360ms}
+
+/* 4) Elevación con lógica --------------------------------------------- */
+/* Para tarjetas/elementos clicables que NO sean .tile (que ya tiene su
+   propia interacción más arriba). Reposo plano; al hover sube + sombra. */
+.lift{transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
+.lift:hover{transform:translateY(-3px);box-shadow:var(--sh-3)}
+.lift:active{transform:translateY(-1px)}
+
+/* Coherencia de la escala de sombras en superficies:
+   reposo --sh-1 (ya definido en .card/.tile), hover --sh-3. */
+.card{transition:box-shadow .18s var(--ease),border-color .18s var(--ease)}
+.card.lift:hover,.card.click:hover{box-shadow:var(--sh-3)}
+
+/* 5) Micro-interacción de botones ------------------------------------- */
+/* .btn ya trae transición + :active{translateY(1px)} más arriba;
+   reforzamos el primario con leve elevación (sombra navy) y un sheen sutil. */
+.btn-primary{position:relative;overflow:hidden}
+.btn-primary:hover{
+  box-shadow:0 4px 14px -4px rgba(12,35,64,.45),0 2px 6px -2px rgba(46,139,208,.5);
+  transform:translateY(-1px);
+}
+.btn-primary:active{transform:translateY(0)}
+/* Sheen: brillo diagonal sutil que cruza el botón al pasar el cursor. */
+.btn-primary::after{
+  content:"";position:absolute;top:0;left:-130%;width:55%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.28),transparent);
+  transform:skewX(-18deg);transition:left .55s var(--ease);pointer-events:none;
+}
+.btn-primary:hover::after{left:150%}
+/* El botón navy también gana una elevación discreta al hover. */
+.btn-navy:hover{
+  box-shadow:0 4px 14px -4px rgba(12,35,64,.5);
+  transform:translateY(-1px);
+}
+.btn-navy:active{transform:translateY(0)}
+
+/* 6) Respeto a prefers-reduced-motion --------------------------------- */
+@media (prefers-reduced-motion:reduce){
+  .rise,
+  .fade-up,
+  .content > .page > *{animation:none}
+  .skeleton,.spinner{animation:none}
+  .lift,
+  .card{transition:none}
+  .lift:hover,
+  .lift:active{transform:none}
+  .btn-primary:hover,
+  .btn-primary:active,
+  .btn-navy:hover,
+  .btn-navy:active{transform:none}
+  .btn-primary::after{display:none}
+}

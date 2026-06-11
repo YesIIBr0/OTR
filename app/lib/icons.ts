@@ -26,6 +26,7 @@ export const IC = (() => {
     chevD: w('<path d="M6 9l6 6 6-6"/>'),
     arrowR: w('<path d="M5 12h14M13 6l6 6-6 6"/>'),
     plus: w('<path d="M12 5v14M5 12h14"/>'),
+    close: w('<path d="M6 6l12 12M18 6 6 18"/>'),
     settings: w('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v2M12 19.5v2M4.5 12h-2M21.5 12h-2M6 6l-1.4-1.4M19.4 19.4 18 18M18 6l1.4-1.4M4.6 19.4 6 18"/>'),
     logout: w('<path d="M15 4h3.5a.5.5 0 0 1 .5.5v15a.5.5 0 0 1-.5.5H15"/><path d="M10 12h9M16 8l3 4-3 4"/>'),
     flame: w('<path d="M12 3c1 3.5 5 4.5 5 9a5 5 0 0 1-10 0c0-1.8.7-2.8 1.5-3.7C9 10 9.5 8 8.5 6.5 11 7 12 5 12 3z"/>'),
