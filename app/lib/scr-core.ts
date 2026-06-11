@@ -163,7 +163,7 @@ function activeItemsFlat() {
       const recos = (DB.catalog || []).filter(c=>!c.enrolled && !enrolledCodes.has(c.code)).slice(0,3);
       const recoCards = recos.map(c=>`
         <div class="tile course-card click" onclick="go('catalog')">
-          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C2340))">
+          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C0C0C))">
             <span class="cc-code">${esc(c.code)}</span>
           </div>
           <div class="cc-body">

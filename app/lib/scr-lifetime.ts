@@ -15,7 +15,7 @@
      DB.membership = { tier, sinceLabel, prices:{ proMonthly:'US$9', proAnnual:'US$79' } }
 
    Patrón de la casa: render(state)->string + mount(root,state) opcional; IC.* iconos,
-   esc() en todo texto de usuario, navy #0C2340 + sky #4FA9E8, claro, fade-up, sin emojis.
+   esc() en todo texto de usuario, navy #0C0C0C + sky #2CAA20, claro, fade-up, sin emojis.
    Acciones del cliente vía los globales de Aula.tsx: go(), api(url,body,method), toast(). */
 import { DB } from "./data";
 import { C } from "./components";
@@ -376,7 +376,7 @@ function publicProfileCard(lt) {
   const toggle = `
     <button id="pp-switch" role="switch" aria-checked="${pp.enabled ? "true" : "false"}" aria-label="Perfil público"
       style="flex:none;width:46px;height:26px;padding:0;border-radius:999px;border:1px solid var(--border-strong);background:${pp.enabled ? "var(--otr-sky-lo)" : "var(--n-150)"};position:relative;cursor:pointer;transition:background .18s">
-      <span style="position:absolute;top:2.5px;left:${pp.enabled ? "23px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(12,35,64,.28);transition:left .18s"></span>
+      <span style="position:absolute;top:2.5px;left:${pp.enabled ? "23px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(12,12,12,.28);transition:left .18s"></span>
     </button>`;
   return `
   <div class="card card-pad">

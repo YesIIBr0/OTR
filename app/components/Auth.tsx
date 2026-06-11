@@ -201,7 +201,7 @@ export default function Auth() {
         <div className="lb-top">
           <svg className="crest" style={{ width: 34, height: 39 }} viewBox="0 0 26 30" fill="none">
             <path d="M13 1 L24 5.5 V16 C24 23 19 27.5 13 29.5 C7 27.5 2 23 2 16 V5.5 Z" fill="#fff" />
-            <text x="13" y="18.5" fontFamily="Archivo Expanded" fontWeight={900} fontSize={8} fill="#0C2340" textAnchor="middle">OTR</text>
+            <text x="13" y="18.5" fontFamily="Inter" fontWeight={900} fontSize={8} fill="#0C0C0C" textAnchor="middle">OTR</text>
           </svg>
           <span className="brand-font" style={{ color: "#fff", fontSize: 16 }}>OTR <span style={{ opacity: 0.5, fontWeight: 600 }}>Aula</span></span>
         </div>
@@ -222,8 +222,8 @@ export default function Auth() {
 
           {notice && (
             <p style={{
-              color: "var(--otr-sky-hi, #4FA9E8)", background: "rgba(79,169,232,0.10)",
-              border: "1px solid rgba(79,169,232,0.30)", borderRadius: 10,
+              color: "var(--otr-sky-hi, #2CAA20)", background: "rgba(44,170,32,0.10)",
+              border: "1px solid rgba(44,170,32,0.30)", borderRadius: 10,
               fontSize: 13, padding: "10px 12px", marginBottom: 14, lineHeight: 1.45,
             }}>{notice}</p>
           )}
@@ -347,7 +347,7 @@ export default function Auth() {
           {mode === "login" && (
             <p style={{ textAlign: "center", marginTop: 14, fontSize: 12.5 }}>
               <button type="button" onClick={() => switchMode("forgot")}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--otr-sky-hi, #4FA9E8)", fontWeight: 600 }}>
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--otr-sky-hi, #2CAA20)", fontWeight: 600 }}>
                 ¿Olvidaste tu contraseña?
               </button>
             </p>
@@ -396,8 +396,8 @@ function RoleCard({ active, onClick, title, desc }: { active: boolean; onClick: 
   const [hover, setHover] = useState(false);
   const [focus, setFocus] = useState(false);
   // El anillo de foco accesible se ve incluso cuando la tarjeta está seleccionada.
-  const ring = "0 0 0 3px rgba(79,169,232,0.30)";
-  const boxShadow = focus ? ring : active ? "0 0 0 3px rgba(79,169,232,0.18)" : hover ? "var(--sh-2, 0 4px 12px rgba(12,35,64,0.10))" : "none";
+  const ring = "0 0 0 3px rgba(44,170,32,0.30)";
+  const boxShadow = focus ? ring : active ? "0 0 0 3px rgba(44,170,32,0.18)" : hover ? "var(--sh-2, 0 4px 12px rgba(12,12,12,0.10))" : "none";
   return (
     <button
       type="button"
@@ -416,8 +416,8 @@ function RoleCard({ active, onClick, title, desc }: { active: boolean; onClick: 
         borderRadius: 12,
         cursor: "pointer",
         outline: "none",
-        border: `1.5px solid ${active || hover || focus ? "var(--otr-sky, #4FA9E8)" : "var(--border-strong, rgba(0,0,0,0.12))"}`,
-        background: active ? "rgba(79,169,232,0.10)" : "var(--otr-white, #fff)",
+        border: `1.5px solid ${active || hover || focus ? "var(--otr-sky, #2CAA20)" : "var(--border-strong, rgba(0,0,0,0.12))"}`,
+        background: active ? "rgba(44,170,32,0.10)" : "var(--otr-white, #fff)",
         boxShadow,
         transition: "border-color .18s var(--ease, cubic-bezier(.2,.7,.2,1)), background .18s var(--ease, cubic-bezier(.2,.7,.2,1)), box-shadow .18s var(--ease, cubic-bezier(.2,.7,.2,1))",
       }}

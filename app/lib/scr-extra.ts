@@ -11,7 +11,7 @@ export const S = {
       const courses = DB.catalog || [];
       const card = (c, i = 0) => `
         <div class="tile click course-card fade-up" style="--d:${i}">
-          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C2340))">
+          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C0C0C))">
             <span class="cc-code">${esc(c.code)}</span>
           </div>
           <div class="cc-body">
@@ -107,7 +107,7 @@ export const S = {
       <div class="page-head"><div><p class="eyebrow">Búsqueda</p><div class="page-title">Resultados para "${esc(window.__q || "")}"</div>
       <div class="page-sub">${total} resultado${total === 1 ? "" : "s"}</div></div></div>
       ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>Sin resultados</h4><p>No encontramos nada para "${esc(window.__q || "")}". Prueba con otra búsqueda.</p></div></div>` : ""}
-      ${section("Cursos", courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C2340)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${esc(c.name)}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${esc(c.coach)}</div></div></div>`).join("")}</div>` : "")}
+      ${section("Cursos", courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C0C0C)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${esc(c.name)}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${esc(c.coach)}</div></div></div>`).join("")}</div>` : "")}
       ${section("Personas", people.length, people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="gap:11px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1;min-width:0"><b style="font-weight:600">${esc(s.n)}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}`;
     },
   },

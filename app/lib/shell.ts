@@ -124,7 +124,7 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
         <a class="sb-logo" href="#dashboard" data-go="dashboard">
           <svg class="crest" viewBox="0 0 26 30" fill="none" aria-hidden="true">
             <path d="M13 1 L24 5.5 V16 C24 23 19 27.5 13 29.5 C7 27.5 2 23 2 16 V5.5 Z" fill="#fff"/>
-            <text x="13" y="18.5" font-family="Archivo Expanded" font-weight="900" font-size="8" fill="#0C2340" text-anchor="middle">OTR</text>
+            <text x="13" y="18.5" font-family="Inter" font-weight="900" font-size="8" fill="#0C0C0C" text-anchor="middle">OTR</text>
           </svg>
           <span class="txt">OTR <span class="sub">Aula</span></span>
         </a>

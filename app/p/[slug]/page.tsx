@@ -1,7 +1,7 @@
 // Perfil público OTR (PRD §8.4) — página server-rendered, SIN auth, fuera del SPA.
 // El Lifetime Progress Profile compartible ("LinkedIn para jóvenes"): solo se
 // sirve si User.publicProfile === true. NUNCA expone email, birthYear ni datos
-// de contacto. Diseño claro premium: navy #0C2340 + sky #4FA9E8, Inter.
+// de contacto. Diseño claro premium: navy #0C0C0C + sky #2CAA20, Inter.
 import { notFound } from "next/navigation";
 import { db } from "../../lib/db";
 
@@ -79,44 +79,44 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   return (
     <div className="pp-page">
       <style>{`
-        .pp-page{min-height:100vh;background:#F2F6FB;color:#0C2340;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:56px}
+        .pp-page{min-height:100vh;background:#FAFAF7;color:#0C0C0C;font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:56px}
         .pp-wrap{max-width:780px;margin:0 auto;padding:0 20px}
-        .pp-hero{background:radial-gradient(640px 280px at 85% -10%,rgba(79,169,232,.30),transparent 60%),linear-gradient(140deg,#0C2340 0%,#0F2D52 55%,#143A66 100%);padding:56px 0 78px;color:#fff}
-        .pp-avatar{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:28px;letter-spacing:1px;color:#fff;background:rgba(79,169,232,.20);border:2px solid rgba(79,169,232,.55);margin-bottom:18px}
+        .pp-hero{background:radial-gradient(640px 280px at 85% -10%,rgba(44,170,32,.30),transparent 60%),linear-gradient(140deg,#0C0C0C 0%,#000000 55%,#1A1A17 100%);padding:56px 0 78px;color:#fff}
+        .pp-avatar{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:28px;letter-spacing:1px;color:#fff;background:rgba(44,170,32,.20);border:2px solid rgba(44,170,32,.55);margin-bottom:18px}
         .pp-name{margin:0;font-size:32px;font-weight:800;letter-spacing:-.02em;color:#fff}
-        .pp-sub{margin:6px 0 18px;color:#9EC9EC;font-weight:600;font-size:15px}
+        .pp-sub{margin:6px 0 18px;color:#54C247;font-weight:600;font-size:15px}
         .pp-hero-meta{display:flex;flex-wrap:wrap;gap:10px}
-        .pp-pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#DCEAF8;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600}
+        .pp-pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:#EFEFE5;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:600}
         .pp-pill strong{color:#fff;font-weight:800;margin-right:6px}
-        .pp-pill-pro{background:rgba(79,169,232,.24);border-color:rgba(79,169,232,.55);color:#fff}
+        .pp-pill-pro{background:rgba(44,170,32,.24);border-color:rgba(44,170,32,.55);color:#fff}
         .pp-main{margin-top:-34px}
-        .pp-card{background:#fff;border:1px solid #E1EAF4;border-radius:18px;padding:24px 26px;margin-bottom:22px;box-shadow:0 10px 30px rgba(12,35,64,.05)}
-        .pp-h2{margin:0 0 16px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#5B7794}
+        .pp-card{background:#fff;border:1px solid #E4E4D9;border-radius:18px;padding:24px 26px;margin-bottom:22px;box-shadow:0 10px 30px rgba(12,12,12,.05)}
+        .pp-h2{margin:0 0 16px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#44443D}
         .pp-skills{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px 26px}
         .pp-skill-top{display:flex;justify-content:space-between;font-size:14px;font-weight:600;margin-bottom:7px}
-        .pp-skill-n{color:#2E8BD0;font-weight:800}
-        .pp-bar{height:8px;border-radius:999px;background:#E8F0F9;overflow:hidden}
-        .pp-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#4FA9E8,#2E8BD0)}
+        .pp-skill-n{color:#1E8C16;font-weight:800}
+        .pp-bar{height:8px;border-radius:999px;background:#F1F1E4;overflow:hidden}
+        .pp-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#2CAA20,#1E8C16)}
         .pp-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
-        .pp-stat{background:#F6FAFE;border:1px solid #E1EAF4;border-radius:14px;padding:16px 12px;text-align:center}
-        .pp-stat-n{font-size:26px;font-weight:800;color:#0C2340}
-        .pp-stat-l{font-size:12px;font-weight:600;color:#5B7794;margin-top:2px}
+        .pp-stat{background:#FAFAF7;border:1px solid #E4E4D9;border-radius:14px;padding:16px 12px;text-align:center}
+        .pp-stat-n{font-size:26px;font-weight:800;color:#0C0C0C}
+        .pp-stat-l{font-size:12px;font-weight:600;color:#44443D;margin-top:2px}
         .pp-rating-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-        .pp-rating-chip{font-size:12px;font-weight:600;color:#205E96;background:#EAF4FC;border:1px solid #CCE3F6;border-radius:999px;padding:5px 11px}
-        .pp-cred{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:13px 0;border-bottom:1px solid #EDF3FA}
+        .pp-rating-chip{font-size:12px;font-weight:600;color:#1E8C16;background:#FAFAF7;border:1px solid #CDEBC8;border-radius:999px;padding:5px 11px}
+        .pp-cred{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:13px 0;border-bottom:1px solid #F7F7ED}
         .pp-cred:last-child{border-bottom:0}
         .pp-cred-t{font-size:15px;font-weight:700}
-        .pp-cred-d{font-size:13px;color:#5B7794;font-weight:500;white-space:nowrap}
+        .pp-cred-d{font-size:13px;color:#44443D;font-weight:500;white-space:nowrap}
         .pp-timeline{list-style:none;margin:0;padding:0;position:relative}
-        .pp-timeline:before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:#D7E5F2;border-radius:2px}
+        .pp-timeline:before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:#D9EED5;border-radius:2px}
         .pp-tl-item{position:relative;padding:0 0 22px 26px}
         .pp-tl-item:last-child{padding-bottom:0}
-        .pp-tl-dot{position:absolute;left:0;top:4px;width:12px;height:12px;border-radius:50%;background:#4FA9E8;border:2px solid #fff;box-shadow:0 0 0 2px #BFDDF4}
-        .pp-tl-date{font-size:12px;font-weight:700;color:#2E8BD0;text-transform:uppercase;letter-spacing:.06em}
-        .pp-tl-title{margin:2px 0 0;font-size:15px;font-weight:700;color:#0C2340}
-        .pp-tl-detail{margin:2px 0 0;font-size:13.5px;color:#5B7794;line-height:1.5}
-        .pp-empty{margin:0;font-size:14px;color:#5B7794}
-        .pp-footer{margin-top:8px;text-align:center;font-size:13px;font-weight:600;color:#5B7794}
+        .pp-tl-dot{position:absolute;left:0;top:4px;width:12px;height:12px;border-radius:50%;background:#2CAA20;border:2px solid #fff;box-shadow:0 0 0 2px #BBE4B5}
+        .pp-tl-date{font-size:12px;font-weight:700;color:#1E8C16;text-transform:uppercase;letter-spacing:.06em}
+        .pp-tl-title{margin:2px 0 0;font-size:15px;font-weight:700;color:#0C0C0C}
+        .pp-tl-detail{margin:2px 0 0;font-size:13.5px;color:#44443D;line-height:1.5}
+        .pp-empty{margin:0;font-size:14px;color:#44443D}
+        .pp-footer{margin-top:8px;text-align:center;font-size:13px;font-weight:600;color:#44443D}
         @media (max-width:560px){.pp-name{font-size:26px}.pp-hero{padding:44px 0 70px}.pp-card{padding:20px 18px}}
       `}</style>
 

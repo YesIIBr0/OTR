@@ -1,70 +1,86 @@
 /* ============================================================
-   OTR LMS · DESIGN TOKENS
-   Theme hijo de Boost (Moodle). Estos tokens mapean 1:1 a
-   variables SCSS del theme. Tema CLARO por defecto.
+   OTR LMS · DESIGN TOKENS — OTRBRANDBOOK 2026
+   Paleta ESTRICTA del brand book: Negro #0C0C0C · Crema #F7F7ED ·
+   Verde #2CAA20 · Amarillo #F2B814. Tipografía: solo Inter, tracking
+   compacto. Estética: prestigio, alto rendimiento, NO escolar.
+   Los nombres legacy (--otr-navy/--otr-sky) se conservan como alias a
+   la marca para re-skinear sin tocar 125 referencias en pantallas.
    ============================================================ */
 :root{
-  /* ---- Brand palette (estricta) ---- */
+  /* ---- Brand palette (OTRBRANDBOOK — estricta) ---- */
+  --otr-black:#0C0C0C;       /* autoridad · texto · registro "arena" */
+  --otr-cream:#F7F7ED;       /* fondo crema premium (canvas) */
+  --otr-green:#2CAA20;       /* acción · acento interactivo */
+  --otr-green-hi:#54C247;    /* gradiente claro / hover sobre oscuro */
+  --otr-green-lo:#1E8C16;    /* hover acción / gradiente oscuro */
+  --otr-green-pale:#E1F2DE;  /* tintes · cards · hover suave */
+  --otr-gold:#F2B814;        /* LOGRO: wins · badges · rank-ups · certs (sobrio) */
+  --otr-gold-lo:#C8920C;     /* dorado para texto (contraste) */
+  --otr-gold-pale:#FBEFCB;   /* tinte de logro */
   --otr-white:#FFFFFF;
-  --otr-offwhite:#F3F7FC;
-  --otr-navy:#0C2340;     /* autoridad / texto */
-  --otr-ink:#0A1A2F;      /* texto más profundo */
-  --otr-sky:#4FA9E8;      /* acción / acento */
-  --otr-sky-hi:#7FC8F2;   /* gradiente claro */
-  --otr-sky-lo:#2E8BD0;   /* gradiente / hover acción */
-  --otr-pale:#DCEEFB;     /* tintes / cards / hover */
 
-  /* ---- Neutrals (derivados, baja saturación azulada) ---- */
+  /* ---- Alias legacy → marca (re-skinea var(--otr-navy/sky) existentes) ---- */
+  --otr-navy:var(--otr-black);
+  --otr-ink:#000000;
+  --otr-sky:var(--otr-green);
+  --otr-sky-hi:var(--otr-green-hi);
+  --otr-sky-lo:var(--otr-green-lo);
+  --otr-pale:var(--otr-green-pale);
+  --otr-offwhite:var(--otr-cream);
+
+  /* ---- Neutrals (rampa CÁLIDA neutra crema→negro, sin tinte azul) ---- */
   --n-0:#FFFFFF;
-  --n-25:#F7FAFD;
-  --n-50:#F3F7FC;
-  --n-100:#E9F0F7;
-  --n-150:#DDE7F1;
-  --n-200:#CBD8E6;
-  --n-300:#AEC0D4;
-  --n-400:#8499B2;
-  --n-500:#5F7390;
-  --n-600:#46586F;
-  --n-700:#314256;
-  --n-800:#1B2C40;
-  --n-900:#0C2340;
+  --n-25:#FAFAF7;
+  --n-50:#F7F7ED;
+  --n-100:#EFEFE5;
+  --n-150:#E4E4D9;
+  --n-200:#D3D3C7;
+  --n-300:#B4B4A7;
+  --n-400:#89897D;
+  --n-500:#5F5F56;
+  --n-600:#44443D;
+  --n-700:#2E2E29;
+  --n-800:#1A1A17;
+  --n-900:#0C0C0C;
 
   /* ---- Semantic ---- */
-  --bg:var(--otr-white);
-  --bg-sunken:var(--otr-offwhite);
+  --bg:var(--otr-cream);            /* canvas crema del brand book */
+  --bg-sunken:#F1F1E4;
   --bg-raised:var(--otr-white);
-  --surface:var(--otr-white);
-  --surface-2:var(--n-25);
-  --surface-tint:var(--otr-pale);
+  --surface:var(--otr-white);       /* cards blancas resaltan sobre crema */
+  --surface-2:#FAFAF7;
+  --surface-tint:var(--otr-green-pale);
   --border:var(--n-150);
   --border-strong:var(--n-200);
-  --text:var(--otr-navy);
+  --text:var(--otr-black);
   --text-2:var(--n-600);
   --text-3:var(--n-500);
-  --text-on-navy:#EAF2FB;
+  --text-on-navy:var(--otr-cream);  /* texto sobre registro negro */
 
-  --action:var(--otr-sky-lo);
-  --action-hover:#236FB0;
-  --action-soft:var(--otr-pale);
-  --focus:var(--otr-sky);
-  --link:var(--otr-sky-lo);
+  --action:var(--otr-green);
+  --action-hover:var(--otr-green-lo);
+  --action-soft:var(--otr-green-pale);
+  --focus:var(--otr-green);
+  --link:var(--otr-green-lo);
 
   /* ---- Status ---- */
-  --ok:#1F8A5B; --ok-soft:#DBF1E6;
-  --warn:#B0791F; --warn-soft:#F6ECD6;   /* ámbar tenue, NO naranja de marca */
+  --ok:#1E8C16; --ok-soft:#E1F2DE;             /* éxito = verde de marca */
+  --warn:#C8920C; --warn-soft:var(--otr-gold-pale); /* aviso = familia dorada */
   --danger:#C2453C; --danger-soft:#F7E0DE;
-  --info:var(--otr-sky-lo); --info-soft:var(--otr-pale);
+  --info:var(--otr-green-lo); --info-soft:var(--otr-green-pale);
 
-  /* ---- Niveles (competencias) ---- */
-  --lvl-novato:#8499B2;
-  --lvl-jv:#4FA9E8;
-  --lvl-varsity:#2E8BD0;
-  --lvl-elite:#0C2340;
+  /* ---- Niveles (competencias): gris → verde → negro ---- */
+  --lvl-novato:#89897D;
+  --lvl-jv:#54C247;
+  --lvl-varsity:#2CAA20;
+  --lvl-elite:#0C0C0C;
 
-  /* ---- Typography ---- */
+  /* ---- Typography (solo Inter, tracking compacto del brand book) ---- */
   --font-ui:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-brand:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --track-tight:-0.03em;   /* tracking compacto para títulos */
+  --track-tighter:-0.045em;/* display grande */
 
   /* compact scale */
   --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-14:14px;
@@ -79,12 +95,12 @@
   /* ---- Radii ---- */
   --r-xs:5px; --r-sm:7px; --r-md:10px; --r-lg:14px; --r-xl:18px; --r-pill:999px;
 
-  /* ---- Elevation (suaves, azuladas) ---- */
-  --sh-1:0 1px 2px rgba(12,35,64,.06), 0 1px 1px rgba(12,35,64,.04);
-  --sh-2:0 2px 8px -2px rgba(12,35,64,.10), 0 1px 2px rgba(12,35,64,.06);
-  --sh-3:0 10px 28px -10px rgba(12,35,64,.20);
-  --sh-pop:0 14px 40px -12px rgba(12,35,64,.26);
-  --ring:0 0 0 3px rgba(79,169,232,.35);
+  /* ---- Elevation (negras, neutras) ---- */
+  --sh-1:0 1px 2px rgba(12,12,12,.06), 0 1px 1px rgba(12,12,12,.04);
+  --sh-2:0 2px 8px -2px rgba(12,12,12,.10), 0 1px 2px rgba(12,12,12,.06);
+  --sh-3:0 10px 28px -10px rgba(12,12,12,.22);
+  --sh-pop:0 14px 40px -12px rgba(12,12,12,.28);
+  --ring:0 0 0 3px rgba(44,170,32,.35);
 
   /* ---- Layout ---- */
   --sidebar-w:248px;

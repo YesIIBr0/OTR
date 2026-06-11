@@ -72,10 +72,10 @@ svg.ic{width:18px;height:18px;flex:none}
   transition:background .15s var(--ease),color .15s var(--ease);
 }
 .sb-item:hover{background:rgba(255,255,255,.07);color:#fff;text-decoration:none}
-.sb-item.active{background:rgba(79,169,232,.18);color:#fff}
+.sb-item.active{background:rgba(44,170,32,.18);color:#fff}
 .sb-item.active::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--otr-sky)}
 .sb-item .ic{width:18px;height:18px;flex:none;opacity:.9}
-.sb-item .badge-count{margin-left:auto;background:var(--otr-sky);color:#06203b;font-size:11px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill)}
+.sb-item .badge-count{margin-left:auto;background:var(--otr-sky);color:#FFFFFF;font-size:11px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill)}
 .app.mini .sb-item{justify-content:center;padding:9px 0}
 .app.mini .sb-item .lbl,.app.mini .sb-item .badge-count{display:none}
 .sb-foot{flex:none;padding:10px;border-top:1px solid rgba(255,255,255,.08)}
@@ -121,14 +121,19 @@ svg.ic{width:18px;height:18px;flex:none}
   transition:background .15s var(--ease),border-color .15s,color .15s,box-shadow .15s,transform .05s;}
 .btn:active{transform:translateY(1px)}
 .btn .ic{width:16px;height:16px}
-.btn-primary{background:var(--action);color:#fff;box-shadow:0 1px 2px rgba(46,139,208,.4)}
-.btn-primary:hover{background:var(--action-hover);text-decoration:none}
-.btn-navy{background:var(--otr-navy);color:#fff}
-.btn-navy:hover{background:var(--otr-ink);text-decoration:none}
+/* OTRBRANDBOOK: botón primario NEGRO (autoridad/prestigio, contraste 21:1).
+   El verde de marca vive en acentos/links/estados activos (btn-accent). */
+.btn-primary{background:var(--otr-black);color:var(--otr-cream);box-shadow:0 1px 2px rgba(12,12,12,.25)}
+.btn-primary:hover{background:#000;text-decoration:none}
+.btn-navy{background:var(--otr-black);color:var(--otr-cream)}
+.btn-navy:hover{background:#000;text-decoration:none}
+/* Acción afirmativa verde (confirmar/continuar) — el acento energético de marca. */
+.btn-accent{background:var(--otr-green);color:#fff;box-shadow:0 1px 2px rgba(30,140,22,.3)}
+.btn-accent:hover{background:var(--otr-green-lo);text-decoration:none}
 .btn-ghost{background:var(--otr-white);border-color:var(--border-strong);color:var(--text)}
-.btn-ghost:hover{background:var(--otr-offwhite);text-decoration:none}
+.btn-ghost:hover{background:var(--bg-sunken);text-decoration:none}
 .btn-soft{background:var(--action-soft);color:var(--action-hover)}
-.btn-soft:hover{background:#cfe6fa;text-decoration:none}
+.btn-soft:hover{background:#d2eccf;text-decoration:none}
 .btn-quiet{background:transparent;color:var(--text-2)}
 .btn-quiet:hover{background:var(--otr-offwhite);color:var(--text)}
 .btn-danger{background:var(--danger);color:#fff}
@@ -198,7 +203,7 @@ svg.ic{width:18px;height:18px;flex:none}
 .chip.soft{background:var(--otr-offwhite);border-color:transparent}
 
 /* Avatars */
-.avatar{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;background:var(--otr-sky-lo);overflow:hidden;border:1px solid rgba(12,35,64,.06)}
+.avatar{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;background:var(--otr-sky-lo);overflow:hidden;border:1px solid rgba(12,12,12,.06)}
 .avatar.sm{width:26px;height:26px;font-size:11px}
 .avatar.lg{width:56px;height:56px;font-size:20px}
 .avatar.xl{width:84px;height:84px;font-size:30px}
@@ -325,7 +330,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
    reforzamos el primario con leve elevación (sombra navy) y un sheen sutil. */
 .btn-primary{position:relative;overflow:hidden}
 .btn-primary:hover{
-  box-shadow:0 4px 14px -4px rgba(12,35,64,.45),0 2px 6px -2px rgba(46,139,208,.5);
+  box-shadow:0 4px 14px -4px rgba(12,12,12,.45),0 2px 6px -2px rgba(12,12,12,.3);
   transform:translateY(-1px);
 }
 .btn-primary:active{transform:translateY(0)}
@@ -338,7 +343,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .btn-primary:hover::after{left:150%}
 /* El botón navy también gana una elevación discreta al hover. */
 .btn-navy:hover{
-  box-shadow:0 4px 14px -4px rgba(12,35,64,.5);
+  box-shadow:0 4px 14px -4px rgba(12,12,12,.5);
   transform:translateY(-1px);
 }
 .btn-navy:active{transform:translateY(0)}

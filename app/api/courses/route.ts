@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const exists = await db.course.findUnique({ where: { code } });
   if (exists) return NextResponse.json({ error: "Ese código ya existe" }, { status: 409 });
   const count = await db.course.count();
-  const color = clean(body.color, 40) || "#2E8BD0";
+  const color = clean(body.color, 40) || "#1E8C16";
   const next = clean(body.next, 120) || "Por definir";
   const format = clean(body.format, 40) || null;
   const modalityRaw = clean(body.modality, 40);

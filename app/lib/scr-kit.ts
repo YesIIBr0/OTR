@@ -17,14 +17,14 @@ export const S = {};
       <div class="kit-section">
         <h3>Paleta de marca</h3>
         <div class="swatches">
-          ${swatch('Navy','#0C2340')}${swatch('Ink','#0A1A2F')}${swatch('Sky','#4FA9E8')}${swatch('Sky hi','#7FC8F2')}${swatch('Sky lo','#2E8BD0')}${swatch('Pale','#DCEEFB')}${swatch('Off-white','#F3F7FC')}${swatch('White','#FFFFFF')}
+          ${swatch('Navy','#0C0C0C')}${swatch('Ink','#000000')}${swatch('Sky','#2CAA20')}${swatch('Sky hi','#54C247')}${swatch('Sky lo','#1E8C16')}${swatch('Pale','#E1F2DE')}${swatch('Off-white','#F3F7FC')}${swatch('White','#FFFFFF')}
         </div>
       </div>
 
       <div class="kit-section">
         <h3>Niveles (competencias)</h3>
         <div class="swatches">
-          ${swatch('Novato','#8499B2')}${swatch('JV','#4FA9E8')}${swatch('Varsity','#2E8BD0')}${swatch('Elite','#0C2340')}
+          ${swatch('Novato','#8499B2')}${swatch('JV','#2CAA20')}${swatch('Varsity','#1E8C16')}${swatch('Elite','#0C0C0C')}
         </div>
       </div>
 
