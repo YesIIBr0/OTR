@@ -22,7 +22,7 @@ Eso instala Docker, **genera los secretos**, levanta la app + PostgreSQL, aplica
 esquema, **siembra el contenido real**, configura Nginx y emite **HTTPS**.
 Al terminar: `https://otr-academy.com` (landing) y `https://otr-academy.com/aula`.
 
-**4) Activar después (cuando tengas las llaves)** — edita `.env.production` y `docker compose up -d`:
+**4) Activar después (cuando tengas las llaves)** — edita `.env.production` y `docker compose --env-file .env.production up -d`:
    - **Email real:** crea un buzón en Hostinger (ej. `no-reply@otr-academy.com`) y pon
      `SMTP_URL="smtps://no-reply@otr-academy.com:CONTRASEÑA@smtp.hostinger.com:465"`
    - **Video por CDN (Cloudflare Stream):** rellena `CLOUDFLARE_*` (ya está cableado, hoy apagado).
@@ -261,19 +261,23 @@ Haz **backup periódico** de `public/uploads/` y de la base de datos
 
 Si prefieres contenedores (la app + Postgres juntos):
 
+> ⚠️ Usa SIEMPRE `--env-file .env.production` en cada comando de compose. Sin él,
+> docker-compose ignora tu `.env.production` y arranca Postgres con la contraseña
+> por defecto insegura (`otr`). Es la fuente nº1 de errores de "password authentication failed".
+
 ```bash
 cd /var/www/otr
 cp .env.production.example .env.production && nano .env.production
 cp prisma/schema.postgres.prisma prisma/schema.prisma
 
-# Construye y arranca (web + postgres)
-docker compose up -d --build
+# Construye y arranca (web + postgres) — SIEMPRE con --env-file
+docker compose --env-file .env.production up -d --build
 
 # Aplica el esquema y siembra (dentro del contenedor web)
-docker compose exec web npx prisma migrate deploy   # o: npx prisma db push
-docker compose exec web npm run db:seed
+docker compose --env-file .env.production exec web npx prisma db push --skip-generate
+docker compose --env-file .env.production exec -e SEED_FORCE=1 web npm run db:seed
 
-docker compose logs -f web
+docker compose --env-file .env.production logs -f web
 ```
 
 La app queda en `127.0.0.1:3000` → pon Nginx + certbot delante (paso 8).
@@ -311,7 +315,7 @@ pm2 reload otr
 - [ ] `https://aula.otr-academy.com/aula` carga el LMS.
 - [ ] Login con `saul@otr.do` / `analia.reyes@otr.do` (pass `otr1234`).
 - [ ] Subir un audio/PDF en una entrega persiste en `public/uploads/`.
-- [ ] `pm2 logs otr` (o `docker compose logs web`) sin errores.
+- [ ] `pm2 logs otr` (o `docker compose --env-file .env.production logs web`) sin errores.
 - [ ] Backup de BD (`pg_dump`) y de `public/uploads/` programado.
 
 ---
