@@ -10,7 +10,9 @@ const csp = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
   "img-src 'self' data: blob: https:",
-  `connect-src 'self'${isDev ? " ws:" : ""}`,
+  // audio/video: subidos (mismo origen /uploads) + preview de grabación en vivo (blob:)
+  "media-src 'self' blob: data:",
+  `connect-src 'self' blob:${isDev ? " ws:" : ""}`,
   // iframes de video permitidos (YouTube + Cloudflare Stream)
   "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://*.cloudflarestream.com https://iframe.videodelivery.net https://videodelivery.net",
   "frame-ancestors 'none'",
@@ -33,6 +35,10 @@ if (!isDev) {
 const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  // La página principal "/" sirve la landing estática (public/site/); el LMS vive en /aula.
+  async rewrites() {
+    return { beforeFiles: [{ source: "/", destination: "/site/index.html" }] };
   },
 };
 

@@ -3,6 +3,9 @@ node_modules
 out
 .env
 .env*.local
+.env.production
+.env.development
+# (se conservan los *.example para plantilla)
 *.log
 .DS_Store
 
@@ -13,3 +16,12 @@ out
 
 # misc
 *.tsbuildinfo
+
+# material entrante (staging de exports — no commitear)
+_incoming/
+
+# archivos subidos por usuarios (se conservan en el servidor/volumen, no en git)
+public/uploads/*
+!public/uploads/.gitkeep
+var/uploads/
+var/

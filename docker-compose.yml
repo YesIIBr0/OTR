@@ -1,0 +1,73 @@
+# ============================================================
+#  OTR Academy · docker-compose (producción / staging)
+#    · web      → la app Next.js (Dockerfile multi-stage)
+#    · postgres → PostgreSQL 16 con volumen persistente
+#
+#  Antes de arrancar:
+#    1) cp .env.production.example .env.production  (y rellénalo)
+#    2) En el servidor: cp prisma/schema.postgres.prisma prisma/schema.prisma
+#       (para que `prisma generate` use el provider postgresql)
+#    3) docker compose up -d --build
+#    4) docker compose exec web npx prisma migrate deploy   # o db push
+#    5) docker compose exec web npm run db:seed             # carga datos OTR
+#  Ver DEPLOY.md para la guía completa de Hostinger.
+# ============================================================
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: otr-academy:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Apunta a la BD del servicio postgres (host = nombre del servicio).
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-otr}:${POSTGRES_PASSWORD:-otr}@postgres:5432/${POSTGRES_DB:-otr_aula}?schema=public&connection_limit=30&pool_timeout=20"
+      AUTH_SECRET: "${AUTH_SECRET}"
+      APP_URL: "${APP_URL}"
+      SMTP_URL: "${SMTP_URL}"
+      STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY}"
+      STRIPE_WEBHOOK_SECRET: "${STRIPE_WEBHOOK_SECRET}"
+      CLOUDFLARE_CUSTOMER_SUBDOMAIN: "${CLOUDFLARE_CUSTOMER_SUBDOMAIN}"
+      CLOUDFLARE_ACCOUNT_ID: "${CLOUDFLARE_ACCOUNT_ID}"
+      CLOUDFLARE_API_TOKEN: "${CLOUDFLARE_API_TOKEN}"
+      NODE_ENV: "production"
+      PORT: "3000"
+      UPLOAD_DIR: "/app/var/uploads"
+    env_file:
+      - .env.production
+    ports:
+      # Expuesto en localhost; Nginx hace de reverse proxy con TLS (ver DEPLOY.md).
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      # Recupera el contenedor si la app se cuelga (no solo si el proceso muere).
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/aula',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # Persistencia de archivos subidos por usuarios (fuera de la imagen, fuera de public/).
+      - otr_uploads:/app/var/uploads
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-otr}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-otr}"
+      POSTGRES_DB: "${POSTGRES_DB:-otr_aula}"
+    volumes:
+      - otr_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-otr} -d ${POSTGRES_DB:-otr_aula}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No exponemos el puerto 5432 al host por defecto (solo red interna).
+
+volumes:
+  otr_pgdata:
+  otr_uploads:
