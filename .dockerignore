@@ -1,0 +1,38 @@
+# Dependencias e artefactos de build (se regeneran dentro de la imagen)
+node_modules
+.next
+out
+
+# Git y metadatos
+.git
+.gitignore
+.github
+
+# Entornos locales (NUNCA copiar secretos a la imagen)
+.env
+.env.local
+.env*.local
+.env.production
+
+# SQLite de desarrollo — producción usa PostgreSQL
+*.db
+*.db-journal
+*.sqlite
+prisma/dev.db
+
+# Caches y logs
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# Material de staging que no va a la imagen
+_incoming/
+
+# Archivos subidos por usuarios: se persisten en un volumen, no en la imagen.
+public/uploads/*
+!public/uploads/.gitkeep
+var/
+
+# Documentación y prototipos no necesarios en runtime
+*.md
+!DEPLOY.md

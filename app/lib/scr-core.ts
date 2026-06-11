@@ -2,188 +2,440 @@
 import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
+import { esc } from "./esc";
 import { videoEmbedHtml } from "./video";
 export const S = {};
 
-// Lección activa (seleccionada al navegar; patrón window.__lesson, como window.__q en búsqueda).
-function currentLesson() {
-  const id = (window as any).__lesson;
-  for (const m of (DB.courseModules || [])) for (const it of (m.items || [])) if (it.id === id) return it;
-  return null;
+// Curso ACTIVO (multi-curso Moodle): el seleccionado por window.__course, o el
+// primero de coursesContent. Todas las vistas (hero, módulos, progreso, índice,
+// lección) derivan de aquí — NO de DB.courseModules[0] (eso es solo el backbone
+// del dashboard).
+function activeCourse() {
+  const list = (DB.coursesContent || []);
+  if (!list.length) return null;
+  const code = (window as any).__course;
+  return list.find((c: any) => c.code === code) || list[0];
 }
 
-  /* ---------------- DASHBOARD / MIS CURSOS ---------------- */
+// Busca una lección por id entre TODOS los cursos inscritos (el id es único global).
+// Devuelve { lesson, course } o nulos. Permite abrir una lección de cualquier curso.
+function findLesson(id) {
+  for (const c of (DB.coursesContent || []))
+    for (const m of (c.modules || []))
+      for (const it of (m.items || []))
+        if (it.id === id) return { lesson: it, course: c };
+  return { lesson: null, course: null };
+}
+
+// Lección activa (seleccionada al navegar; patrón window.__lesson). Se busca
+// entre TODOS los cursos para que una lección de LD-101/ORA-101 también abra.
+function currentLesson() {
+  const id = (window as any).__lesson;
+  if (!id) return null;
+  return findLesson(id).lesson;
+}
+
+// Items navegables (no bloqueados) del curso ACTIVO en orden, con su tipo/destino.
+function activeItemsFlat() {
+  const c = activeCourse();
+  if (!c) return [];
+  const out = [];
+  for (const m of (c.modules || [])) {
+    if (m.locked) continue;
+    for (const it of (m.items || [])) {
+      if (it.locked) continue;
+      out.push(it);
+    }
+  }
+  return out;
+}
+
+  /* ---------------- DASHBOARD (PRD §4.2) ----------------
+     Regla del PRD: "nunca vacío, siempre exactamente UNA acción siguiente obvia".
+     Orden: ① Next Action hero · ② Skill snapshot · ③ Recommended for you;
+     RIGHT rail: ④ Upcoming sessions · ⑤ Debate Rank · ⑥ Achievements;
+     BOTTOM: tira de leaderboard del cohort. Sin emojis (IC.*), navy+sky. */
+
+  // Las 6 dimensiones del radar OTR, en orden fijo del contrato.
+  const DASH_SKILL_DIMS = ['Confianza','Estructura','Evidencia','Refutación','Cross-ex','Delivery'];
+
+  // Próxima lección NO completada del primer curso (para "retomar lección").
+  function nextLessonItem() {
+    for (const m of (DB.courseModules || [])) {
+      if (m.locked) continue;
+      for (const it of (m.items || [])) {
+        if (it.locked) continue;
+        if (!it.doneByMe) return it;
+      }
+    }
+    return null;
+  }
+  // Destino de navegación según el tipo de actividad (mismo patrón que la vista de curso).
+  function destFor(it) {
+    return it.type === 'quiz' ? 'quiz' : (it.type === 'mic' || it.type === 'assign') ? 'assignment' : it.type === 'video' ? 'player' : 'lesson';
+  }
+
   S.dashboard = {
     render() {
-      const courseCards = DB.courses.map(c => `
-        <div class="tile course-card click" onclick="go('course')">
-          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C2340))">
-            <span class="cc-code">${c.code}</span>
-          </div>
-          <div class="cc-body">
-            <div class="cc-name">${c.name}</div>
-            <div class="cc-coach">${c.coach}</div>
-            <div class="cc-meta">
-              <span>${IC.book} ${c.lessons} lecciones</span>
-              ${c.due ? `<span class="dot-sep"></span><span style="color:var(--warn);font-weight:600">${c.due} pendiente${c.due>1?'s':''}</span>` : ''}
-            </div>
-            ${C.bar(c.progress, { cls:'thin' })}
-            <div class="cc-foot">
-              <span class="cc-pct">${c.progress}% completado</span>
-              <span class="faint" style="font-size:12px">Sig: ${c.next}</span>
-            </div>
-          </div>
-        </div>`).join('');
-
-      const firstName = (DB.me?.name || "").split(" ")[0] || "";
-      const avg = DB.courses.length ? Math.round(DB.courses.reduce((s,c)=>s+(c.progress||0),0)/DB.courses.length) : 0;
-      const pending = DB.courses.reduce((s,c)=>s+(c.due||0),0);
+      const firstName = esc((DB.me?.name || "").split(" ")[0] || "");
       const myLevel = DB.me?.level || "Novato";
       const order = ['Novato','JV','Varsity','Elite'];
       const myIdx = order.indexOf(myLevel);
       const nextName = order[myIdx+1] || 'Elite';
-      const ladder = order.map((n,i)=>`<div class="lvl-step ${i<myIdx?'done':i===myIdx?'cur':''}">${n}</div>`).join('');
+      const courses = DB.courses || [];
+      const pending = courses.reduce((s,c)=>s+(c.due||0),0);
+      const avg = courses.length ? Math.round(courses.reduce((s,c)=>s+(c.progress||0),0)/courses.length) : 0;
 
-      return `
-      <div class="hello-card" style="margin-bottom:18px">
+      /* ---- ① NEXT ACTION (una sola acción obvia, CTA primario navy) ---- */
+      const nextL = nextLessonItem();
+      const firstCourse = courses[0];
+      let na;
+      if (nextL && firstCourse) {
+        // Retomar lección: lo más obvio si hay curso con actividad pendiente.
+        const setLesson = `${nextL.type==='quiz'?`window.__quizLesson='${nextL.id}';`:''}window.__lesson='${nextL.id}';`;
+        na = {
+          eyebrow: 'Tu siguiente paso',
+          title: `Retoma "${esc(nextL.t)}"`,
+          sub: firstCourse ? `${esc(firstCourse.name)} · ${firstCourse.progress}% completado` : '',
+          cta: 'Continuar lección', ic: IC.play,
+          onclick: `${setLesson}go('${destFor(nextL)}')`,
+        };
+      } else if (!courses.length) {
+        // Sin cursos: la acción obvia es explorar el catálogo.
+        na = { eyebrow: 'Empieza aquí', title: 'Únete a tu primer programa',
+          sub: 'Explora el catálogo OTR y reserva tu lugar.', cta: 'Explorar catálogo', ic: IC.book, onclick: `go('catalog')` };
+      } else if ((DB.debateRank?.provisional)) {
+        // Curso al día y sin rating real: el PRD pide empujar al primer debate de práctica.
+        na = { eyebrow: 'Tu siguiente paso', title: 'Prueba tu primer debate de práctica',
+          sub: 'Sin rondas aún. Mide tus 6 habilidades en un simulacro.', cta: 'Practicar debate', ic: IC.mic, onclick: `go('coach')` };
+      } else {
+        // Todo al día: reservar sesión con el coach para seguir subiendo.
+        na = { eyebrow: 'Tu siguiente paso', title: 'Reserva una sesión con tu coach',
+          sub: 'Vas al día. Una sesión 1:1 acelera tu siguiente nivel.', cta: 'Ver coach', ic: IC.headset, onclick: `go('coach')` };
+      }
+
+      const heroNext = `
+      <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
         <div class="h-row">
-          <div>
-            <p class="eyebrow" style="color:var(--otr-sky-hi)">Tu aula OTR</p>
-            <h2 class="brand-font">Buenas, ${firstName} 👋</h2>
-            <p style="color:rgba(234,242,251,.72);font-size:13.5px;margin-top:4px">${pending>0?`Tienes <b style="color:#fff">${pending} entrega${pending!==1?'s':''}</b> pendiente${pending!==1?'s':''}.`:'Vas al día. ¡Sigue así! 💪'}</p>
+          <div style="max-width:560px">
+            <p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
+            <h2 class="brand-font" style="margin-top:2px">Buenas, ${firstName}</h2>
+            <p style="color:#fff;font-size:15px;font-weight:650;margin-top:10px">${na.title}</p>
+            ${na.sub ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
+            <button class="btn btn-primary" style="margin-top:14px" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
           </div>
-          <div class="row" style="gap:10px">
+          <div class="row" style="gap:10px;align-self:flex-start">
             <span class="streak">${IC.flame} ${DB.me?.streak||0} días de racha</span>
             ${C.levelBadge(myLevel)}
           </div>
         </div>
-      </div>
+      </div>`;
 
-      <div class="grid g-4" style="margin-bottom:20px">
-        <div class="tile">${C.kpi('Cursos activos',String(DB.courses.length),{ic:'book'})}</div>
+      /* ---- KPIs ligeros (XP/nivel sí son Fase 1) ---- */
+      const kpis = `
+      <div class="grid g-4 fade-up" style="--d:1;margin-bottom:20px">
+        <div class="tile">${C.kpi('Cursos activos',String(courses.length),{ic:'book'})}</div>
         <div class="tile">${C.kpi('Progreso medio',String(avg),{unit:'%',ic:'chart'})}</div>
         <div class="tile">${C.kpi('XP total',(DB.xp||0).toLocaleString('es'),{ic:'flame'})}</div>
         <div class="tile">${C.kpi('Entregas pendientes',String(pending),{ic:'clock'})}</div>
-      </div>
-
-      <div class="split">
-        <div>
-          <div class="page-head" style="margin-bottom:14px">
-            <div><div class="page-title" style="font-size:18px">Mis cursos</div></div>
-            <div class="seg"><button class="on">Todos</button><button>En progreso</button><button>Completados</button></div>
-          </div>
-          <div class="grid g-3">${courseCards}</div>
-        </div>
-
-        <div class="stack" style="gap:16px">
-          <div class="card">
-            <div class="card-head"><h3>Agenda</h3><a href="#" onclick="return false" style="font-size:12.5px">Ver todo</a></div>
-            <div class="card-body" style="padding:6px 16px 12px">
-              ${DB.events.map(e=>`
-                <div class="agenda-item">
-                  <span class="when-dot" style="background:var(--${e.tone==='warn'?'warn':e.tone==='navy'?'otr-navy':'otr-sky'})"></span>
-                  <div><div class="ai-t">${e.t}</div><div class="ai-c">${e.c}</div></div>
-                  <span class="ai-w">${e.when}</span>
-                </div>`).join('')}
-            </div>
-          </div>
-
-          <div class="card card-pad">
-            <div class="lvl-widget">
-              <div class="row between vcenter">
-                <b style="font-size:14px">Tu nivel</b>${C.levelBadge(myLevel)}
-              </div>
-              ${C.bar(Math.max(0,Math.min(100,((DB.xp-DB.xpLevelStart)/((DB.xpNext-DB.xpLevelStart)||1))*100)),{cls:'thick navy'})}
-              <div class="row between" style="font-size:12px;color:var(--text-2)">
-                <span class="tnum">${(DB.xp||0).toLocaleString('es')} XP</span><span class="tnum">${(DB.xpNext||0).toLocaleString('es')} XP → ${nextName}</span>
-              </div>
-              <div class="lvl-ladder">${ladder}</div>
-              <button class="btn btn-soft btn-sm" onclick="go('progress')">Ver progreso ${IC.arrowR}</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head"><h3>Actividad</h3></div>
-            <div class="card-body" style="padding:6px 16px 12px">
-              ${DB.activity.map(a=>`<div class="agenda-item"><span class="when-dot" style="background:var(--otr-pale)"></span>
-                <div><div class="ai-t" style="font-weight:500"><b>${a.who}</b> ${a.a} <span class="sky">${a.t}</span></div></div>
-                <span class="ai-w">${a.when}</span></div>`).join('')}
-            </div>
-          </div>
-        </div>
       </div>`;
+
+      /* ---- ② SKILL SNAPSHOT (radar, reusa DB.skills) ---- */
+      const skillMap = {};
+      (DB.skills || []).forEach((s)=>{ skillMap[s.skill] = Math.max(0, Math.min(100, Number(s.score)||0)); });
+      const hasSkills = (DB.skills || []).length > 0;
+      const comps = DASH_SKILL_DIMS.map((n)=>[n, skillMap[n] != null ? skillMap[n] : 0]);
+      const skillAvg = hasSkills ? Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length) : 0;
+      const skillCard = `
+        <div class="card card-pad">
+          <div class="row between vcenter">
+            <div><div class="eyebrow" style="margin-bottom:2px">Radar OTR</div><b style="font-size:15px">Tus habilidades</b></div>
+            ${hasSkills ? `<span class="badge sky">${skillAvg} prom.</span>` : ''}
+          </div>
+          ${hasSkills
+            ? `<div style="margin-top:12px">${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${c[0]}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
+              <button class="btn btn-soft btn-sm" style="margin-top:12px" onclick="go('progress')">Ver progreso ${IC.arrowR}</button></div>`
+            : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.award}</div><h4>Aún sin evaluación</h4><p>Tu coach evaluará tus 6 habilidades. Completa una lección para empezar.</p></div>`}
+        </div>`;
+
+      /* ---- ③ RECOMMENDED FOR YOU (cursos no inscritos / práctica) ---- */
+      const enrolledCodes = new Set(courses.map(c=>c.code));
+      const recos = (DB.catalog || []).filter(c=>!c.enrolled && !enrolledCodes.has(c.code)).slice(0,3);
+      const recoCards = recos.map(c=>`
+        <div class="tile course-card click" onclick="go('catalog')">
+          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C2340))">
+            <span class="cc-code">${esc(c.code)}</span>
+          </div>
+          <div class="cc-body">
+            <div class="cc-name">${esc(c.name)}</div>
+            <div class="cc-coach">${esc(c.coach)}</div>
+            <div class="cc-meta">${c.format?`<span class="row vcenter" style="gap:5px">${IC.flag} ${esc(c.format)}</span>`:''}${c.modality?`<span class="dot-sep"></span><span>${esc(c.modality)}</span>`:''}</div>
+            <button class="btn btn-soft btn-sm" style="margin-top:10px;width:100%">Ver programa ${IC.arrowR}</button>
+          </div>
+        </div>`).join('');
+      const recoCard = `
+        <div class="card card-pad">
+          <div class="row between vcenter" style="margin-bottom:14px">
+            <div><div class="eyebrow" style="margin-bottom:2px">Para ti</div><b style="font-size:15px">Recomendado</b></div>
+          </div>
+          ${recos.length
+            ? `<div class="grid g-3">${recoCards}</div>`
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.target}</div><h4>Estás al día</h4><p>Ya estás en los programas disponibles. Reserva una sesión con tu coach para ir más lejos.</p><button class="btn btn-soft btn-sm" onclick="go('coach')">Ver coach ${IC.arrowR}</button></div>`}
+        </div>`;
+
+      /* ---- ④ UPCOMING SESSIONS (reservas REALES del usuario, PRD §4.2 ④) ----
+         Lee DB.myBookings (STUDENT): CONFIRMED/PENDING futuras, ordenadas por
+         slotAtIso asc, máximo 3. CTA al marketplace (data-go='explore') en el
+         empty. Defensivo si no hay myBookings (rol no-STUDENT) → cae a DB.events
+         o al empty. La sala on-platform (videoUrl) abre con window.open. */
+      const nextSessions = (Array.isArray(DB.myBookings) ? DB.myBookings : [])
+        .filter(b => b && b.upcoming && (b.status === 'CONFIRMED' || b.status === 'PENDING'))
+        .sort((a,b)=> (Date.parse(a.slotAtIso)||0) - (Date.parse(b.slotAtIso)||0))
+        .slice(0,3);
+
+      // Countdown textual desde el ISO del slot ("" si no hay fecha o ya pasó).
+      const dashCountdown = (iso) => {
+        if (!iso) return '';
+        const t = Date.parse(iso);
+        if (Number.isNaN(t)) return '';
+        const ms = t - Date.now();
+        if (ms <= 0) return '';
+        const min = Math.round(ms/60000);
+        if (min < 60) return `en ${min} min`;
+        const hours = Math.round(min/60);
+        if (hours < 24) return `en ${hours} h`;
+        const days = Math.round(hours/24);
+        return `en ${days} día${days===1?'':'s'}`;
+      };
+
+      // EMPTY STATE: sin reservas próximas → CTA al marketplace (PRD §4.2 ④).
+      const sessionsEmpty = `<div style="padding:10px 0"><p class="faint" style="font-size:13px">Aún no tienes sesiones — reserva tu primer coach.</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-go="explore">Explorar coaches ${IC.arrowR}</button></div>`;
+
+      // Si DB.myBookings no existe (rol no-STUDENT): respaldo a DB.events; si
+      // tampoco hay, empty con CTA.
+      const sessionsHasBookings = Array.isArray(DB.myBookings);
+      const sessionsBody = nextSessions.length
+        ? nextSessions.map(b=>{
+            const cd = dashCountdown(b.slotAtIso);
+            const statusBadge = b.status === 'CONFIRMED'
+              ? `<span class="badge sky"><span class="dot"></span>Confirmada</span>`
+              : `<span class="badge warn"><span class="dot"></span>Esperando aprobación</span>`;
+            const canJoin = b.status === 'CONFIRMED' && b.videoUrl;
+            const action = canJoin
+              ? `<button class="btn btn-soft btn-sm" style="flex:none" onclick="window.open('${esc(b.videoUrl)}','_blank','noopener')">${IC.video} Unirse</button>`
+              : `<button class="btn btn-soft btn-sm" style="flex:none" data-go="my-bookings">Ver ${IC.arrowR}</button>`;
+            return `
+              <div class="agenda-item" style="align-items:center">
+                ${C.avatar(esc(b.coachInitials || 'C'),{size:'sm',bg:'var(--otr-navy)'})}
+                <div style="flex:1;min-width:0">
+                  <div class="ai-t">${esc(b.coachName || 'Coach OTR')}</div>
+                  <div class="ai-c">${esc(b.slotLabel || '')}${cd?` · ${esc(cd)}`:''}</div>
+                  <div class="row vcenter" style="gap:6px;margin-top:5px">${statusBadge}</div>
+                </div>
+                ${action}
+              </div>`;
+          }).join('')
+        : (!sessionsHasBookings && (DB.events||[]).length
+            ? DB.events.map(e=>`
+              <div class="agenda-item">
+                <span class="when-dot" style="background:var(--${e.tone==='warn'?'warn':e.tone==='navy'?'otr-navy':'otr-sky'})"></span>
+                <div><div class="ai-t">${esc(e.t)}</div><div class="ai-c">${esc(e.c)}</div></div>
+                <span class="ai-w">${esc(e.when)}</span>
+              </div>`).join('')
+            : sessionsEmpty);
+
+      const upcoming = `
+        <div class="card">
+          <div class="card-head"><h3>Próximas sesiones</h3><a href="#" data-go="my-bookings" style="font-size:12.5px">Ver todo</a></div>
+          <div class="card-body" style="padding:6px 16px 12px">
+            ${sessionsBody}
+          </div>
+        </div>`;
+
+      /* ---- ⑤ DEBATE RANK (DB.debateRank; no-debatientes ven CTA de práctica) ---- */
+      const dr = DB.debateRank || { rating: 1500, rd: 350, tier: 'Novato', provisional: true };
+      const debateCard = `
+        <div class="card card-pad">
+          <div class="row between vcenter">
+            <div><div class="eyebrow" style="margin-bottom:2px">Debate Rank</div><b style="font-size:15px">${esc(dr.tier)}</b></div>
+            <span class="badge ${dr.provisional?'':'sky'}">${dr.provisional?'Provisional':'Estable'}</span>
+          </div>
+          <div class="row vcenter" style="gap:8px;margin:12px 0 4px">
+            <span class="brand-font" style="font-size:30px;font-weight:800;color:var(--otr-navy)">${dr.rating}</span>
+            <span class="muted" style="font-size:12.5px">rating ${dr.provisional?`(±${dr.rd})`:''}</span>
+          </div>
+          ${dr.provisional
+            ? `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">Aún sin rondas registradas. Tu rating es provisional.</p>
+               <button class="btn btn-primary btn-sm" style="width:100%" onclick="go('coach')">${IC.mic} Prueba tu primer debate de práctica</button>`
+            : `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">Sigue debatiendo para subir de tier.</p>
+               <button class="btn btn-soft btn-sm" style="width:100%" onclick="go('coach')">Ver historial ${IC.arrowR}</button>`}
+        </div>`;
+
+      /* ---- ⑥ ACHIEVEMENTS (badges recientes + "X para el siguiente") ---- */
+      const badges = DB.badges || [];
+      const earned = badges.filter(b=>b.got);
+      const nextBadge = badges.find(b=>!b.got);
+      const xpToNext = Math.max(0, (DB.xpNext||0) - (DB.xp||0));
+      const achievements = `
+        <div class="card card-pad">
+          <div class="row between vcenter" style="margin-bottom:12px">
+            <div><div class="eyebrow" style="margin-bottom:2px">Logros</div><b style="font-size:15px">${earned.length} de ${badges.length}</b></div>
+            ${C.levelBadge(myLevel)}
+          </div>
+          <div class="row wrap" style="gap:7px">
+            ${earned.slice(0,6).map(b=>`<span class="badge sky" title="${esc(b.d||'')}">${IC.medal} ${esc(b.n)}</span>`).join('') || `<span class="muted" style="font-size:12.5px">Aún sin insignias. ¡Completa una lección!</span>`}
+          </div>
+          <div class="divider"></div>
+          ${C.bar(Math.max(0,Math.min(100,((DB.xp-DB.xpLevelStart)/((DB.xpNext-DB.xpLevelStart)||1))*100)),{cls:'thin navy'})}
+          <div class="row between" style="font-size:12px;color:var(--text-2);margin-top:6px">
+            <span class="tnum">${xpToNext.toLocaleString('es')} XP para ${nextName}</span>
+            ${nextBadge?`<span class="sky" style="font-weight:600">Próx: ${esc(nextBadge.n)}</span>`:''}
+          </div>
+        </div>`;
+
+      /* ---- BOTTOM: tira de leaderboard del cohort ---- */
+      // STUDENT no recibe DB.students; usa DB.activity (timeline propio) como respaldo.
+      const roster = (DB.students || []).slice(0, 5);
+      const leaderboard = roster.length
+        ? `<div class="card fade-up" style="--d:4;margin-top:18px">
+            <div class="card-head"><h3>Leaderboard del cohort</h3><a href="#" onclick="return false" style="font-size:12.5px">Ver todo</a></div>
+            <div class="card-body" style="padding:6px 16px 12px">
+              ${roster.map((s,i)=>`<div class="agenda-item">
+                <span class="badge ${i===0?'sky':''}" style="min-width:26px;justify-content:center">${i+1}</span>
+                <div class="row vcenter" style="gap:9px;flex:1">${C.avatar(esc(s.i),{size:'sm'})}<div><div class="ai-t">${esc(s.n)}</div><div class="ai-c">${esc(s.lvl)}</div></div></div>
+                <span class="ai-w tnum">${(s.xp||0).toLocaleString('es')} XP</span></div>`).join('')}
+            </div>
+          </div>`
+        : `<div class="card fade-up" style="--d:4;margin-top:18px">
+            <div class="card-head"><h3>Tu actividad reciente</h3></div>
+            <div class="card-body" style="padding:6px 16px 12px">
+              ${(DB.activity||[]).length ? DB.activity.slice(0,5).map(a=>`<div class="agenda-item"><span class="when-dot" style="background:var(--otr-sky)"></span>
+                <div><div class="ai-t">${esc(a.title)}</div>${a.xp?`<div class="ai-c sky">+${a.xp} XP</div>`:a.detail?`<div class="ai-c">${esc(a.detail)}</div>`:''}</div>
+                <span class="ai-w">${esc(a.when)}</span></div>`).join('') : `<p class="faint" style="font-size:13px;padding:10px 0">Sin actividad reciente. Completa una lección para empezar tu historial.</p>`}
+            </div>
+          </div>`;
+
+      return `
+      ${heroNext}
+      ${kpis}
+      <div class="split fade-up" style="--d:2">
+        <div class="stack" style="gap:16px">
+          ${skillCard}
+          ${recoCard}
+        </div>
+        <div class="stack" style="gap:16px">
+          ${upcoming}
+          ${debateCard}
+          ${achievements}
+        </div>
+      </div>
+      ${leaderboard}`;
     }
   };
 
   /* ---------------- VISTA DE CURSO ---------------- */
   S.course = {
     render() {
-      if (!DB.courses || !DB.courses.length) {
+      // Curso ACTIVO (multi-curso). El hero, módulos, progreso y % derivan de aquí.
+      const c = activeCourse();
+      if (!c) {
         return `<div class="page-head"><div><div class="page-title">Aún no tienes cursos</div><div class="page-sub">Inscríbete en un curso para empezar a entrenar.</div></div></div>
         <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Tu aula está vacía</h4><p>Explora el catálogo y únete a tu primer curso.</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">Explorar catálogo</button></div></div>`;
       }
-      const c = DB.courses[0];
-      const modules = DB.courseModules.map((m,mi)=>`
+      // Metadatos extra (estudiantes/lecciones) solo viven en DB.courses; los unimos por code.
+      const meta = (DB.courses || []).find((x: any) => x.code === c.code) || {};
+      const cMods = c.modules || [];
+      const allItems = cMods.flatMap(m => m.items || []);
+      const totalActs = allItems.length;
+      const doneActs = allItems.filter(it => it.doneByMe).length;
+
+      // SELECTOR "Mis cursos": solo si el alumno tiene >1 curso. Chip por curso con
+      // nombre + progreso; al clicar fija window.__course y recarga la vista.
+      const courseList = (DB.coursesContent || []);
+      const selector = courseList.length > 1
+        ? `<div class="course-switch row wrap fade-up" style="--d:0;gap:10px;margin-bottom:16px">
+            ${courseList.map((x: any) => {
+              const on = x.code === c.code;
+              return `<button class="chip-course${on ? ' active' : ''}" onclick="window.__course='${esc(x.code)}';go('course')" style="display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:12px;border:1.5px solid ${on ? 'var(--otr-sky)' : 'var(--line)'};background:${on ? 'color-mix(in srgb,var(--otr-sky) 12%,#fff)' : '#fff'};cursor:pointer;text-align:left">
+                <span class="cc-code" style="background:${x.color};color:#fff;border-radius:7px;padding:3px 7px;font-size:11px;font-weight:700">${esc(x.code)}</span>
+                <span style="display:flex;flex-direction:column;line-height:1.25"><b style="font-size:12.5px;color:var(--text)">${esc(x.name)}</b><span class="muted tnum" style="font-size:11.5px">${x.progress || 0}% completado</span></span>
+              </button>`;
+            }).join('')}
+          </div>`
+        : '';
+
+      const modules = cMods.length
+        ? cMods.map((m,mi)=>`
         <div class="module ${mi===1?'open':''}">
           <div class="module-head" data-acc>
             <div class="mh-ic ${m.done?'done':m.locked?'lock':''}">${m.done?IC.check:m.locked?IC.lock:`<b>${mi+1}</b>`}</div>
-            <div class="mh-text"><div class="mh-title">${m.t}</div><div class="mh-sub">${m.items.length} actividades${m.done?' · completada':m.locked?' · bloqueada':''}</div></div>
+            <div class="mh-text"><div class="mh-title">${esc(m.t)}</div><div class="mh-sub">${m.items.length} actividades${m.done?' · completada':m.locked?' · bloqueada':''}</div></div>
             <span class="chev">${IC.chevD}</span>
           </div>
           <div class="module-items">
             ${m.items.map(it=>`
-              <div class="mitem ${it.done?'done':''} ${it.locked?'lock':''}" ${!it.locked?`onclick="window.__lesson='${it.id}';go('${it.type==='quiz'?'quiz':it.type==='mic'||it.type==='assign'?'assignment':it.type==='video'?'player':'lesson'}')"`:''}>
-                <div class="mi-ic">${it.done?IC.check:C.typeIcon(it.type)}</div>
-                <div class="mi-t">${it.t}</div>
-                <div class="mi-meta">${it.grade?C.badge(it.grade,'ok'):''}${it.due?`<span style="color:var(--warn)">${it.due}</span>`:''}${it.dur?`<span>${it.dur}</span>`:''}${it.locked?IC.lock:''}</div>
+              <div class="mitem ${it.doneByMe?'done':''} ${it.locked?'lock':''}" ${!it.locked?`onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
+                <div class="mi-ic">${it.doneByMe?IC.check:C.typeIcon(it.type)}</div>
+                <div class="mi-t">${esc(it.t)}</div>
+                <div class="mi-meta">${it.grade?C.badge(esc(it.grade),'ok'):''}${it.due?`<span style="color:var(--warn)">${esc(it.due)}</span>`:''}${it.dur?`<span>${esc(it.dur)}</span>`:''}${it.locked?IC.lock:''}</div>
               </div>`).join('')}
           </div>
-        </div>`).join('');
+        </div>`).join('')
+        : `<div class="card"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Este curso aún no tiene contenido</h4><p>Cuando tu coach publique módulos y lecciones aparecerán aquí.</p></div></div>`;
+
+      // "Continuar": próxima actividad NO completada del curso ACTIVO. Fija
+      // window.__lesson (y __quizLesson si aplica) y enruta por tipo antes de navegar.
+      const flat = activeItemsFlat();
+      const nextItem = flat.find(it => !it.doneByMe) || flat[0] || null;
+      const continueBtn = nextItem
+        ? `<button class="btn btn-primary" onclick="${nextItem.type==='quiz'?`window.__quizLesson='${esc(nextItem.id)}';`:''}window.__lesson='${esc(nextItem.id)}';go('${destFor(nextItem)}')">Continuar ${IC.arrowR}</button>`
+        : `<button class="btn btn-primary" disabled style="opacity:.55;cursor:default">Sin actividades</button>`;
+
+      // Promedio real del alumno (DB.myGrades.avg). Sin notas → se omite la fila.
+      const avgGrade = (DB.myGrades && typeof DB.myGrades.avg === 'number') ? DB.myGrades.avg : null;
+      const hasAvg = avgGrade != null && (DB.myGrades?.submitted || 0) > 0;
 
       return `
-      <div class="course-hero">
+      ${selector}
+      <div class="course-hero fade-up" style="--d:0">
         <div class="ch-banner" style="background:linear-gradient(120deg,${c.color},var(--otr-navy))">
           <div class="stripes"></div>
-          <span class="cc-code" style="position:relative;z-index:2">${c.code}</span>
+          <span class="cc-code" style="position:relative;z-index:2">${esc(c.code)}</span>
         </div>
         <div class="ch-body">
           <div style="flex:1;min-width:220px">
-            <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em">${c.name}</h2>
-            <div class="row vcenter" style="gap:12px;margin-top:6px;font-size:13px;color:var(--text-2)">
-              <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${c.coach}</span>
-              <span class="dot-sep"></span><span>${c.students} estudiantes</span>
-              <span class="dot-sep"></span><span>${c.lessons} lecciones</span>
+            <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em">${esc(c.name)}</h2>
+            <div class="row vcenter wrap" style="gap:10px 12px;margin-top:8px;font-size:13px;color:var(--text-2)">
+              <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${esc(c.coach)}</span>
+              ${meta.students!=null?`<span class="dot-sep"></span><span>${meta.students} estudiantes</span>`:''}
+              ${meta.lessons!=null?`<span class="dot-sep"></span><span>${meta.lessons} lecciones</span>`:''}
             </div>
           </div>
           <div class="row vcenter" style="gap:18px">
             ${C.ring(c.progress, 64)}
             <div class="stack" style="gap:8px">
-              <button class="btn btn-primary" onclick="go('lesson')">Continuar ${IC.arrowR}</button>
+              ${continueBtn}
               <button class="btn btn-ghost btn-sm" onclick="go('course-index')">Índice del curso</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="tabs">
+      <div class="tabs fade-up" style="--d:1">
         <button class="tab active">Contenido</button>
-        <button class="tab">Calificaciones</button>
-        <button class="tab">Foro</button>
-        <button class="tab">Participantes</button>
+        <button class="tab" onclick="go('grades')">Calificaciones</button>
       </div>
 
-      <div class="split">
+      <div class="split fade-up" style="--d:2">
         <div>${modules}</div>
         <div class="stack" style="gap:16px">
           <div class="card card-pad">
             <b style="font-size:14px">Tu progreso</b>
-            <div class="row vcenter between" style="margin:14px 0 8px"><span class="muted" style="font-size:13px">12 de 18 actividades</span><b class="sky">${c.progress}%</b></div>
+            <div class="row vcenter between" style="margin:14px 0 8px"><span class="muted" style="font-size:13px">${doneActs} de ${totalActs} actividades</span><b class="sky">${c.progress}%</b></div>
             ${C.bar(c.progress)}
-            <div class="divider"></div>
-            <div class="row between" style="font-size:13px"><span class="muted">Promedio actual</span><b>89%</b></div>
-            <div class="row between" style="font-size:13px;margin-top:8px"><span class="muted">Asistencia</span><b>92%</b></div>
+            ${hasAvg ? `<div class="divider"></div>
+            <div class="row between" style="font-size:13px"><span class="muted">Promedio actual</span><b>${avgGrade}%</b></div>` : ''}
           </div>
-          <div class="alert info"><span class="ai">${IC.calendar}</span><div><div class="at">Próximo: Simulacro con jueces</div>Hoy 4:00 PM · trae tu caso impreso.</div></div>
         </div>
       </div>`;
     },
@@ -196,31 +448,39 @@ function currentLesson() {
   /* ---------------- SHELL DE NAVEGACIÓN / ÍNDICE ---------------- */
   S.courseIndex = {
     render() {
+      // Índice del curso ACTIVO (no del primer curso fijo).
+      const c = activeCourse();
       const all = [];
-      DB.courseModules.forEach((m,mi)=>{ m.items.forEach(it=>all.push({...it,unit:`U${mi+1}`})); });
+      (c?.modules || []).forEach((m,mi)=>{ (m.items||[]).forEach(it=>all.push({...it,unit:`U${mi+1}`})); });
+
+      // KPIs reales: % completado del curso, total de actividades y tiempo estimado
+      // (suma de las duraciones "Nn min" de los items que la declaren; se omite si 0).
+      const totalActs = all.length;
+      const totalMin = all.reduce((s,it)=>{ const m = /(\d+)\s*min/i.exec(it.dur||''); return s + (m ? Number(m[1]) : 0); }, 0);
+      const timeLabel = totalMin >= 60 ? `~${Math.round(totalMin/60)}h` : totalMin > 0 ? `${totalMin} min` : null;
       return `
-      <div class="page-head"><div>
+      <div class="page-head fade-up" style="--d:0"><div>
         <div class="page-title">Índice del curso</div>
-        <div class="page-sub">Public Forum I · navega cualquier actividad del curso</div>
+        <div class="page-sub">${esc(c?.name || 'Curso')} · navega cualquier actividad del curso</div>
       </div><button class="btn btn-ghost" onclick="go('course')">${IC.chevL} Volver al curso</button></div>
 
-      <div class="grid g-3" style="margin-bottom:20px">
-        <div class="tile">${C.kpi('Completado','67',{unit:'%',ic:'checkCircle'})}</div>
-        <div class="tile">${C.kpi('Actividades','18',{ic:'grid'})}</div>
-        <div class="tile">${C.kpi('Tiempo restante','~3h',{ic:'clock'})}</div>
+      <div class="grid g-3 fade-up" style="--d:1;margin-bottom:20px">
+        <div class="tile">${C.kpi('Completado',String(c?.progress ?? 0),{unit:'%',ic:'checkCircle'})}</div>
+        <div class="tile">${C.kpi('Actividades',String(totalActs),{ic:'grid'})}</div>
+        ${timeLabel ? `<div class="tile">${C.kpi('Tiempo estimado',timeLabel,{ic:'clock'})}</div>` : ''}
       </div>
 
-      <div class="table-wrap scroll-m">
+      <div class="table-wrap scroll-m fade-up" style="--d:2">
         <table class="tbl">
           <thead><tr><th>Actividad</th><th>Unidad</th><th>Tipo</th><th class="center">Estado</th><th class="num">Nota</th></tr></thead>
           <tbody>
-            ${all.map(it=>`<tr style="cursor:pointer" ${!it.locked?`onclick="window.__lesson='${it.id}';go('${it.type==='quiz'?'quiz':it.type==='mic'||it.type==='assign'?'assignment':it.type==='video'?'player':'lesson'}')"`:''}>
-              <td><div class="row vcenter" style="gap:10px"><span style="display:flex;width:18px;color:var(--text-2)">${C.typeIcon(it.type)}</span><b style="font-weight:600">${it.t}</b></div></td>
-              <td><span class="tag-soft">${it.unit}</span></td>
-              <td class="muted" style="text-transform:capitalize">${({video:'Video',lesson:'Lección',quiz:'Quiz',assign:'Tarea',mic:'Grabación'})[it.type]||it.type}</td>
+            ${all.length ? all.map(it=>`<tr style="cursor:pointer" ${!it.locked?`onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
+              <td><div class="row vcenter" style="gap:10px"><span style="display:flex;width:18px;color:var(--text-2)">${C.typeIcon(it.type)}</span><b style="font-weight:600">${esc(it.t)}</b></div></td>
+              <td><span class="tag-soft">${esc(it.unit)}</span></td>
+              <td class="muted" style="text-transform:capitalize">${({video:'Video',lesson:'Lección',quiz:'Quiz',assign:'Tarea',mic:'Grabación'})[it.type]||esc(it.type)}</td>
               <td class="center">${it.done?C.badge('Hecho','ok',{dot:1}):it.locked?C.badge('Bloqueado','',{dot:1}):C.badge('Pendiente','warn',{dot:1})}</td>
-              <td class="num">${it.grade||'—'}</td>
-            </tr>`).join('')}
+              <td class="num">${it.grade?esc(it.grade):'—'}</td>
+            </tr>`).join('') : `<tr><td colspan="5"><div class="empty" style="padding:32px"><div class="ill">${IC.grid}</div><h4>Sin actividades todavía</h4><p>Cuando el coach añada contenido aparecerá aquí.</p></div></td></tr>`}
           </tbody>
         </table>
       </div>`;
@@ -230,10 +490,14 @@ function currentLesson() {
   /* ---------------- LECCIÓN / CONTENIDO ---------------- */
   S.lesson = {
     render() {
-      const L = currentLesson();
+      const lid = (window as any).__lesson;
+      const { lesson: L, course: Lcourse } = lid ? findLesson(lid) : { lesson: null, course: null };
       const hasL = !!L;
-      const title = hasL ? L.t : "Claim · Warrant · Impact";
+      const title = hasL ? esc(L.t) : "Claim · Warrant · Impact";
       const embed = hasL ? videoEmbedHtml(L.videoKind, L.videoSrc) : "";
+
+      // Prosa demo SOLO cuando no hay ninguna lección seleccionada (entrada legacy
+      // sin window.__lesson). NUNCA se inyecta como relleno de una lección real.
       const defaultProse = `
             <p>Un argumento sólido no es una opinión más fuerte: es una <b>estructura</b>. En OTR entrenamos cada contención sobre tres piezas que el juez puede seguir sin esfuerzo.</p>
             <h2 id="s1">1. Claim — la afirmación</h2>
@@ -244,22 +508,44 @@ function currentLesson() {
             <ul><li>Evidencia empírica (datos, estudios, ejemplos).</li><li>Razonamiento causal (A provoca B).</li><li>Principios y analogías.</li></ul>
             <h2 id="s3">3. Impact — el porqué importa</h2>
             <p>El impacto traduce tu argumento al lenguaje del juez: ¿qué cambia en el mundo si tienes razón? Magnitud, probabilidad y tiempo. Sin impacto, ganaste la lógica pero perdiste la ronda.</p>`;
-      const emptyLesson = hasL && !L.contentHtml && !embed;
-      const body = emptyLesson
-        ? `<div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Lección sin contenido todavía</h4><p>El coach aún no añadió video ni contenido a esta lección.</p></div>`
-        : `<div class="prose">${hasL && L.contentHtml ? L.contentHtml : defaultProse}</div>`;
+
+      // Cuerpo: (1) lección real con notas → su HTML; (2) lección real sin notas
+      // pero con video → nota neutra (no la prosa demo); (3) lección real sin nada
+      // → estado vacío; (4) sin lección seleccionada → prosa demo legacy.
+      let body;
+      if (hasL) {
+        if (L.contentHtml) body = `<div class="prose">${L.contentHtml}</div>`;
+        else if (embed) body = `<p class="faint" style="font-size:13px;margin-top:4px">Sin notas de texto para esta lección.</p>`;
+        else body = `<div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Lección sin contenido todavía</h4><p>El coach aún no añadió video ni contenido a esta lección.</p></div>`;
+      } else {
+        body = `<div class="prose">${defaultProse}</div>`;
+      }
+
+      // Navegación Anterior/Siguiente: recorre los items NO bloqueados del curso al
+      // que pertenece la lección activa, en orden. Setea window.__lesson y enruta por
+      // tipo. Vacío en los extremos (o sin lección).
+      const seq = (Lcourse?.modules || []).flatMap(m => m.locked ? [] : (m.items || []).filter(it => !it.locked));
+      const pos = hasL ? seq.findIndex(it => it.id === L.id) : -1;
+      const prev = pos > 0 ? seq[pos - 1] : null;
+      const next = pos >= 0 && pos < seq.length - 1 ? seq[pos + 1] : null;
+      const navBtn = (it, label, dir) => it
+        ? `<button class="btn btn-soft btn-sm" onclick="${it.type==='quiz'?`window.__quizLesson='${esc(it.id)}';`:''}window.__lesson='${esc(it.id)}';go('${destFor(it)}')">${dir==='prev'?`${IC.chevL} `:''}${label}${dir==='next'?` ${IC.arrowR}`:''}</button>`
+        : `<button class="btn btn-soft btn-sm" disabled style="opacity:.45;cursor:default">${dir==='prev'?`${IC.chevL} `:''}${label}${dir==='next'?` ${IC.arrowR}`:''}</button>`;
+
       return `
-      <div class="row between vcenter" style="margin-bottom:6px">
+      <div class="row between vcenter fade-up" style="--d:0;margin-bottom:6px">
         <span class="badge sky">${IC.book} ${hasL ? "Lección" : "Unidad 2 · Lección 1"}</span>
-        <span class="muted" style="font-size:12.5px">${IC.clock} ${hasL && L.dur ? L.dur : "18 min de lectura"}</span>
+        <span class="muted row vcenter" style="font-size:12.5px;gap:5px">${IC.clock} ${hasL && L.dur ? esc(L.dur) : "18 min de lectura"}</span>
       </div>
-      <div class="lesson-wrap">
+      <div class="lesson-wrap fade-up" style="--d:1">
         <div>
           <h1 class="page-title" style="font-size:28px;margin-bottom:14px">${title}</h1>
           ${embed ? `<div class="player-stage" style="margin-bottom:18px">${embed}</div>` : ""}
           ${body}
-          <div class="lesson-nav">
+          <div class="lesson-nav row vcenter between" style="gap:10px">
+            ${hasL ? navBtn(prev, 'Anterior', 'prev') : `<span></span>`}
             <button class="btn btn-ghost" onclick="go('course')">${IC.chevL} Volver al curso</button>
+            ${hasL ? navBtn(next, 'Siguiente', 'next') : `<span></span>`}
           </div>
         </div>
         <aside class="lesson-outline">
@@ -270,7 +556,11 @@ function currentLesson() {
           <a href="#s2">Warrant — el porqué</a>
           <a href="#s3">Impact — por qué importa</a>`}
           <div class="divider"></div>
-          <label class="check"><input type="checkbox" /> Marcar como completada</label>
+          ${hasL && L.id
+            ? (L.doneByMe
+                ? `<button class="btn btn-soft btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="false">Completada ${IC.check}</button>`
+                : `<button class="btn btn-primary btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="true">Marcar como completada</button>`)
+            : `<label class="check"><input type="checkbox" /> Marcar como completada</label>`}
         </aside>
       </div>`;
     }

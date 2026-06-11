@@ -1,5 +1,5 @@
 // Cripto de auth (sin dependencias — Node crypto). Hash de contraseñas + firma de sesión.
-import { scryptSync, randomBytes, timingSafeEqual, createHmac } from "crypto";
+import { scryptSync, randomBytes, timingSafeEqual, createHmac, createHash } from "crypto";
 
 export function hashPassword(pw: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -23,23 +23,32 @@ if (!SECRET || SECRET.length < 16) {
 
 const MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 días
 
-export function signSession(userId: string): string {
+/**
+ * Huella corta que liga la sesión al passwordHash actual del usuario.
+ * Cambiar la contraseña (reset o cambio manual) cambia la huella → las sesiones
+ * emitidas antes dejan de validar (m4: invalidar sesiones al resetear).
+ */
+export function passwordFingerprint(passwordHash: string | null | undefined): string {
+  return createHash("sha256").update(`${SECRET}:${passwordHash ?? ""}`).digest("hex").slice(0, 16);
+}
+
+export function signSession(userId: string, fp: string): string {
   const ts = Date.now().toString(36);
-  const payload = `${userId}.${ts}`;
+  const payload = `${userId}.${ts}.${fp}`;
   const mac = createHmac("sha256", SECRET).update(payload).digest("hex");
   return `${payload}.${mac}`;
 }
 
-export function verifySession(token: string): string | null {
+export function verifySession(token: string): { userId: string; fp: string } | null {
   const parts = token.split(".");
-  if (parts.length !== 3) return null; // formato antiguo o inválido → re-login
-  const [userId, ts, mac] = parts;
-  const payload = `${userId}.${ts}`;
+  if (parts.length !== 4) return null; // formato antiguo (3 partes) o inválido → re-login
+  const [userId, ts, fp, mac] = parts;
+  const payload = `${userId}.${ts}.${fp}`;
   const expected = createHmac("sha256", SECRET).update(payload).digest("hex");
   const a = Buffer.from(mac);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   const issued = parseInt(ts, 36);
   if (!Number.isFinite(issued) || Date.now() - issued > MAX_AGE_MS) return null; // sesión expirada
-  return userId;
+  return { userId, fp };
 }

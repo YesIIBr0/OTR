@@ -7,7 +7,7 @@ import { rateLimit } from "../../../lib/rate-limit";
 export async function POST(req: Request) {
   const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
   const data = await readJson<{ email?: string; password?: string }>(req);
-  const email = clean(data.email, 160);
+  const email = clean(data.email, 160).toLowerCase();
   const password = String(data.password ?? "");
 
   // Anti fuerza-bruta: 8 intentos por IP+correo cada 5 minutos.
@@ -19,6 +19,6 @@ export async function POST(req: Request) {
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return bad("Correo o contraseña incorrectos", 401);
   }
-  await setSession(user.id);
+  await setSession(user);
   return ok();
 }

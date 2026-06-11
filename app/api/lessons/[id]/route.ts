@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { teacherOwnsLesson } from "../../../lib/authz";
-import { normalizeKind, normalizeVideoSrc, sanitizeHtml } from "../../../lib/video";
+import { normalizeKind, normalizeVideoSrc } from "../../../lib/video";
+import { sanitizeHtml } from "../../../lib/sanitize";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -30,6 +31,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const lesson = await teacherOwnsLesson(id, user);
   if (!lesson) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   await db.lesson.deleteMany({ where: { id } });
-  await db.course.update({ where: { id: lesson.module.courseId }, data: { lessonsCount: { decrement: 1 } } });
+  // updateMany no lanza P2025 si el curso ya no existe (a diferencia de update).
+  await db.course.updateMany({ where: { id: lesson.module.courseId }, data: { lessonsCount: { decrement: 1 } } });
   return NextResponse.json({ ok: true });
 }

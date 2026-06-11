@@ -3,20 +3,21 @@
 import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
+import { esc } from "./esc";
 
 export const S = {
   catalog: {
     render() {
       const courses = DB.catalog || [];
-      const card = (c) => `
-        <div class="tile course-card">
+      const card = (c, i = 0) => `
+        <div class="tile click course-card fade-up" style="--d:${i}">
           <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C2340))">
-            <span class="cc-code">${c.code}</span>
+            <span class="cc-code">${esc(c.code)}</span>
           </div>
           <div class="cc-body">
-            <div class="cc-name">${c.name}</div>
-            <div class="cc-coach">${c.coach}</div>
-            <div class="cc-foot" style="margin-top:14px;align-items:center">
+            <div class="cc-name">${esc(c.name)}</div>
+            <div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${esc(c.coach)}</div>
+            <div class="cc-foot" style="margin-top:16px">
               ${c.price > 0 ? `<span class="cc-pct">$${(c.price / 100).toFixed(0)}</span>` : `<span class="badge ok">Gratis</span>`}
               ${c.enrolled
                 ? `<span class="badge ok"><span class="dot"></span>Inscrito</span>`
@@ -26,10 +27,13 @@ export const S = {
         </div>`;
       return `
       <div class="page-head"><div>
+        <p class="eyebrow">Academia OTR</p>
         <div class="page-title">Catálogo de cursos</div>
         <div class="page-sub">Explora e inscríbete en los cursos de OTR</div>
       </div></div>
-      <div class="grid g-3">${courses.map(card).join("")}</div>`;
+      ${courses.length
+        ? `<div class="grid g-3">${courses.map(card).join("")}</div>`
+        : `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Sin cursos disponibles</h4><p>Pronto se publicarán nuevos cursos en el catálogo.</p></div></div>`}`;
     },
   },
 
@@ -37,33 +41,56 @@ export const S = {
     render() {
       const courses = DB.teacherCourses || [];
       if (!courses.length) {
-        return `<div class="page-head"><div><div class="page-title">Gestión de contenido</div>
+        return `<div class="page-head"><div><p class="eyebrow">Profesor</p><div class="page-title">Gestión de contenido</div>
           <div class="page-sub">Aún no tienes cursos. Usa el botón <b>+ Crear</b> arriba para empezar.</div></div></div>
           <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Sin cursos todavía</h4><p>Crea tu primer curso con "+ Crear → Nuevo curso".</p></div></div>`;
       }
-      const lesson = (l) => `<div class="row between vcenter" style="padding:6px 0 6px 16px;font-size:13px;color:var(--text-2)">
-        <span class="row vcenter" style="gap:8px"><span style="display:flex;width:15px">${C.typeIcon(l.type)}</span>${l.title}${l.videoKind && l.videoKind !== 'none' ? `<span class="badge sky" style="height:18px;font-size:10px;gap:3px">${IC.video} ${l.videoKind === 'youtube' ? 'YouTube' : 'Stream'}</span>` : ''}</span>
-        <span class="row" style="gap:4px"><button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar lección">${IC.pencil}</button>
-        <button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" title="Eliminar lección">✕</button></span></div>`;
-      const mod = (m) => `<div style="border-top:1px solid var(--border);padding:10px 0">
-        <div class="row between vcenter"><b style="font-size:13.5px">${m.title}</b>
+      const lesson = (l) => {
+        // Estado del examen (mismo criterio que el panel de S.teacher).
+        const isQuiz = l.type === 'quiz';
+        const quizInDb = (DB.quizByLesson || {})[l.id];
+        const quizBadge = isQuiz
+          ? (quizInDb
+              ? `<span class="badge ok" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.check} ${quizInDb.questions?.length || 0} preg.</span>`
+              : `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Sin preguntas</span>`)
+          : '';
+        return `<div class="row between vcenter" style="padding:7px 0 7px 18px;font-size:13px;color:var(--text-2)">
+        <span class="row vcenter" style="gap:8px;min-width:0"><span style="display:flex;width:15px;color:var(--text-3);flex:none">${C.typeIcon(l.type)}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.title)}</span>${l.videoKind && l.videoKind !== 'none' ? `<span class="badge sky" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.video} ${l.videoKind === 'youtube' ? 'YouTube' : 'Stream'}</span>` : ''}${quizBadge}</span>
+        <span class="row" style="gap:4px;flex:none">${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ''}<button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar lección">${IC.pencil}</button>
+        <button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" style="color:var(--danger)" title="Eliminar lección">${IC.close}</button></span></div>`;
+      };
+      const mod = (m) => `<div style="border-top:1px solid var(--border);padding:12px 0 6px">
+        <div class="row between vcenter" style="margin-bottom:4px"><b class="row vcenter" style="gap:7px;font-size:13.5px"><span style="display:flex;width:14px;color:var(--text-3)">${IC.grid}</span>${esc(m.title)}</b>
           <button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar módulo</button></div>
-        ${m.lessons.map(lesson).join("") || '<div class="faint" style="font-size:12px;padding:6px 0 0 16px">Sin lecciones — añade con "+ Crear"</div>'}
+        ${m.lessons.map(lesson).join("") || '<div class="faint" style="font-size:12px;padding:6px 0 0 18px">Sin lecciones — añade con "+ Crear"</div>'}
       </div>`;
-      const course = (c) => `<div class="card card-pad" style="margin-bottom:14px">
-        <div class="row between vcenter">
-          <div class="row vcenter" style="gap:10px"><span style="width:11px;height:11px;border-radius:3px;background:${c.color}"></span><b style="font-size:15px">${c.code} · ${c.name}</b></div>
-          <div class="row" style="gap:6px">
-            <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${c.name}">${IC.pencil} Editar</button>
+      const course = (c, i = 0) => `<div class="card card-pad fade-up" style="margin-bottom:14px;--d:${i}">
+        <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
+          <div class="row vcenter" style="gap:10px;min-width:0">${C.courseDot(c.color)}<b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${esc(c.name)}</b></div>
+          <div class="row" style="gap:6px;flex:none">
+            <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${esc(c.name)}">${IC.pencil} Editar</button>
             <button class="btn btn-quiet btn-sm" data-del="course:${c.id}" style="color:var(--danger)">${IC.flag} Eliminar</button>
           </div>
         </div>
-        ${c.modules.map(mod).join("") || '<div class="faint" style="font-size:12px;margin-top:8px">Sin módulos todavía — añade con "+ Crear → Nuevo módulo"</div>'}
+        ${c.modules.map(mod).join("") || '<div class="faint" style="font-size:12px;margin-top:10px">Sin módulos todavía — añade con "+ Crear → Nuevo módulo"</div>'}
       </div>`;
       return `
-      <div class="page-head"><div><div class="page-title">Gestión de contenido</div>
+      <div class="page-head"><div><p class="eyebrow">Profesor</p><div class="page-title">Gestión de contenido</div>
       <div class="page-sub">Edita y elimina tus cursos, módulos y lecciones · usa <b>+ Crear</b> para añadir</div></div></div>
       ${courses.map(course).join("")}`;
+    },
+    // El constructor de examen vive en scr-teacher.ts y se expone como
+    // window.otrOpenQuizBuilder. Aquí solo lo cableamos para los botones
+    // "Examen" de las lecciones type='quiz'. (edit/del usan la delegación de Aula.tsx.)
+    mount(root) {
+      if (!root) return;
+      root.addEventListener("click", (e) => {
+        const btn = e.target.closest && e.target.closest('[data-tm="quiz"]');
+        if (!btn || !root.contains(btn)) return;
+        e.preventDefault();
+        if (typeof window !== "undefined" && window.otrOpenQuizBuilder)
+          window.otrOpenQuizBuilder(btn.getAttribute("data-lesson"), btn.getAttribute("data-title"));
+      });
     },
   },
 
@@ -72,16 +99,16 @@ export const S = {
       const q = (window.__q || "").toLowerCase().trim();
       const courses = (DB.catalog || []).filter((c) => `${c.name} ${c.code} ${c.coach}`.toLowerCase().includes(q));
       const people = (DB.students || []).filter((s) => s.n.toLowerCase().includes(q));
-      const threads = (DB.forum || []).filter((t) => `${t.title} ${t.tag}`.toLowerCase().includes(q));
-      const total = courses.length + people.length + threads.length;
-      const section = (title, body) => body ? `<div class="kit-section"><h3>${title}</h3>${body}</div>` : "";
+      // Foro APAGADO (PRD-estricto): sin sección de discusiones en los resultados.
+      const total = courses.length + people.length;
+      let _sec = 0;
+      const section = (title, count, body) => body ? `<div class="kit-section fade-up" style="--d:${_sec++}"><h3 class="row between vcenter"><span>${title}</span><span class="badge-count">${count}</span></h3>${body}</div>` : "";
       return `
-      <div class="page-head"><div><div class="page-title">Resultados para "${window.__q || ""}"</div>
+      <div class="page-head"><div><p class="eyebrow">Búsqueda</p><div class="page-title">Resultados para "${esc(window.__q || "")}"</div>
       <div class="page-sub">${total} resultado${total === 1 ? "" : "s"}</div></div></div>
-      ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>Sin resultados</h4><p>Prueba con otra búsqueda.</p></div></div>` : ""}
-      ${section("Cursos", courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C2340)"><span class="cc-code">${c.code}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach">${c.coach}</div></div></div>`).join("")}</div>` : "")}
-      ${section("Personas", people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="padding:10px 16px;gap:10px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1"><b>${s.n}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}
-      ${section("Foro", threads.length ? `<div class="card">${threads.map((t) => `<div class="forum-row" onclick="go('forum-thread')">${C.avatar(t.ini, { size: "sm" })}<div class="fr-main"><div class="fr-title">${t.title}</div><div class="fr-meta"><span class="tag-soft">${t.tag}</span></div></div></div>`).join("")}</div>` : "")}`;
+      ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>Sin resultados</h4><p>No encontramos nada para "${esc(window.__q || "")}". Prueba con otra búsqueda.</p></div></div>` : ""}
+      ${section("Cursos", courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C2340)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${esc(c.name)}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${esc(c.coach)}</div></div></div>`).join("")}</div>` : "")}
+      ${section("Personas", people.length, people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="gap:11px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1;min-width:0"><b style="font-weight:600">${esc(s.n)}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}`;
     },
   },
 };

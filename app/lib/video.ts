@@ -61,27 +61,6 @@ export function videoEmbedHtml(kind: unknown, src: unknown): string {
   return "";
 }
 
-/**
- * Sanitización conservadora de contentHtml — se aplica en SERVIDOR antes de persistir,
- * de modo que el cliente puede inyectarlo por innerHTML con seguridad. Allowlist de tags;
- * elimina script/iframe/style, atributos on*, style=, y href/src con javascript:/data:.
- */
-const ALLOWED_TAGS = new Set([
-  "P", "B", "STRONG", "I", "EM", "U", "H2", "H3", "H4", "UL", "OL", "LI", "BR", "A", "BLOCKQUOTE", "CODE", "PRE", "SPAN", "DIV",
-]);
-export function sanitizeHtml(html: unknown): string | null {
-  let s = String(html ?? "");
-  if (!s.trim()) return null;
-  // 1) eliminar bloques peligrosos completos (con o sin cierre)
-  s = s.replace(/<\s*(script|style|iframe|object|embed|link|meta|svg|math|form)[\s\S]*?<\/\s*\1\s*>/gi, "");
-  s = s.replace(/<\s*\/?\s*(script|style|iframe|object|embed|link|meta|svg|math|form)[^>]*>/gi, "");
-  // 2) quitar manejadores on*=, style= y javascript:/data: en href/src
-  s = s.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-  s = s.replace(/\sstyle\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
-  s = s.replace(/(href|src)\s*=\s*("|')\s*(javascript|data|vbscript):[^"']*\2/gi, '$1="#"');
-  // 3) eliminar tags fuera de la allowlist (conserva su contenido de texto)
-  s = s.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (m, tag) =>
-    ALLOWED_TAGS.has(String(tag).toUpperCase()) ? m : "");
-  s = s.trim().slice(0, 20000);
-  return s || null;
-}
+// sanitizeHtml se movió a app/lib/sanitize.ts (usa sanitize-html, parser real y robusto,
+// SOLO servidor) para no arrastrar la librería al bundle del cliente, que importa
+// videoEmbedHtml desde este módulo. Las rutas API importan sanitizeHtml desde "./sanitize".

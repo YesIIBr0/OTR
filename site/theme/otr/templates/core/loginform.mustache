@@ -1,0 +1,90 @@
+{{!
+    This file is part of the OTR theme for Moodle — theme_otr.
+    GPL v3 or later — http://www.gnu.org/copyleft/gpl.html
+}}
+{{!
+    @template core/loginform
+
+    THEME OVERRIDE of core's login form (lib/templates/loginform.mustache).
+    Placing this file at theme/otr/templates/core/loginform.mustache makes
+    Moodle resolve OTR's version on /login/index.php instead of core's.
+
+    This is a STUB showing the override pattern + the brand panel. For
+    production, copy the full core/loginform.mustache from your Moodle
+    version (it is GPL) and add the .otr-login-brand block — DO NOT remove
+    the existing form fields or you will break login.
+
+    Context variables for this template (SCHEMA — provided by \core\output\login):
+    * autofocusform        bool
+    * canloginbyemail      bool
+    * canloginasguest      bool
+    * cansignup            bool
+    * cookieshelpicon      object
+    * error                string   login error message
+    * info                 string   info notice
+    * loginurl             string   POST target
+    * signupurl            string
+    * username             string   remembered username
+    * rememberusername     bool
+    * identityproviders[]  array    OAuth2 / SSO buttons
+    * instructions         string   site login instructions (raw html)
+    * maintenance          string
+}}
+<div class="otr-login row no-gutters">
+    {{! ---- Brand panel (OTR) — left on desktop, hidden on mobile ---- }}
+    <div class="otr-login-brand col-lg-6 d-none d-lg-flex">
+        <div class="otr-login-brand__inner">
+            <div class="otr-eyebrow">{{#str}}pluginname, theme_otr{{/str}} · Aula</div>
+            <h1 class="otr-display">Domina la sala.<br>Empieza por entrenar.</h1>
+            <p class="otr-login-brand__sub">
+                Tu aula de debate y oratoria: cursos, grabaciones, niveles y resultados.
+            </p>
+            <div class="otr-login-brand__proof">10 campeonatos · 55 clasificaciones · Harvard '26</div>
+        </div>
+    </div>
+
+    {{! ---- Login form (KEEP core fields intact) ---- }}
+    <div class="otr-login-form col-lg-6 col-12">
+        {{#error}}
+            <div class="alert alert-danger" role="alert">{{error}}</div>
+        {{/error}}
+        {{#info}}
+            <div class="alert alert-info" role="alert">{{info}}</div>
+        {{/info}}
+
+        <form action="{{loginurl}}" method="post" id="login" {{#autofocusform}}data-autofocus="true"{{/autofocusform}}>
+            <input type="hidden" name="logintoken" value="{{logintoken}}">
+
+            <div class="form-group">
+                <label for="username">{{#str}}username{{/str}}</label>
+                <input type="text" name="username" id="username" class="form-control"
+                       value="{{username}}" autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">{{#str}}password{{/str}}</label>
+                <input type="password" name="password" id="password" class="form-control"
+                       autocomplete="current-password">
+            </div>
+
+            {{#rememberusername}}
+                <div class="form-check">
+                    <input type="checkbox" name="rememberusername" id="rememberusername" value="1" class="form-check-input">
+                    <label for="rememberusername" class="form-check-label">{{#str}}rememberusername, admin{{/str}}</label>
+                </div>
+            {{/rememberusername}}
+
+            <button type="submit" class="btn btn-primary btn-block mt-3" id="loginbtn">
+                {{#str}}login{{/str}}
+            </button>
+        </form>
+
+        {{#identityproviders.length}}
+            <div class="otr-login-idp mt-3">
+                {{#identityproviders}}
+                    <a class="btn btn-outline-secondary btn-block" href="{{url}}">{{name}}</a>
+                {{/identityproviders}}
+            </div>
+        {{/identityproviders.length}}
+    </div>
+</div>

@@ -1,6 +1,7 @@
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean } from "../../../lib/api";
+import { logActivitySafe } from "../../../lib/activity";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -37,6 +38,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // Notificar solo cuando la nota realmente cambia (recalificar igual no spamea al alumno).
   const gradeChanged = existing.grade !== g || existing.status !== "GRADED";
   if (g != null && gradeChanged) {
+    // Spine ActivityEvent: la entrega se calificó → registro en el timeline del ALUMNO.
+    await logActivitySafe({
+      userId: submission.userId,
+      type: "submission_graded",
+      title: `Entrega calificada "${submission.activity}" · ${g}`,
+      detail: `por ${user.name}`,
+      xp: delta > 0 ? delta : 0,
+      source: "submission-grade",
+      refId: submission.id,
+      meta: { grade: g, courseCode: submission.courseCode },
+    });
     await db.notification.create({
       data: {
         userId: submission.userId, icon: "chart", tone: "ok",

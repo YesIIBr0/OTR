@@ -6,19 +6,33 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "start:prod": "next start -p ${PORT:-3000}",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "postinstall": "prisma generate",
+    "deploy:prod": "prisma migrate deploy && next build && next start -p ${PORT:-3000}"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "next": "^15.1.6",
+    "nodemailer": "^8.0.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sanitize-html": "^2.17.4",
     "stripe": "^22.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",
+    "@types/nodemailer": "^8.0.0",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
+    "@types/sanitize-html": "^2.16.1",
     "prisma": "^6.19.3",
     "tsx": "^4.22.4",
     "typescript": "^5.7.3"

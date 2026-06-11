@@ -1,38 +1,219 @@
 // OTR LMS · funciones de consulta — leen de la base de datos (Prisma).
 import { db } from "./db";
 import { esc } from "./esc";
+import { safeUrl } from "./api";
+import { dateLabel, timeLabel } from "./consultations";
 
 const ME_EMAIL = "analia.reyes@otr.do";
 const TEACHER_EMAIL = "saul@otr.do";
 const MAIN_COURSE = "PF-101";
 
-export async function getAppData(email: string = ME_EMAIL) {
-  const me = await db.user.findUnique({ where: { email } });
+// Etiqueta de fecha relativa en español (texto generado por nosotros, no de usuario).
+function whenLabel(d?: Date | null): string {
+  if (!d) return "";
+  const date = d instanceof Date ? d : new Date(d);
+  const ms = Date.now() - date.getTime();
+  if (Number.isNaN(ms)) return "";
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return "ahora";
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  const days = Math.floor(h / 24);
+  if (days < 7) return `hace ${days} ${days === 1 ? "día" : "días"}`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return `hace ${weeks} sem`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `hace ${months} ${months === 1 ? "mes" : "meses"}`;
+  const years = Math.floor(days / 365);
+  return `hace ${years} ${years === 1 ? "año" : "años"}`;
+}
+
+// Etiqueta legible mes + año en español, tipo "jun 2026" (texto generado por nosotros).
+const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+function monthYearLabel(d?: Date | null): string {
+  if (!d) return "";
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${MONTHS_ES[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+// Etiqueta corta de día "12 jun" (journey/atribución del Lifetime Profile, PRD §8).
+function shortDateLabel(d?: Date | string | null): string {
+  if (!d) return "";
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getDate()} ${MONTHS_ES[date.getMonth()]}`;
+}
+
+// Etiqueta de mes completo capitalizado "Junio 2026" (agrupa el journey, PRD §8).
+function monthFullLabel(d?: Date | string | null): string {
+  if (!d) return "";
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "";
+  const m = MONTHS_ES_FULL[date.getMonth()];
+  return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${date.getFullYear()}`;
+}
+
+// Etiqueta de fecha de evento futuro tipo "12 jun · 9:00 AM" (texto generado por
+// nosotros). Usada para el inicio de los torneos del Debate Hub.
+function eventDateLabel(d?: Date | null): string {
+  if (!d) return "";
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = date.getDate();
+  const mon = MONTHS_ES[date.getMonth()];
+  let h = date.getHours();
+  const min = date.getMinutes();
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  const mm = min.toString().padStart(2, "0");
+  return `${day} ${mon} · ${h}:${mm} ${ampm}`;
+}
+
+// Las 6 dimensiones del radar OTR, en el orden fijo del contrato.
+const OTR_SKILLS = ["Confianza", "Estructura", "Evidencia", "Refutación", "Cross-ex", "Delivery"];
+
+// Promedio de ratings redondeado a 1 decimal (0 si no hay reseñas).
+function avgRating(ratings: number[]): number {
+  if (!ratings.length) return 0;
+  const sum = ratings.reduce((a, b) => a + (b || 0), 0);
+  return Math.round((sum / ratings.length) * 10) / 10;
+}
+
+// Convierte el string de "formats" (separado por coma) en lista de strings escapados.
+function formatsList(formats?: string | null): string[] {
+  return String(formats ?? "")
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean)
+    .map((f) => esc(f));
+}
+
+// Forma del quiz para el cliente (sección 2 CONTRACT.md). Texto de usuario escapado.
+// Para ESTUDIANTE las opciones NO incluyen 'correct' (anti-trampa);
+// para PROFESOR/ADMIN sí, para poder editar.
+function buildQuiz(quiz: any, isTeacher: boolean) {
+  if (!quiz) return null;
+  return {
+    id: quiz.id,
+    lessonId: quiz.lessonId,
+    title: esc(quiz.title),
+    passScore: quiz.passScore,
+    questions: (quiz.questions || []).map((q: any) => ({
+      id: q.id,
+      prompt: esc(q.prompt),
+      options: (q.options || []).map((o: any) =>
+        isTeacher
+          ? { id: o.id, text: esc(o.text), correct: o.correct }
+          : { id: o.id, text: esc(o.text) },
+      ),
+    })),
+  };
+}
+
+export async function getAppData(email: string = ME_EMAIL, lang: string = "es") {
+  // PRD §17.3: "i18n is structural, not a wrapper". El contenido de cursos y
+  // lecciones se sirve en el idioma activo, cayendo al ES si no hay traducción.
+  // `lang` lo decide el SERVER (cookie otr_lang vía next/headers) y lo pasa quien
+  // llama a getAppData — aquí NO se puede leer document.cookie (corre en server).
+  // pickLang(es, en): devuelve la variante EN solo si lang==='en' Y existe; si no, ES.
+  const wantEn = lang === "en";
+  const pickLang = (es?: string | null, en?: string | null): string =>
+    wantEn && en != null && en !== "" ? (en as string) : (es ?? "");
+  // select defensivo: NUNCA traer passwordHash (sensible) ni emailVerified (no se usa).
+  const me = await db.user.findUnique({
+    where: { email },
+    select: {
+      id: true, name: true, email: true, role: true, initials: true, level: true,
+      xp: true, streak: true, headline: true, bio: true, teachingStyle: true,
+      formats: true, location: true, avatarUrl: true, preferences: true,
+      // PRD §4: rating de debate (Glicko-2) para la Debate Rank card del dashboard.
+      debateRating: true, debateRd: true, debateTier: true,
+      // PRD §7 Safety Gate: ageBand alimenta el candado de consentimiento del marketplace.
+      ageBand: true,
+      // PRD §11.3 / §2.2: placedAt (null = estudiante nuevo sin placement) → me.needsPlacement.
+      placedAt: true,
+      // PRD §13: membresía simulada · PRD §8 identity (lang) · §8.4 perfil público.
+      membership: true, membershipSince: true, publicSlug: true, publicProfile: true, lang: true,
+    },
+  });
   const isTeacher = me?.role === "TEACHER" || me?.role === "ADMIN";
+  const myRole = (me?.role || "STUDENT").toLowerCase(); // rol REAL: student | teacher | admin
+
   const [
     teacher, levels, meEnrollments, pfModules, pfStudents,
     gradeCells, competencies, badges, notifications, events, activity,
     threads, mainThread, convos, allCourses, allModules, taughtCourses,
+    resources, mainCourse, myStudentSkills, myCertificates, coachProfiles,
   ] = await Promise.all([
-    db.user.findUnique({ where: { email: TEACHER_EMAIL } }),
+    db.user.findUnique({ where: { email: TEACHER_EMAIL }, select: { name: true, email: true, initials: true, headline: true, bio: true, teachingStyle: true, formats: true, location: true } }),
     db.level.findMany({ orderBy: { position: "asc" } }),
     db.enrollment.findMany({ where: { user: { email } }, include: { course: true }, orderBy: { course: { position: "asc" } } }),
     db.module.findMany({ where: { course: { code: MAIN_COURSE } }, include: { lessons: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } }),
-    db.enrollment.findMany({ where: { course: { code: MAIN_COURSE } }, include: { user: true }, orderBy: { user: { xp: "desc" } } }),
-    db.gradeCell.findMany({ orderBy: [{ studentPos: "asc" }, { colPos: "asc" }] }),
+    // Roster de estudiantes: solo para profesor/admin (un estudiante NUNCA debe verlo).
+    isTeacher
+      ? db.enrollment.findMany({ where: { course: { code: MAIN_COURSE } }, include: { user: true }, orderBy: { user: { xp: "desc" } }, take: 200 })
+      : Promise.resolve([]),
+    // Gradebook: solo profesor/admin.
+    isTeacher ? db.gradeCell.findMany({ orderBy: [{ studentPos: "asc" }, { colPos: "asc" }] }) : Promise.resolve([]),
     db.competency.findMany({ orderBy: { position: "asc" } }),
     db.badge.findMany({ orderBy: { position: "asc" } }),
-    db.notification.findMany({ orderBy: { position: "asc" } }),
-    db.eventItem.findMany({ orderBy: { position: "asc" } }),
-    db.activityItem.findMany({ orderBy: { position: "asc" } }),
-    db.forumThread.findMany({ orderBy: { position: "asc" } }),
-    db.forumThread.findFirst({ where: { pinned: true }, orderBy: { position: "asc" }, include: { posts: { orderBy: { position: "asc" } } } }),
-    db.conversation.findMany({ orderBy: { position: "asc" }, include: { messages: { orderBy: { position: "asc" } } } }),
-    db.course.findMany({ orderBy: { position: "asc" }, select: { id: true, code: true, name: true, color: true, coachName: true, priceCents: true } }),
-    db.module.findMany({ orderBy: { position: "asc" }, select: { id: true, courseId: true, title: true } }),
+    db.notification.findMany({ orderBy: { position: "asc" }, take: 200 }),
+    db.eventItem.findMany({ orderBy: { position: "asc" }, take: 200 }),
+    db.activityItem.findMany({ orderBy: { position: "asc" }, take: 200 }),
+    // Foro APAGADO (PRD-estricto, Fase 3 §10): no se cargan ni envían threads.
+    Promise.resolve([] as any[]),
+    Promise.resolve(null as any),
+    // PRD §7.4/§17.4: las conversaciones se scopean por participante (no se cargan
+    // todas). El usuario solo recibe aquellas donde es ConversationParticipant.
+    // Fallback legacy: conversaciones SIN ningún participante registrado (seed viejo)
+    // se incluyen para no romper. me?.id puede faltar (sin sesión) → [].
+    me
+      ? db.conversation.findMany({
+          where: { OR: [{ participants: { some: { userId: me.id } } }, { participants: { none: {} } }] },
+          orderBy: { position: "asc" },
+          take: 50,
+          include: { messages: { orderBy: { position: "asc" }, take: 200 } },
+        })
+      : Promise.resolve([] as any[]),
+    db.course.findMany({ orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true } }),
+    // Mapa de módulos para gestión de contenido: solo profesor/admin.
+    isTeacher ? db.module.findMany({ orderBy: { position: "asc" }, select: { id: true, courseId: true, title: true } }) : Promise.resolve([]),
+    // Cursos impartidos (con reseñas para el perfil del coach): solo profesor/admin.
     isTeacher
-      ? db.course.findMany({ where: { teacher: { email } }, include: { modules: { include: { lessons: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } } }, orderBy: { position: "asc" } })
+      ? db.course.findMany({ where: { teacher: { email } }, include: { modules: { include: { lessons: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } }, reviews: { include: { student: true }, orderBy: { createdAt: "desc" } } }, orderBy: { position: "asc" } })
       : Promise.resolve([]),
+    // Arsenal (recursos), ordenados por posición y luego por creación.
+    // Arsenal APAGADO (PRD-estricto): no se cargan recursos.
+    Promise.resolve([] as any[]),
+    // Curso principal con su profesor, programas del coach y reseñas (para coachProfile del estudiante).
+    db.course.findUnique({
+      where: { code: MAIN_COURSE },
+      include: {
+        // select defensivo del coach: solo los campos que consume buildCoachProfile (sin passwordHash).
+        teacher: { select: { id: true, name: true, initials: true, headline: true, bio: true, teachingStyle: true, formats: true, location: true } },
+        reviews: { include: { student: true }, orderBy: { createdAt: "desc" } },
+      },
+    }),
+    // Habilidades (radar) del estudiante logueado. [] si no existe el usuario.
+    me ? db.studentSkill.findMany({ where: { userId: me.id } }) : Promise.resolve([]),
+    // Certificados del estudiante logueado, con el curso para obtener programName.
+    me
+      ? db.certificate.findMany({ where: { userId: me.id }, orderBy: { issuedAt: "desc" } })
+      : Promise.resolve([]),
+    // Marketplace (PRD §7): perfiles de coach ACTIVOS con paquetes y disponibilidad.
+    // Visible para TODOS los roles (browse/search de coaches).
+    db.coachProfile.findMany({
+      where: { active: true },
+      include: {
+        packages: { orderBy: { position: "asc" } },
+        availability: { orderBy: [{ weekday: "asc" }, { startMin: "asc" }] },
+      },
+      take: 100,
+    }),
   ]);
 
   const curLevel = levels.find((l) => l.name === me?.level) ?? levels[0];
@@ -51,8 +232,237 @@ export async function getAppData(email: string = ME_EMAIL) {
 
   const enrolledIds = new Set(meEnrollments.map((e) => e.courseId));
 
-  // Insignias automáticas (derivadas de logros reales del usuario)
-  const mySubs = me ? await db.submission.findMany({ where: { userId: me.id } }) : [];
+  // --- Datos reales del estudiante para notas y progreso -------------------
+  // Cargados en paralelo: progreso de lecciones (LessonProgress), entregas
+  // calificadas (Submission GRADED) y exámenes (QuizAttempt) del usuario actual,
+  // y todas las lecciones de sus cursos inscritos (para el % de progreso real).
+  // Para el profesor: conteo de entregas pendientes de sus cursos.
+  const taughtCodes = isTeacher ? taughtCourses.map((c: any) => c.code) : [];
+  // Ids de los cursos cuyos quizzes nos interesan: impartidos (profesor) o
+  // inscritos (alumno). Se usan para cargar los exámenes reales sin N+1.
+  const taughtIds = isTeacher ? taughtCourses.map((c: any) => c.id) : [];
+  const quizCourseIds = isTeacher ? taughtIds : [...enrolledIds];
+  // [l7] Para ESTUDIANTE: el dashboard/courseModules deriva del PRIMER curso REAL
+  // inscrito (meEnrollments ya viene ordenado por course.position asc). Si no hay
+  // ninguna inscripción → [] (no se fuerza PF-101). El profesor mantiene PF-101.
+  const firstEnrolledCourseId = !isTeacher ? (meEnrollments[0]?.courseId ?? null) : null;
+  // Coach del curso principal (solo aplica a STUDENT); resuelto ya desde el Promise.all principal.
+  const studentCoach = !isTeacher ? (mainCourse?.teacher ?? null) : null;
+  const [
+    myProgress, mySubs, myQuizzes, enrolledLessons, pendingSubs, quizRows, studentModules,
+    coachPrograms, myReviewRow, activityEvents,
+    debateRecords, debateCriteriaScores, leaderboardRows, upcomingTournaments, myLeaderboardAhead,
+    coachUsers, myBookingRows, parentGuardianships, myTournamentRegs,
+    coachBookingRows, myCoachProfileRow,
+  ] = await Promise.all([
+    me ? db.lessonProgress.findMany({ where: { userId: me.id, done: true } }) : Promise.resolve([]),
+    // Una sola consulta de TODAS las entregas del usuario; las GRADED se derivan en JS.
+    // (Antes había dos findMany: GRADED + todas. select defensivo: solo campos usados.)
+    me ? db.submission.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" }, take: 300, select: { id: true, status: true, activity: true, grade: true, feedback: true, kind: true, fileUrl: true, fileName: true, textBody: true, courseCode: true, createdLabel: true } }) : Promise.resolve([]),
+    me ? db.quizAttempt.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
+    // Lecciones (id + courseId) de los cursos en que está inscrito, para el % real.
+    meEnrollments.length
+      ? db.lesson.findMany({ where: { module: { courseId: { in: [...enrolledIds] } } }, select: { id: true, module: { select: { courseId: true } } } })
+      : Promise.resolve([]),
+    // Entregas pendientes (no calificadas) de los cursos del profesor.
+    isTeacher && taughtCodes.length
+      ? db.submission.count({ where: { status: { not: "GRADED" }, courseCode: { in: taughtCodes } } })
+      : Promise.resolve(0),
+    // Exámenes reales (Quiz) de las lecciones de los cursos del usuario, con
+    // preguntas y opciones ordenadas por posición. Una sola consulta (sin N+1).
+    quizCourseIds.length
+      ? db.quiz.findMany({
+          where: { lesson: { module: { courseId: { in: quizCourseIds } } } },
+          include: { questions: { orderBy: { position: "asc" }, include: { options: { orderBy: { position: "asc" } } } } },
+        })
+      : Promise.resolve([]),
+    // Módulos de TODOS los cursos inscritos del estudiante (Moodle multi-curso):
+    // el dashboard usa el primero; S.course/coursesContent navegan cualquiera.
+    !isTeacher && enrolledIds.size
+      ? db.module.findMany({ where: { courseId: { in: [...enrolledIds] } }, include: { lessons: { orderBy: { position: "asc" } } }, orderBy: [{ courseId: "asc" }, { position: "asc" }] })
+      : Promise.resolve([]),
+    // Programas del coach (STUDENT): no depende de resultados de esta ola → paralelo.
+    studentCoach
+      ? db.course.findMany({
+          where: { teacherId: studentCoach.id },
+          orderBy: { position: "asc" },
+          select: { id: true, code: true, name: true, nameEn: true, format: true, modality: true, priceCents: true, color: true, summary: true, summaryEn: true },
+        })
+      : Promise.resolve([]),
+    // Mi reseña del curso principal: solo depende de me + mainCourse (ya resueltos) → paralelo.
+    me && mainCourse
+      ? db.review.findUnique({ where: { courseId_studentId: { courseId: mainCourse.id, studentId: me.id } } })
+      : Promise.resolve(null),
+    // Spine ActivityEvent (PRD §4 + §8): últimos 60 eventos del usuario, UNA sola
+    // consulta para dos consumidores — DB.activity usa los primeros 15 (desc) y
+    // DB.lifetime.journey los 60 invertidos a orden cronológico (asc).
+    me
+      ? db.activityEvent.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" }, take: 60 })
+      : Promise.resolve([]),
+    // --- Debate Hub (PRD §6) — solo para roles CON sesión (me existe) ---------
+    // history + recentForm: DebateRecord del usuario con su RatingUpdate 1:1.
+    // take 50 (history); recentForm usa los primeros 5 (ya vienen desc).
+    me
+      ? db.debateRecord.findMany({
+          where: { userId: me.id },
+          orderBy: { recordedAt: "desc" },
+          take: 50,
+          include: { rating: true },
+        })
+      : Promise.resolve([]),
+    // analytics.criteria: promedio de RubricScore por criterio across los ballots
+    // del usuario. Cargamos las RubricScore de los ballots de sus DebateRecord.
+    me
+      ? db.rubricScore.findMany({
+          where: { ballot: { debate: { userId: me.id } } },
+          select: { criterion: true, score: true },
+        })
+      : Promise.resolve([]),
+    // leaderboard.rows: top 50 usuarios por debateRating desc.
+    me
+      ? db.user.findMany({
+          orderBy: { debateRating: "desc" },
+          take: 50,
+          select: { id: true, name: true, initials: true, debateRating: true, debateTier: true },
+        })
+      : Promise.resolve([]),
+    // tournaments: UPCOMING|LIVE (take 20) ordenados por fecha de inicio.
+    me
+      ? db.tournament.findMany({
+          where: { status: { in: ["UPCOMING", "LIVE"] } },
+          orderBy: [{ startsAt: "asc" }],
+          take: 20,
+          include: { registrations: { where: { userId: me.id }, select: { id: true } } },
+        })
+      : Promise.resolve([]),
+    // Rank real del usuario en el leaderboard global: nº de usuarios con
+    // debateRating ESTRICTAMENTE mayor + 1 (sirve aunque no esté en el top 50).
+    me ? db.user.count({ where: { debateRating: { gt: me.debateRating } } }) : Promise.resolve(0),
+    // Marketplace (PRD §7): datos públicos del User de cada coach activo.
+    // select defensivo: NUNCA passwordHash ni email (no se exponen en browse).
+    coachProfiles.length
+      ? db.user.findMany({
+          where: { id: { in: coachProfiles.map((p) => p.userId) } },
+          select: { id: true, name: true, initials: true, headline: true, avatarUrl: true, coachVerified: true, location: true },
+        })
+      : Promise.resolve([]),
+    // "Mis reservas" (PRD §7): bookings del STUDENT con su escrow (precio/estado).
+    me && me.role === "STUDENT"
+      ? db.booking.findMany({ where: { studentId: me.id }, include: { escrow: true }, orderBy: { slotAt: "desc" }, take: 100 })
+      : Promise.resolve([]),
+    // Parent Portal (PRD §11): vínculos ACTIVE del padre con sus hijos.
+    me && me.role === "PARENT"
+      ? db.guardianship.findMany({ where: { parentId: me.id, status: "ACTIVE" }, orderBy: { createdAt: "asc" } })
+      : Promise.resolve([]),
+    // PRD §8 ledger: nº de torneos en los que el usuario se ha registrado.
+    me ? db.tournamentRegistration.count({ where: { userId: me.id } }) : Promise.resolve(0),
+    // Coach Workspace (PRD §7.5): TODOS los bookings donde el usuario es el coach,
+    // con su escrow (inbox + earnings se derivan en JS, una sola consulta).
+    isTeacher && me
+      ? db.booking.findMany({ where: { coachId: me.id }, include: { escrow: true }, orderBy: { slotAt: "desc" } })
+      : Promise.resolve([]),
+    // Coach Workspace (PRD §7.5): perfil propio del coach. Se reusa coachProfiles
+    // (browse) si ya viene ahí; esta consulta extra solo corre si NO está (p.ej.
+    // perfil desactivado — el browse filtra active:true).
+    isTeacher && me && !coachProfiles.some((p) => p.userId === me.id)
+      ? db.coachProfile.findUnique({
+          where: { userId: me.id },
+          include: {
+            packages: { orderBy: { position: "asc" } },
+            availability: { orderBy: [{ weekday: "asc" }, { startMin: "asc" }] },
+          },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  // Entregas calificadas (GRADED) derivadas en JS de la consulta única de entregas.
+  const mySubsGraded = (mySubs as any[]).filter((s) => s.status === "GRADED");
+
+  // [l7] Origen de courseModules (dashboard): profesor → PF-101 (pfModules);
+  // estudiante → módulos de su PRIMER curso inscrito. studentModules ahora trae
+  // TODOS los cursos inscritos (Moodle multi-curso), así que filtramos al primero
+  // para mantener el contrato del dashboard; coursesContent (abajo) trae el resto.
+  const modulesForDashboard = isTeacher
+    ? pfModules
+    : (studentModules as any[]).filter((m) => m.courseId === firstEnrolledCourseId);
+
+  // Mapa lessonId -> quiz (forma del contrato). Para alumno sin 'correct'.
+  const quizByLessonMap = new Map<string, any>();
+  (quizRows || []).forEach((q: any) => {
+    quizByLessonMap.set(q.lessonId, buildQuiz(q, isTeacher));
+  });
+  // DB.quizByLesson: objeto { [lessonId]: quiz } con la misma forma.
+  const quizByLesson: Record<string, any> = {};
+  quizByLessonMap.forEach((quiz, lessonId) => {
+    quizByLesson[lessonId] = quiz;
+  });
+
+  // Conjunto de ids de lecciones completadas por el usuario (progreso real).
+  const doneSet = new Set((myProgress || []).map((p: any) => p.lessonId));
+
+  // Total de lecciones por curso inscrito y cuántas ha completado el alumno.
+  const totalByCourse = new Map<string, number>();
+  const doneByCourse = new Map<string, number>();
+  (enrolledLessons || []).forEach((l: any) => {
+    const cid = l.module?.courseId;
+    if (!cid) return;
+    totalByCourse.set(cid, (totalByCourse.get(cid) || 0) + 1);
+    if (doneSet.has(l.id)) doneByCourse.set(cid, (doneByCourse.get(cid) || 0) + 1);
+  });
+  const courseProgress = (courseId: string): number => {
+    const total = totalByCourse.get(courseId) || 0;
+    if (total === 0) return 0;
+    return Math.round(((doneByCourse.get(courseId) || 0) / total) * 100);
+  };
+
+  // --- Notas reales del estudiante (Submission GRADED + QuizAttempt) --------
+  // Letra derivada del score numérico (>=90 A, >=85 B+, >=80 B, >=70 C, si no —).
+  const letterFor = (score: number): string => {
+    if (score >= 90) return "A";
+    if (score >= 85) return "B+";
+    if (score >= 80) return "B";
+    if (score >= 70) return "C";
+    return "—";
+  };
+  const gradeRows: any[] = [];
+  // Calificaciones del alumno: incluye el FEEDBACK escrito del coach (PRD §6.5/§7.5
+  // — el alumno DEBE poder leer los comentarios, no solo la nota numérica).
+  (mySubsGraded || []).forEach((s: any) => {
+    if (s.grade == null) {
+      gradeRows.push({ activity: esc(s.activity), score: "En revisión", letter: "—", kind: "Entrega", status: s.status, feedback: esc(s.feedback || "") });
+    } else {
+      const sc = s.grade;
+      gradeRows.push({ activity: esc(s.activity), score: sc, letter: letterFor(sc), kind: "Entrega", status: "GRADED", feedback: esc(s.feedback || "") });
+    }
+  });
+  (myQuizzes || []).forEach((q: any) => {
+    const sc = q.total > 0 ? Math.round((q.score / q.total) * 100) : 0;
+    gradeRows.push({ activity: esc(q.lessonTitle), score: sc, letter: letterFor(sc), kind: "Examen", status: "GRADED", feedback: "" });
+  });
+  // Entregas del alumno por nombre de actividad (para que S.assignment muestre el
+  // estado: ya entregaste / en revisión / calificada + nota + feedback + archivo).
+  const mySubmissionsByActivity: Record<string, any> = {};
+  (mySubs as any[]).forEach((s: any) => {
+    if (!mySubmissionsByActivity[s.activity]) {
+      mySubmissionsByActivity[s.activity] = {
+        id: s.id, activity: esc(s.activity), status: s.status, grade: s.grade ?? null,
+        feedback: esc(s.feedback || ""), kind: s.kind, fileUrl: safeUrl(s.fileUrl),
+        fileName: esc(s.fileName || ""), textBody: esc(s.textBody || ""), when: esc(s.createdLabel || ""),
+        letter: typeof s.grade === "number" ? letterFor(s.grade) : "—",
+      };
+    }
+  });
+  const numericScores = gradeRows.map((r) => r.score).filter((s) => typeof s === "number") as number[];
+  const myGrades = {
+    rows: gradeRows,
+    avg: numericScores.length ? Math.round(numericScores.reduce((a, b) => a + b, 0) / numericScores.length) : 0,
+    submitted: numericScores.length,
+    total: gradeRows.length,
+    best: numericScores.length ? Math.max(...numericScores) : 0,
+  };
+
+  // Insignias automáticas (derivadas de logros reales del usuario).
+  // mySubs ya se cargó arriba (consulta única de entregas del usuario).
   const lvl = me?.level || "Novato";
   const gotBadge = (name: string) => {
     switch (name) {
@@ -66,34 +476,807 @@ export async function getAppData(email: string = ME_EMAIL) {
     }
   };
 
-  return {
-    me: { name: esc(me?.name), email: me?.email, initials: esc(me?.initials), level: me?.level, streak: me?.streak, role: "student" },
-    teacher: { name: esc(teacher?.name), email: teacher?.email, initials: esc(teacher?.initials), role: "teacher" },
+  // --- Perfil de coach -----------------------------------------------------
+  // Construye el objeto coachProfile a partir de un usuario coach, sus programas
+  // (cursos que imparte) y un arreglo de reviews ya cargadas.
+  function buildCoachProfile(
+    coach: any,
+    programs: any[],
+    reviews: any[],
+  ) {
+    const revs = (reviews || []).map((r) => ({
+      author: esc(r.student?.name),
+      ini: esc(r.student?.initials),
+      rating: r.rating,
+      body: esc(r.body),
+      when: whenLabel(r.createdAt),
+    }));
+    return {
+      id: coach?.id || "",
+      name: esc(coach?.name),
+      initials: esc(coach?.initials),
+      headline: esc(coach?.headline),
+      bio: esc(coach?.bio),
+      teachingStyle: esc(coach?.teachingStyle),
+      formatsList: formatsList(coach?.formats),
+      location: esc(coach?.location),
+      rating: avgRating((reviews || []).map((r) => r.rating)),
+      reviewCount: (reviews || []).length,
+      programs: (programs || []).map((c) => ({
+        id: c.id,
+        code: c.code,
+        name: esc(pickLang(c.name, c.nameEn)),
+        format: esc(c.format),
+        modality: esc(c.modality),
+        price: c.priceCents,
+        color: c.color,
+        summary: esc(pickLang(c.summary, c.summaryEn)),
+      })),
+      reviews: revs,
+    };
+  }
+
+  let coachProfile: any;
+  if (isTeacher) {
+    // TEACHER/ADMIN: su propio perfil con sus programas y reseñas recibidas.
+    const myReviews = taughtCourses.flatMap((c: any) =>
+      (c.reviews || []).map((r: any) => ({ ...r, _courseName: c.name })),
+    );
+    coachProfile = buildCoachProfile(me, taughtCourses, myReviews);
+  } else {
+    // STUDENT: el coach del curso principal con sus programas y reseñas.
+    // coachPrograms ya se cargó en paralelo arriba (Promise.all).
+    const coach = studentCoach;
+    coachProfile = buildCoachProfile(coach, coachPrograms, mainCourse?.reviews ?? []);
+  }
+
+  // --- Mi reseña (del usuario actual para el curso principal) ---------------
+  // myReviewRow ya se cargó en paralelo arriba (Promise.all).
+  let myReview: { rating: number; body: string } | null = null;
+  if (myReviewRow) {
+    myReview = { rating: myReviewRow.rating, body: esc(myReviewRow.body) };
+  }
+  // VERIFIED-BOOKING-ONLY (PRD §7.4): puede reseñar al coach principal solo si
+  // tiene una sesión 1:1 COMPLETADA con él (deriva de myBookingRows, sin query extra).
+  const canReviewCoach = !!(
+    studentCoach &&
+    (myBookingRows as any[]).some((b) => b.coachId === studentCoach.id && b.status === "COMPLETED")
+  );
+
+  // --- Reseñas recibidas (solo TEACHER/ADMIN) -------------------------------
+  const reviewsReceived = isTeacher
+    ? taughtCourses.flatMap((c: any) =>
+        (c.reviews || []).map((r: any) => ({
+          author: esc(r.student?.name),
+          ini: esc(r.student?.initials),
+          rating: r.rating,
+          body: esc(r.body),
+          when: whenLabel(r.createdAt),
+          programName: esc(c.name),
+        })),
+      )
+    : [];
+
+  // --- Habilidades (radar) del estudiante: [{ skill, score }] -------------
+  // Solo se exponen las 6 dimensiones del contrato; score se clampa 0..100.
+  const skillScore = new Map<string, number>();
+  (myStudentSkills || []).forEach((s: any) => {
+    skillScore.set(s.skill, Math.max(0, Math.min(100, Number(s.score) || 0)));
+  });
+  const skills = OTR_SKILLS
+    .filter((name) => skillScore.has(name))
+    .map((name) => ({ skill: name, score: skillScore.get(name) as number }));
+
+  // --- Certificados reales del estudiante: [{ id, title, programName, issuedAt }]
+  const courseNameById = new Map<string, string>();
+  allCourses.forEach((c) => courseNameById.set(c.id, c.name));
+  const certificates = (myCertificates || []).map((c: any) => ({
+    id: c.id,
+    title: esc(c.title),
+    programName: esc(courseNameById.get(c.courseId) || ""),
+    issuedAt: monthYearLabel(c.issuedAt),
+  }));
+
+  // --- Arsenal APAGADO (PRD-estricto): no existe en el PDF (el motion library
+  // §6.4 es otra cosa y es Fase 2). La pantalla está desregistrada y el API
+  // responde 410; no se envía ningún recurso al cliente.
+  const arsenal: any[] = [];
+
+  // --- Debate Hub (PRD §6): DB.debate / DB.leaderboard / DB.tournaments -----
+  // Construidos a partir de los datos cargados en paralelo arriba. Sólo se
+  // exponen cuando hay sesión (me); si no, objetos vacíos coherentes con la UI.
+  const records = (debateRecords || []) as any[];
+
+  // recentForm: últimos 5 records (ya vienen desc) → { result, opponent, delta }.
+  // delta = ratingAfter - ratingBefore del RatingUpdate 1:1 (0 si la ronda no se
+  // adjudicó / no tiene RatingUpdate — anti-gaming: el rating sólo mueve en ronda adjudicada).
+  const recentForm = records.slice(0, 5).map((r) => ({
+    result: r.result,
+    opponent: esc(r.opponent || ""),
+    delta: r.rating ? Math.round(r.rating.ratingAfter - r.rating.ratingBefore) : 0,
+  }));
+
+  // history: hasta 50 records con ratingAfter/source/when (label relativa).
+  const debateHistory = records.map((r) => ({
+    id: r.id,
+    format: esc(r.format),
+    side: esc(r.side || ""),
+    opponent: esc(r.opponent || ""),
+    result: r.result,
+    source: r.source,
+    eventName: esc(r.eventName || ""),
+    roundLabel: esc(r.roundLabel || ""),
+    ratingAfter: r.rating ? Math.round(r.rating.ratingAfter) : null,
+    when: whenLabel(r.recordedAt),
+  }));
+
+  // analytics.byFormat / bySide: conteo W-L-D por formato y por lado (PRO/CON).
+  const tally = () => ({ wins: 0, losses: 0, draws: 0, total: 0 });
+  const byFormatMap = new Map<string, ReturnType<typeof tally>>();
+  const bySideMap = new Map<string, ReturnType<typeof tally>>();
+  const bump = (map: Map<string, ReturnType<typeof tally>>, key: string, result: string) => {
+    if (!key) return;
+    const t = map.get(key) || tally();
+    if (result === "WIN") t.wins++;
+    else if (result === "LOSS") t.losses++;
+    else if (result === "DRAW") t.draws++;
+    t.total++;
+    map.set(key, t);
+  };
+  records.forEach((r) => {
+    bump(byFormatMap, r.format, r.result);
+    if (r.side) bump(bySideMap, r.side, r.result);
+  });
+  const byFormat = [...byFormatMap.entries()].map(([format, t]) => ({ format: esc(format), ...t }));
+  const bySide = [...bySideMap.entries()].map(([side, t]) => ({ side: esc(side), ...t }));
+
+  // analytics.criteria: promedio (0-10, 1 decimal) de RubricScore por criterio,
+  // across todos los ballots del usuario. Orden fijo de la rúbrica del PRD §6.
+  const RUBRIC_CRITERIA = ["Argumentation", "Rebuttal", "Delivery", "Evidence/Research", "Crossfire"];
+  const critSum = new Map<string, { sum: number; n: number }>();
+  (debateCriteriaScores || []).forEach((s: any) => {
+    const acc = critSum.get(s.criterion) || { sum: 0, n: 0 };
+    acc.sum += Number(s.score) || 0;
+    acc.n++;
+    critSum.set(s.criterion, acc);
+  });
+  const criteria = RUBRIC_CRITERIA.map((criterion) => {
+    const acc = critSum.get(criterion);
+    return { criterion, avg: acc && acc.n ? Math.round((acc.sum / acc.n) * 10) / 10 : 0 };
+  });
+
+  // PRD §13.2: "Full analytics" del Debate Hub es beneficio Pro. Para free el tab
+  // Analytics se recorta a { locked:true } — la barrera vive en los DATOS (free
+  // NUNCA recibe el desglose por formato/lado/criterio), no solo en la UI. Para
+  // pro/elite se emite completo. Así el beneficio es verificable.
+  const isProMember = me?.membership === "pro" || me?.membership === "elite";
+  const debateAnalytics = isProMember ? { byFormat, bySide, criteria } : { locked: true };
+
+  const debate = me
+    ? {
+        rating: Math.round(me.debateRating ?? 1500),
+        rd: Math.round(me.debateRd ?? 350),
+        tier: me.debateTier || "Novato",
+        provisional: (me.debateRd ?? 350) > 150,
+        recentForm,
+        history: debateHistory,
+        analytics: debateAnalytics,
+      }
+    : null;
+
+  // --- Leaderboard: top 50 por debateRating + posición del usuario ----------
+  const initialsFrom = (name: string): string =>
+    String(name || "")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((w) => w[0] || "")
+      .join("")
+      .toUpperCase();
+  const leaderboardRowsOut = (leaderboardRows || []).map((u: any, i: number) => ({
+    rank: i + 1,
+    name: esc(u.name),
+    initials: esc(u.initials || initialsFrom(u.name)),
+    rating: Math.round(u.debateRating ?? 1500),
+    tier: u.debateTier || "Novato",
+    you: u.id === me?.id,
+  }));
+  const leaderboard = me
+    ? {
+        rows: leaderboardRowsOut,
+        me: {
+          rank: (myLeaderboardAhead as number) + 1,
+          rating: Math.round(me.debateRating ?? 1500),
+          tier: me.debateTier || "Novato",
+        },
+      }
+    : null;
+
+  // --- Tournaments: UPCOMING|LIVE con flag `registered` del usuario ----------
+  const tournaments = me
+    ? (upcomingTournaments || []).map((t: any) => ({
+        id: t.id,
+        name: esc(t.name),
+        format: esc(t.format),
+        region: esc(t.region || ""),
+        modality: esc(t.modality),
+        startsLabel: t.startsAt ? eventDateLabel(t.startsAt) : "Por anunciar",
+        status: t.status,
+        entryLabel: t.entryCents > 0 ? `RD$${(t.entryCents / 100).toLocaleString("es-DO")}` : "Gratis",
+        registered: (t.registrations || []).length > 0,
+      }))
+    : [];
+
+  // --- Marketplace (PRD §7): coaches activos para browse + perfil -----------
+  // Etiqueta de precio en USD (los paquetes de coaching se cotizan en USD).
+  const usdLabel = (cents: number): string => {
+    const v = (Number(cents) || 0) / 100;
+    return `$${v.toLocaleString("en-US", Number.isInteger(v) ? undefined : { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+  // Etiqueta de slot "lun 16 jun · 4:00 PM" (hora RD) — reutiliza consultations.ts.
+  const slotLabel = (d: Date | string): string => `${dateLabel(d as any)} · ${timeLabel(d as any)}`;
+  // Lista separada por comas → array escapado (specialties, languages).
+  const splitList = (s?: string | null): string[] =>
+    String(s ?? "").split(",").map((x) => x.trim()).filter(Boolean).map((x) => esc(x));
+
+  const coachUserById = new Map<string, any>();
+  (coachUsers as any[]).forEach((u) => coachUserById.set(u.id, u));
+  // Mapa packageId -> paquete (para resolver el nombre/precio en bookings).
+  const packageById = new Map<string, any>();
+  coachProfiles.forEach((p: any) => (p.packages || []).forEach((pk: any) => packageById.set(pk.id, pk)));
+
+  const marketplace = {
+    // Quien mira: 'minor' activa el candado de consentimiento parental en el UI
+    // (la barrera real vive en POST /api/bookings — esto es solo señalización).
+    viewer: { ageBand: me?.ageBand || null },
+    coaches: coachProfiles
+      .filter((p: any) => coachUserById.has(p.userId))
+      .map((p: any) => {
+        const u = coachUserById.get(p.userId);
+        const pkgs = (p.packages || []).map((pk: any) => ({
+          id: pk.id,
+          name: esc(pk.name),
+          sessions: pk.sessions,
+          priceCents: pk.priceCents,
+          priceLabel: usdLabel(pk.priceCents),
+          discountPct: pk.discountPct,
+        }));
+        // "Desde $X": el paquete más barato (o la tarifa por hora si no hay paquetes).
+        const fromPriceCents = pkgs.length ? Math.min(...pkgs.map((x: any) => x.priceCents)) : p.hourlyCents;
+        return {
+          id: p.userId, // id del coach (User) — es el coachId que usa Booking
+          profileId: p.id,
+          name: esc(u.name),
+          initials: esc(u.initials),
+          headline: esc(u.headline),
+          avatarUrl: safeUrl(u.avatarUrl),
+          coachVerified: !!u.coachVerified,
+          location: esc(u.location),
+          introVideoUrl: safeUrl(p.introVideoUrl),
+          credentials: esc(p.credentials),
+          specialties: esc(p.specialties),
+          specialtiesList: splitList(p.specialties),
+          languages: splitList(p.languages),
+          hourlyCents: p.hourlyCents,
+          hourlyLabel: usdLabel(p.hourlyCents),
+          responseTime: esc(p.responseTime),
+          cancelPolicy: esc(p.cancelPolicy),
+          ratingAvg: Math.round((p.ratingAvg || 0) * 10) / 10,
+          reviewCount: p.reviewCount,
+          bookingCount: p.bookingCount,
+          packages: pkgs,
+          availability: (p.availability || []).map((a: any) => ({ weekday: a.weekday, startMin: a.startMin, endMin: a.endMin })),
+          fromPriceCents,
+          fromPriceLabel: fromPriceCents > 0 ? `Desde ${usdLabel(fromPriceCents)}` : "Gratis",
+        };
+      }),
+  };
+
+  // --- Parent Portal (PRD §11): tercera ola, depende de los guardianships ----
+  const childIds = (parentGuardianships as any[]).map((g) => g.studentId);
+  // PRD §11.3: el Guardianship por hijo guarda el umbral de auto-aprobación
+  // (approveUnderCents) y el nivel de consentimiento (consentLevel) → P4 los muestra.
+  const guardianshipByChild = new Map<string, any>(
+    (parentGuardianships as any[]).map((g) => [g.studentId, g]),
+  );
+  // Coach Workspace (§7.5): estudiantes de los bookings del coach (nombre/iniciales).
+  const coachStudentIds = [...new Set((coachBookingRows as any[]).map((b: any) => b.studentId))];
+  const [childUsers, childBookings, childCertRows, childSkills, coachStudentUsers] = await Promise.all([
+    childIds.length
+      ? db.user.findMany({
+          where: { id: { in: childIds } },
+          // §8.4: publicProfile/publicSlug del hijo — el padre habilita el perfil
+          // público del menor desde su portal (solo datos aquí, sin UI todavía).
+          select: { id: true, name: true, initials: true, level: true, ageBand: true, publicProfile: true, publicSlug: true },
+        })
+      : Promise.resolve([]),
+    childIds.length
+      ? db.booking.findMany({ where: { studentId: { in: childIds } }, include: { escrow: true }, orderBy: { slotAt: "asc" }, take: 300 })
+      : Promise.resolve([]),
+    childIds.length
+      ? db.certificate.findMany({ where: { userId: { in: childIds } }, select: { userId: true, title: true } })
+      : Promise.resolve([]),
+    childIds.length ? db.studentSkill.findMany({ where: { userId: { in: childIds } } }) : Promise.resolve([]),
+    // select defensivo: solo lo que muestra el booking inbox del coach.
+    coachStudentIds.length
+      ? db.user.findMany({ where: { id: { in: coachStudentIds } }, select: { id: true, name: true, initials: true } })
+      : Promise.resolve([]),
+  ]);
+
+  // Nombres de coach para bookings (míos o de mis hijos) cuyo coach NO esté en
+  // el mapa del marketplace (p.ej. perfil desactivado): una sola consulta extra.
+  const missingCoachIds = [
+    ...new Set(
+      [...(myBookingRows as any[]), ...(childBookings as any[])]
+        .map((b) => b.coachId)
+        .filter((id) => id && !coachUserById.has(id)),
+    ),
+  ];
+  if (missingCoachIds.length) {
+    const extras = await db.user.findMany({
+      where: { id: { in: missingCoachIds } },
+      select: { id: true, name: true, initials: true, headline: true, avatarUrl: true, coachVerified: true, location: true },
+    });
+    extras.forEach((u) => coachUserById.set(u.id, u));
+  }
+  const coachNameOf = (id: string): string => esc(coachUserById.get(id)?.name || "Coach OTR");
+  const coachIniOf = (id: string): string => esc(coachUserById.get(id)?.initials || "C");
+
+  const nowMs = Date.now();
+
+  // --- "Mis reservas" (STUDENT): bookings propios con coach + slot + precio --
+  const myBookings = (myBookingRows as any[]).map((b) => ({
+    id: b.id,
+    status: b.status, // PENDING | CONFIRMED | COMPLETED | CANCELLED | DISPUTED
+    coachId: b.coachId,
+    coachName: coachNameOf(b.coachId),
+    coachInitials: coachIniOf(b.coachId),
+    packageName: b.packageId ? esc(packageById.get(b.packageId)?.name || "") : "",
+    slotLabel: slotLabel(b.slotAt),
+    slotAtIso: new Date(b.slotAt).toISOString(),
+    durationMin: b.durationMin,
+    upcoming: new Date(b.slotAt).getTime() > nowMs,
+    priceCents: b.escrow?.amountCents ?? 0,
+    priceLabel: b.escrow ? usdLabel(b.escrow.amountCents) : "",
+    escrowStatus: b.escrow?.status ?? null, // HELD | RELEASED | REFUNDED
+    videoUrl: safeUrl(b.videoUrl), // sala on-platform
+  }));
+
+  // --- PRD §7.5: Coach Workspace (supply-side) — SOLO TEACHER/ADMIN ----------
+  // Booking inbox + earnings (escrow transparente, take rate 18%) + métricas de
+  // éxito del coach + gestión de perfil (disponibilidad/paquetes). null si no aplica.
+  let coachwork: any = null;
+  if (isTeacher && me) {
+    const coachStudentById = new Map<string, any>((coachStudentUsers as any[]).map((u: any) => [u.id, u]));
+    // Perfil propio: del browse (activo) o de la consulta directa (inactivo).
+    const myCoachProfile: any = coachProfiles.find((p: any) => p.userId === me.id) ?? myCoachProfileRow ?? null;
+    // Sus paquetes resuelven nombre en el inbox aunque el perfil esté inactivo
+    // (packageById solo trae los de perfiles activos del browse).
+    if (myCoachProfile) {
+      (myCoachProfile.packages || []).forEach((pk: any) => {
+        if (!packageById.has(pk.id)) packageById.set(pk.id, pk);
+      });
+    }
+
+    // Día de la semana (0=Dom..6=Sáb) y minutos desde medianoche → "9:00 AM".
+    const WEEKDAYS_ES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    const minToTime = (min: number): string => {
+      const total = Number(min) || 0;
+      const h24 = Math.floor(total / 60);
+      const m = total % 60;
+      const ampm = h24 >= 12 ? "PM" : "AM";
+      let h = h24 % 12;
+      if (h === 0) h = 12;
+      return `${h}:${String(m).padStart(2, "0")} ${ampm}`;
+    };
+
+    const allCoachBookings = coachBookingRows as any[]; // ya vienen slotAt desc
+    const bookingShape = (b: any) => ({
+      id: b.id,
+      status: b.status, // PENDING | CONFIRMED | COMPLETED | CANCELLED
+      studentName: esc(coachStudentById.get(b.studentId)?.name || "Estudiante OTR"),
+      studentInitials: esc(coachStudentById.get(b.studentId)?.initials || "E"),
+      slotLabel: slotLabel(b.slotAt), // "vie 12 jun · 4:00 PM" (hora RD)
+      durationMin: b.durationMin,
+      packageName: b.packageId ? esc(packageById.get(b.packageId)?.name || "") : "",
+      amountLabel: b.escrow ? usdLabel(b.escrow.amountCents) : "",
+      // PENDING = espera el consentimiento parental del menor (Safety Gate §7).
+      awaitingConsent: b.status === "PENDING",
+    });
+    const inboxUpcoming = allCoachBookings
+      .filter((b) => (b.status === "CONFIRMED" || b.status === "PENDING") && new Date(b.slotAt).getTime() >= nowMs)
+      .sort((a, b) => new Date(a.slotAt).getTime() - new Date(b.slotAt).getTime())
+      .map(bookingShape);
+    const inboxPast = allCoachBookings
+      .filter((b) => b.status === "COMPLETED" || b.status === "CANCELLED")
+      .slice(0, 20) // ya vienen desc
+      .map((b) => ({ ...bookingShape(b), escrowStatus: b.escrow?.status ?? null }));
+
+    // Earnings: retenido (HELD) vs liberado (RELEASED); payout = liberado − take rate.
+    const escrows = allCoachBookings.map((b) => b.escrow).filter(Boolean);
+    const heldCents = escrows
+      .filter((t: any) => t.status === "HELD")
+      .reduce((s: number, t: any) => s + (t.amountCents || 0), 0);
+    const released = escrows.filter((t: any) => t.status === "RELEASED");
+    const releasedCents = released.reduce((s: number, t: any) => s + (t.amountCents || 0), 0);
+    const payoutOf = (txns: any[]): number =>
+      Math.round(txns.reduce((s: number, t: any) => s + (t.amountCents || 0) * (1 - (t.takeRatePct ?? 18) / 100), 0));
+    const payoutCents = payoutOf(released);
+    // Payout del MES ACTUAL: RELEASED con releasedAt dentro del mes en curso.
+    const nowDate = new Date(nowMs);
+    const inCurrentMonth = (d: any): boolean => {
+      if (!d) return false;
+      const x = new Date(d);
+      return x.getMonth() === nowDate.getMonth() && x.getFullYear() === nowDate.getFullYear();
+    };
+    const monthPayoutCents = payoutOf(released.filter((t: any) => inCurrentMonth(t.releasedAt)));
+
+    // Métricas de éxito del coach (PRD §7.5): rating, volumen y repeat-booking.
+    const completedCount = allCoachBookings.filter((b) => b.status === "COMPLETED").length;
+    const bookingsByStudent = new Map<string, number>();
+    allCoachBookings.forEach((b) => bookingsByStudent.set(b.studentId, (bookingsByStudent.get(b.studentId) || 0) + 1));
+    const repeatStudents = [...bookingsByStudent.values()].filter((n) => n > 1).length;
+
+    coachwork = {
+      inbox: { upcoming: inboxUpcoming, past: inboxPast },
+      earnings: {
+        heldCents,
+        releasedCents,
+        payoutCents,
+        monthPayoutCents,
+        takeRatePct: 18,
+        heldLabel: usdLabel(heldCents),
+        releasedLabel: usdLabel(releasedCents),
+        payoutLabel: usdLabel(payoutCents),
+        monthPayoutLabel: usdLabel(monthPayoutCents),
+      },
+      metrics: {
+        ratingAvg: Math.round((myCoachProfile?.ratingAvg || 0) * 10) / 10,
+        reviewCount: myCoachProfile?.reviewCount ?? 0,
+        bookingCount: myCoachProfile?.bookingCount ?? 0,
+        completed: completedCount,
+        repeatStudents,
+      },
+      // Sin CoachProfile → profile null (la UI muestra el CTA de crear perfil).
+      profile: myCoachProfile
+        ? {
+            active: !!myCoachProfile.active,
+            hourlyCents: myCoachProfile.hourlyCents,
+            hourlyLabel: usdLabel(myCoachProfile.hourlyCents),
+            specialties: esc(myCoachProfile.specialties),
+            languages: splitList(myCoachProfile.languages),
+            availability: (myCoachProfile.availability || []).map((a: any) => ({
+              id: a.id,
+              weekday: a.weekday,
+              startMin: a.startMin,
+              endMin: a.endMin,
+              label: `${WEEKDAYS_ES[a.weekday] || ""} ${minToTime(a.startMin)} – ${minToTime(a.endMin)}`,
+            })),
+            packages: (myCoachProfile.packages || []).map((pk: any) => ({
+              id: pk.id,
+              name: esc(pk.name),
+              sessions: pk.sessions,
+              priceCents: pk.priceCents,
+              priceLabel: usdLabel(pk.priceCents),
+              discountPct: pk.discountPct,
+            })),
+          }
+        : null,
+    };
+  }
+
+  // DB.parent — SOLO para rol PARENT (role-scoped, PRD §11).
+  let parentData: any = null;
+  if (me && me.role === "PARENT") {
+    // Logros por hijo: lista de títulos de certificados (scr-parent espera array).
+    const certsByChild = new Map<string, string[]>();
+    (childCertRows as any[]).forEach((c) => {
+      const arr = certsByChild.get(c.userId) || [];
+      arr.push(esc(c.title));
+      certsByChild.set(c.userId, arr);
+    });
+    const skillsByChild = new Map<string, any[]>();
+    (childSkills as any[]).forEach((s) => {
+      const arr = skillsByChild.get(s.userId) || [];
+      arr.push(s);
+      skillsByChild.set(s.userId, arr);
+    });
+    const bookingsByChild = new Map<string, any[]>();
+    (childBookings as any[]).forEach((b) => {
+      const arr = bookingsByChild.get(b.studentId) || [];
+      arr.push(b);
+      bookingsByChild.set(b.studentId, arr);
+    });
+    const childById = new Map<string, any>((childUsers as any[]).map((u) => [u.id, u]));
+    parentData = {
+      // Mantiene el orden de los guardianships (createdAt asc).
+      children: childIds
+        .filter((id) => childById.has(id))
+        .map((id) => {
+          const u = childById.get(id);
+          const books = bookingsByChild.get(id) || [];
+          const attended = books.filter((b) => b.status === "COMPLETED").length;
+          const scheduled = books.filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED").length;
+          const upcoming = books
+            .filter((b) => b.status === "CONFIRMED" && new Date(b.slotAt).getTime() > nowMs)
+            .map((b) => ({
+              id: b.id,
+              coachName: coachNameOf(b.coachId),
+              slotLabel: slotLabel(b.slotAt),
+              durationMin: b.durationMin,
+            }));
+          // Billing & spend: lo retenido + liberado (REFUNDED no cuenta como gasto).
+          const spendCents = books.reduce(
+            (sum, b) => sum + (b.escrow && b.escrow.status !== "REFUNDED" ? b.escrow.amountCents : 0),
+            0,
+          );
+          // Safety & consent: bookings PENDING que esperan la aprobación de ESTE padre.
+          const pendingConsents = books
+            .filter((b) => b.status === "PENDING" && b.consentBy === me.id)
+            .map((b) => ({
+              id: b.id,
+              bookingId: b.id, // alias: scr-parent referencia pc.bookingId
+              coachName: coachNameOf(b.coachId),
+              slotLabel: slotLabel(b.slotAt),
+              priceLabel: b.escrow
+                ? usdLabel(b.escrow.amountCents)
+                : usdLabel((b.packageId && packageById.get(b.packageId)?.priceCents) || 0),
+            }));
+          return {
+            id: u.id,
+            childId: u.id, // alias explícito para el toggle de consentimiento §8.4
+            name: esc(u.name),
+            initials: esc(u.initials),
+            level: u.level,
+            ageBand: u.ageBand || "minor",
+            // §8.4: estado del perfil público del hijo (el padre es quien lo
+            // habilita para menores — aquí solo viajan los datos, sin UI).
+            publicProfile: { enabled: !!u.publicProfile, slug: u.publicSlug ? esc(u.publicSlug) : null },
+            // Skill growth: score actual por dimensión; delta=0 (placeholder hasta
+            // tener histórico mensual de StudentSkill).
+            skillDeltas: (skillsByChild.get(id) || []).map((s: any) => ({
+              skill: esc(s.skill),
+              name: esc(s.skill), // alias: scr-parent renderiza s.name
+              score: Math.max(0, Math.min(100, Number(s.score) || 0)),
+              delta: 0,
+            })),
+            attendance: { attended, scheduled },
+            achievements: certsByChild.get(id) || [],
+            upcoming,
+            spendCents,
+            spendLabel: usdLabel(spendCents),
+            pendingConsents,
+            // PRD §11.3: umbral configurable del padre para ESTE hijo. null en
+            // approveUnderCents = aprobar cada reserva; N = auto-aprueba hasta N centavos.
+            approveUnderCents: guardianshipByChild.get(id)?.approveUnderCents ?? null,
+            consentLevel: guardianshipByChild.get(id)?.consentLevel || "full",
+          };
+        }),
+    };
+  }
+
+  // --- PRD §8: Lifetime Progress Profile (DB.lifetime) — el moat -------------
+  // Identity + Skill Graph CON ATRIBUCIÓN (cada skill enlaza los eventos que lo
+  // movieron — sin cajas negras) + activity ledger + performance record +
+  // credenciales + Journey cronológico + perfil público compartible (§8.4).
+  // Se emite para TODO usuario con sesión (TEACHER/PARENT reciben el suyo propio).
+  const activityAsc = [...(activityEvents as any[])].reverse(); // la consulta viene desc → asc
+
+  // "Miembro desde …": User no tiene createdAt en el schema → primer
+  // ActivityEvent del usuario, o "2026" si aún no tiene historia.
+  const firstEventAt = activityAsc[0]?.createdAt ?? null;
+  const memberSinceLabel = firstEventAt
+    ? `Miembro desde ${MONTHS_ES_FULL[new Date(firstEventAt).getMonth()]} ${new Date(firstEventAt).getFullYear()}`
+    : "Miembro desde 2026";
+
+  // Atribución del Skill Graph (PRD §8.2, sin cajas negras):
+  //  1) FUENTE PRIMARIA — meta.skillBumps escrito por el server cuando un evento
+  //     mueve un skill (debates/api lo registra: [{skill, before, after}]). Esto
+  //     es atribución EXACTA: el evento movió ese skill, no una adivinanza.
+  //  2) RESPALDO — para eventos viejos sin skillBumps en meta, se cae a la
+  //     heurística (mención en texto o mapeo por tipo) para no dejar el tap vacío.
+  // Pre-parseamos meta una vez por evento.
+  const parseMeta = (raw: any): any => {
+    if (!raw) return null;
+    if (typeof raw === "object") return raw;
+    try { return JSON.parse(String(raw)); } catch { return null; }
+  };
+  const recentForSkills = (activityEvents as any[]).slice(0, 40).map((a) => {
+    const meta = parseMeta(a.meta);
+    const bumpedSkills: string[] = Array.isArray(meta?.skillBumps)
+      ? meta.skillBumps.map((b: any) => String(b?.skill || "")).filter(Boolean)
+      : [];
+    return { ...a, _bumpedSkills: bumpedSkills };
+  });
+  const SKILL_EVENT_TYPES = new Set(["quiz_passed", "lesson_done", "debate_logged", "skill_eval", "booking_made", "session_done"]);
+  const TYPE_TO_SKILLS: Record<string, string[]> = {
+    debate_logged: ["Refutación", "Estructura"],
+    quiz_passed: ["Evidencia"],
+    lesson_done: ["Estructura"],
+    booking_made: ["Delivery"],
+    session_done: ["Delivery"],
+  };
+  const eventsForSkill = (skillName: string) => {
+    const needle = skillName.toLowerCase();
+    return recentForSkills
+      .filter((a) => {
+        // 1) atribución exacta del server
+        if (a._bumpedSkills.includes(skillName)) return true;
+        // 2) respaldo heurístico solo para eventos relevantes SIN skillBumps
+        if (a._bumpedSkills.length) return false;
+        if (!SKILL_EVENT_TYPES.has(a.type)) return false;
+        const text = `${a.title || ""} ${a.detail || ""}`.toLowerCase();
+        return text.includes(needle) || (TYPE_TO_SKILLS[a.type] || []).includes(skillName);
+      })
+      .slice(0, 8)
+      .map((a) => ({ title: esc(a.title), whenLabel: shortDateLabel(a.createdAt) }));
+  };
+  // Sin StudentSkill → las 6 dimensiones canónicas en 0 (el perfil nunca va vacío).
+  const skillGraphBase = (myStudentSkills || []).length
+    ? (myStudentSkills as any[]).map((s) => ({ skill: String(s.skill), score: Math.max(0, Math.min(100, Number(s.score) || 0)) }))
+    : OTR_SKILLS.map((skill) => ({ skill, score: 0 }));
+  const skillGraph = skillGraphBase.map((s) => ({
+    skill: esc(s.skill),
+    name: esc(s.skill),
+    score: s.score,
+    events: eventsForSkill(s.skill),
+  }));
+
+  // Activity ledger: números de vida entera (cursos, lecciones, debates, sesiones…).
+  const lessonsDoneCount = (myProgress || []).length;
+  const sessionsAttended = (myBookingRows as any[]).filter((b) => b.status === "COMPLETED").length;
+  const enrollCompleted = meEnrollments.filter((e) => courseProgress(e.courseId) >= 100).length;
+  const lifetimeLedger = {
+    // Un certificado emitido también cuenta como curso completado (es su prueba).
+    coursesCompleted: Math.max(enrollCompleted, (myCertificates || []).length),
+    lessonsDone: lessonsDoneCount,
+    debates: records.length,
+    wins: records.filter((r) => r.result === "WIN").length,
+    sessionsAttended,
+    tournaments: myTournamentRegs as number,
+    hoursStudied: Math.round(lessonsDoneCount * 0.4 + sessionsAttended * 1),
+  };
+
+  // Performance record: historia de rating (RatingUpdate 1:1 de cada DebateRecord,
+  // en orden cronológico; el label usa la fecha real de la ronda).
+  const ratingHistory = records
+    .filter((r) => r.rating)
+    .slice()
+    .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime())
+    .map((r) => ({
+      label: shortDateLabel(r.recordedAt),
+      ratingAfter: Math.round(r.rating.ratingAfter),
+      tierAfter: r.rating.tierAfter,
+    }));
+  const lifetimePerformance = {
+    rating: Math.round(me?.debateRating ?? 1500),
+    tier: me?.debateTier || "Novato",
+    rd: Math.round(me?.debateRd ?? 350),
+    provisional: (me?.debateRd ?? 350) >= 150,
+    history: ratingHistory,
+  };
+
+  // Credenciales verificables (certificados emitidos).
+  const lifetimeCredentials = (myCertificates || []).map((c: any) => ({
+    title: esc(c.title),
+    issuedLabel: monthYearLabel(c.issuedAt),
+  }));
+
+  // Journey: la historia cronológica vertical (hasta 60 eventos, asc) — el
+  // screenshot que un estudiante comparte y que enorgullece a los padres.
+  const journey = activityAsc.slice(0, 60).map((a: any) => ({
+    whenLabel: shortDateLabel(a.createdAt),
+    monthLabel: monthFullLabel(a.createdAt),
+    title: esc(a.title),
+    detail: esc(a.detail || ""),
+    type: a.type,
+  }));
+
+  const lifetime = me
+    ? {
+        identity: {
+          name: esc(me.name),
+          initials: esc(me.initials),
+          level: me.level,
+          ageBand: me.ageBand || null,
+          memberSinceLabel,
+          // Bilingüe nativo: ES siempre lleva EN al lado; cuenta en EN → solo EN.
+          languages: me.lang === "en" ? ["EN"] : ["ES", "EN"],
+          location: esc(me.location),
+        },
+        skillGraph,
+        ledger: lifetimeLedger,
+        performance: lifetimePerformance,
+        credentials: lifetimeCredentials,
+        journey,
+        // §8.4: perfil público compartible — privacy-default OFF; un MENOR no
+        // puede togglearlo (lo habilita su padre/madre desde el Portal de familia).
+        publicProfile: {
+          enabled: !!me.publicProfile,
+          slug: me.publicSlug ? esc(me.publicSlug) : null,
+          url: me.publicSlug ? `/p/${esc(me.publicSlug)}` : null,
+          canToggle: me.ageBand !== "minor",
+          minorNote: "Tu padre/madre puede habilitar tu perfil público desde el Portal de familia.",
+        },
+      }
+    : null;
+
+  // --- PRD §13: membresía por suscripción (SIMULADA en F1 — sin Stripe; el
+  // upgrade solo cambia User.membership). free | pro | elite ("Próximamente").
+  const membership = {
+    tier: me?.membership || "free",
+    sinceLabel: me?.membershipSince
+      ? `Desde ${MONTHS_ES_FULL[new Date(me.membershipSince).getMonth()]} ${new Date(me.membershipSince).getFullYear()}`
+      : null,
+    prices: { proMonthly: "US$9", proAnnual: "US$79" },
+  };
+
+  const base: any = {
+    me: { name: esc(me?.name), email: me?.email, initials: esc(me?.initials), level: me?.level, streak: me?.streak, role: myRole,
+      headline: esc(me?.headline), bio: esc(me?.bio), teachingStyle: esc(me?.teachingStyle), formats: esc(me?.formats), location: esc(me?.location), preferences: me?.preferences ?? null,
+      // PRD §11.3 / §2.2: estudiante sin placement aún (placedAt null) → P1/Aula.tsx lo enruta al placement.
+      needsPlacement: me?.role === "STUDENT" && !me?.placedAt,
+      avatarUrl: safeUrl(me?.avatarUrl) },
+    teacher: { name: esc(teacher?.name), email: teacher?.email, initials: esc(teacher?.initials), role: "teacher",
+      headline: esc(teacher?.headline), bio: esc(teacher?.bio), teachingStyle: esc(teacher?.teachingStyle), formats: esc(teacher?.formats), location: esc(teacher?.location) },
     levels: levels.map((l) => ({ id: l.name.toLowerCase(), name: l.name, range: l.range, color: l.color })),
     xp: me?.xp ?? 0,
     xpNext,
     xpLevelStart,
     courses: meEnrollments.map((e) => ({
-      id: e.course.code, dbId: e.course.id, code: e.course.code, name: esc(e.course.name), coach: esc(e.course.coachName),
-      color: e.course.color, progress: e.progress, next: esc(e.course.next),
+      id: e.course.code, dbId: e.course.id, code: e.course.code, name: esc(pickLang(e.course.name, e.course.nameEn)), coach: esc(e.course.coachName),
+      color: e.course.color, progress: courseProgress(e.course.id), next: esc(e.course.next),
       students: e.course.studentsCount, lessons: e.course.lessonsCount, due: e.due,
+      format: esc(e.course.format), modality: esc(e.course.modality), capacity: e.course.capacity, summary: esc(pickLang(e.course.summary, e.course.summaryEn)),
     })),
-    courseModules: pfModules.map((m) => ({
+    courseModules: modulesForDashboard.map((m) => ({
       t: esc(m.title), done: m.done, locked: m.locked,
       items: m.lessons.map((l) => ({
-        id: l.id, t: esc(l.title), type: l.type, done: l.done, locked: l.locked, grade: l.grade, dur: l.dur, due: l.due,
-        videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml,
+        id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id), locked: l.locked, grade: l.grade, dur: l.dur, due: l.due,
+        videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
+        // Examen real adjunto solo a lecciones type='quiz' (null si no tiene).
+        quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
       })),
     })),
-    students: pfStudents.map((e) => ({
-      n: esc(e.user.name), i: esc(e.user.initials), lvl: e.user.level, xp: e.user.xp,
-      grade: e.grade, att: e.attendance, eng: e.engagement, trend: e.trend, risk: e.risk, last: e.lastAccess,
-    })),
-    gradebook: { cols, rows: gbRows },
+    // Moodle multi-curso: módulos de TODOS los cursos inscritos, agrupados por curso.
+    // S.course/S.courseIndex/S.lesson navegan cualquiera vía window.__course; las
+    // pantallas de lección buscan window.__lesson entre todos estos items.
+    coursesContent: (() => {
+      const src = isTeacher ? [] : (studentModules as any[]);
+      const byCourse = new Map<string, any[]>();
+      src.forEach((m) => {
+        const arr = byCourse.get(m.courseId) || [];
+        arr.push(m);
+        byCourse.set(m.courseId, arr);
+      });
+      return meEnrollments.map((e: any) => ({
+        id: e.course.code, dbId: e.course.id, code: e.course.code,
+        name: esc(pickLang(e.course.name, e.course.nameEn)), coach: esc(e.course.coachName),
+        color: e.course.color, progress: courseProgress(e.course.id),
+        summary: esc(pickLang(e.course.summary, e.course.summaryEn)),
+        format: esc(e.course.format), modality: esc(e.course.modality),
+        modules: (byCourse.get(e.course.id) || []).map((m: any) => ({
+          t: esc(m.title), done: m.done, locked: m.locked,
+          items: m.lessons.map((l: any) => ({
+            id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id),
+            locked: l.locked, grade: l.grade, dur: l.dur, due: l.due,
+            videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
+            quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
+          })),
+        })),
+      }));
+    })(),
+    // Estado de las entregas del alumno por actividad (S.assignment lo lee).
+    mySubmissions: mySubmissionsByActivity,
     competencies: competencies.map((c) => ({ name: c.name, score: c.score })),
     badges: badges.map((b) => ({ n: b.name, d: b.description, got: gotBadge(b.name), ic: b.icon, tone: b.tone })),
     events: events.map((e) => ({ t: e.title, c: e.course, when: e.whenLabel, tone: e.tone })),
-    activity: activity.map((a) => ({ who: esc(a.who), a: esc(a.action), t: esc(a.target), when: a.whenLabel })),
+    // PRD §4: DB.activity = timeline del Progress Profile (ActivityEvent del usuario,
+    // los últimos 15 de la consulta compartida con journey). esc() en texto de usuario.
+    activity: (activityEvents || []).slice(0, 15).map((a) => ({
+      type: a.type, title: esc(a.title), detail: esc(a.detail || ""),
+      xp: a.xp || 0, when: whenLabel(a.createdAt),
+    })),
     notifications: notifications.filter((n) => !n.userId || n.userId === me?.id).map((n) => ({ ic: n.icon, tone: n.tone, t: esc(n.title), d: esc(n.detail), when: n.whenLabel, unread: n.unread })),
     forum: threads.map((t) => ({ id: t.id, title: esc(t.title), author: esc(t.author), ini: esc(t.initials), tag: esc(t.tag), replies: t.replies, views: t.views, pinned: t.pinned, last: t.lastLabel, excerpt: esc(t.excerpt) })),
     forumThread: mainThread ? {
@@ -102,11 +1285,95 @@ export async function getAppData(email: string = ME_EMAIL) {
     } : { id: "", title: "", tag: "", posts: [] },
     messages: convos.map((c) => ({ ini: esc(c.initials), name: esc(c.name), last: esc(c.lastLabel), when: c.whenLabel, unread: c.unread, online: c.online, navy: c.navy })),
     chat: (convos[0]?.messages ?? []).map((m) => ({ me: m.me, body: esc(m.body), when: m.timeLabel })),
-    manage: { courses: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(c.name) })), modules: allModules.map((m) => ({ id: m.id, courseId: m.courseId, title: esc(m.title) })) },
-    catalog: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(c.name), coach: esc(c.coachName), color: c.color, price: c.priceCents, enrolled: enrolledIds.has(c.id) })),
-    teacherCourses: taughtCourses.map((c) => ({
-      id: c.id, code: c.code, name: esc(c.name), color: c.color,
-      modules: c.modules.map((m) => ({ id: m.id, title: esc(m.title), lessons: m.lessons.map((l) => ({ id: l.id, title: esc(l.title), type: l.type, videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml })) })),
-    })),
+    // VENTA POR CURSO APAGADA (PRD §13.1): los cursos son valor de la membresía —
+    // price 0 → la UI muestra "Gratis"/Inscribirme y /api/checkout inscribe directo.
+    catalog: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(pickLang(c.name, c.nameEn)), coach: esc(c.coachName), color: c.color, price: 0, enrolled: enrolledIds.has(c.id),
+      format: esc(c.format), modality: esc(c.modality) })),
+    // --- Hub: campos nuevos (visibles para todos los roles) ---
+    arsenal,
+    skills,
+    certificates,
+    coachProfile,
+    myReview,
+    canReviewCoach, // §7.4 verified-booking-only: habilita el form de reseña del coach
+    // Notas reales del estudiante (Submission GRADED + QuizAttempt).
+    myGrades,
+    // Mapa lessonId -> quiz real (misma forma del contrato; alumno sin 'correct').
+    quizByLesson,
+    // PRD §4: Debate Rank card. Si el RD es alto (>= 200, default 350) el rating
+    // aún es "soft"/provisional → estado novato para quien no ha debatido.
+    debateRank: {
+      rating: Math.round(me?.debateRating ?? 1500),
+      rd: Math.round(me?.debateRd ?? 350),
+      tier: me?.debateTier || "Novato",
+      provisional: (me?.debateRd ?? 350) >= 200,
+      recentForm,
+    },
+    // PRD §6: Debate Hub (flagship). Sólo para roles CON sesión (null si no hay me).
+    // DB.debate = dashboard del debatiente (rating/tier/form/history/analytics).
+    debate,
+    // DB.leaderboard = top 50 por rating + la posición del usuario.
+    leaderboard,
+    // DB.tournaments = torneos UPCOMING|LIVE con flag `registered`.
+    tournaments,
+    // PRD §7: Marketplace de coaches (browse/perfil) — visible para TODOS los roles.
+    marketplace,
+    // PRD §7.5: Coach Workspace (supply-side) — SOLO TEACHER/ADMIN (null si no).
+    coachwork,
+    // PRD §8: Lifetime Progress Profile — identity + skill graph con atribución +
+    // ledger + performance + credenciales + journey + perfil público (§8.4).
+    lifetime,
+    // PRD §13: membresía por suscripción (simulada en F1).
+    membership,
   };
+
+  // PRD §7: "Mis reservas" — SOLO para STUDENT (sus propios bookings).
+  if (me?.role === "STUDENT") {
+    base.myBookings = myBookings;
+  }
+  // PRD §11: Parent Portal — SOLO para PARENT (role-scoped; un STUDENT/TEACHER
+  // NUNCA recibe los datos de hijos de nadie).
+  if (parentData) {
+    base.parent = parentData;
+  }
+
+  // --- SEGMENTACIÓN por rol ------------------------------------------------
+  // Un STUDENT NUNCA recibe gradebook, students, manage, teacherCourses ni
+  // reviewsReceived. Solo se añaden para TEACHER/ADMIN.
+  if (isTeacher) {
+    base.students = pfStudents.map((e) => ({
+      id: e.user.id, n: esc(e.user.name), i: esc(e.user.initials), lvl: e.user.level, xp: e.user.xp,
+      grade: e.grade, att: e.attendance, eng: e.engagement, trend: e.trend, risk: e.risk, last: e.lastAccess,
+    }));
+
+    // --- KPIs del profesor (calculados del roster base.students) ------------
+    // avg=promedio de s.grade; attendance=promedio de s.att; onTime=promedio de
+    // s.eng (engagement string mapeado a %); atRisk=conteo de s.risk truthy.
+    const engPct = (eng: string): number => (eng === "Alto" ? 100 : eng === "Bajo" ? 33 : 66);
+    const roster = base.students as any[];
+    const avgOf = (vals: number[]): number =>
+      vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+    base.teacherKpis = {
+      avg: avgOf(roster.map((s) => Number(s.grade) || 0)),
+      attendance: avgOf(roster.map((s) => Number(s.att) || 0)),
+      onTime: avgOf(roster.map((s) => engPct(s.eng))),
+      atRisk: roster.filter((s) => s.risk).length,
+    };
+    // Entregas pendientes (no calificadas) de los cursos del profesor.
+    base.pendingSubs = pendingSubs;
+
+    base.gradebook = { cols, rows: gbRows };
+    base.manage = {
+      courses: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(c.name) })),
+      modules: allModules.map((m) => ({ id: m.id, courseId: m.courseId, title: esc(m.title) })),
+    };
+    base.teacherCourses = taughtCourses.map((c: any) => ({
+      id: c.id, code: c.code, name: esc(c.name), color: c.color,
+      format: esc(c.format), modality: esc(c.modality), capacity: c.capacity, summary: esc(c.summary),
+      modules: c.modules.map((m: any) => ({ id: m.id, title: esc(m.title), lessons: m.lessons.map((l: any) => ({ id: l.id, title: esc(l.title), type: l.type, videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml })) })),
+    }));
+    base.reviewsReceived = reviewsReceived;
+  }
+
+  return base;
 }

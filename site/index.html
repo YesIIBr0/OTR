@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OTR Debate Academy — Domina la sala</title>
+<meta name="description" content="Academia #1 del circuito de debate dominicano. Convertimos estudiantes en líderes que hablan con autoridad, claridad y dominio." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@500;600;700;800;900&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --white:#FFFFFF;
+  --offwhite:#F3F7FC;
+  --navy:#0C2340;
+  --ink:#0A1A2F;
+  --sky:#4FA9E8;
+  --sky-hi:#7FC8F2;
+  --sky-lo:#2E8BD0;
+  --pale:#DCEEFB;
+  --paper:#FBFDFF;
+
+  --maxw:1240px;
+  --gut:clamp(20px,5vw,64px);
+
+  --fs-eyebrow:clamp(12px,1vw,14px);
+  --fs-body:clamp(16px,1.15vw,19px);
+  --fs-h1:clamp(58px,11.5vw,168px);
+  --fs-h2:clamp(34px,5.2vw,76px);
+  --fs-h3:clamp(22px,2.4vw,32px);
+
+  --display:'Archivo Expanded',system-ui,sans-serif;
+  --body:'Inter',system-ui,sans-serif;
+
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--body);
+  color:var(--navy);
+  background:var(--white);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+::selection{background:var(--navy);color:#fff}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+
+/* faint film grain across the whole page */
+body::after{
+  content:"";position:fixed;inset:0;z-index:9990;pointer-events:none;
+  opacity:.035;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============ utility ============ */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--gut)}
+.eyebrow{
+  font-family:var(--body);font-weight:600;
+  font-size:var(--fs-eyebrow);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--sky-lo);display:inline-flex;align-items:center;gap:10px;
+}
+.eyebrow::before{content:"";width:26px;height:1.5px;background:var(--sky);display:inline-block}
+.display{font-family:var(--display);font-weight:800;line-height:.92;letter-spacing:-.01em}
+.sky{color:var(--sky-lo)}
+.muted{color:#5a6b80}
+
+/* magnetic / sweep CTA */
+.btn{
+  position:relative;display:inline-flex;align-items:center;gap:12px;
+  font-family:var(--body);font-weight:600;font-size:16px;letter-spacing:.005em;
+  padding:18px 30px;border-radius:100px;border:0;cursor:pointer;
+  isolation:isolate;overflow:hidden;transition:transform .5s var(--ease),box-shadow .5s var(--ease);
+  will-change:transform;
+}
+.btn .lbl{position:relative;z-index:2;display:inline-flex;align-items:center;gap:12px}
+.btn-primary{color:#fff;background:var(--navy);box-shadow:0 14px 34px -14px rgba(12,35,64,.55)}
+.btn-primary::before{
+  content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(100deg,var(--sky-lo),var(--sky),var(--sky-hi));
+  transform:translateY(101%);transition:transform .55s var(--ease);
+}
+.btn-primary:hover{box-shadow:0 20px 46px -16px rgba(46,139,208,.6)}
+.btn-primary:hover::before{transform:translateY(0)}
+.btn-arrow{transition:transform .45s var(--ease)}
+.btn:hover .btn-arrow{transform:translateX(5px)}
+.btn-ghost{
+  color:var(--navy);background:transparent;border:1.5px solid rgba(12,35,64,.18);
+  padding:17px 26px;
+}
+.btn-ghost:hover{border-color:var(--navy);background:rgba(12,35,64,.03)}
+.btn-ghost .dot{width:9px;height:9px;border-radius:50%;background:var(--sky);box-shadow:0 0 0 0 rgba(79,169,232,.5);animation:pulse 2.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(79,169,232,.5)}70%{box-shadow:0 0 0 9px rgba(79,169,232,0)}100%{box-shadow:0 0 0 0 rgba(79,169,232,0)}}
+
+/* ============ top nav ============ */
+header.nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px var(--gut);
+  transition:background .4s var(--ease),box-shadow .4s var(--ease),padding .4s var(--ease);
+}
+header.nav.scrolled{
+  background:rgba(251,253,255,.82);backdrop-filter:blur(16px) saturate(1.2);
+  box-shadow:0 1px 0 rgba(12,35,64,.07);padding:12px var(--gut);
+}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:800;letter-spacing:.02em;font-size:18px}
+.crest-mark{width:30px;height:34px;flex:none}
+.nav-links{display:flex;align-items:center;gap:34px}
+.nav-links nav{display:flex;gap:30px}
+.nav-links a.lk{font-size:14px;font-weight:500;color:var(--navy);opacity:.72;position:relative;transition:opacity .3s}
+.nav-links a.lk::after{content:"";position:absolute;left:0;bottom:-5px;height:1.5px;width:0;background:var(--sky);transition:width .35s var(--ease)}
+.nav-links a.lk:hover{opacity:1}
+.nav-links a.lk:hover::after{width:100%}
+.lang{display:flex;align-items:center;gap:2px;font-size:13px;font-weight:600;border:1px solid rgba(12,35,64,.14);border-radius:100px;padding:5px;background:rgba(255,255,255,.5)}
+.lang button{border:0;background:transparent;cursor:pointer;font-family:var(--body);font-weight:600;font-size:12.5px;color:#7286a0;padding:5px 11px;border-radius:100px;transition:.3s}
+.lang button.on{background:var(--navy);color:#fff}
+.nav-cta{font-size:13.5px;padding:12px 20px}
+.burger{display:none}
+
+/* ============ HERO ============ */
+.hero{position:relative;min-height:100svh;display:flex;align-items:center;overflow:hidden;background:linear-gradient(180deg,var(--white) 0%,var(--offwhite) 60%,var(--pale) 140%)}
+#orb-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;display:block}
+.hero-fallback{position:absolute;inset:0;z-index:1;display:none}
+.hero-fallback .glow{position:absolute;top:38%;left:62%;width:62vh;height:62vh;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle at 38% 32%,#fff 0%,var(--sky-hi) 24%,var(--sky) 46%,var(--sky-lo) 64%,var(--navy) 100%);
+  filter:blur(2px);box-shadow:0 40px 120px -20px rgba(46,139,208,.5);animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}}
+
+/* clarity beam that follows cursor */
+#beam{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(420px 420px at var(--mx,70%) var(--my,40%),rgba(127,200,242,.22),rgba(127,200,242,0) 60%);
+  opacity:0;transition:opacity .6s ease;mix-blend-mode:screen}
+
+.hero-inner{position:relative;z-index:5;width:100%}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:0;padding-top:96px}
+.hero-eyebrow{margin-bottom:26px}
+h1.h1{font-family:var(--display);font-weight:900;line-height:.86;letter-spacing:-.02em;font-size:var(--fs-h1);color:var(--navy);
+  text-wrap:balance;max-width:14ch}
+h1.h1 .word{display:inline-block;overflow:hidden;vertical-align:bottom}
+h1.h1 .word > span{display:inline-block;transform:translateY(105%);will-change:transform}
+.h1 em{font-style:normal;background:linear-gradient(100deg,var(--sky-lo),var(--sky) 55%,var(--sky-hi));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sig{font-family:var(--display);font-weight:600;font-size:clamp(15px,1.5vw,21px);letter-spacing:.04em;color:#7c91a8;margin-top:18px;display:flex;align-items:center;gap:14px}
+.sig::before{content:"";width:30px;height:1.5px;background:#aebfd2}
+.hero-sub{font-size:var(--fs-body);line-height:1.5;color:#3f5168;max-width:46ch;margin-top:30px;font-weight:450}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:38px}
+.microproof{margin-top:44px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;font-size:14px;color:#5a6b80;font-weight:500}
+.microproof .pip{display:inline-flex;align-items:center;gap:9px}
+.microproof .pip b{font-family:var(--display);font-weight:800;color:var(--navy);font-size:15px}
+.microproof .sep{width:4px;height:4px;border-radius:50%;background:var(--sky);opacity:.6}
+
+.scroll-hint{position:absolute;bottom:26px;right:var(--gut);left:auto;transform:none;z-index:6;display:flex;flex-direction:column;align-items:center;gap:9px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#9fb0c6;font-weight:600}
+.scroll-hint .rail{width:1.5px;height:42px;background:linear-gradient(var(--sky),transparent);position:relative;overflow:hidden}
+.scroll-hint .rail::after{content:"";position:absolute;top:-40%;left:0;width:100%;height:40%;background:var(--navy);animation:fall 1.8s var(--ease) infinite}
+@keyframes fall{0%{top:-40%}100%{top:110%}}
+
+/* reveal animation primitive */
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+[data-stagger]{transition-delay:var(--d,0ms)}
+
+/* ============ AUTHORITY BAR ============ */
+.authority{background:var(--navy);color:#fff;position:relative;overflow:hidden;padding:0;z-index:10}
+.authority::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 100% at 80% -20%,rgba(79,169,232,.28),transparent 55%);pointer-events:none}
+.marquee{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.1);overflow:hidden;white-space:nowrap;-webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.marquee-track{display:flex;align-items:center;gap:0;animation:scrollx 38s linear infinite;flex:none}
+.marquee:hover .marquee-track{animation-play-state:paused}
+.mq-item{display:flex;align-items:center;gap:14px;padding:22px 34px;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.02em;color:rgba(255,255,255,.86)}
+.mq-item .trophy{color:var(--sky-hi)}
+.mq-dot{width:5px;height:5px;border-radius:50%;background:var(--sky);flex:none}
+@keyframes scrollx{to{transform:translateX(-50%)}}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);position:relative;z-index:2}
+.stat{padding:54px 34px;border-right:1px solid rgba(255,255,255,.1);position:relative}
+.stat:last-child{border-right:0}
+.stat .num{font-family:var(--display);font-weight:900;font-size:clamp(46px,6vw,82px);line-height:1;letter-spacing:-.02em;
+  background:linear-gradient(180deg,#fff 30%,var(--sky-hi));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat .num .suf{font-size:.5em;-webkit-text-fill-color:var(--sky-hi);color:var(--sky-hi);vertical-align:super}
+.stat .cap{margin-top:14px;font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.66);font-weight:450;max-width:24ch}
+.verified{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--sky-hi);margin-bottom:12px;letter-spacing:.02em}
+.verified svg{width:15px;height:15px}
+
+/* ============ PAIN → PROMISE ============ */
+.pain{background:var(--white);padding:clamp(90px,12vw,170px) 0;position:relative}
+.pain .wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:clamp(40px,7vw,110px);align-items:center}
+.pain-copy h2{font-family:var(--display);font-weight:800;font-size:var(--fs-h2);line-height:1.0;letter-spacing:-.015em;color:var(--navy);text-wrap:balance}
+.pain-copy h2 .strike{position:relative;white-space:nowrap}
+.pain-copy h2 .strike::after{content:"";position:absolute;left:-2%;right:-2%;top:54%;height:5px;background:var(--sky);transform:scaleX(0);transform-origin:left;border-radius:3px;transition:transform .8s var(--ease) .2s}
+.pain-copy.in h2 .strike::after{transform:scaleX(1)}
+.pain-copy p{font-size:var(--fs-body);line-height:1.6;color:#43576f;margin-top:26px;max-width:42ch;font-weight:450}
+.pain-copy .lead{margin-top:30px}
+.beforeafter{position:relative;border-radius:22px;overflow:hidden;background:var(--offwhite);border:1px solid rgba(12,35,64,.08);box-shadow:0 30px 70px -34px rgba(12,35,64,.3)}
+.ba-track{display:grid;grid-template-columns:1fr 1fr}
+.ba-cell{padding:38px 30px;min-height:300px;display:flex;flex-direction:column;justify-content:space-between}
+.ba-cell.before{background:linear-gradient(180deg,#eef2f7,#e6ecf3);color:#5a6b80}
+.ba-cell.after{background:linear-gradient(180deg,var(--navy),var(--ink));color:#fff;position:relative;overflow:hidden}
+.ba-cell.after::before{content:"";position:absolute;inset:0;background:radial-gradient(90% 80% at 70% 0%,rgba(79,169,232,.3),transparent 60%)}
+.ba-tag{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;opacity:.8}
+.ba-cell .voicewave{display:flex;align-items:flex-end;gap:4px;height:54px;position:relative;z-index:2}
+.ba-cell .voicewave i{flex:1;border-radius:3px;display:block;transform-origin:bottom center}
+.ba-cell.before .voicewave i{background:#c0ccda}
+.ba-cell.after .voicewave i{background:linear-gradient(var(--sky-hi),var(--sky))}
+.ba-quote{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.15;position:relative;z-index:2;letter-spacing:-.01em}
+
+/* ============ METHOD ============ */
+.method{background:var(--offwhite);padding:clamp(90px,12vw,160px) 0 clamp(110px,14vw,180px);position:relative;overflow:hidden}
+.method-head{max-width:60ch;margin-bottom:clamp(50px,7vw,90px)}
+.method-head h2{font-family:var(--display);font-weight:800;font-size:var(--fs-h2);line-height:.98;letter-spacing:-.015em;color:var(--navy);margin-top:22px;text-wrap:balance}
+.timeline{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
+.timeline::before{content:"";position:absolute;left:0;right:0;top:38px;height:2px;
+  background:linear-gradient(90deg,var(--pale),var(--sky) 50%,var(--pale));z-index:0}
+.step{position:relative;z-index:1}
+.step .node{width:76px;height:76px;border-radius:50%;background:#fff;border:2px solid var(--pale);
+  display:flex;align-items:center;justify-content:center;position:relative;
+  box-shadow:0 16px 36px -18px rgba(12,35,64,.3);transition:.5s var(--ease)}
+.step .node .ix{font-family:var(--display);font-weight:900;font-size:26px;color:var(--navy)}
+.step .node::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid var(--sky);opacity:0;transform:scale(.7);transition:.6s var(--ease)}
+.step.in .node{border-color:var(--sky);transform:translateY(-4px)}
+.step.in .node::after{opacity:1;transform:scale(1.12)}
+.step h3{font-family:var(--display);font-weight:700;font-size:var(--fs-h3);color:var(--navy);margin-top:26px;letter-spacing:-.01em;line-height:1.05}
+.step .lede{font-size:15px;line-height:1.55;color:#52647c;margin-top:13px;font-weight:450}
+.step .meta{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--sky-lo);font-weight:700;margin-top:18px}
+.method-anchor{margin-top:clamp(64px,8vw,96px);max-width:30ch}
+.method-anchor p{font-family:var(--display);font-weight:700;font-size:clamp(24px,3.4vw,44px);line-height:1.04;letter-spacing:-.01em;color:var(--navy);text-wrap:balance}
+.method-anchor p em{font-style:normal;color:var(--sky-lo)}
+
+/* ============ OTR SOUNDWAVE DIVIDER (wow) ============ */
+.wave-divider{background:var(--navy);position:relative;overflow:hidden;padding:clamp(64px,9vw,120px) 0}
+.wave-divider::before{content:"";position:absolute;inset:0;background:radial-gradient(80% 140% at 50% 0%,rgba(79,169,232,.22),transparent 60%)}
+.wave-wrap{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:22px}
+.wave-cap{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--sky-hi);font-weight:600;white-space:nowrap}
+#otrwave{width:min(760px,86vw);height:120px;display:block}
+.wave-sub{font-family:var(--display);font-weight:600;color:rgba(255,255,255,.66);font-size:14px;letter-spacing:.04em}
+
+/* ============ footer mini ============ */
+.foot{background:var(--ink);color:rgba(255,255,255,.7);padding:38px var(--gut);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;font-size:13px}
+.foot .brand{color:#fff;font-size:16px}
+
+/* ============ INTRO OVERLAY ============ */
+#intro{position:fixed;inset:0;z-index:1000;background:var(--white);display:flex;align-items:center;justify-content:center;transition:opacity .9s var(--ease),visibility .9s}
+#intro.gone{opacity:0;visibility:hidden;pointer-events:none}
+#intro-canvas{position:absolute;inset:0;width:100%;height:100%}
+.intro-skip{position:absolute;bottom:30px;right:30px;z-index:3;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9fb0c6;font-weight:600;background:transparent;border:1px solid rgba(12,35,64,.16);padding:10px 18px;border-radius:100px;cursor:pointer;transition:.3s}
+.intro-skip:hover{color:var(--navy);border-color:var(--navy)}
+.intro-crest{position:relative;z-index:2;opacity:0}
+
+/* ============ ROUTER + SUBPAGES ============ */
+.route{position:fixed;inset:0;height:100%;overflow-y:auto;overflow-x:hidden;background:var(--white);
+  transform:translateX(100%);transition:transform .62s cubic-bezier(.76,0,.24,1);will-change:transform;
+  -webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+.route.active{pointer-events:auto}
+.route:not(.active){pointer-events:none}
+#route-home{transform:translateX(0)}
+
+.navback{display:none;align-items:center;gap:9px;background:transparent;border:1.5px solid rgba(12,35,64,.18);
+  border-radius:100px;padding:10px 18px 10px 16px;font-family:var(--body);font-weight:600;font-size:13.5px;color:var(--navy);cursor:pointer;transition:.3s var(--ease)}
+.navback:hover{border-color:var(--navy);background:rgba(12,35,64,.03)}
+.navback .bk{transition:transform .35s var(--ease)}
+.navback:hover .bk{transform:translateX(-4px)}
+body:not([data-route="home"]) .nav-links nav{display:none}
+body:not([data-route="home"]) .navback{display:inline-flex}
+
+.subhero{padding:clamp(120px,16vh,180px) 0 clamp(40px,6vw,72px);position:relative;overflow:hidden;background:linear-gradient(180deg,var(--white),var(--offwhite))}
+.subhero::before{content:"";position:absolute;top:-30%;right:-10%;width:60vh;height:60vh;border-radius:50%;
+  background:radial-gradient(circle at 40% 40%,rgba(127,200,242,.4),transparent 65%);filter:blur(10px);pointer-events:none}
+.subhero h1{font-family:var(--display);font-weight:900;font-size:clamp(44px,7vw,104px);line-height:.9;letter-spacing:-.02em;color:var(--navy);margin-top:22px;text-wrap:balance;max-width:15ch}
+.subhero .sub{font-size:var(--fs-body);line-height:1.55;color:#43576f;max-width:50ch;margin-top:26px;font-weight:450}
+.sub-section{padding:clamp(56px,8vw,104px) 0}
+.sub-section.tint{background:var(--offwhite)}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:clamp(34px,5vw,58px)}
+.sec-head h2{font-family:var(--display);font-weight:800;font-size:clamp(28px,4vw,52px);line-height:.98;letter-spacing:-.015em;color:var(--navy);text-wrap:balance}
+.sec-head .cnt{font-family:var(--display);font-weight:700;font-size:14px;color:var(--sky-lo);letter-spacing:.04em}
+
+.ph{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(12,35,64,.08);
+  background:repeating-linear-gradient(135deg,#eef3f9 0 11px,#e4ecf4 11px 22px);display:flex;align-items:flex-end;padding:16px}
+.ph .lab{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.06em;color:#7c8ea4;
+  background:rgba(255,255,255,.9);padding:6px 11px;border-radius:100px;border:1px solid rgba(12,35,64,.06)}
+
+.cases{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.case{border-radius:22px;overflow:hidden;border:1px solid rgba(12,35,64,.08);background:var(--white);
+  box-shadow:0 28px 64px -38px rgba(12,35,64,.4);display:grid;grid-template-columns:0.85fr 1fr}
+.case .portrait{min-height:240px}
+.case .body{padding:28px 26px;display:flex;flex-direction:column;gap:14px}
+.case .names{font-family:var(--display);font-weight:800;font-size:22px;color:var(--navy);letter-spacing:-.01em}
+.case .arc{display:flex;flex-direction:column;gap:10px;margin-top:2px}
+.case .arc .row{display:flex;align-items:center;gap:10px;font-size:14.5px;color:#52647c}
+.case .arc .tag{font-family:ui-monospace,monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#90a2b8;width:58px;flex:none}
+.case .arc .row.aft{color:var(--navy);font-weight:600}
+.case .arc .row.aft .tag{color:var(--sky-lo)}
+.case .meta{display:flex;gap:10px;margin-top:auto;padding-top:8px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:100px}
+.badge.sky{background:var(--pale);color:var(--sky-lo)}
+.badge.navy{background:var(--navy);color:#fff}
+
+.wall{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:200px;gap:16px}
+.wall .ph:nth-child(1){grid-column:span 2;grid-row:span 2}
+.wall .ph:nth-child(6){grid-column:span 2}
+
+.coaches{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.coach{border-radius:20px;overflow:hidden;border:1px solid rgba(12,35,64,.08);background:var(--white);box-shadow:0 24px 54px -38px rgba(12,35,64,.4)}
+.coach .portrait{height:280px}
+.coach .body{padding:22px 22px 26px}
+.coach .role{font-family:var(--display);font-weight:800;font-size:19px;color:var(--navy);letter-spacing:-.01em}
+.coach .cred{font-size:14px;color:#52647c;margin-top:8px;line-height:1.45}
+.coach .pill{display:inline-flex;margin-top:14px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--sky-lo)}
+
+.values{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.value{padding:30px 28px;border-radius:18px;background:var(--white);border:1px solid rgba(12,35,64,.08)}
+.value .vn{font-family:var(--display);font-weight:900;font-size:30px;color:var(--pale);line-height:1}
+.value h3{font-family:var(--display);font-weight:700;font-size:22px;color:var(--navy);margin-top:16px;letter-spacing:-.01em}
+.value p{font-size:14.5px;line-height:1.5;color:#52647c;margin-top:10px}
+
+.story{display:grid;grid-template-columns:1fr 1fr;gap:clamp(40px,7vw,96px);align-items:center}
+.story p{font-size:var(--fs-body);line-height:1.6;color:#43576f;font-weight:450}
+.story p+p{margin-top:22px}
+.story .visual{aspect-ratio:4/5;min-height:380px}
+
+.cta-band{background:var(--navy);color:#fff;position:relative;overflow:hidden;padding:clamp(72px,11vw,140px) 0;text-align:center}
+.cta-band::before{content:"";position:absolute;inset:0;background:radial-gradient(70% 130% at 50% 0%,rgba(79,169,232,.26),transparent 60%)}
+.cta-band .inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:26px}
+.cta-band h2{font-family:var(--display);font-weight:800;font-size:clamp(32px,5vw,68px);line-height:.98;letter-spacing:-.015em;text-wrap:balance;max-width:18ch}
+
+@media (max-width:980px){
+  .cases{grid-template-columns:1fr}
+  .wall{grid-template-columns:repeat(2,1fr)}
+  .wall .ph:nth-child(1){grid-column:span 2;grid-row:auto}
+  .coaches{grid-template-columns:1fr 1fr}
+  .values{grid-template-columns:1fr}
+  .story{grid-template-columns:1fr;gap:40px}
+  .pain .wrap{grid-template-columns:1fr;gap:46px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stat{border-right:0;border-bottom:1px solid rgba(255,255,255,.1)}
+  .stat:nth-child(odd){border-right:1px solid rgba(255,255,255,.1)}
+  .timeline{grid-template-columns:repeat(2,1fr);gap:40px 26px}
+  .timeline::before{display:none}
+}
+@media (max-width:720px){
+  .nav-links nav,.nav-cta{display:none}
+  h1.h1{font-size:clamp(54px,16vw,90px)}
+  .stats{grid-template-columns:1fr}
+  .stat:nth-child(odd){border-right:0}
+  .timeline{grid-template-columns:1fr}
+  .ba-track{grid-template-columns:1fr}
+  .case{grid-template-columns:1fr}
+  .case .portrait{min-height:200px}
+  .wall{grid-template-columns:1fr}
+  .wall .ph:nth-child(1),.wall .ph:nth-child(6){grid-column:auto}
+  .coaches{grid-template-columns:1fr}
+  .subhero h1{font-size:clamp(40px,13vw,72px)}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto}
+  .reveal{opacity:1;transform:none}
+  #orb-canvas{display:none}.hero-fallback{display:block}
+  h1.h1 .word > span{transform:none}
+  .route{transition:none}
+}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro" aria-hidden="true">
+  <canvas id="intro-canvas"></canvas>
+  <svg class="intro-crest" width="120" height="138" viewBox="0 0 120 138" fill="none" aria-hidden="true">
+    <path d="M60 4 L112 26 V70 C112 104 88 124 60 134 C32 124 8 104 8 70 V26 Z" fill="none" stroke="#0C2340" stroke-width="2.5"/>
+    <path d="M60 16 L100 33 V69 C100 96 81 112 60 121 C39 112 20 96 20 69 V33 Z" fill="#0C2340"/>
+    <text x="60" y="80" font-family="Archivo Expanded" font-weight="900" font-size="34" fill="#fff" text-anchor="middle" letter-spacing="1">OTR</text>
+  </svg>
+  <button class="intro-skip" id="skip">Saltar intro</button>
+</div>
+
+<!-- NAV -->
+<header class="nav" id="nav">
+  <a class="brand" href="#top" data-nav="home" aria-label="OTR Debate Academy">
+    <svg class="crest-mark" viewBox="0 0 30 34" fill="none" aria-hidden="true">
+      <path d="M15 1 L28 6.5 V18 C28 26.5 22 31.5 15 33.5 C8 31.5 2 26.5 2 18 V6.5 Z" fill="#0C2340"/>
+      <text x="15" y="21" font-family="Archivo Expanded" font-weight="900" font-size="9.5" fill="#fff" text-anchor="middle">OTR</text>
+    </svg>
+    <span>OTR<span style="opacity:.45;font-weight:500"> · Debate Academy</span></span>
+  </a>
+  <div class="nav-links">
+    <button class="navback" data-back type="button"><span class="bk">←</span> <span data-i18n="back">Volver</span></button>
+    <nav>
+      <a class="lk" href="#metodo" data-nav="home" data-anchor="metodo" data-i18n="nav_method">El Método</a>
+      <a class="lk" href="#resultados" data-nav="resultados" data-i18n="nav_proof">Resultados</a>
+      <a class="lk" href="#nosotros" data-nav="nosotros" data-i18n="nav_story">Nosotros</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Idioma">
+      <button data-lang="es" class="on">ES</button>
+      <button data-lang="en">EN</button>
+    </div>
+    <a href="#cta" class="btn btn-primary nav-cta"><span class="lbl" data-i18n="cta_short">Reserva tu consulta</span></a>
+  </div>
+</header>
+
+<div id="router">
+<section class="route active" id="route-home" data-route="home">
+<main id="top">
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <canvas id="orb-canvas"></canvas>
+  <div class="hero-fallback"><div class="glow"></div></div>
+  <div id="beam"></div>
+  <div class="hero-inner">
+    <div class="wrap hero-grid">
+      <p class="eyebrow hero-eyebrow reveal" data-i18n="hero_eyebrow">Academia #1 del circuito de debate dominicano</p>
+      <h1 class="h1" id="h1">
+        <span class="word"><span data-i18n="hero_h1_a">Domina</span></span>
+        <span class="word"><span data-i18n="hero_h1_b">la sala.</span></span>
+      </h1>
+      <p class="sig reveal" data-i18n="hero_sig">Own the Room.</p>
+      <p class="hero-sub reveal" data-i18n="hero_sub">Convertimos estudiantes en líderes que hablan con autoridad, claridad y dominio de cada escenario.</p>
+      <div class="hero-cta reveal">
+        <a href="#cta" class="btn btn-primary"><span class="lbl"><span data-i18n="hero_cta1">Reserva tu consulta gratis</span><span class="btn-arrow">→</span></span></a>
+        <a href="#resultados" data-nav="resultados" class="btn btn-ghost"><span class="dot"></span><span data-i18n="hero_cta2">Mira las transformaciones</span></a>
+      </div>
+      <div class="microproof reveal">
+        <span class="pip"><b>10</b> <span data-i18n="mp_champ">campeonatos</span></span>
+        <span class="sep"></span>
+        <span class="pip"><b>55</b> <span data-i18n="mp_qual">clasificaciones</span></span>
+        <span class="sep"></span>
+        <span class="pip"><span data-i18n="mp_harvard">Mejor academia latinoamericana en Harvard '26</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint"><span data-i18n="scroll">Desliza</span><span class="rail"></span></div>
+</section>
+
+<!-- AUTHORITY BAR -->
+<section class="authority" id="authority">
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track" id="mqtrack"></div>
+  </div>
+  <div class="wrap" style="position:relative;z-index:2;padding-top:30px">
+    <div class="verified reveal">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.9 1 2.9-2.4 1.8-.9 2.9-3-.2L12 22l-2.4-1.8-3 .2-.9-2.9L3.3 16l1-2.9-1-2.9 2.4-1.8.9-2.9 3 .2z" fill="#4FA9E8"/><path d="M8.5 12l2.3 2.3 4.7-4.7" stroke="#0C2340" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span data-i18n="verified">Academia verificada · #1 del circuito dominicano</span>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat reveal" data-stagger style="--d:0ms"><div class="num" data-count="10">0</div><div class="cap" data-i18n="stat_champ">Campeonatos ganados en el circuito nacional e internacional.</div></div>
+    <div class="stat reveal" data-stagger style="--d:90ms"><div class="num" data-count="55">0</div><div class="cap" data-i18n="stat_qual">Clasificaciones nacionales e internacionales acumuladas.</div></div>
+    <div class="stat reveal" data-stagger style="--d:180ms"><div class="num" data-count="10"><span data-suffix>0</span></div><div class="cap" data-i18n="stat_days">Días para pasar de principiante a semifinalista.</div></div>
+    <div class="stat reveal" data-stagger style="--d:270ms"><div class="num" data-count="1">0</div><div class="cap" data-i18n="stat_harvard">Mejor academia latinoamericana en Harvard '26.</div></div>
+  </div>
+</section>
+
+<!-- PAIN -> PROMISE -->
+<section class="pain" id="pain">
+  <div class="wrap">
+    <div class="pain-copy reveal">
+      <p class="eyebrow" data-i18n="pain_eyebrow">El obstáculo número uno</p>
+      <h2 style="margin-top:22px">El miedo a hablar en público es la <span class="strike" data-i18n="pain_strike">barrera #1</span>.<br/><span data-i18n="pain_h2b">Nosotros lo convertimos en tu mayor ventaja.</span></h2>
+      <p class="lead" data-i18n="pain_p1">El nudo en la garganta, las manos que tiemblan, la mente en blanco. No es falta de talento: es falta de método. Y el método se entrena.</p>
+      <p data-i18n="pain_p2">En OTR no escondemos el miedo — lo usamos como combustible. En semanas, ese mismo estudiante toma el micrófono y la sala se queda en silencio para escucharlo.</p>
+    </div>
+    <div class="beforeafter reveal">
+      <div class="ba-track">
+        <div class="ba-cell before">
+          <span class="ba-tag" data-i18n="ba_before">Antes</span>
+          <div class="voicewave" data-wave="before"></div>
+          <p class="ba-quote muted" style="color:#6c7d92" data-i18n="ba_q1">"No sabía ni cómo empezar."</p>
+        </div>
+        <div class="ba-cell after">
+          <span class="ba-tag" style="color:var(--sky-hi)" data-i18n="ba_after">Después</span>
+          <div class="voicewave" data-wave="after"></div>
+          <p class="ba-quote" data-i18n="ba_q2">"Subí al podio y gané la sala."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- METHOD -->
+<section class="method" id="metodo">
+  <div class="wrap">
+    <div class="method-head reveal">
+      <p class="eyebrow" data-i18n="method_eyebrow">El Método OTR</p>
+      <h2 data-i18n="method_h2">Cuatro pasos para subir del piso al escenario.</h2>
+    </div>
+    <div class="timeline">
+      <div class="step reveal" data-stagger style="--d:0ms">
+        <div class="node"><span class="ix">1</span></div>
+        <h3 data-i18n="m1_t">Diagnóstico</h3>
+        <p class="lede" data-i18n="m1_d">Medimos voz, estructura y presencia. Sabemos exactamente dónde estás y a dónde puedes llegar.</p>
+        <p class="meta" data-i18n="m1_m">Semana 1</p>
+      </div>
+      <div class="step reveal" data-stagger style="--d:110ms">
+        <div class="node"><span class="ix">2</span></div>
+        <h3 data-i18n="m2_t">Entrenamiento élite</h3>
+        <p class="lede" data-i18n="m2_d">Argumentación, retórica y control escénico con entrenadores campeones. Repetición deliberada.</p>
+        <p class="meta" data-i18n="m2_m">Núcleo</p>
+      </div>
+      <div class="step reveal" data-stagger style="--d:220ms">
+        <div class="node"><span class="ix">3</span></div>
+        <h3 data-i18n="m3_t">Simulacros con jueces</h3>
+        <p class="lede" data-i18n="m3_d">Rondas reales bajo presión, con jueces que puntúan como en un torneo. Feedback quirúrgico.</p>
+        <p class="meta" data-i18n="m3_m">Presión real</p>
+      </div>
+      <div class="step reveal" data-stagger style="--d:330ms">
+        <div class="node"><span class="ix">4</span></div>
+        <h3 data-i18n="m4_t">Torneos</h3>
+        <p class="lede" data-i18n="m4_d">Competimos. El estudiante defiende sus ideas en el escenario y vuelve con resultados, no con teoría.</p>
+        <p class="meta" data-i18n="m4_m">El escenario</p>
+      </div>
+    </div>
+    <div class="method-anchor reveal">
+      <p data-i18n="method_anchor">La preparación no es suerte. Es <em>disciplina convertida en resultados.</em></p>
+    </div>
+  </div>
+</section>
+
+<!-- OTR SOUNDWAVE DIVIDER -->
+<section class="wave-divider" id="cta">
+  <div class="wave-wrap">
+    <span class="wave-cap" data-i18n="wave_cap">Tu voz, con forma</span>
+    <canvas id="otrwave" width="1520" height="240" aria-label="OTR soundwave"></canvas>
+    <span class="wave-sub" data-i18n="wave_sub">— Own the Room —</span>
+    <a href="#" class="btn btn-primary" style="margin-top:8px"><span class="lbl"><span data-i18n="hero_cta1">Reserva tu consulta gratis</span><span class="btn-arrow">→</span></span></a>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <span class="brand">OTR · Debate Academy</span>
+  <span>@otrdebateacademy · Santo Domingo, RD · <span data-i18n="foot_results">Resultados no negociables.</span></span>
+</footer>
+</section><!-- /route-home -->
+
+<!-- ============ RESULTADOS ============ -->
+<section class="route" id="route-resultados" data-route="resultados" aria-hidden="true">
+  <div class="subhero">
+    <div class="wrap">
+      <p class="eyebrow reveal" data-i18n="r_eyebrow">Resultados</p>
+      <h1 class="reveal" data-i18n="r_h1">La prueba está en el escenario.</h1>
+      <p class="sub reveal" data-i18n="r_sub">No vendemos promesas. Mostramos podios, finales y trofeos — resultados que se pueden verificar.</p>
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <h2 data-i18n="r_tf_title">Transformaciones reales</h2>
+        <span class="cnt" data-i18n="r_tf_cnt">Antes → Después</span>
+      </div>
+      <div class="cases">
+        <article class="case reveal">
+          <div class="ph portrait"><span class="lab" data-i18n="ph_case1">foto · Analia & María</span></div>
+          <div class="body">
+            <div class="names">Analia &amp; María</div>
+            <div class="arc">
+              <div class="row"><span class="tag" data-i18n="ba_before">Antes</span><span data-i18n="c1_before">Pánico escénico, cero experiencia.</span></div>
+              <div class="row aft"><span class="tag" data-i18n="ba_after">Después</span><span data-i18n="c1_after">Semifinalistas nacionales.</span></div>
+            </div>
+            <div class="meta">
+              <span class="badge navy" data-i18n="c1_result">Semifinal</span>
+              <span class="badge sky" data-i18n="c1_time">10 días</span>
+            </div>
+          </div>
+        </article>
+        <article class="case reveal">
+          <div class="ph portrait"><span class="lab" data-i18n="ph_case2">foto · Saúl & Agustín</span></div>
+          <div class="body">
+            <div class="names">Saúl &amp; Agustín</div>
+            <div class="arc">
+              <div class="row"><span class="tag" data-i18n="ba_before">Antes</span><span data-i18n="c2_before">Nunca habían debatido.</span></div>
+              <div class="row aft"><span class="tag" data-i18n="ba_after">Después</span><span data-i18n="c2_after">Campeones de su categoría.</span></div>
+            </div>
+            <div class="meta">
+              <span class="badge navy" data-i18n="c2_result">1er lugar</span>
+              <span class="badge sky" data-i18n="c2_time">1 temporada</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-section tint">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <h2 data-i18n="r_wall_title">Muro de pruebas</h2>
+        <span class="cnt" data-i18n="r_wall_cnt">10 campeonatos · 55 clasificaciones</span>
+      </div>
+      <div class="wall">
+        <div class="ph reveal"><span class="lab" data-i18n="ph_harvard">foto · Harvard '26</span></div>
+        <div class="ph reveal"><span class="lab" data-i18n="ph_final">foto · Final Nacional</span></div>
+        <div class="ph reveal"><span class="lab" data-i18n="ph_podio">foto · Podio</span></div>
+        <div class="ph reveal"><span class="lab" data-i18n="ph_trophy">foto · Trofeo</span></div>
+        <div class="ph reveal"><span class="lab" data-i18n="ph_stage">foto · En escena</span></div>
+        <div class="ph reveal"><span class="lab" data-i18n="ph_team">foto · Equipo OTR</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <div class="wrap inner">
+      <h2 data-i18n="final_h">Es tu turno de subir al escenario.</h2>
+      <a href="#" class="btn btn-primary"><span class="lbl"><span data-i18n="hero_cta1">Reserva tu consulta gratis</span><span class="btn-arrow">→</span></span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ NOSOTROS ============ -->
+<section class="route" id="route-nosotros" data-route="nosotros" aria-hidden="true">
+  <div class="subhero">
+    <div class="wrap">
+      <p class="eyebrow reveal" data-i18n="n_eyebrow">Nosotros</p>
+      <h1 class="reveal" data-i18n="n_h1">Por estudiantes, para estudiantes.</h1>
+      <p class="sub reveal" data-i18n="n_sub">Los mejores entrenadores de debate son los que acaban de ganar. Esa es la idea que nos hizo #1.</p>
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <div class="wrap">
+      <div class="story">
+        <div class="reveal">
+          <p data-i18n="n_p1">OTR nació de una idea simple: los mejores entrenadores de debate son los que acaban de ganar. Campeones que enseñan lo que funciona hoy, no hace diez años.</p>
+          <p data-i18n="n_p2">En un año nos convertimos en la academia #1 del circuito dominicano. No por suerte — por un sistema obsesionado con resultados, repetición y mentalidad de campeón.</p>
+        </div>
+        <div class="ph visual reveal"><span class="lab" data-i18n="ph_story">foto · Equipo OTR en torneo</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-section tint">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <h2 data-i18n="n_coaches_title">Entrenadores campeones</h2>
+        <span class="cnt" data-i18n="n_coaches_cnt">Campeones que entrenan campeones</span>
+      </div>
+      <div class="coaches">
+        <article class="coach reveal">
+          <div class="ph portrait"><span class="lab" data-i18n="ph_coach1">foto · coach 01</span></div>
+          <div class="body">
+            <div class="role" data-i18n="coach1_r">Dirección técnica</div>
+            <p class="cred" data-i18n="coach1_c">10 campeonatos como entrenador en el circuito nacional e internacional.</p>
+            <span class="pill" data-i18n="coach1_p">Head Coach</span>
+          </div>
+        </article>
+        <article class="coach reveal">
+          <div class="ph portrait"><span class="lab" data-i18n="ph_coach2">foto · coach 02</span></div>
+          <div class="body">
+            <div class="role" data-i18n="coach2_r">Public Forum</div>
+            <p class="cred" data-i18n="coach2_c">Finalista internacional. Especialista en argumentación y casos de impacto.</p>
+            <span class="pill" data-i18n="coach2_p">Estrategia</span>
+          </div>
+        </article>
+        <article class="coach reveal">
+          <div class="ph portrait"><span class="lab" data-i18n="ph_coach3">foto · coach 03</span></div>
+          <div class="body">
+            <div class="role" data-i18n="coach3_r">Oratoria</div>
+            <p class="cred" data-i18n="coach3_c">Coach de oratoria competitiva. Voz, presencia y control escénico.</p>
+            <span class="pill" data-i18n="coach3_p">Presencia</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <div class="wrap">
+      <div class="sec-head reveal"><h2 data-i18n="n_values_title">Lo que no se negocia.</h2></div>
+      <div class="values">
+        <div class="value reveal"><div class="vn">01</div><h3 data-i18n="v1_t">Disciplina</h3><p data-i18n="v1_d">La preparación no es suerte. Es repetición deliberada, semana tras semana.</p></div>
+        <div class="value reveal"><div class="vn">02</div><h3 data-i18n="v2_t">Claridad</h3><p data-i18n="v2_d">Pensar claro para hablar claro. Estructura antes que adorno.</p></div>
+        <div class="value reveal"><div class="vn">03</div><h3 data-i18n="v3_t">Mentalidad de campeón</h3><p data-i18n="v3_d">Competir, perder, ajustar y volver. Hasta ganar la sala.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta-band">
+    <div class="wrap inner">
+      <h2 data-i18n="final_h">Es tu turno de subir al escenario.</h2>
+      <a href="#" class="btn btn-primary"><span class="lbl"><span data-i18n="hero_cta1">Reserva tu consulta gratis</span><span class="btn-arrow">→</span></span></a>
+    </div>
+  </div>
+</section>
+
+</div><!-- /router -->
+
+<script src="orb.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

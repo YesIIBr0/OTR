@@ -1,7 +1,5 @@
 // ============================================================
-//  OTR LMS · Esquema de base de datos
-//  Local: SQLite · Producción (Hostinger): cambiar provider a
-//  "postgresql" y DATABASE_URL — el resto del código es idéntico.
+//  OTR LMS · Esquema — PRODUCCIÓN (PostgreSQL). Generado desde schema.prisma.
 // ============================================================
 
 generator client {
@@ -9,22 +7,51 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" // Hostinger producción: "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
   id            String       @id @default(cuid())
   name          String
   email         String       @unique
-  role          String       @default("STUDENT") // STUDENT | TEACHER | ADMIN
+  role          String       @default("STUDENT") // STUDENT | PARENT | COACH | TEACHER | ADMIN
   initials      String
   level         String       @default("Novato")  // Novato | JV | Varsity | Elite
   xp            Int          @default(0)
   streak        Int          @default(0)
   passwordHash  String?
+  emailVerified Boolean      @default(false)
+  // --- PRD: age-gate + idioma (bilingüe nativo) ---
+  birthYear     Int?         // 12-17 = minor, 18-24 = adult
+  ageBand       String?      // "minor" | "adult" (derivado de birthYear)
+  lang          String       @default("es") // es | en
+  // --- PRD: Debate (rating Glicko-2: display + cómputo) ---
+  debateRating  Float        @default(1500)
+  debateRd      Float        @default(350)
+  debateVol     Float        @default(0.06)
+  debateTier    String       @default("Novato") // Novato→Bronze→Silver→Gold→Platinum→Diamond→Master→Grandmaster
+  coachVerified Boolean      @default(false) // PRD: verificación de coach (marketplace)
+  // --- PRD §13: membresía (suscripción simulada — Stripe se cablea después) ---
+  membership      String    @default("free") // free | pro | elite
+  membershipSince DateTime?
+  // --- PRD §8.4: perfil público compartible (off por defecto; menores requieren consentimiento) ---
+  publicSlug    String?      @unique // /p/[slug]
+  publicProfile Boolean      @default(false)
+  // PRD §2.2 Journey A: placement de 3 min completado (null = nuevo, sin placement).
+  placedAt      DateTime?
+  // --- Perfil (Hub) ---
+  headline      String?      // ej: "Head Coach · Public Forum"
+  bio           String?      // presentación / sobre mí
+  teachingStyle String?      // "cómo trabajo" (cara profesor)
+  formats       String?      // "qué enseño" — formatos separados por coma
+  location      String?      // ciudad / país
+  avatarUrl     String?      // foto (opcional; si no, iniciales)
+  preferences   String?      // JSON: { pace, schedule, goals } — "Mi experiencia"
   coursesTaught Course[]     @relation("CourseTeacher")
   enrollments   Enrollment[]
+  reviewsGiven  Review[]     @relation("ReviewAuthor")
+  reviewsGot    Review[]     @relation("ReviewTeacher")
 }
 
 model Level {
@@ -50,8 +77,81 @@ model Course {
   position     Int          @default(0)
   teacherId    String?
   teacher      User?        @relation("CourseTeacher", fields: [teacherId], references: [id])
+  // --- Programa (Hub) ---
+  summary      String?      // resumen del programa
+  // PRD §17.3: i18n estructural — variante EN del contenido (null = sin traducir,
+  // se cae al ES). La UI ya conmuta ES/EN; queries sirve la variante según lang.
+  nameEn       String?
+  summaryEn    String?
+  format       String?      // PF | LD | Parli | Oratoria | ...
+  modality     String       @default("online") // online | presencial | híbrido
+  capacity     Int?         // cupo
   modules      Module[]
   enrollments  Enrollment[]
+  reviews      Review[]
+
+  @@index([teacherId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   User     @relation("ReviewTeacher", fields: [teacherId], references: [id])
+  studentId String
+  student   User     @relation("ReviewAuthor", fields: [studentId], references: [id])
+  rating    Int      // 1-5
+  body      String?
+  createdAt DateTime @default(now())
+
+  @@unique([courseId, studentId]) // un review por programa por alumno
+  @@index([teacherId])
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  kind        String   @default("brief") // brief | template | drill | recording | link
+  tag         String?
+  format      String?  // PF | LD | Parli | Oratoria | ...
+  url         String?  // enlace externo / video
+  contentHtml String?  // contenido inline (ya sanitizado)
+  gated       Boolean  @default(true)
+  teacherId   String?
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model StudentSkill {
+  id     String @id @default(cuid())
+  userId String
+  skill  String // Confianza | Estructura | Evidencia | Refutación | Cross-ex | Delivery
+  score  Int    @default(0) // 0-100
+
+  @@unique([userId, skill])
+  @@index([userId])
+}
+
+model Certificate {
+  id       String   @id @default(cuid())
+  userId   String
+  courseId String
+  title    String
+  issuedAt DateTime @default(now())
+
+  @@unique([userId, courseId])
+  @@index([userId])
+}
+
+model LessonProgress {
+  id       String  @id @default(cuid())
+  userId   String
+  lessonId String
+  done     Boolean @default(true)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
 }
 
 model Module {
@@ -63,6 +163,8 @@ model Module {
   done     Boolean  @default(false)
   locked   Boolean  @default(false)
   lessons  Lesson[]
+
+  @@index([courseId])
 }
 
 model Lesson {
@@ -77,9 +179,47 @@ model Lesson {
   grade    String?
   dur      String?
   due      String?
-  videoKind   String  @default("none") // none | youtube | cloudflare
-  videoSrc    String?                   // youtube: ID; cloudflare: UID (normalizado en servidor)
+  videoKind   String  @default("none") // none | youtube | cloudflare | upload
+  videoSrc    String?                   // youtube: ID; cloudflare: UID; upload: /uploads/...
   contentHtml String?                   // contenido de la lección (HTML ya sanitizado)
+  titleEn     String?                   // PRD §17.3: i18n estructural — variante EN
+  contentHtmlEn String?                 // (null = sin traducir → cae al ES)
+  quiz        Quiz?                      // si type=quiz, el examen creado por el profesor
+
+  @@index([moduleId])
+}
+
+// --- Examen creado por el profesor (reemplaza el quiz hardcodeado) ---
+model Quiz {
+  id        String         @id @default(cuid())
+  lessonId  String         @unique
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  title     String         @default("Examen de unidad")
+  passScore Int            @default(60) // % mínimo para aprobar
+  questions QuizQuestion[]
+  createdAt DateTime       @default(now())
+}
+
+model QuizQuestion {
+  id       String       @id @default(cuid())
+  quizId   String
+  quiz     Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  prompt   String
+  position Int          @default(0)
+  options  QuizOption[]
+
+  @@index([quizId])
+}
+
+model QuizOption {
+  id         String       @id @default(cuid())
+  questionId String
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  correct    Boolean      @default(false)
+  position   Int          @default(0)
+
+  @@index([questionId])
 }
 
 model Enrollment {
@@ -100,6 +240,7 @@ model Enrollment {
   lastAccess String  @default("")
 
   @@unique([userId, courseId])
+  @@index([courseId])
 }
 
 model GradeCell {
@@ -153,6 +294,7 @@ model QuizAttempt {
   createdAt   DateTime @default(now())
 
   @@index([userId])
+  @@index([userId, lessonTitle]) // mejor intento por lección (anti-farm) en cada envío
 }
 
 model EventItem {
@@ -199,6 +341,8 @@ model ForumPost {
   op        Boolean     @default(false)
   body      String
   position  Int         @default(0)
+
+  @@index([threadId])
 }
 
 model Conversation {
@@ -212,6 +356,33 @@ model Conversation {
   navy      Boolean       @default(false)
   position  Int           @default(0)
   messages  ChatMessage[]
+  // PRD §7.4/§17: scoping real — solo los participantes leen/escriben.
+  participants ConversationParticipant[]
+}
+
+// PRD §7.4: pertenencia a una conversación (enforcement en capa de datos, no UI).
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+// PRD §7.4: reporting + moderación — one-tap report con revisión ADMIN.
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  targetType String   // user | message | conversation | booking | coach
+  targetId   String
+  reason     String
+  status     String   @default("OPEN") // OPEN | REVIEWED | DISMISSED
+  resolution String?  // nota del ADMIN al cerrar
+  createdAt  DateTime @default(now())
+
+  @@index([status, createdAt])
 }
 
 model ChatMessage {
@@ -222,6 +393,8 @@ model ChatMessage {
   body           String
   timeLabel      String
   position       Int          @default(0)
+
+  @@index([conversationId])
 }
 
 model Submission {
@@ -234,9 +407,311 @@ model Submission {
   status       String  @default("SUBMITTED") // SUBMITTED | GRADED
   grade        Int?
   feedback     String?
+  fileUrl      String?  // archivo real subido por el alumno (/uploads/...)
+  fileName     String?  // nombre original del archivo
+  textBody     String?  // entrega de texto (ensayo / caso escrito)
   createdLabel String  @default("ahora")
   createdAt    DateTime @default(now())
 
   @@index([userId])
   @@index([status])
+  @@index([courseCode])
+  @@index([userId, status])       // notas del alumno (GRADED) sin sort en memoria
+  @@index([courseCode, status])   // pendientes/calificadas del profesor por curso
+}
+
+// --- Recuperación de contraseña (token de un solo uso, hasheado) ---
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// --- Registro de archivos subidos (auditoría + galería del usuario) ---
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @default("file") // avatar | submission | resource | video | image | file
+  filename  String   // nombre en disco (cuid + ext)
+  original  String   // nombre original
+  mime      String
+  size      Int
+  url       String   // ruta pública servida (/uploads/...)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// --- Reserva de consulta de estrategia gratuita (flujo propio, reemplaza Calendly) ---
+model ConsultationBooking {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  goal        String?  // qué quiere lograr / mensaje
+  level       String?  // experiencia: ninguna | algo | competidor
+  format      String?  // interés: PF | LD | Parli | Policy | Oratoria
+  slotAt      DateTime // fecha + hora elegida (UTC)
+  durationMin Int      @default(30)
+  status      String   @default("CONFIRMED") // CONFIRMED | CANCELLED | COMPLETED
+  userId      String?  // si reservó con sesión iniciada
+  createdAt   DateTime @default(now())
+
+  @@index([slotAt])
+  @@index([status])
+  @@index([email])
+}
+
+// ============================================================
+//  PRD §17 — Entidades del blueprint (Fase 1 MVP).
+//  ActivityEvent es el "write target" universal: toda acción significativa
+//  escribe aquí, y Dashboard / Lifetime Progress Profile / Parent Report leen.
+// ============================================================
+
+// --- Spine: ledger universal de actividad ---
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // lesson_done | debate_win | debate_loss | session_done | badge_earned | cert_earned | skill_up | tournament_result | booking_made ...
+  source    String   @default("")
+  refId     String?
+  title     String   // texto del timeline ("Ganó ronda vs ...")
+  detail    String?
+  xp        Int      @default(0)
+  meta      String?  // JSON (skill deltas, rating delta...)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type])
+}
+
+// --- Guardianship: vínculo parent ↔ student (consentimiento + visibilidad) ---
+model Guardianship {
+  id           String   @id @default(cuid())
+  parentId     String   // User(PARENT)
+  studentId    String   // User(STUDENT)
+  status       String   @default("ACTIVE") // PENDING | ACTIVE | REVOKED
+  consentLevel String   @default("full")   // full | progress_only
+  // PRD §11.3: umbral de aprobación per-booking configurable. null = aprobar cada
+  // reserva; N = auto-aprueba reservas de hasta N centavos (sobre N requiere OK).
+  approveUnderCents Int?
+  createdAt    DateTime @default(now())
+
+  @@unique([parentId, studentId])
+  @@index([studentId])
+  @@index([parentId])
+}
+
+// --- Debate Hub: registro + ballot por rúbrica + update de rating (Glicko-2) ---
+model DebateRecord {
+  id         String        @id @default(cuid())
+  userId     String
+  format     String        @default("PF") // PF | LD | Policy | Parli | Worlds
+  side       String?       // PRO | CON
+  opponent   String?
+  partner    String?       // PF es 2v2
+  result     String        // WIN | LOSS | DRAW
+  source     String        @default("OTR") // OTR | EXTERNAL (NSDA...)
+  eventName  String?
+  roundLabel String?
+  recordedAt DateTime      @default(now())
+  // PRD §6.2 anti-gaming: el rating SOLO se mueve en rondas adjudicadas
+  // (registradas/validadas por un coach). Auto-reportes quedan en el historial
+  // sin RatingUpdate hasta que un TEACHER/ADMIN las valide.
+  adjudicated   Boolean  @default(false)
+  adjudicatedBy String?  // userId del coach que validó
+  ballots    Ballot[]
+  rating     RatingUpdate?
+
+  @@index([userId, recordedAt])
+}
+
+model Ballot {
+  id           String        @id @default(cuid())
+  debateId     String
+  debate       DebateRecord  @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  judge        String?       // juez / "AI-assisted"
+  comments     String?
+  recordingUrl String?
+  scores       RubricScore[]
+
+  @@index([debateId])
+}
+
+model RubricScore {
+  id        String  @id @default(cuid())
+  ballotId  String
+  ballot    Ballot  @relation(fields: [ballotId], references: [id], onDelete: Cascade)
+  criterion String  // Argumentation | Rebuttal | Delivery | Evidence/Research | Crossfire
+  score     Int     // 0-10
+  flagged   Boolean @default(false)
+
+  @@index([ballotId])
+}
+
+model RatingUpdate {
+  id           String       @id @default(cuid())
+  debateId     String       @unique
+  debate       DebateRecord @relation(fields: [debateId], references: [id], onDelete: Cascade)
+  ratingBefore Float
+  ratingAfter  Float
+  rdAfter      Float
+  volAfter     Float
+  tierAfter    String
+  createdAt    DateTime     @default(now())
+}
+
+// --- Marketplace: perfil de coach, disponibilidad, paquetes ---
+model CoachProfile {
+  id            String              @id @default(cuid())
+  userId        String              @unique // User(COACH)
+  introVideoUrl String?
+  credentials   String?
+  specialties   String?
+  languages     String              @default("es") // es,en
+  hourlyCents   Int                 @default(0)
+  responseTime  String?
+  cancelPolicy  String?
+  ratingAvg     Float               @default(0)
+  reviewCount   Int                 @default(0)
+  bookingCount  Int                 @default(0)
+  active        Boolean             @default(true)
+  availability  CoachAvailability[]
+  packages      CoachPackage[]
+
+  @@index([active])
+}
+
+model CoachAvailability {
+  id       String       @id @default(cuid())
+  coachId  String
+  profile  CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  weekday  Int          // 0=dom..6=sáb
+  startMin Int          // min desde medianoche (hora RD)
+  endMin   Int
+
+  @@index([coachId])
+}
+
+model CoachPackage {
+  id          String       @id @default(cuid())
+  coachId     String
+  profile     CoachProfile @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  name        String       // Single | 5-pack | 10-pack
+  sessions    Int          @default(1)
+  priceCents  Int
+  discountPct Int          @default(0)
+  position    Int          @default(0)
+
+  @@index([coachId])
+}
+
+// --- Booking de coaching (PAGO vía escrow) — distinto de ConsultationBooking (consulta gratis) ---
+model Booking {
+  id          String        @id @default(cuid())
+  studentId   String
+  coachId     String
+  packageId   String?
+  slotAt      DateTime
+  durationMin Int           @default(60)
+  status      String        @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED | DISPUTED
+  consentBy   String?       // parentId si el alumno es menor
+  videoUrl    String?       // sala on-platform
+  createdAt   DateTime      @default(now())
+  escrow      EscrowTxn?
+  session     CoachSession?
+
+  @@index([studentId])
+  @@index([coachId, slotAt])
+}
+
+model EscrowTxn {
+  id          String    @id @default(cuid())
+  bookingId   String    @unique
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amountCents Int
+  takeRatePct Int       @default(18) // comisión 15-20%
+  status      String    @default("HELD") // HELD | RELEASED | REFUNDED
+  stripeRef   String?
+  createdAt   DateTime  @default(now())
+  releasedAt  DateTime?
+}
+
+model CoachSession {
+  id          String    @id @default(cuid())
+  bookingId   String    @unique
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  notes       String?
+  rubric      String?   // JSON: rúbrica que llena el coach (escribe ActivityEvent + SkillScore)
+  completedAt DateTime?
+}
+
+// --- Tournaments (Debate Hub) ---
+model Tournament {
+  id            String                   @id @default(cuid())
+  name          String
+  format        String                   @default("PF")
+  ageDivision   String?                  // Novice | JV | Varsity
+  region        String?
+  modality      String                   @default("online")
+  entryCents    Int                      @default(0)
+  startsAt      DateTime?
+  source        String                   @default("OTR") // OTR | EXTERNAL
+  status        String                   @default("UPCOMING") // UPCOMING | LIVE | DONE
+  registrations TournamentRegistration[]
+  rounds        TournamentRound[]
+
+  @@index([status])
+}
+
+model TournamentRegistration {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId       String
+  partner      String?
+  seed         Int?
+  createdAt    DateTime   @default(now())
+
+  @@unique([tournamentId, userId])
+  @@index([userId])
+}
+
+model TournamentRound {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  label        String
+  position     Int        @default(0)
+
+  @@index([tournamentId])
+}
+
+// --- Community (PRD §10 — Fase 3: modelo listo, apagado en MVP) ---
+model Club {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String           @unique
+  kind        String           @default("interest") // interest | cohort | pod
+  description String?
+  scope       String           @default("scoped") // scoped | open (cerrado por defecto: menores)
+  createdAt   DateTime         @default(now())
+  members     ClubMembership[]
+}
+
+model ClubMembership {
+  id        String   @id @default(cuid())
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  userId    String
+  role      String   @default("member") // member | mentor | admin
+  createdAt DateTime @default(now())
+
+  @@unique([clubId, userId])
+  @@index([userId])
 }

@@ -1,0 +1,33 @@
+{{!
+    This file is part of the OTR theme for Moodle — theme_otr.
+    GPL v3 or later — http://www.gnu.org/copyleft/gpl.html
+}}
+{{!
+    @template theme_otr/level_badge
+
+    OTR competency-level pill (Novato → JV → Varsity → Elite).
+    A reusable brand partial — render it from any renderer/template with
+    {{> theme_otr/level_badge }} and the context below.
+
+    Context variables required for this template (SCHEMA):
+    * levelid   string   one of: novato | jv | varsity | elite
+    * label     string   localised level name (e.g. get_string('level_varsity','theme_otr'))
+    * xp        int      (optional) current XP, shown after the label
+    * compact   bool     (optional) when true, hides XP
+
+    Example context:
+    {
+        "levelid": "varsity",
+        "label": "Varsity",
+        "xp": 3120,
+        "compact": false
+    }
+}}
+<span class="otr-level-badge otr-level-badge--{{levelid}}" {{!
+    }}role="status" aria-label="{{#str}}level_{{levelid}}, theme_otr{{/str}}">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="otr-level-badge__label">{{label}}</span>
+    {{^compact}}
+        {{#xp}}<span class="otr-level-badge__xp">· {{xp}} XP</span>{{/xp}}
+    {{/compact}}
+</span>

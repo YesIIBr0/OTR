@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 
+// APAGADO (PRD-estricto): ver app/api/forum/threads/route.ts.
+const FORUM_ENABLED = false;
+
 export async function POST(req: Request) {
+  if (!FORUM_ENABLED) return NextResponse.json({ error: "El foro está desactivado en esta fase" }, { status: 410 });
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const { threadId, body } = await req.json();

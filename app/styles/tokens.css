@@ -63,7 +63,7 @@
 
   /* ---- Typography ---- */
   --font-ui:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  --font-brand:'Archivo Expanded','Inter',system-ui,sans-serif;
+  --font-brand:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
 
   /* compact scale */

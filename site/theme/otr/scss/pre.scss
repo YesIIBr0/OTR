@@ -1,0 +1,84 @@
+// ============================================================
+// theme_otr · scss/pre.scss
+// Injected BEFORE Bootstrap. Brand tokens become the Bootstrap
+// variables that Boost and core Moodle build everything from.
+// Mirrors lms/tokens.css 1:1 so prototype === production.
+// ============================================================
+
+// ---- Brand palette (ground truth) ----
+$otr-navy:     #0C2340;   // authority / text
+$otr-ink:      #0A1A2F;   // deepest text
+$otr-sky:      #4FA9E8;   // accent / focus / glow
+$otr-sky-hi:   #7FC8F2;   // gradient light
+$otr-sky-lo:   #2E8BD0;   // action / link / hover
+$otr-pale:     #DCEEFB;   // tints / cards / hovers
+$otr-offwhite: #F3F7FC;   // sunken bg
+$otr-white:    #FFFFFF;
+
+// ---- Bootstrap theme colours ----
+$primary:    $otr-sky-lo;   // buttons, links, active states (single CTA colour)
+$secondary:  $otr-navy;     // authority surfaces, dark sections
+$success:    #1F8A5B;
+$info:       $otr-sky-lo;
+$warning:    #B0791F;       // ámbar tenue — NUNCA naranja de marca
+$danger:     #C2453C;
+$light:      $otr-offwhite;
+$dark:       $otr-navy;
+
+// Soft tints used by alerts/badges (Bootstrap 4.6 / Boost).
+$theme-colors: (
+  "primary":   $primary,
+  "secondary": $secondary,
+  "success":   $success,
+  "info":      $info,
+  "warning":   $warning,
+  "danger":    $danger,
+  "light":     $light,
+  "dark":      $dark,
+);
+
+// ---- Body & links ----
+$body-bg:          $otr-white;
+$body-color:       $otr-navy;
+$link-color:       $otr-sky-lo;
+$link-hover-color: darken($otr-sky-lo, 9%);
+$link-decoration:  none;
+
+// ---- Typography (Inter UI · Archivo Expanded for brand moments) ----
+$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+$font-size-base:     0.95rem;   // ~15.2px — compact-but-ordered
+$line-height-base:   1.45;
+$headings-font-weight: 700;
+$headings-letter-spacing: -0.01em;
+$display-font-family: "Archivo Expanded", $font-family-sans-serif;
+
+// ---- Borders / radius / shadow ----
+$border-color:     #DDE7F1;
+$border-radius:    0.5rem;
+$border-radius-lg: 0.875rem;
+$border-radius-sm: 0.375rem;
+
+// ---- Cards ----
+$card-border-color:  #E9F0F7;
+$card-border-radius: $border-radius-lg;
+$card-cap-bg:        $otr-white;
+$card-spacer-y:      1rem;
+$card-spacer-x:      1.125rem;
+
+// ---- Components ----
+$component-active-bg: $primary;
+$input-btn-focus-color: rgba($otr-sky, .35);
+$input-focus-border-color: $otr-sky;
+$input-border-color: #CBD8E6;
+$btn-font-weight: 600;
+$btn-border-radius: $border-radius-sm;
+
+// ---- Boost navbar / drawers ----
+$navbar-height: 56px;
+$body-font-weight: 450;
+
+// ---- OTR level palette (consumed by post.scss + level_badge.mustache) ----
+$otr-level-novato:  #8499B2;
+$otr-level-jv:      #4FA9E8;
+$otr-level-varsity: #2E8BD0;
+$otr-level-elite:   #0C2340;
