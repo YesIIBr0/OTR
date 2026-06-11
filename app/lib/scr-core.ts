@@ -102,16 +102,16 @@ function activeItemsFlat() {
         };
       } else if (!courses.length) {
         // Sin cursos: la acción obvia es explorar el catálogo.
-        na = { eyebrow: 'Empieza aquí', title: 'Únete a tu primer programa',
-          sub: 'Explora el catálogo OTR y reserva tu lugar.', cta: 'Explorar catálogo', ic: IC.book, onclick: `go('catalog')` };
+        na = { eyebrow: 'Empieza aquí', title: 'Tu entrenamiento empieza hoy',
+          sub: 'Elige tu primer programa y reserva tu lugar.', cta: 'Explorar catálogo', ic: IC.book, onclick: `go('catalog')` };
       } else if ((DB.debateRank?.provisional)) {
         // Curso al día y sin rating real: el PRD pide empujar al primer debate de práctica.
-        na = { eyebrow: 'Tu siguiente paso', title: 'Prueba tu primer debate de práctica',
-          sub: 'Sin rondas aún. Mide tus 6 habilidades en un simulacro.', cta: 'Practicar debate', ic: IC.mic, onclick: `go('coach')` };
+        na = { eyebrow: 'Tu siguiente paso', title: 'Juega tu primer debate de práctica',
+          sub: 'Aún sin rondas. Estrena tu rating en un simulacro.', cta: 'Practicar debate', ic: IC.mic, onclick: `go('coach')` };
       } else {
         // Todo al día: reservar sesión con el coach para seguir subiendo.
         na = { eyebrow: 'Tu siguiente paso', title: 'Reserva una sesión con tu coach',
-          sub: 'Vas al día. Una sesión 1:1 acelera tu siguiente nivel.', cta: 'Ver coach', ic: IC.headset, onclick: `go('coach')` };
+          sub: 'Vas al día. Una sesión 1:1 te acerca al siguiente tier.', cta: 'Ver coach', ic: IC.headset, onclick: `go('coach')` };
       }
 
       const heroNext = `
@@ -155,7 +155,7 @@ function activeItemsFlat() {
           ${hasSkills
             ? `<div style="margin-top:12px">${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${c[0]}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
               <button class="btn btn-soft btn-sm" style="margin-top:12px" onclick="go('progress')">Ver progreso ${IC.arrowR}</button></div>`
-            : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.award}</div><h4>Aún sin evaluación</h4><p>Tu coach evaluará tus 6 habilidades. Completa una lección para empezar.</p></div>`}
+            : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.award}</div><h4>Tu radar está por estrenarse</h4><p>Completa una lección y tu coach medirá tus 6 habilidades.</p></div>`}
         </div>`;
 
       /* ---- ③ RECOMMENDED FOR YOU (cursos no inscritos / práctica) ---- */
@@ -180,7 +180,7 @@ function activeItemsFlat() {
           </div>
           ${recos.length
             ? `<div class="grid g-3">${recoCards}</div>`
-            : `<div class="empty" style="padding:24px"><div class="ill">${IC.target}</div><h4>Estás al día</h4><p>Ya estás en los programas disponibles. Reserva una sesión con tu coach para ir más lejos.</p><button class="btn btn-soft btn-sm" onclick="go('coach')">Ver coach ${IC.arrowR}</button></div>`}
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.target}</div><h4>Vas con todo</h4><p>Ya estás en todos los programas disponibles. Una sesión 1:1 con tu coach te lleva más lejos.</p><button class="btn btn-soft btn-sm" onclick="go('coach')">Ver coach ${IC.arrowR}</button></div>`}
         </div>`;
 
       /* ---- ④ UPCOMING SESSIONS (reservas REALES del usuario, PRD §4.2 ④) ----
@@ -209,7 +209,7 @@ function activeItemsFlat() {
       };
 
       // EMPTY STATE: sin reservas próximas → CTA al marketplace (PRD §4.2 ④).
-      const sessionsEmpty = `<div style="padding:10px 0"><p class="faint" style="font-size:13px">Aún no tienes sesiones — reserva tu primer coach.</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-go="explore">Explorar coaches ${IC.arrowR}</button></div>`;
+      const sessionsEmpty = `<div style="padding:10px 0"><p class="faint" style="font-size:13px">Tu agenda está libre — tu primer coach te espera.</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-go="explore">Explorar coaches ${IC.arrowR}</button></div>`;
 
       // Si DB.myBookings no existe (rol no-STUDENT): respaldo a DB.events; si
       // tampoco hay, empty con CTA.
@@ -265,9 +265,9 @@ function activeItemsFlat() {
             <span class="muted" style="font-size:12.5px">rating ${dr.provisional?`(±${dr.rd})`:''}</span>
           </div>
           ${dr.provisional
-            ? `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">Aún sin rondas registradas. Tu rating es provisional.</p>
-               <button class="btn btn-primary btn-sm" style="width:100%" onclick="go('coach')">${IC.mic} Prueba tu primer debate de práctica</button>`
-            : `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">Sigue debatiendo para subir de tier.</p>
+            ? `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">Rating provisional. Tu primera ronda lo pone en juego.</p>
+               <button class="btn btn-primary btn-sm" style="width:100%" onclick="go('coach')">${IC.mic} Juega tu primer debate de práctica</button>`
+            : `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">Cada ronda adjudicada te acerca al siguiente tier.</p>
                <button class="btn btn-soft btn-sm" style="width:100%" onclick="go('coach')">Ver historial ${IC.arrowR}</button>`}
         </div>`;
 
@@ -283,7 +283,7 @@ function activeItemsFlat() {
             ${C.levelBadge(myLevel)}
           </div>
           <div class="row wrap" style="gap:7px">
-            ${earned.slice(0,6).map(b=>`<span class="badge sky" title="${esc(b.d||'')}">${IC.medal} ${esc(b.n)}</span>`).join('') || `<span class="muted" style="font-size:12.5px">Aún sin insignias. ¡Completa una lección!</span>`}
+            ${earned.slice(0,6).map(b=>`<span class="badge gold" title="${esc(b.d||'')}">${IC.medal} ${esc(b.n)}</span>`).join('') || `<span class="muted" style="font-size:12.5px">Sin insignias todavía. La primera cae con tu primera lección.</span>`}
           </div>
           <div class="divider"></div>
           ${C.bar(Math.max(0,Math.min(100,((DB.xp-DB.xpLevelStart)/((DB.xpNext-DB.xpLevelStart)||1))*100)),{cls:'thin navy'})}
@@ -301,7 +301,7 @@ function activeItemsFlat() {
             <div class="card-head"><h3>Leaderboard del cohort</h3><a href="#" onclick="return false" style="font-size:12.5px">Ver todo</a></div>
             <div class="card-body" style="padding:6px 16px 12px">
               ${roster.map((s,i)=>`<div class="agenda-item">
-                <span class="badge ${i===0?'sky':''}" style="min-width:26px;justify-content:center">${i+1}</span>
+                <span class="badge ${i<3?'gold':''}" style="min-width:26px;justify-content:center">${i+1}</span>
                 <div class="row vcenter" style="gap:9px;flex:1">${C.avatar(esc(s.i),{size:'sm'})}<div><div class="ai-t">${esc(s.n)}</div><div class="ai-c">${esc(s.lvl)}</div></div></div>
                 <span class="ai-w tnum">${(s.xp||0).toLocaleString('es')} XP</span></div>`).join('')}
             </div>
@@ -311,7 +311,7 @@ function activeItemsFlat() {
             <div class="card-body" style="padding:6px 16px 12px">
               ${(DB.activity||[]).length ? DB.activity.slice(0,5).map(a=>`<div class="agenda-item"><span class="when-dot" style="background:var(--otr-sky)"></span>
                 <div><div class="ai-t">${esc(a.title)}</div>${a.xp?`<div class="ai-c sky">+${a.xp} XP</div>`:a.detail?`<div class="ai-c">${esc(a.detail)}</div>`:''}</div>
-                <span class="ai-w">${esc(a.when)}</span></div>`).join('') : `<p class="faint" style="font-size:13px;padding:10px 0">Sin actividad reciente. Completa una lección para empezar tu historial.</p>`}
+                <span class="ai-w">${esc(a.when)}</span></div>`).join('') : `<p class="faint" style="font-size:13px;padding:10px 0">Sin actividad aún. Tu historial arranca con la primera lección.</p>`}
             </div>
           </div>`;
 
@@ -339,8 +339,8 @@ function activeItemsFlat() {
       // Curso ACTIVO (multi-curso). El hero, módulos, progreso y % derivan de aquí.
       const c = activeCourse();
       if (!c) {
-        return `<div class="page-head"><div><div class="page-title">Aún no tienes cursos</div><div class="page-sub">Inscríbete en un curso para empezar a entrenar.</div></div></div>
-        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Tu aula está vacía</h4><p>Explora el catálogo y únete a tu primer curso.</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">Explorar catálogo</button></div></div>`;
+        return `<div class="page-head"><div><div class="page-title">Tu entrenamiento empieza aquí</div><div class="page-sub">Elige tu primer programa y entra a entrenar.</div></div></div>
+        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Tu primer programa te espera</h4><p>Entrena con los coaches más dominantes — explora el catálogo.</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">Explorar catálogo</button></div></div>`;
       }
       // Metadatos extra (estudiantes/lecciones) solo viven en DB.courses; los unimos por code.
       const meta = (DB.courses || []).find((x: any) => x.code === c.code) || {};
@@ -381,7 +381,7 @@ function activeItemsFlat() {
               </div>`).join('')}
           </div>
         </div>`).join('')
-        : `<div class="card"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Este curso aún no tiene contenido</h4><p>Cuando tu coach publique módulos y lecciones aparecerán aquí.</p></div></div>`;
+        : `<div class="card"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Contenido en camino</h4><p>Tu coach está montando los módulos. En cuanto publique, entrenas.</p></div></div>`;
 
       // "Continuar": próxima actividad NO completada del curso ACTIVO. Fija
       // window.__lesson (y __quizLesson si aplica) y enruta por tipo antes de navegar.
@@ -404,7 +404,7 @@ function activeItemsFlat() {
         </div>
         <div class="ch-body">
           <div style="flex:1;min-width:220px">
-            <h2 style="font-size:20px;font-weight:750;letter-spacing:-.01em">${esc(c.name)}</h2>
+            <h2 style="font-size:20px;font-weight:800;letter-spacing:var(--track-tight)">${esc(c.name)}</h2>
             <div class="row vcenter wrap" style="gap:10px 12px;margin-top:8px;font-size:13px;color:var(--text-2)">
               <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${esc(c.coach)}</span>
               ${meta.students!=null?`<span class="dot-sep"></span><span>${meta.students} estudiantes</span>`:''}
@@ -461,7 +461,7 @@ function activeItemsFlat() {
       return `
       <div class="page-head fade-up" style="--d:0"><div>
         <div class="page-title">Índice del curso</div>
-        <div class="page-sub">${esc(c?.name || 'Curso')} · navega cualquier actividad del curso</div>
+        <div class="page-sub">${esc(c?.name || 'Curso')} · todo tu plan, actividad por actividad</div>
       </div><button class="btn btn-ghost" onclick="go('course')">${IC.chevL} Volver al curso</button></div>
 
       <div class="grid g-3 fade-up" style="--d:1;margin-bottom:20px">
@@ -480,7 +480,7 @@ function activeItemsFlat() {
               <td class="muted" style="text-transform:capitalize">${({video:'Video',lesson:'Lección',quiz:'Quiz',assign:'Tarea',mic:'Grabación'})[it.type]||esc(it.type)}</td>
               <td class="center">${it.done?C.badge('Hecho','ok',{dot:1}):it.locked?C.badge('Bloqueado','',{dot:1}):C.badge('Pendiente','warn',{dot:1})}</td>
               <td class="num">${it.grade?esc(it.grade):'—'}</td>
-            </tr>`).join('') : `<tr><td colspan="5"><div class="empty" style="padding:32px"><div class="ill">${IC.grid}</div><h4>Sin actividades todavía</h4><p>Cuando el coach añada contenido aparecerá aquí.</p></div></td></tr>`}
+            </tr>`).join('') : `<tr><td colspan="5"><div class="empty" style="padding:32px"><div class="ill">${IC.grid}</div><h4>El plan se está armando</h4><p>Tu coach está cargando actividades. Pronto tendrás ruta.</p></div></td></tr>`}
           </tbody>
         </table>
       </div>`;
@@ -516,7 +516,7 @@ function activeItemsFlat() {
       if (hasL) {
         if (L.contentHtml) body = `<div class="prose">${L.contentHtml}</div>`;
         else if (embed) body = `<p class="faint" style="font-size:13px;margin-top:4px">Sin notas de texto para esta lección.</p>`;
-        else body = `<div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Lección sin contenido todavía</h4><p>El coach aún no añadió video ni contenido a esta lección.</p></div>`;
+        else body = `<div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Lección en preparación</h4><p>Tu coach todavía no publicó el contenido. Vuelve pronto.</p></div>`;
       } else {
         body = `<div class="prose">${defaultProse}</div>`;
       }

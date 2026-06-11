@@ -109,10 +109,10 @@ function heroPanel(d) {
           </div>
         </div>
         ${d.provisional
-          ? `<div class="alert" style="margin-top:14px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">Tu rating es provisional</div><span style="color:rgba(234,242,251,.78)">Aún hay pocas rondas adjudicadas. Tu rating se afinará con cada ballot oficial.</span></div></div>`
+          ? `<div class="alert" style="margin-top:14px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">Tu rating es provisional</div><span style="color:rgba(234,242,251,.78)">Pocas rondas adjudicadas aún. Cada ballot oficial lo acerca a tu nivel real.</span></div></div>`
           : nt
-            ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:12px">Próximo tier: <b style="color:var(--otr-sky-hi)">${esc(nt)}</b> — sigue ganando rondas adjudicadas para ascender.</p>`
-            : `<p style="color:var(--otr-sky-hi);font-size:13px;margin-top:12px;font-weight:650">Estás en la cima de la escalera: ${esc(d.tier)}.</p>`}
+            ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:12px">Próximo tier: <b style="color:var(--otr-sky-hi)">${esc(nt)}</b> — gana rondas adjudicadas y asciende.</p>`
+            : `<p style="color:var(--otr-sky-hi);font-size:13px;margin-top:12px;font-weight:650">La cima es tuya: ${esc(d.tier)}. Defiéndela.</p>`}
       </div>
       <div class="stack" style="gap:12px;align-self:stretch;justify-content:center;min-width:220px">
         <div>
@@ -123,7 +123,7 @@ function heroPanel(d) {
                 return `<span title="${esc(f.opponent || "")} · ${deltaLabel(f.delta)}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;font-size:12px;font-weight:800;color:#fff;background:${rs.cssVar}">${rs.label[0]}</span>`;
               }).join("")}</div>
                <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${forms.map((f) => `<span class="tnum" style="width:30px;text-align:center;font-size:11px;color:${deltaColor(f.delta)};font-weight:700">${deltaLabel(f.delta)}</span>`).join("")}</div>`
-            : `<span style="font-size:12.5px;color:rgba(234,242,251,.6)">Sin rondas registradas todavía.</span>`}
+            : `<span style="font-size:12.5px;color:rgba(234,242,251,.6)">Aún sin rondas. Tu forma empieza con la primera.</span>`}
         </div>
         <button class="btn btn-sm" style="background:#fff;color:var(--otr-navy);font-weight:700" data-action="debate-record">${IC.plus} Registrar un debate</button>
       </div>
@@ -168,7 +168,7 @@ function viewOverview(d) {
             <div style="flex:1;min-width:0"><div class="ai-t">${esc(h.opponent || "Rival")} · ${esc(h.format || "")}</div><div class="ai-c">${esc(h.eventName || "Práctica")}${h.roundLabel ? " · " + esc(h.roundLabel) : ""}</div></div>
             <span class="ai-w tnum" style="color:${deltaColor(h.delta != null ? h.delta : 0)}">${h.ratingAfter != null ? h.ratingAfter : ""}</span>
           </div>`;
-        }).join("") : `<div style="padding:14px 0"><p class="faint" style="font-size:13px">Aún no hay debates en tu historial. Registra tu primera ronda o juega una práctica.</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-dtab="practice">${IC.mic} Ir a práctica</button></div>`}
+        }).join("") : `<div style="padding:14px 0"><p class="faint" style="font-size:13px">Historial en cero. Juega una práctica o registra tu primera ronda.</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-dtab="practice">${IC.mic} Ir a práctica</button></div>`}
       </div>
     </div>`;
 
@@ -184,7 +184,7 @@ function viewOverview(d) {
            </div>
            ${nextEvent.startsLabel ? `<div class="row vcenter" style="gap:6px;margin-top:10px;font-size:13px;color:var(--text)">${IC.calendar} ${esc(nextEvent.startsLabel)}</div>` : ""}
            <button class="btn btn-soft btn-sm btn-block" style="margin-top:14px" data-dtab="tournaments">Ver torneos ${IC.arrowR}</button>`
-        : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>Sin eventos próximos</h4><p>Cuando se abran torneos los verás aquí.</p></div>`}
+        : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>Sin eventos en el radar</h4><p>Cuando se abran torneos los verás aquí. Llega entrenado.</p></div>`}
     </div>`;
 
   const formCard = `
@@ -212,7 +212,7 @@ function viewOverview(d) {
 /* ================= SECCIÓN · MIS DEBATES ================= */
 function viewHistory(d) {
   if (!d.history.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>Tu historial está vacío</h4><p>Registra un debate (OTR o externo) o juega una práctica para empezar tu hoja de ruta.</p><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} Registrar un debate</button></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>Tu historial empieza hoy</h4><p>Registra un debate (OTR o externo) o juega una práctica. Cada ronda cuenta.</p><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} Registrar un debate</button></div></div>`;
   }
   const cards = d.history.map((h, i) => {
     const rs = resultStyle(h.result);
@@ -240,7 +240,7 @@ function viewHistory(d) {
     </div>`;
   }).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Tu hoja de ruta</p><div class="page-title" style="font-size:20px">Mis debates</div><div class="page-sub">${d.history.length} ronda${d.history.length === 1 ? "" : "s"} · toca una tarjeta para ver el ballot</div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Tu palmarés</p><div class="page-title" style="font-size:20px">Mis debates</div><div class="page-sub">${d.history.length} ronda${d.history.length === 1 ? "" : "s"} · toca una tarjeta para ver el ballot</div></div>
     <button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} Registrar un debate</button></div>
     <div class="grid g-3">${cards}</div>`;
 }
@@ -302,13 +302,13 @@ function viewPractice() {
           <div class="row between vcenter" style="padding:9px 0;border-bottom:1px solid var(--border)">
             <span class="row vcenter" style="gap:10px">${C.avatar(esc(r.initials || "?"), { size: "sm", bg: "var(--otr-navy)" })}<span><span style="display:block;font-weight:600;font-size:13px">${esc(r.name || "Debatiente")}</span><span class="faint" style="font-size:11.5px">${esc(r.tier || "")}</span></span></span>
             <span class="row vcenter" style="gap:8px"><span class="tnum" style="font-weight:700;font-size:13px">${r.rating}</span><span class="badge ${r.diff <= 50 ? "ok" : "sky"}" style="font-size:10.5px">±${r.diff}</span></span>
-          </div>`).join("") : `<p class="faint" style="font-size:13px">Aún no hay otros debatientes en tu cohort. El leaderboard se llenará a medida que más alumnos jueguen rondas.</p>`}
+          </div>`).join("") : `<p class="faint" style="font-size:13px">Tu cohort aún no entra a la arena. En cuanto jueguen rondas, tendrás rivales a tu altura.</p>`}
       </div>
       <button class="btn btn-ghost btn-sm btn-block" style="margin-top:12px" data-dtab="leaderboard">Ver leaderboard completo ${IC.arrowR}</button>
     </div>`;
 
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Entrena bajo presión</p><div class="page-title" style="font-size:20px">Práctica</div><div class="page-sub">Cronometra un flujo PF completo y registra el resultado para alimentar tu rating</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Entrena bajo presión</p><div class="page-title" style="font-size:20px">Práctica</div><div class="page-sub">Cronometra un flujo PF completo y registra el resultado — cada ronda mueve tu rating</div></div></div>
     <div class="split">${timer}<div class="stack" style="gap:16px">${finder}</div></div>`;
 }
 
@@ -316,14 +316,14 @@ function viewPractice() {
 function viewLeaderboard() {
   const lb = getLeaderboard();
   if (!lb.rows.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>El leaderboard se está formando</h4><p>A medida que tú y tu cohort jueguen rondas adjudicadas, las posiciones aparecerán aquí.</p></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>El leaderboard se está formando</h4><p>Juega rondas adjudicadas y reclama tu posición antes que el resto del cohort.</p></div></div>`;
   }
   const meRow = lb.me
     ? `<div class="alert info fade-up" style="margin-bottom:16px"><span class="ai">${IC.target}</span><div><div class="at">Tu posición</div>#${lb.me.rank} · ${lb.me.rating} de rating · ${esc(lb.me.tier || "")}</div></div>`
     : "";
   const rows = lb.rows.map((r) => `
     <tr ${r.you ? 'style="background:var(--action-soft)"' : ""}>
-      <td><span class="badge ${r.rank === 1 ? "sky" : ""}" style="min-width:30px;justify-content:center">${r.rank}</span></td>
+      <td><span class="badge ${r.rank <= 3 ? "gold" : ""}" style="min-width:30px;justify-content:center">${r.rank}</span></td>
       <td><div class="row vcenter" style="gap:10px">${C.avatar(esc(r.initials || "?"), { size: "sm", bg: r.you ? "var(--otr-sky-lo)" : "var(--otr-navy)" })}<b style="font-weight:600">${esc(r.name || "")}${r.you ? ' <span class="badge sky" style="font-size:10px;margin-left:4px">Tú</span>' : ""}</b></div></td>
       <td>${esc(r.tier || "")}</td>
       <td class="num tnum"><b>${r.rating}</b></td>
@@ -343,7 +343,7 @@ function viewLeaderboard() {
 function viewTournaments() {
   const ts = getTournaments();
   if (!ts.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.calendar}</div><h4>Sin torneos por ahora</h4><p>Cuando OTR abra inscripciones para un torneo lo verás aquí, con un botón para registrarte.</p></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.calendar}</div><h4>Sin torneos por ahora</h4><p>Cuando OTR abra inscripciones lo verás aquí. Mientras tanto, suma rondas de práctica.</p></div></div>`;
   }
   const cards = ts.map((t, i) => `
     <div class="tile fade-up" data-tournament-card="${esc(t.id || "")}" style="display:flex;flex-direction:column;--d:${i}">
@@ -387,11 +387,11 @@ function viewAnalytics(d) {
   // de los gráficos — el botón lleva a la pantalla de membresía.
   if (a.locked) {
     return `
-      <div class="page-head fade-up"><div><p class="eyebrow">Conócete</p><div class="page-title" style="font-size:20px">Analytics</div><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
+      <div class="page-head fade-up"><div><p class="eyebrow">Conoce tu juego</p><div class="page-title" style="font-size:20px">Analytics</div><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
       <div class="card fade-up"><div class="empty" style="padding:34px 24px">
         <div class="ill">${IC.chart}</div>
         <h4>Analytics completo es parte de OTR Pro</h4>
-        <p>Desbloquea tu desglose por formato, por lado (Pro / Con) y el promedio por criterio de la rúbrica del juez. Tus datos ya se están registrando — solo falta activar Pro para verlos.</p>
+        <p>Desbloquea tu desglose por formato, por lado (Pro / Con) y el promedio por criterio de la rúbrica del juez. Tus datos ya se están registrando — activa Pro y úsalos a tu favor.</p>
         <button class="btn btn-primary btn-sm" style="margin-top:14px" data-go="membership">${IC.star} Ver OTR Pro</button>
       </div></div>`;
   }
@@ -400,7 +400,7 @@ function viewAnalytics(d) {
   const criteria = Array.isArray(a.criteria) ? a.criteria : [];
   const hasAny = byFormat.length || bySide.length || criteria.length;
   if (!hasAny) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.chart}</div><h4>Aún sin datos de analytics</h4><p>Cuando acumules rondas adjudicadas con ballots, verás tu desglose por formato, lado y criterio de rúbrica.</p></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.chart}</div><h4>Tus números están por escribirse</h4><p>Acumula rondas adjudicadas con ballots y verás tu desglose por formato, lado y criterio.</p></div></div>`;
   }
   const formatCard = `
     <div class="card card-pad fade-up">
@@ -429,7 +429,7 @@ function viewAnalytics(d) {
       </div>
     </div>`;
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Conócete</p><div class="page-title" style="font-size:20px">Analytics</div><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Conoce tu juego</p><div class="page-title" style="font-size:20px">Analytics</div><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
     <div class="split">${critCard}<div class="stack" style="gap:16px">${formatCard}${sideCard}</div></div>`;
 }
 

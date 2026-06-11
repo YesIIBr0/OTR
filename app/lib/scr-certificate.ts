@@ -1,23 +1,22 @@
 // @ts-nocheck
 import { DB } from "./data";
 import { C } from "./components";
-import { IC } from "./icons";
+import { IC, otrCrest } from "./icons";
 import { esc } from "./esc";
 export const S = {};
 
 /* ---------------- CERTIFICADO / DIPLOMA OFICIAL OTR ---------------- */
 
-// Escudo / sello OTR — SVG simple con marco circular, estrella y monograma.
+// Sello del certificado — marco circular ceremonial (anillos dorados = LOGRO)
+// con el ESCUDO OTR del brand book centrado como svg anidado; el markup
+// canónico del escudo vive en ./icons (otrCrest).
 const otrSeal = () => `
   <span class="cert-seal" aria-hidden="true">
     <svg viewBox="0 0 120 120" width="92" height="92" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="60" cy="60" r="56" fill="var(--otr-navy)"/>
-      <circle cx="60" cy="60" r="50" fill="none" stroke="var(--otr-sky)" stroke-width="1.6" stroke-dasharray="2 4"/>
-      <circle cx="60" cy="60" r="42" fill="none" stroke="var(--otr-sky-hi)" stroke-width="1.2"/>
-      <path d="M60 27l4.6 9.3 10.3 1.5-7.5 7.3 1.8 10.2L60 60.6 50.8 65.6l1.8-10.2-7.5-7.3 10.3-1.5z"
-            fill="var(--otr-sky)"/>
-      <text x="60" y="84" text-anchor="middle" font-family="var(--font-brand)" font-size="20"
-            font-weight="800" fill="#fff" letter-spacing="2">OTR</text>
+      <circle cx="60" cy="60" r="50" fill="none" stroke="var(--otr-gold)" stroke-width="1.6" stroke-dasharray="2 4"/>
+      <circle cx="60" cy="60" r="42" fill="none" stroke="var(--otr-gold)" stroke-width="1.2"/>
+      ${otrCrest({ id: "seal", attrs: 'x="43" y="40.5" width="34" height="39"' })}
     </svg>
   </span>`;
 

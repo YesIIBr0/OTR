@@ -8,7 +8,7 @@
    ('forum') y Certificaciones como producto ('certificate' bajo Learn).
    Las etiquetas (grupos + items + topbar) son bilingües vía i18n.t().
    Las llaves 'k' apuntan al diccionario i18n; 'l' es el fallback en español. */
-import { IC } from "./icons";
+import { IC, otrCrest } from "./icons";
 import { DB } from "./data";
 import { t, getLang } from "./i18n";
 
@@ -122,10 +122,8 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
     <aside class="sidebar">
       <div class="sb-head">
         <a class="sb-logo" href="#dashboard" data-go="dashboard">
-          <svg class="crest" viewBox="0 0 26 30" fill="none" aria-hidden="true">
-            <path d="M13 1 L24 5.5 V16 C24 23 19 27.5 13 29.5 C7 27.5 2 23 2 16 V5.5 Z" fill="#fff"/>
-            <text x="13" y="18.5" font-family="Inter" font-weight="900" font-size="8" fill="#0C0C0C" text-anchor="middle">OTR</text>
-          </svg>
+          ${/* Escudo OTR del brand book (sidebar, fondo negro) — markup canónico en ./icons (otrCrest) */""}
+          ${otrCrest({ id: "sb", attrs: 'class="crest"' })}
           <span class="txt">OTR <span class="sub">Aula</span></span>
         </a>
       </div>

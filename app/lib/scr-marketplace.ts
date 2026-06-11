@@ -241,7 +241,7 @@ function renderGrid() {
   <div class="page-head"><div>
     <p class="eyebrow">Marketplace</p>
     <div class="page-title">Coaches</div>
-    <div class="page-sub">Encuentra a tu coach de debate — reservas seguras, pagos en custodia y sesiones dentro de OTR</div>
+    <div class="page-sub">Entrena con los coaches más dominantes del país — reservas seguras y pagos protegidos, todo dentro de OTR</div>
   </div>
   <span class="badge sky">${list.length} coach${list.length === 1 ? "" : "es"}</span></div>
 
@@ -290,9 +290,9 @@ function heroBlock(c) {
   <div style="background:linear-gradient(140deg,var(--otr-navy),var(--otr-ink));padding:34px 26px;display:flex;align-items:center;gap:16px">
     ${C.avatar(esc(c.initials), { size: "lg", bg: "rgba(255,255,255,.14)" })}
     <div>
-      <p class="eyebrow" style="color:var(--otr-sky-hi)">Coach de OTR Academy</p>
+      <p class="eyebrow" style="color:var(--otr-sky-hi)">Coach verificado de OTR</p>
       <div class="brand-font" style="font-size:24px;font-weight:800;color:#fff;margin-top:2px">${esc(c.name)}</div>
-      <p style="color:rgba(234,242,251,.72);font-size:12.5px;margin-top:4px">Este coach aún no subió su video de presentación.</p>
+      <p style="color:rgba(234,242,251,.72);font-size:12.5px;margin-top:4px">Su video de presentación llega pronto — su historial habla por él.</p>
     </div>
   </div>`;
 }

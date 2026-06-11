@@ -103,7 +103,7 @@ function identityHero(lt) {
       <div style="flex:1;min-width:220px">
         <p class="eyebrow">Tu historia en OTR</p>
         <div class="row vcenter wrap" style="gap:10px;margin-top:3px">
-          <h2 class="brand-font" style="font-size:24px;font-weight:800;letter-spacing:-.01em">${esc(id.name || "Estudiante OTR")}</h2>
+          <h2 class="brand-font" style="font-size:24px;font-weight:800">${esc(id.name || "Estudiante OTR")}</h2>
           ${C.levelBadge(esc(id.level))}
         </div>
         ${meta.length ? `<p class="muted" style="font-size:13px;margin-top:6px">${meta.join(' <span class="dot-sep"></span> ')}</p>` : ""}
@@ -382,7 +382,7 @@ function publicProfileCard(lt) {
   <div class="card card-pad">
     <div class="eyebrow" style="margin-bottom:2px">Comparte tu historia</div>
     <b style="font-size:15px">Perfil público</b>
-    <p class="muted" style="font-size:12.5px;margin-top:6px">Una página compartible con tu Skill Graph, credenciales y journey — para que cualquiera vea lo que has construido.</p>
+    <p class="muted" style="font-size:12.5px;margin-top:6px">Tu Skill Graph, credenciales y journey en una sola página — la prueba pública de tu nivel.</p>
     ${!pp.canToggle
       ? `<div class="alert info" style="margin-top:12px"><span class="ai">${IC.lock}</span><div><div class="at">Requiere consentimiento</div>${esc(pp.minorNote || "Por tu seguridad, tu familia debe habilitar el perfil público desde su portal.")}</div></div>`
       : `
@@ -516,7 +516,7 @@ function tierCards(m) {
   const freeCard = `
   <div class="tile fade-up" style="--d:1;display:flex;flex-direction:column">
     <div class="eyebrow" style="margin-bottom:2px">Free</div>
-    <b style="font-size:15px">Empieza a construir tu historia</b>
+    <b style="font-size:15px">Tu historia empieza aquí</b>
     <div class="row vcenter" style="gap:6px;margin-top:10px"><span class="brand-font tnum" style="font-size:30px;font-weight:800;color:var(--otr-navy)">US$0</span><span class="faint" style="font-size:12px">para siempre</span></div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
       ${featureLi("Perfil + Skill Graph básico")}
@@ -537,7 +537,7 @@ function tierCards(m) {
     </div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
       ${featureLi("Analytics completo: ve exactamente dónde ganar puntos")}
-      ${featureLi("Práctica y drills ilimitados — mejora a tu ritmo")}
+      ${featureLi("Práctica y drills ilimitados — entrena sin techo")}
       ${featureLi("Protección de racha: un mal día no borra tu constancia")}
       ${featureLi("Recomendaciones prioritarias de tu siguiente paso")}
       ${featureLi("Descuentos en certificaciones y coaching")}

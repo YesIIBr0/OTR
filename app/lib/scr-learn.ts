@@ -138,7 +138,7 @@ function priorQuizAttempt() {
 
       ${prevCard}
 
-      ${prev ? `<div class="page-sub fade-up" style="--d:1;margin-bottom:12px">${prev.status === "GRADED" ? "Puedes re-entregar para mejorar tu nota." : "Puedes re-entregar mientras esté en revisión."}</div>` : ""}
+      ${prev ? `<div class="page-sub fade-up" style="--d:1;margin-bottom:12px">${prev.status === "GRADED" ? "Puedes re-entregar y subir tu nota." : "Puedes re-entregar mientras esté en revisión."}</div>` : ""}
 
       <div class="split fade-up" style="--d:1">
         <div class="stack" style="gap:16px">
@@ -340,7 +340,7 @@ function priorQuizAttempt() {
             courseCode: courseCode || undefined,
           });
           (window as any).toast && window.toast('Entregado', 'ok');
-          submitBtn.outerHTML = `<div class="alert ok"><span class="ai">${IC.checkCircle}</span><div><div class="at">¡Entregado y guardado!</div>Tu coach revisará tu entrega. Recibirás feedback pronto.</div></div>`;
+          submitBtn.outerHTML = `<div class="alert ok"><span class="ai">${IC.checkCircle}</span><div><div class="at">Entregado y en manos de tu coach</div>Recibirás feedback para afinar tu próxima entrega.</div></div>`;
           (window as any).refresh && window.refresh();
         } catch (err: any) {
           submitBtn.textContent = orig; submitBtn.classList.remove('disabled');
@@ -363,7 +363,7 @@ function priorQuizAttempt() {
         <div class="card"><div class="empty">
           <div class="ill">${IC.doc}</div>
           <h4>No hay examen disponible</h4>
-          <p>El coach aún no ha publicado un examen para esta lección. Vuelve más tarde.</p>
+          <p>Tu coach aún no publicó el examen de esta lección. Vuelve pronto — y llega preparado.</p>
           <button class="btn btn-primary btn-sm" onclick="go('course')">Volver al curso ${IC.arrowR}</button>
         </div></div>`;
       }
@@ -377,7 +377,7 @@ function priorQuizAttempt() {
         <div class="card-body" style="padding:18px 16px;text-align:center">
           <div class="ill" style="color:var(--ok)">${IC.checkCircle}</div>
           <h4 style="margin:6px 0 2px">Ya completaste este examen</h4>
-          <p class="muted" style="font-size:13.5px">${attempt.best >= passScore ? "Aprobado" : "A reforzar"} · puedes reintentarlo para mejorar tu nota.</p>
+          <p class="muted" style="font-size:13.5px">${attempt.best >= passScore ? "Aprobado" : "A reforzar"} · puedes reintentarlo y subir tu marca.</p>
           <div class="row vcenter" style="gap:8px;justify-content:center;margin-top:12px">
             <span class="badge ${attempt.best >= passScore ? "ok" : "warn"}" style="height:26px">${IC.star} Mejor: ${esc(String(attempt.best))}%</span>
             <button class="btn btn-primary btn-sm" id="qz-retry">${IC.refresh} Reintentar examen</button>
@@ -487,7 +487,7 @@ function priorQuizAttempt() {
         <div class="card"><div class="empty">
           <div class="ill">${IC.chart}</div>
           <h4>No hay un examen reciente</h4>
-          <p>Completa un examen para ver aquí tu puntuación y la revisión de respuestas.</p>
+          <p>Completa un examen y aquí verás tu puntuación, pregunta por pregunta.</p>
           <button class="btn btn-primary btn-sm" onclick="go('course')">Volver al curso ${IC.arrowR}</button>
         </div></div>`;
       }
@@ -591,7 +591,7 @@ function priorQuizAttempt() {
             ${markBtn}
           </div>
         </div>
-        ${!hasVideo ? `<div class="alert info" style="margin:10px 0"><span class="ai">${IC.flag}</span><div><div class="at">Video en preparación</div>El coach aún no ha subido el video de esta lección.</div></div>` : ""}
+        ${!hasVideo ? `<div class="alert info" style="margin:10px 0"><span class="ai">${IC.flag}</span><div><div class="at">Video en preparación</div>Tu coach está preparando el video de esta lección.</div></div>` : ""}
         ${transcript}
         <div class="row" style="justify-content:flex-end;margin-top:18px">
           <button class="btn btn-primary" onclick="${nextOnclick}">${nextLabel}</button>
@@ -614,8 +614,8 @@ function priorQuizAttempt() {
         return `${head}
         <div class="card"><div class="empty">
           <div class="ill">${IC.chart}</div>
-          <h4>Aún no tienes calificaciones</h4>
-          <p>Cuando entregues tareas o completes exámenes, tus notas aparecerán aquí con su promedio.</p>
+          <h4>Tu marcador está en blanco</h4>
+          <p>Entrega una tarea o completa un examen — tus notas y tu promedio se construyen aquí.</p>
         </div></div>`;
       }
 

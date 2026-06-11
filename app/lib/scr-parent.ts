@@ -133,7 +133,7 @@ function childCard(k, i) {
           ${k.ageBand === "minor" ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.lock}</span>Menor — protegido</span>` : ""}
           ${pendingLink ? `<span class="badge warn"><span class="dot"></span>Esperando su consentimiento</span>` : ""}
         </div>
-        <div class="faint" style="font-size:12px;margin-top:3px">Snapshot de este mes — progreso, asistencia y gasto</div>
+        <div class="faint" style="font-size:12px;margin-top:3px">Su mes en claro — progreso, asistencia y gasto</div>
       </div>
       <div style="text-align:right;flex:none">
         <span class="faint" style="font-size:11px;display:block">Gasto del mes</span>
@@ -444,7 +444,7 @@ S.parentPortal = {
         </div>
         <div class="card card-pad fade-up" style="--d:2">
           <b style="font-size:13.5px">Mensajes de coaches</b>
-          <p class="muted" style="font-size:12.5px;margin-top:6px">Lee lo que los coaches reportan sobre tu hijo/a, siempre dentro de la plataforma.</p>
+          <p class="muted" style="font-size:12.5px;margin-top:6px">Lo que los coaches ven en tu hijo/a, contado de primera mano — siempre dentro de OTR.</p>
           <button class="btn btn-soft btn-sm btn-block" style="margin-top:10px" data-go="messages">${IC.msg} Abrir mensajes</button>
         </div>
         ${membershipCard(kids)}

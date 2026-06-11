@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { otrCrest } from "../lib/icons";
 
 const WAVE = Array.from({ length: 60 }, (_, i) => {
   const env = Math.sin((i / 59) * Math.PI);
@@ -184,9 +185,9 @@ export default function Auth() {
     "Nueva contraseña";
 
   const subheading =
-    mode === "login" ? "Bienvenido de vuelta a OTR." :
-    mode === "register" ? "Únete a OTR — By Students, For Students." :
-    mode === "forgot" ? "Te enviaremos un enlace para volver a entrar." :
+    mode === "login" ? "De vuelta al entrenamiento — la sala te espera." :
+    mode === "register" ? "Bienvenido al cuartel general de tu formación. By Students, For Students." :
+    mode === "forgot" ? "Te enviaremos un enlace para volver al entrenamiento." :
     "Elige una contraseña nueva para tu cuenta.";
 
   const submitLabel =
@@ -199,10 +200,12 @@ export default function Auth() {
     <div className="login">
       <div className="login-brand">
         <div className="lb-top">
-          <svg className="crest" style={{ width: 34, height: 39 }} viewBox="0 0 26 30" fill="none">
-            <path d="M13 1 L24 5.5 V16 C24 23 19 27.5 13 29.5 C7 27.5 2 23 2 16 V5.5 Z" fill="#fff" />
-            <text x="13" y="18.5" fontFamily="Inter" fontWeight={900} fontSize={8} fill="#0C0C0C" textAnchor="middle">OTR</text>
-          </svg>
+          {/* Escudo OTR del brand book (login, panel oscuro) — markup canónico en lib/icons (otrCrest) */}
+          <span
+            aria-hidden="true"
+            style={{ display: "flex", flex: "none" }}
+            dangerouslySetInnerHTML={{ __html: otrCrest({ id: "auth", attrs: 'class="crest" style="width:34px;height:39px"' }) }}
+          />
           <span className="brand-font" style={{ color: "#fff", fontSize: 16 }}>OTR <span style={{ opacity: 0.5, fontWeight: 600 }}>Aula</span></span>
         </div>
         <div className="lb-mid">
@@ -247,7 +250,7 @@ export default function Auth() {
                       active={role === "parent"}
                       onClick={() => setRole("parent")}
                       title="Padre/Madre"
-                      desc="Acompaña su progreso"
+                      desc="Sigue su progreso con pruebas reales"
                     />
                   </div>
                 </div>

@@ -100,7 +100,7 @@ export const S = {};
         <div class="stack" style="gap:16px">
           <div class="card card-pad" style="text-align:center">
             <div class="eyebrow" style="margin-bottom:10px">Racha</div>
-            <span class="streak" style="background:var(--otr-pale);color:var(--action-hover);border:0;font-size:14px">${IC.flame} ${DB.me.streak} días</span>
+            <span class="streak" style="font-size:14px">${IC.flame} ${DB.me.streak} días</span>
             <div style="margin-top:10px;font-size:12.5px" class="muted">Racha de entrenamiento. ¡No la rompas!</div>
             <div class="row wrap" style="gap:5px;margin-top:14px;justify-content:center">
               ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:4px;background:${i<12?'var(--otr-sky)':'var(--n-150)'}"></span>`).join('')}
@@ -110,7 +110,7 @@ export const S = {};
             <div class="card-head"><h3>Subidas recientes</h3></div>
             <div class="card-body" style="padding:8px 16px 12px">
               ${[['Subiste a Varsity','+500 XP','hace 6 días'],['Insignia: Semifinalista','+250 XP','hace 1 sem'],['Racha de 7 días','+100 XP','hace 1 sem']].map(r=>`
-                <div class="agenda-item"><span class="when-dot" style="background:var(--otr-sky)"></span>
+                <div class="agenda-item"><span class="when-dot" style="background:var(--otr-gold)"></span>
                 <div><div class="ai-t">${r[0]}</div><div class="ai-c sky">${r[1]}</div></div><span class="ai-w">${r[2]}</span></div>`).join('')}
             </div>
           </div>
@@ -135,7 +135,7 @@ export const S = {};
           <div class="cert">
             <div class="seal">${IC.award}</div>
             <div style="flex:1;min-width:0">
-              <div class="badge sky" style="margin-bottom:7px">Certificado oficial OTR</div>
+              <div class="badge gold" style="margin-bottom:7px">Certificado oficial OTR</div>
               <h3 style="font-size:17px;font-weight:750;line-height:1.2">${esc(ct.title)}</h3>
               <p class="muted" style="font-size:13px;margin-top:4px">${esc(ct.programName)}${ct.issuedAt ? ` · ${esc(ct.issuedAt)}` : ''}</p>
             </div>
@@ -149,7 +149,7 @@ export const S = {};
         ${DB.badges.map(b=>`
           <div class="badge-card ${b.got?'':'locked'}">
             ${b.got?'<span class="badge ok" style="position:absolute;top:12px;right:12px">Ganada</span>':`<span style="position:absolute;top:12px;right:12px;color:var(--n-300)">${IC.lock}</span>`}
-            <div class="badge-medal ${b.got?b.tone:'lock'}">${IC[b.ic]}</div>
+            <div class="badge-medal ${b.got?'gold':'lock'}">${IC[b.ic]}</div>
             <div class="bn">${esc(b.n)}</div>
             <div class="bd">${esc(b.d)}</div>
           </div>`).join('')}
@@ -308,13 +308,13 @@ export const S = {};
             <div><b style="font-size:15px">${esc(me.level || 'Novato')}</b><div class="faint" style="font-size:12px;margin-top:1px">${(DB.xpNext - DB.xp)} XP para el siguiente nivel</div></div>
           </div>
           ${C.bar(DB.xpNext > DB.xpLevelStart ? Math.round(((DB.xp - DB.xpLevelStart) / (DB.xpNext - DB.xpLevelStart)) * 100) : 0, { cls: 'navy' })}
-          <div class="row between vcenter" style="font-size:12px;color:var(--text-2);margin-top:10px"><span class="tnum">${(DB.xp || 0).toLocaleString('es')} XP</span><span class="streak" style="background:var(--otr-pale);color:var(--action-hover);border:0">${IC.flame} ${(me.streak || 0)} días</span></div>
+          <div class="row between vcenter" style="font-size:12px;color:var(--text-2);margin-top:10px"><span class="tnum">${(DB.xp || 0).toLocaleString('es')} XP</span><span class="streak">${IC.flame} ${(me.streak || 0)} días</span></div>
         </div>
         <div class="card card-pad">
           <div class="eyebrow" style="margin-bottom:2px">Logros</div>
           <b style="font-size:13.5px">Insignias destacadas</b>
           ${gotBadges.length
-            ? `<div class="row wrap" style="gap:12px;margin-top:14px">${gotBadges.slice(0, 4).map((b) => `<div class="badge-medal ${b.tone}" style="width:46px;height:46px" title="${esc(b.n)}">${IC[b.ic]}</div>`).join('')}</div>
+            ? `<div class="row wrap" style="gap:12px;margin-top:14px">${gotBadges.slice(0, 4).map((b) => `<div class="badge-medal gold" style="width:46px;height:46px" title="${esc(b.n)}">${IC[b.ic]}</div>`).join('')}</div>
                <button class="btn btn-ghost btn-sm btn-block" style="margin-top:16px" onclick="go('badges')">Ver todas ${IC.chevR}</button>`
             : `<p class="faint" style="font-size:12.5px;margin-top:10px">Aún no has ganado insignias. ¡Entrena para conseguirlas!</p>`}
         </div>

@@ -61,7 +61,7 @@ export const S = {};
         <button class="btn btn-ghost btn-sm" onclick="go('forum')">${IC.chevL} Volver al foro</button>
         <span class="tag-soft">${esc(th.tag)}</span>
       </div>
-      <h1 class="page-title" style="font-size:24px;margin-bottom:18px;letter-spacing:-.01em">${esc(th.title)}</h1>
+      <h1 class="page-title" style="font-size:24px;margin-bottom:18px">${esc(th.title)}</h1>
       <div class="card card-pad fade-up" style="display:flex;flex-direction:column;gap:4px">
         ${th.posts.map(post).join('<div class="divider" style="margin:14px 0"></div>')}
       </div>

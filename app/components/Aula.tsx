@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { renderShell } from "../lib/shell";
 import { SCREENS, ROUTES } from "../lib/screens";
-import { IC } from "../lib/icons";
+import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
 
@@ -11,7 +11,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
   const initialHtml = `
     <div style="min-height:100vh;display:grid;place-items:center;background:var(--otr-navy);color:#fff;font-family:var(--font-ui)">
       <div style="text-align:center">
-        <svg viewBox="0 0 26 30" fill="none" style="width:48px;height:54px;margin:0 auto;display:block"><path d="M13 1 L24 5.5 V16 C24 23 19 27.5 13 29.5 C7 27.5 2 23 2 16 V5.5 Z" fill="#fff"/><text x="13" y="18.5" font-family="Inter" font-weight="900" font-size="8" fill="#0C0C0C" text-anchor="middle">OTR</text></svg>
+        ${/* Escudo OTR del brand book (pantalla de carga, fondo negro) — markup canónico en lib/icons (otrCrest) */""}
+        ${otrCrest({ id: "load", attrs: 'style="width:48px;height:54px;margin:0 auto;display:block"' })}
         <p style="margin-top:14px;color:rgba(234,242,251,.6)">Cargando tu aula…</p>
       </div>
     </div>`;

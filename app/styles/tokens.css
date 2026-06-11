@@ -79,8 +79,8 @@
   --font-ui:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-brand:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
-  --track-tight:-0.03em;   /* tracking compacto para títulos */
-  --track-tighter:-0.045em;/* display grande */
+  --track-tight:-0.06em;   /* tracking -60 del brand book para títulos */
+  --track-tighter:-0.065em;/* display grande */
 
   /* compact scale */
   --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-14:14px;

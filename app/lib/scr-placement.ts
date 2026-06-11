@@ -12,12 +12,12 @@ export const S = {};
 
 // Las 6 dimensiones canónicas, con una descripción corta de qué mide cada una.
 const DIMS = [
-  { key: "Confianza",  desc: "Qué tan seguro te sientes al hablar frente a un público o un juez." },
+  { key: "Confianza",  desc: "Qué tan firme te plantas al hablar frente al público o al juez." },
   { key: "Estructura", desc: "Tu capacidad de ordenar ideas: claim, warrant e impacto claros." },
   { key: "Evidencia",  desc: "Cómo respaldas tus argumentos con datos, ejemplos y fuentes." },
   { key: "Refutación", desc: "Tu habilidad para responder y desmontar los argumentos del rival." },
-  { key: "Cross-ex",   desc: "Cómo preguntas y respondes en el interrogatorio cruzado." },
-  { key: "Delivery",   desc: "Tu voz, ritmo y presencia al pronunciar el discurso." },
+  { key: "Cross-ex",   desc: "Cómo preguntas con intención y respondes sin ceder terreno en el cruzado." },
+  { key: "Delivery",   desc: "Voz, ritmo y presencia: cómo llega tu discurso a la sala." },
 ];
 
 S.placement = {
@@ -31,10 +31,10 @@ S.placement = {
             <p class="eyebrow" style="color:var(--otr-sky-hi)">Bienvenido a OTR${firstName ? ", " + firstName : ""}</p>
             <h2 class="brand-font" style="margin-top:2px">Ubiquémonos en 3 minutos</h2>
             <p style="color:rgba(234,242,251,.82);font-size:14.5px;margin-top:12px;line-height:1.55">
-              No hay respuestas incorrectas — esto define <b>TU</b> punto de partida. Mueve cada barra
-              hasta donde sientas que estás hoy en cada habilidad. Lo iremos subiendo juntos.
+              No hay respuestas incorrectas — esto fija <b>TU</b> punto de partida. Mueve cada barra
+              hasta donde estás hoy en cada habilidad. Desde ahí, solo queda subir.
             </p>
-            <span class="streak" style="margin-top:14px;display:inline-flex">${IC.target} Evaluación inicial · 6 habilidades</span>
+            <span class="badge" style="margin-top:14px;display:inline-flex;height:30px;padding:0 13px;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:600">${IC.target} Evaluación inicial · 6 habilidades</span>
           </div>
         </div>
       </div>`;
@@ -66,7 +66,7 @@ S.placement = {
         ${sliders}
         <div class="row between vcenter fade-up" style="--d:7;margin-top:6px;gap:12px;flex-wrap:wrap">
           <p class="faint" style="font-size:12.5px;margin:0">Podrás afinar todo esto más adelante con tu coach.</p>
-          <button class="btn btn-primary" id="pl-submit">Ver mi punto de partida ${IC.arrowR}</button>
+          <button class="btn btn-primary" id="pl-submit">Fijar mi punto de partida ${IC.arrowR}</button>
         </div>
       </div>`;
   },

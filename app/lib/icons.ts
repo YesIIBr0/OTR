@@ -48,3 +48,46 @@ export const IC = (() => {
     award: w('<circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5L7 21l5-2.5L17 21l-1.5-7.5"/>'),
   };
 })();
+
+/* ---------------- ESCUDO OTR · logo de marca (OTRBRANDBOOK 2026) ----------------
+   Shield con tapa plana y punta inferior redondeada, dividido en una grilla 2x2
+   de cuadrantes que alternan crema/negro (recortados con clipPath):
+
+     ┌──────────────┬──────────────┐
+     │ CREMA · "O"  │ NEGRO · "T"  │  · la O (negra) lleva un trazo horizontal
+     │  O cruzada   │  + ribbon    │    que la cruza por debajo
+     ├──────────────┼──────────────┤  · bajo la T cuelga un ribbon/marcador de
+     │ NEGRO · "R"  │ CREMA vacío  │    libro crema (muesca triangular inferior)
+     └──────────────┴──────────────┘  · inferior-derecho: crema, sin letra
+
+   Letras O/T/R en Inter 800. Colores fijos de marca: crema #F7F7ED y negro
+   #0C0C0C. Pensado para fondos OSCUROS (contorno crema por defecto); sobre
+   fondos claros pásese `outline` negro.
+
+   - `id`    → sufijo ÚNICO por documento (el clipPath se referencia con url(#…);
+               dos instancias simultáneas no deben compartir id).
+   - `attrs` → atributos extra inyectados en el <svg> raíz (class, style,
+               width/height, o x/y si se anida dentro de otro svg).
+   viewBox "0 0 26 30" — mismas proporciones que el crest anterior para no
+   romper los layouts existentes. */
+export const otrCrest = ({ id = "crest", attrs = "", outline = "#F7F7ED" } = {}) => {
+  const CREAM = "#F7F7ED", BLACK = "#0C0C0C";
+  // Contorno del shield: M tapa (y=2) → lados rectos hasta y=15.5 → curvas que
+  // convergen en la punta inferior, suavizada con un pequeño arco (redondeada).
+  const shield = "M3 2 H23 V15.5 C23 21.5 19.8 25.8 14.2 28.6 C13.45 28.97 12.55 28.97 11.8 28.6 C6.2 25.8 3 21.5 3 15.5 Z";
+  return `<svg viewBox="0 0 26 30" fill="none" aria-hidden="true" ${attrs}>
+    <defs><clipPath id="otr-shield-${id}"><path d="${shield}"/></clipPath></defs>
+    <g clip-path="url(#otr-shield-${id})">
+      <rect x="3" y="2" width="10" height="13.5" fill="${CREAM}"/>
+      <rect x="13" y="2" width="10" height="13.5" fill="${BLACK}"/>
+      <rect x="3" y="15.5" width="10" height="13.6" fill="${BLACK}"/>
+      <rect x="13" y="15.5" width="10" height="13.6" fill="${CREAM}"/>
+      <text x="8" y="11.8" font-family="Inter" font-weight="800" font-size="9" fill="${BLACK}" text-anchor="middle">O</text>
+      <path d="M4.2 10.6 H11.8" stroke="${BLACK}" stroke-width="1.1"/>
+      <text x="18" y="10" font-family="Inter" font-weight="800" font-size="9" fill="${CREAM}" text-anchor="middle">T</text>
+      <path d="M16.7 11 H19.3 V14.6 L18 13.3 L16.7 14.6 Z" fill="${CREAM}"/>
+      <text x="8.4" y="22.6" font-family="Inter" font-weight="800" font-size="9" fill="${CREAM}" text-anchor="middle">R</text>
+    </g>
+    <path d="${shield}" stroke="${outline}" stroke-width="1.1"/>
+  </svg>`;
+};

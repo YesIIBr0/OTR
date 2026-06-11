@@ -127,9 +127,9 @@ S.myBookings = {
       return `${head}
       <div class="card fade-up" style="--d:1"><div class="empty">
         <div class="ill">${IC.calendar}</div>
-        <h4>Aún no reservas</h4>
-        <p>Explora a los coaches del marketplace y reserva tu primera sesión 1:1. Tus pagos quedan en escrow y se liberan al completar la sesión.</p>
-        <button class="btn btn-primary" data-go="explore">Explorar coaches</button>
+        <h4>Tu primera sesión 1:1 te espera</h4>
+        <p>Elige a tu coach en el marketplace y reserva. Tu pago queda protegido en escrow y se libera solo al completar la sesión.</p>
+        <button class="btn btn-primary" data-go="explore">Encontrar mi coach</button>
       </div></div>`;
     }
 
@@ -152,7 +152,7 @@ S.myBookings = {
       </div>
       ${history.length
         ? `<div style="margin-top:6px">${history.map(historyRow).join("")}</div>`
-        : `<p class="muted" style="font-size:13px;margin-top:12px">Todavía no tienes sesiones completadas ni canceladas.</p>`}
+        : `<p class="muted" style="font-size:13px;margin-top:12px">Tu historial se escribe sesión a sesión — cada una quedará registrada aquí.</p>`}
     </div>`;
   },
 
