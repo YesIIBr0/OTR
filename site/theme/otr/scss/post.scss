@@ -1,0 +1,98 @@
+// ============================================================
+// theme_otr · scss/post.scss
+// Injected AFTER Bootstrap + Boost. Component overrides keyed to
+// REAL Moodle selectors so the brand lands on actual rendered
+// pages (navbar, cards, gradebook, forum, badges, messaging…).
+// ============================================================
+
+// ---- Web fonts (self-host in pix/ for production; CDN shown for dev) ----
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;450;500;600;700&display=swap');
+
+// ---- Brand-moment display type (level names, big numbers, hero copy) ----
+.otr-display,
+.path-badges .page-context-header h1,
+#page-my-index .h2 {
+  font-family: $display-font-family;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+// ---- Navbar: navy authority bar (Boost top navbar) ----
+.navbar.fixed-top {
+  background-color: $otr-navy !important;
+  border-bottom: 0;
+  .navbar-brand,
+  .nav-link { color: rgba(#EAF2FB, .85) !important; }
+  .nav-link:hover { color: #fff !important; }
+}
+
+// ---- Drawers: subtle tinted active state (theme_boost/drawers nav) ----
+.drawercontent .list-group-item.active,
+.primary-navigation .nav-link.active {
+  background-color: rgba($otr-sky, .14);
+  color: $otr-navy;
+  box-shadow: inset 3px 0 0 $otr-sky;
+}
+
+// ---- Buttons: single sky CTA + navy authority ----
+.btn-primary {
+  background-color: $primary;
+  border-color: $primary;
+  &:hover, &:focus { background-color: darken($primary, 8%); border-color: darken($primary, 8%); }
+}
+.btn-outline-secondary { border-color: #CBD8E6; color: $otr-navy; }
+
+// ---- Cards: soft blue-grey elevation ----
+.card {
+  border-color: $card-border-color;
+  box-shadow: 0 1px 2px rgba($otr-navy, .06);
+}
+
+// ---- Course index drawer (core_course/courseindex) ----
+.courseindex .courseindex-item.pageitem {
+  border-left: 3px solid $otr-sky;
+  background: rgba($otr-pale, .5);
+}
+.courseindex .completioninfo .icon { color: $success; }
+
+// ---- Activity completion / progress bars ----
+.progress { background-color: #E9F0F7; border-radius: 999px; }
+.progress-bar { background: linear-gradient(90deg, $otr-sky-lo, $otr-sky); }
+
+// ---- Gradebook (gradereport_grader) ----
+.path-grade-report-grader {
+  .gradeparent table#user-grades thead th { background: $otr-offwhite; color: #5F7390; }
+  .gradeparent .baggt, .gradeparent .cell.grade { font-variant-numeric: tabular-nums; }
+}
+
+// ---- Forum (mod_forum) ----
+.path-mod-forum {
+  .discussionname a { color: $otr-navy; font-weight: 600; }
+  .forumpost .author { color: $otr-sky-lo; }
+  .forumpost.firstpost { background: $otr-offwhite; border-radius: $border-radius-lg; }
+}
+
+// ---- Messaging drawer (core_message/message_drawer) ----
+.message-app .conversation .messages .message.send .text { background: $otr-sky-lo; color: #fff; }
+
+// ---- Badges (core_badges) ----
+.path-badges .badge-image { box-shadow: 0 8px 24px -10px rgba($otr-navy, .4); }
+
+// ---- Notification popover (message_popup) ----
+.popover-region-notifications .notification.unread { background: rgba($otr-pale, .45); }
+
+// ============================================================
+// OTR level system (Novato → JV → Varsity → Elite)
+// Used by theme_otr/level_badge.mustache and block_xp overrides.
+// ============================================================
+.otr-level-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700;
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  &--novato  { background: rgba($otr-level-novato, .16);  color: $otr-level-novato;  .dot { background: $otr-level-novato; } }
+  &--jv      { background: rgba($otr-level-jv, .16);      color: $otr-level-jv;      .dot { background: $otr-level-jv; } }
+  &--varsity { background: rgba($otr-level-varsity, .16); color: $otr-level-varsity; .dot { background: $otr-level-varsity; } }
+  &--elite   { background: rgba($otr-level-elite, .12);   color: $otr-level-elite;   .dot { background: $otr-level-elite; } }
+}

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OTR LMS · Handoff técnico (Moodle / Boost)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --navy:#0C2340;--ink:#0A1A2F;--sky:#4FA9E8;--sky-hi:#7FC8F2;--sky-lo:#2E8BD0;--pale:#DCEEFB;
+  --off:#F3F7FC;--white:#fff;--border:#DDE7F1;--b2:#CBD8E6;--t2:#46586F;--t3:#5F7390;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;--ui:'Inter',system-ui,sans-serif;--disp:'Archivo Expanded',sans-serif;
+  --ok:#1F8A5B;--warn:#B0791F;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--ui);color:var(--navy);background:var(--off);line-height:1.55;font-size:15px;-webkit-font-smoothing:antialiased}
+.doc{max-width:1080px;margin:0 auto;background:var(--white);min-height:100vh;box-shadow:0 0 80px -30px rgba(12,35,64,.25)}
+a{color:var(--sky-lo)}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.hero{background:linear-gradient(150deg,var(--navy),var(--ink));color:#fff;padding:54px 60px 46px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;top:-30%;right:-8%;width:46vh;height:46vh;border-radius:50%;background:radial-gradient(circle at 40% 40%,rgba(79,169,232,.4),transparent 62%)}
+.hero .eyebrow{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--sky-hi)}
+.hero h1{font-family:var(--disp);font-weight:800;font-size:38px;letter-spacing:-.02em;line-height:1.04;margin:14px 0 12px;position:relative}
+.hero p{color:rgba(234,242,251,.78);max-width:62ch;font-size:15.5px}
+.hero .crestrow{display:flex;align-items:center;gap:12px;margin-bottom:6px;position:relative}
+.body{padding:44px 60px 80px}
+section{margin-bottom:46px;scroll-margin-top:20px}
+h2{font-family:var(--disp);font-weight:700;font-size:23px;letter-spacing:-.01em;margin-bottom:8px;padding-top:6px}
+h2 .n{color:var(--sky-lo);font-size:.7em;margin-right:10px}
+h3{font-size:15px;font-weight:700;margin:20px 0 8px}
+p.lead{color:var(--t2);margin-bottom:16px;max-width:70ch}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}
+.toc a{font-size:13px;font-weight:600;background:var(--off);border:1px solid var(--border);border-radius:999px;padding:7px 14px;color:var(--navy);text-decoration:none}
+.toc a:hover{border-color:var(--sky);background:var(--pale)}
+.callout{border-left:3px solid var(--sky);background:var(--pale);padding:14px 18px;border-radius:0 10px 10px 0;margin:16px 0;font-size:14px;color:#1a4d75}
+.callout.warn{border-left-color:var(--warn);background:#F6ECD6;color:#7c5614}
+.callout b{color:inherit}
+pre{background:var(--ink);color:#dbe7f4;border-radius:12px;padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;margin:14px 0}
+pre .c{color:#7b93ad}.pre .k{color:var(--sky-hi)}
+.tree{background:var(--off);border:1px solid var(--border);border-radius:12px;padding:18px 22px;font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--navy);overflow-x:auto}
+.tree .d{color:var(--sky-lo);font-weight:500}.tree .cm{color:var(--t3)}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:14px 0;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+thead th{background:var(--navy);color:#fff;text-align:left;padding:11px 13px;font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+tbody td{padding:10px 13px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:nth-child(even){background:var(--off)}
+td .scr{font-weight:600}
+td code{background:rgba(79,169,232,.12);padding:1px 6px;border-radius:5px;color:var(--sky-lo);white-space:nowrap}
+td .tmpl{display:block;font-family:var(--mono);font-size:11.5px;color:var(--t2);margin-top:3px}
+.swrow{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}
+.sw{border:1px solid var(--border);border-radius:10px;overflow:hidden;width:118px}
+.sw .c{height:46px}.sw .m{padding:6px 9px}.sw .nm{font-size:12px;font-weight:600}.sw .hx{font-family:var(--mono);font-size:10.5px;color:var(--t3)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700;background:var(--pale);color:var(--sky-lo)}
+.pill.third{background:#F6ECD6;color:var(--warn)}
+.foot{padding:26px 60px;border-top:1px solid var(--border);color:var(--t3);font-size:13px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+@media print{body{background:#fff}.doc{box-shadow:none;max-width:none}.toc{display:none}pre,.tree{break-inside:avoid}table{break-inside:auto}tr{break-inside:avoid}}
+@media (max-width:720px){.hero,.body,.foot{padding-left:22px;padding-right:22px}.hero h1{font-size:28px}}
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <header class="hero">
+    <div class="crestrow">
+      <svg width="30" height="34" viewBox="0 0 26 30" fill="none"><path d="M13 1 L24 5.5 V16 C24 23 19 27.5 13 29.5 C7 27.5 2 23 2 16 V5.5 Z" fill="#fff"/><text x="13" y="18.5" font-family="Archivo Expanded" font-weight="900" font-size="8" fill="#0C2340" text-anchor="middle">OTR</text></svg>
+      <span class="eyebrow">Handoff técnico · theme_otr</span>
+    </div>
+    <h1>OTR LMS — Tema hijo de Boost</h1>
+    <p>Cómo el prototipo se implementa como un tema de Moodle real: instalación, mapeo de tokens a SCSS de Bootstrap, y cada pantalla conectada a su <b>ruta</b> y su <b>plantilla Mustache</b> con su esquema de contexto.</p>
+    <nav class="toc">
+      <a href="#install">1 · Instalación</a>
+      <a href="#estructura">2 · Estructura</a>
+      <a href="#tokens">3 · Tokens → SCSS</a>
+      <a href="#rutas">4 · Pantallas → Rutas → Plantillas</a>
+      <a href="#schema">5 · Esquemas de contexto</a>
+      <a href="#niveles">6 · Niveles & gamificación</a>
+      <a href="#checklist">7 · Checklist</a>
+    </nav>
+  </header>
+
+  <main class="body">
+
+    <section id="install">
+      <h2><span class="n">01</span>Instalación</h2>
+      <p class="lead">El tema vive en <code>theme/otr/</code> dentro de tu Moodle (4.3+). Copia la carpeta, entra como admin y completa la actualización; Moodle detecta el plugin.</p>
+      <pre><span class="c"># 1. Copia el plugin a la raíz de Moodle</span>
+cp -r theme/otr  /var/www/moodle/theme/otr
+
+<span class="c"># 2. Dispara la actualización (UI o CLI)</span>
+php admin/cli/upgrade.php --non-interactive
+
+<span class="c"># 3. Activa el tema y purga cachés</span>
+<span class="c"># Site administration › Appearance › Themes › Theme selector → "OTR"</span>
+php admin/cli/purge_caches.php</pre>
+      <div class="callout"><b>Requisito:</b> <code>theme_boost</code> debe estar presente — OTR hereda todos sus layouts y renderers (declarado en <code>version.php → $plugin->dependencies</code>).</div>
+    </section>
+
+    <section id="estructura">
+      <h2><span class="n">02</span>Estructura del plugin</h2>
+      <p class="lead">Estructura mínima de un tema hijo de Boost. Cada archivo cumple un rol concreto del pipeline de Moodle.</p>
+      <div class="tree">
+theme/<span class="d">otr/</span>
+├── version.php          <span class="cm"># metadata + dependencia de Boost</span>
+├── config.php           <span class="cm"># $THEME: parents=[boost], callbacks SCSS</span>
+├── lib.php              <span class="cm"># theme_otr_get_(main|pre|extra)_scss()</span>
+├── settings.php         <span class="cm"># preset + colores de marca (Appearance)</span>
+├── lang/
+│   ├── en/theme_otr.php
+│   └── es/theme_otr.php
+├── scss/
+│   ├── pre.scss         <span class="cm"># tokens → variables Bootstrap (ANTES)</span>
+│   └── post.scss        <span class="cm"># overrides por componente (DESPUÉS)</span>
+├── templates/
+│   ├── core/
+│   │   └── loginform.mustache      <span class="cm"># override de /login</span>
+│   └── theme_otr/
+│       └── level_badge.mustache    <span class="cm"># partial de marca reutilizable</span>
+└── pix/                 <span class="cm"># escudo, favicon, fuentes self-host</span>
+      </div>
+      <div class="callout"><b>Regla de oro de los overrides:</b> para sobreescribir cualquier plantilla, replica su ruta de componente dentro de <code>templates/</code>. Ej: <code>core/full_header</code> → <code>theme/otr/templates/core/full_header.mustache</code>; <code>mod_forum/forum_discussion</code> → <code>theme/otr/templates/mod_forum/forum_discussion.mustache</code>. Moodle resuelve la versión del tema automáticamente.</div>
+    </section>
+
+    <section id="tokens">
+      <h2><span class="n">03</span>Tokens → variables SCSS</h2>
+      <p class="lead"><code>scss/pre.scss</code> se inyecta <b>antes</b> de Bootstrap: ahí los tokens de marca se convierten en las variables que Boost y el core usan para construir todo. Espejan <code>lms/tokens.css</code> 1:1, así prototipo = producción.</p>
+      <div class="swrow">
+        <div class="sw"><div class="c" style="background:#0C2340"></div><div class="m"><div class="nm">Navy</div><div class="hx">#0C2340</div></div></div>
+        <div class="sw"><div class="c" style="background:#2E8BD0"></div><div class="m"><div class="nm">Sky lo</div><div class="hx">#2E8BD0</div></div></div>
+        <div class="sw"><div class="c" style="background:#4FA9E8"></div><div class="m"><div class="nm">Sky</div><div class="hx">#4FA9E8</div></div></div>
+        <div class="sw"><div class="c" style="background:#DCEEFB"></div><div class="m"><div class="nm">Pale</div><div class="hx">#DCEEFB</div></div></div>
+        <div class="sw"><div class="c" style="background:#F3F7FC;border-bottom:1px solid var(--border)"></div><div class="m"><div class="nm">Off-white</div><div class="hx">#F3F7FC</div></div></div>
+      </div>
+      <table>
+        <thead><tr><th>Token (prototipo)</th><th>Variable Bootstrap/Boost</th><th>Valor</th><th>Dónde aterriza</th></tr></thead>
+        <tbody>
+          <tr><td><code>--otr-sky-lo</code></td><td><code>$primary</code></td><td>#2E8BD0</td><td>Botones, links, estados activos (CTA único)</td></tr>
+          <tr><td><code>--otr-navy</code></td><td><code>$secondary</code> / <code>$dark</code></td><td>#0C2340</td><td>Navbar, superficies de autoridad, texto</td></tr>
+          <tr><td><code>--otr-sky</code></td><td><code>$input-focus-border-color</code></td><td>#4FA9E8</td><td>Foco de inputs, glow</td></tr>
+          <tr><td><code>--ok / --warn / --danger</code></td><td><code>$success / $warning / $danger</code></td><td>—</td><td>Alertas, badges, gradebook</td></tr>
+          <tr><td><code>--font-ui</code></td><td><code>$font-family-sans-serif</code></td><td>Inter</td><td>Todo el UI</td></tr>
+          <tr><td><code>--font-brand</code></td><td><code>$display-font-family</code></td><td>Archivo Expanded</td><td>Niveles, números, momentos de marca</td></tr>
+          <tr><td><code>--r-md</code></td><td><code>$border-radius</code></td><td>0.5rem</td><td>Cards, inputs, botones</td></tr>
+        </tbody>
+      </table>
+      <pre><span class="c">// scss/pre.scss — extracto</span>
+$otr-navy:   #0C2340;
+$otr-sky-lo: #2E8BD0;
+
+$primary:    $otr-sky-lo;   <span class="c">// CTA único</span>
+$secondary:  $otr-navy;
+$body-color: $otr-navy;
+$link-color: $otr-sky-lo;
+$font-family-sans-serif: "Inter", system-ui, sans-serif;</pre>
+      <div class="callout warn"><b>No inventes rutas de color:</b> warning usa un ámbar tenue <code>#B0791F</code> — el brief prohíbe oro y naranja, así que nunca uses los amarillos por defecto de Bootstrap.</div>
+    </section>
+
+    <section id="rutas">
+      <h2><span class="n">04</span>Pantallas → Rutas → Plantillas</h2>
+      <p class="lead">Cada pantalla del prototipo corresponde a una <b>ruta real</b> de Moodle y a la(s) <b>plantilla(s) Mustache</b> que la renderizan. Diseña dentro de estos contratos — no inventes flujos que la plataforma no produce.</p>
+      <table>
+        <thead><tr><th>Pantalla</th><th>Ruta (URL)</th><th>Plantilla Mustache · plugin</th></tr></thead>
+        <tbody>
+          <tr><td class="scr">Login</td><td><code>/login/index.php</code></td><td><span class="tmpl">core/loginform · layout: theme_boost/login</span></td></tr>
+          <tr><td class="scr">Dashboard</td><td><code>/my/</code></td><td><span class="tmpl">block_myoverview/main · core/dashboard</span></td></tr>
+          <tr><td class="scr">Mis cursos</td><td><code>/my/courses.php</code></td><td><span class="tmpl">block_myoverview/main (vista courses)</span></td></tr>
+          <tr><td class="scr">Vista de curso</td><td><code>/course/view.php?id=</code></td><td><span class="tmpl">core_courseformat/local/content · format_topics</span></td></tr>
+          <tr><td class="scr">Índice del curso</td><td><code>/course/view.php</code> (drawer)</td><td><span class="tmpl">core_course/courseindex/courseindex</span></td></tr>
+          <tr><td class="scr">Shell de navegación</td><td>todas las páginas</td><td><span class="tmpl">theme_boost/drawers · core/moremenu · core/navbar</span></td></tr>
+          <tr><td class="scr">Lección / contenido</td><td><code>/mod/page/view.php?id=</code></td><td><span class="tmpl">mod_page · (alt: mod_book, mod_lesson)</span></td></tr>
+          <tr><td class="scr">Entrega + grabador</td><td><code>/mod/assign/view.php?id=</code></td><td><span class="tmpl">mod_assign · grabador: tiny_recordrtc / qtype_poodllrecording</span></td></tr>
+          <tr><td class="scr">Examen</td><td><code>/mod/quiz/attempt.php</code></td><td><span class="tmpl">mod_quiz/attempt · core_question</span></td></tr>
+          <tr><td class="scr">Resultados examen</td><td><code>/mod/quiz/review.php</code></td><td><span class="tmpl">mod_quiz/review</span></td></tr>
+          <tr><td class="scr">Reproductor</td><td><code>/mod/url/view.php</code> · core_media</td><td><span class="tmpl">core_media/… · mediaplugin</span></td></tr>
+          <tr><td class="scr">Panel profesor (tracking)</td><td><code>/report/progress/</code> · <code>/report/insights/</code></td><td><span class="tmpl">report_progress · report_insights · gradereport_overview</span></td></tr>
+          <tr><td class="scr">Calificador</td><td><code>/grade/report/grader/index.php</code></td><td><span class="tmpl">gradereport_grader</span></td></tr>
+          <tr><td class="scr">Participantes</td><td><code>/user/index.php?id=</code></td><td><span class="tmpl">core_user/participants · core_table/dynamic</span></td></tr>
+          <tr><td class="scr">Progreso / Niveles</td><td><code>/report/progress/</code> + bloque</td><td><span class="tmpl">block_xp (Level Up!) <span class="pill third">3rd-party</span></span></td></tr>
+          <tr><td class="scr">Insignias / Certificados</td><td><code>/badges/mybadges.php</code> · <code>/mod/customcert</code></td><td><span class="tmpl">core_badges · mod_customcert <span class="pill third">3rd-party</span></span></td></tr>
+          <tr><td class="scr">Perfil</td><td><code>/user/profile.php?id=</code></td><td><span class="tmpl">core_user/myprofile</span></td></tr>
+          <tr><td class="scr">Foro</td><td><code>/mod/forum/view.php?id=</code></td><td><span class="tmpl">mod_forum/forum_discussion_list</span></td></tr>
+          <tr><td class="scr">Hilo</td><td><code>/mod/forum/discuss.php?d=</code></td><td><span class="tmpl">mod_forum/forum_discussion_nested_v2</span></td></tr>
+          <tr><td class="scr">Mensajería</td><td><code>/message/index.php</code></td><td><span class="tmpl">core_message/message_drawer</span></td></tr>
+          <tr><td class="scr">Notificaciones</td><td>popover (toda página)</td><td><span class="tmpl">message_popup/notification_area</span></td></tr>
+          <tr><td class="scr">Design System / Kit</td><td>— (styleguide interno)</td><td><span class="tmpl">sin ruta Moodle · referencia de diseño</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="schema">
+      <h2><span class="n">05</span>Esquemas de contexto (ejemplos)</h2>
+      <p class="lead">Las plantillas Mustache reciben un contexto JSON. Estos son los campos clave de las que vas a tocar. Respétalos: si quitas un campo del form de login, rompes el login.</p>
+      <h3><code>core/loginform</code> — ya incluido como override</h3>
+      <pre>{
+  <span class="c">"error"</span>: "",            <span class="c">// mensaje de error</span>
+  <span class="c">"info"</span>: "",
+  <span class="c">"loginurl"</span>: ".../login/index.php",
+  <span class="c">"username"</span>: "",         <span class="c">// usuario recordado</span>
+  <span class="c">"rememberusername"</span>: true,
+  <span class="c">"logintoken"</span>: "…",       <span class="c">// CSRF — NO quitar</span>
+  <span class="c">"identityproviders"</span>: [ { "url": "…", "name": "Google" } ],
+  <span class="c">"cansignup"</span>: true,
+  <span class="c">"instructions"</span>: "&lt;p&gt;…&lt;/p&gt;"
+}</pre>
+      <h3><code>theme_otr/level_badge</code> — partial de marca (nuestro)</h3>
+      <pre>{
+  <span class="c">"levelid"</span>: "varsity",   <span class="c">// novato | jv | varsity | elite</span>
+  <span class="c">"label"</span>: "Varsity",
+  <span class="c">"xp"</span>: 3120,
+  <span class="c">"compact"</span>: false
+}
+<span class="c">// uso desde cualquier template:</span>
+{{> theme_otr/level_badge }}</pre>
+      <div class="callout">Para descubrir el esquema de cualquier plantilla: lee el bloque <code>@template</code> al inicio del <code>.mustache</code> de core, o ejecuta el renderer con <code>$OUTPUT-&gt;render_from_template('core/loginform', $context)</code> y vuelca <code>$context</code>.</div>
+    </section>
+
+    <section id="niveles">
+      <h2><span class="n">06</span>Niveles & gamificación</h2>
+      <p class="lead">La progresión <b>Novato → JV → Varsity → Elite</b> es el ADN de campeón de OTR. En Moodle se implementa con el bloque <span class="pill third">block_xp</span> (“Level Up!”), reetiquetando sus 4 niveles y aplicando los colores de marca vía <code>post.scss</code>.</p>
+      <table>
+        <thead><tr><th>Nivel</th><th>Rango XP</th><th>Color · variable</th></tr></thead>
+        <tbody>
+          <tr><td class="scr">Novato</td><td>0 – 999</td><td><code>$otr-level-novato</code> #8499B2</td></tr>
+          <tr><td class="scr">JV</td><td>1.000 – 2.499</td><td><code>$otr-level-jv</code> #4FA9E8</td></tr>
+          <tr><td class="scr">Varsity</td><td>2.500 – 4.999</td><td><code>$otr-level-varsity</code> #2E8BD0</td></tr>
+          <tr><td class="scr">Elite</td><td>5.000+</td><td><code>$otr-level-elite</code> #0C2340</td></tr>
+        </tbody>
+      </table>
+      <p class="lead">Renderiza el badge con el partial <code>theme_otr/level_badge</code> donde quieras (perfil, dashboard, foro). El estilo vive en <code>post.scss → .otr-level-badge</code>.</p>
+    </section>
+
+    <section id="checklist">
+      <h2><span class="n">07</span>Checklist de implementación</h2>
+      <table>
+        <thead><tr><th>Área</th><th>Estado</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td>Scaffold del plugin (version/config/lib/settings/lang)</td><td><span class="pill">Listo</span></td><td>Incluido en <code>theme/otr/</code></td></tr>
+          <tr><td>Tokens → SCSS (pre + post)</td><td><span class="pill">Listo</span></td><td>Mapeo 1:1 con el prototipo</td></tr>
+          <tr><td>Override de login + partial de nivel</td><td><span class="pill">Ejemplo</span></td><td>Patrón demostrado; replicar al resto</td></tr>
+          <tr><td>Overrides Mustache restantes</td><td><span class="pill third">Pendiente</span></td><td>Copiar de core por versión y rebrandear</td></tr>
+          <tr><td>block_xp · mod_customcert</td><td><span class="pill third">Instalar</span></td><td>Plugins 3rd-party para niveles/certificados</td></tr>
+          <tr><td>Estados vacíos / error · AA</td><td><span class="pill third">Pendiente</span></td><td>Heredados de Boost; rebrandear y auditar contraste</td></tr>
+          <tr><td>Fuentes self-host en <code>pix/</code></td><td><span class="pill third">Pendiente</span></td><td>Quitar CDN de Google Fonts para producción</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <div class="foot">
+    <span>OTR · Debate Academy — theme_otr v0.1.0</span>
+    <span>Moodle 4.3+ · hijo de Boost · GPL v3</span>
+  </div>
+</div>
+</body>
+</html>

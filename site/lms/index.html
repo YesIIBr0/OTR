@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OTR LMS · Aula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@600;700;800;900&family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="screens.css" />
+<link rel="stylesheet" href="responsive.css" />
+</head>
+<body>
+
+<!-- LOGIN (full screen, no shell) -->
+<div id="login-root"></div>
+
+<!-- APP SHELL -->
+<div class="app" id="app" hidden>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <a class="sb-logo" href="#dashboard" data-link>
+        <svg class="crest" viewBox="0 0 26 30" fill="none" aria-hidden="true">
+          <path d="M13 1 L24 5.5 V16 C24 23 19 27.5 13 29.5 C7 27.5 2 23 2 16 V5.5 Z" fill="#fff"/>
+          <text x="13" y="18.5" font-family="Archivo Expanded" font-weight="900" font-size="8" fill="#0C2340" text-anchor="middle">OTR</text>
+        </svg>
+        <span class="txt">OTR <span class="sub">Aula</span></span>
+      </a>
+    </div>
+    <nav class="sb-nav" id="sb-nav"></nav>
+    <div class="sb-foot">
+      <div class="sb-user" data-link href="#profile">
+        <span class="avatar sm" id="sb-avatar">AR</span>
+        <span class="meta" style="min-width:0">
+          <span style="display:block;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="sb-username">Analía Reyes</span>
+          <span style="display:block;font-size:11px;color:rgba(234,242,251,.5)" id="sb-userrole">Estudiante</span>
+        </span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn mobile-only" id="burger" aria-label="Menú"></button>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="spacer"></div>
+      <div class="searchbox desk-only">
+        <span style="display:flex;width:16px;height:16px" id="search-ic"></span>
+        <input placeholder="Buscar cursos, tareas, personas…" />
+      </div>
+      <div class="role-switch desk-only" id="role-switch">
+        <button data-role="student" class="on">Estudiante</button>
+        <button data-role="teacher">Profesor</button>
+      </div>
+      <button class="icon-btn" id="bell" aria-label="Notificaciones"><span class="dot"></span></button>
+    </header>
+
+    <div class="content" id="content"></div>
+
+    <!-- mobile bottom tab bar -->
+    <nav class="tabbar mobile-only" id="tabbar"></nav>
+  </div>
+
+  <!-- mobile drawer scrim -->
+  <div class="scrim" id="scrim" hidden></div>
+</div>
+
+<script src="icons.js"></script>
+<script src="data.js"></script>
+<script src="components.js"></script>
+<script src="screens-core.js"></script>
+<script src="screens-learn.js"></script>
+<script src="screens-teacher.js"></script>
+<script src="screens-profile.js"></script>
+<script src="screens-community.js"></script>
+<script src="screens-hub.js"></script>
+<script src="screens-kit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
