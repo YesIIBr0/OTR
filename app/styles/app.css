@@ -235,7 +235,7 @@ svg.ic{width:18px;height:18px;flex:none}
 .alert{display:flex;gap:12px;padding:13px 15px;border-radius:var(--r-md);border:1px solid var(--border);background:var(--surface);font-size:13.5px}
 .alert .ai{flex:none;width:20px;height:20px}
 .alert .at{font-weight:700;margin-bottom:2px}
-.alert.info{background:var(--info-soft);border-color:#bfe0f8;color:#1a4d75}
+.alert.info{background:var(--info-soft);border-color:#bfe6d2;color:#155e3f}
 .alert.ok{background:var(--ok-soft);border-color:#bfe6d2;color:#155e3f}
 .alert.warn{background:var(--warn-soft);border-color:#ecd9ad;color:#7c5614}
 .alert.danger{background:var(--danger-soft);border-color:#eeb9b4;color:#8a2f28}

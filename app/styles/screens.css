@@ -150,7 +150,7 @@
 .score-hero{display:flex;align-items:center;gap:28px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;box-shadow:var(--sh-1)}
 
 /* ---------------- PLAYER ---------------- */
-.player-stage{background:#06121f;border-radius:var(--r-lg);overflow:hidden;position:relative;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#fff}
+.player-stage{background:var(--otr-black);border-radius:var(--r-lg);overflow:hidden;position:relative;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#fff}
 .player-stage .pstripes{position:absolute;inset:0;background:repeating-linear-gradient(125deg,rgba(255,255,255,.03) 0 22px,transparent 22px 46px)}
 .player-bigplay{width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.16);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.3);z-index:2}
 .player-bigplay .ic{width:34px;height:34px}

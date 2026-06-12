@@ -519,7 +519,7 @@ function priorQuizAttempt() {
         ${C.ring(pct,108,{color:`var(--${tone})`,label:`<b class="brand-font" style="font-size:30px">${pct}%</b><span style="font-size:11px;color:var(--text-3)">${score}/${total}</span>`})}
         <div style="flex:1;min-width:200px">
           <div class="badge ${tone}" style="height:24px;margin-bottom:8px">${passed?(pct>=90?'¡Aprobado con honores!':'Aprobado'):'A reforzar'}</div>
-          <h2 style="font-size:22px;font-weight:750;letter-spacing:-.01em">${esc(data.title || 'Examen')}</h2>
+          <h2 style="font-size:22px;font-weight:800;letter-spacing:var(--track-tight)">${esc(data.title || 'Examen')}</h2>
           <p class="muted" style="margin-top:4px">Acertaste <b class="sky">${score} de ${total}</b>. Revisa las respuestas abajo para afinar tu técnica.</p>
           <div class="row" style="gap:10px;margin-top:14px">
             <button class="btn btn-primary" onclick="go('course')">Continuar curso ${IC.arrowR}</button>
@@ -583,7 +583,7 @@ function priorQuizAttempt() {
         <div class="player-stage">${stageInner}</div>
         <div class="row between vcenter" style="margin:16px 0 10px;flex-wrap:wrap;gap:10px">
           <div>
-            <h2 style="font-size:19px;font-weight:750;letter-spacing:-.01em">${title}</h2>
+            <h2 style="font-size:19px;font-weight:800;letter-spacing:var(--track-tight)">${title}</h2>
             ${courseLabel ? `<div class="muted" style="font-size:13px;margin-top:2px">${courseLabel}</div>` : ""}
           </div>
           <div class="row" style="gap:8px">

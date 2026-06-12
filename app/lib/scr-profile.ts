@@ -71,7 +71,7 @@ export const S = {};
             const order=['novato','jv','varsity','elite'].indexOf(l.id);
             const cur=l.id==='varsity', done=order<2, locked=order>2;
             return `<div class="level-node ${cur?'cur':''} ${locked?'locked':''}">
-              <div class="ln-badge" style="background:${cur?'linear-gradient(135deg,var(--otr-sky),var(--otr-sky-lo))':done?'linear-gradient(135deg,#9fb6cc,#7d96b0)':'linear-gradient(135deg,'+l.color+','+l.color+')'}">${esc((l.name||'')[0])}</div>
+              <div class="ln-badge" style="background:${cur?'linear-gradient(135deg,var(--otr-sky),var(--otr-sky-lo))':done?'linear-gradient(135deg,#B4B4A7,#89897D)':'linear-gradient(135deg,'+l.color+','+l.color+')'}">${esc((l.name||'')[0])}</div>
               <div class="ln-name">${esc(l.name)}${done?` <span style="display:inline-flex;width:14px;height:14px;color:var(--ok);vertical-align:-2px">${IC.check}</span>`:cur?'':''}</div>
               <div class="ln-range">${esc(l.range)}</div>
             </div>`;

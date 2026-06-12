@@ -490,7 +490,7 @@ S.debateHub = {
         btn.textContent = "Registrando…";
         try {
           await (window as any).api("/api/tournaments", { tournamentId: id });
-          (window as any).toast?.("¡Inscripción enviada!", "ok");
+          (window as any).toast?.("Inscripción enviada — nos vemos en la arena.", "ok");
           // marca localmente como inscrito y repinta (sin recarga completa)
           (DB.tournaments || []).forEach((t) => { if (t.id === id) t.registered = true; });
           repaint();

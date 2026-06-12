@@ -51,7 +51,7 @@ export const S = {};
             <div class="post-head"><b>${esc(p.author)}</b>${p.role==='Coach'?C.badge('Coach','navy'):''}${p.op?C.badge('Autor','sky'):''}<span class="faint" style="font-size:12px">${esc(p.when)}</span></div>
             <p>${esc(p.body)}</p>
             <div class="post-actions">
-              <button class="btn btn-quiet btn-sm" data-toast="¡Te gusta!">${IC.star} Útil</button>
+              <button class="btn btn-quiet btn-sm" data-toast="Marcado como útil">${IC.star} Útil</button>
               <button class="btn btn-quiet btn-sm">Responder</button>
             </div>
           </div>
@@ -138,7 +138,7 @@ export const S = {};
         body.appendChild(div); input.value=''; body.scrollTop=body.scrollHeight;
         setTimeout(()=>{ const r=document.createElement('div'); r.className='bubble-row';
           r.innerHTML=`<div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>`; body.appendChild(r); body.scrollTop=body.scrollHeight;
-          setTimeout(()=>{ r.querySelector('.bubble').innerHTML='¡Perfecto! Lo reviso en cuanto lo subas.<span class="b-time">ahora</span>'; body.scrollTop=body.scrollHeight; },1100);
+          setTimeout(()=>{ r.querySelector('.bubble').innerHTML='Perfecto. Lo reviso en cuanto lo subas.<span class="b-time">ahora</span>'; body.scrollTop=body.scrollHeight; },1100);
         },500);
       };
       send.addEventListener('click',push);
