@@ -534,8 +534,8 @@ function activeItemsFlat() {
 
       return `
       <div class="row between vcenter fade-up" style="--d:0;margin-bottom:6px">
-        <span class="badge sky">${IC.book} ${hasL ? "Lección" : "Unidad 2 · Lección 1"}</span>
-        <span class="muted row vcenter" style="font-size:12.5px;gap:5px">${IC.clock} ${hasL && L.dur ? esc(L.dur) : "18 min de lectura"}</span>
+        <span class="badge sky">${IC.book} Lección</span>
+        ${hasL && L.dur ? `<span class="muted row vcenter" style="font-size:12.5px;gap:5px">${IC.clock} ${esc(L.dur)}</span>` : ''}
       </div>
       <div class="lesson-wrap fade-up" style="--d:1">
         <div>

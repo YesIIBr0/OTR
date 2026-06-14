@@ -111,10 +111,11 @@ export const S = {};
           </div>
           <div class="card card-pad fade-up" style="--d:2">
             <div class="row between vcenter" style="margin-bottom:12px"><b style="font-size:13.5px">Pendientes de calificar</b><span class="badge sky">${DB.pendingSubs ?? 0}</span></div>
-            ${[['Grabación 2 min','12 sin revisar'],['Contention #1','5 sin revisar']].map(r=>`
-              <div class="lrow" style="padding:10px 0"><span style="display:flex;width:18px;color:var(--text-2)">${IC.mic}</span>
-              <div style="flex:1"><div style="font-weight:600;font-size:13px">${r[0]}</div><div class="faint" style="font-size:12px">${r[1]}</div></div><span style="display:flex;color:var(--text-3)">${IC.chevR}</span></div>`).join('')}
-            <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="grade-subs">Calificar entregas</button>
+            ${(DB.pendingSubs ?? 0) > 0
+              ? `<div class="lrow" style="padding:10px 0"><span style="display:flex;width:18px;color:var(--text-2)">${IC.mic}</span>
+                <div style="flex:1"><div style="font-weight:600;font-size:13px">${DB.pendingSubs} entrega${DB.pendingSubs === 1 ? '' : 's'} por revisar</div><div class="faint" style="font-size:12px">Ábrelas para calificar con nota y feedback</div></div></div>
+                <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="grade-subs">Calificar entregas</button>`
+              : `<div class="empty" style="padding:20px 16px"><div class="ill">${IC.checkCircle}</div><h4>Todo al día</h4><p>No tienes entregas pendientes de calificar.</p></div>`}
           </div>
         </div>
       </div>

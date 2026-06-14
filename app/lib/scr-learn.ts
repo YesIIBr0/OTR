@@ -75,7 +75,7 @@ function priorQuizAttempt() {
       const { lesson: L, course } = findLesson((window as any).__lesson);
       // Título de la actividad (= título de la lección). L.t YA viene esc() desde
       // queries.ts, igual que la clave de DB.mySubmissions y course.code/name.
-      const activity = L && L.t ? L.t : "Grabación: discurso de 2 minutos";
+      const activity = L && L.t ? L.t : "Entrega";
       // courseCode del curso activo (no el primero fijo). Cae al curso del primer
       // inscrito solo si no se pudo resolver la lección. Ya viene esc().
       const courseCode =
@@ -131,7 +131,7 @@ function priorQuizAttempt() {
         <div>
           <div class="eyebrow">Entrega de tarea</div>
           <div class="page-title" style="font-size:22px;margin-top:2px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</div>
-          <div class="page-sub" style="margin-top:2px">${course ? course.name : "Defiende una contención usando Claim · Warrant · Impact"}</div>
+          ${course && course.name ? `<div class="page-sub" style="margin-top:2px">${course.name}</div>` : ''}
         </div>
         ${due ? `<span class="badge warn" style="height:28px;align-self:flex-start">${IC.clock} ${due}</span>` : ''}
       </div>
@@ -183,7 +183,6 @@ function priorQuizAttempt() {
                 <div class="rubric-row"><span>${r[0]}</span><span class="badge sky" style="margin-left:auto">${r[1]} pts</span></div>`).join('')}
             </div>
           </div>
-          <div class="alert info"><span class="ai">${IC.target}</span><div><div class="at">Consejo del coach</div>Empieza fuerte: claim en los primeros 10 segundos.</div></div>
           <button class="btn btn-primary btn-lg btn-block" id="asg-submit">${prev ? "Re-entregar" : "Entregar"}</button>
           <p class="faint" style="text-align:center;font-size:12px">${prev ? "Una re-entrega reemplaza la anterior." : "Podrás re-entregar después de enviar."}</p>
         </div>
@@ -606,9 +605,9 @@ function priorQuizAttempt() {
       const g = DB.myGrades || { rows:[], avg:0, submitted:0, total:0, best:0 };
       const rows = g.rows || [];
 
+      const mainCourseName = (DB.courses && DB.courses[0] && DB.courses[0].name) || null;
       const head = `
-      <div class="page-head fade-up" style="--d:0"><div><div class="page-title">Mis calificaciones</div><div class="page-sub">Public Forum I · promedio ponderado</div></div>
-      <div class="seg"><button class="on">Public Forum I</button><button>Todos los cursos</button></div></div>`;
+      <div class="page-head fade-up" style="--d:0"><div><div class="page-title">Mis calificaciones</div><div class="page-sub">${mainCourseName ? esc(mainCourseName) + ' · ' : ''}promedio ponderado</div></div>${mainCourseName ? `<div class="seg"><button class="on">${esc(mainCourseName)}</button><button>Todos los cursos</button></div>` : ''}</div>`;
 
       if (!g.total) {
         return `${head}

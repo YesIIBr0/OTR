@@ -104,6 +104,7 @@ export const S = {};
         <div class="bubble-row ${c.me?'me':''}">
           <div class="bubble">${esc(c.body)}<span class="b-time">${esc(c.when)}</span></div>
         </div>`).join('');
+      const head = (DB.messages || [])[0] || null; // conversación seleccionada REAL; null → estado vacío
       return `
       <div class="page-head" style="margin-bottom:14px"><div><div class="eyebrow">Comunidad</div><div class="page-title" style="margin-top:2px">Mensajes</div>
       <div class="page-sub">Habla con tus coaches y compañeros</div></div></div>
@@ -113,9 +114,10 @@ export const S = {};
           ${convo}
         </aside>
         <section class="msg-thread">
+          ${head ? `
           <div class="mt-head">
-            <div class="avatar" style="background:var(--otr-navy);position:relative">SM<span class="online-dot"></span></div>
-            <div><b>Coach Saúl Méndez</b><div class="faint" style="font-size:12px">En línea · normalmente responde rápido</div></div>
+            <div class="avatar" style="background:${head.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${esc(head.ini)}${head.online?'<span class="online-dot"></span>':''}</div>
+            <div><b>${esc(head.name)}</b>${head.online?`<div class="faint" style="font-size:12px">En línea</div>`:''}</div>
             <div style="margin-left:auto" class="row"><button class="icon-btn">${IC.video}</button><button class="icon-btn">${IC.settings}</button></div>
           </div>
           <div class="mt-body" id="mt-body">
@@ -125,7 +127,8 @@ export const S = {};
           <div class="mt-compose">
             <input class="input" id="chat-input" placeholder="Escribe un mensaje…" style="flex:1"/>
             <button class="btn btn-primary" id="chat-send" style="width:42px;padding:0">${IC.arrowR}</button>
-          </div>
+          </div>`
+          : `<div class="empty" style="margin:auto;padding:48px 24px;text-align:center"><div class="ill">${IC.msg}</div><h4>Sin conversaciones</h4><p>Cuando hables con tus coaches o compañeros, los mensajes aparecerán aquí.</p></div>`}
         </section>
       </div>`;
     },
@@ -136,11 +139,10 @@ export const S = {};
         const div=document.createElement('div'); div.className='bubble-row me';
         div.innerHTML=`<div class="bubble">${esc(v)}<span class="b-time">ahora</span></div>`;
         body.appendChild(div); input.value=''; body.scrollTop=body.scrollHeight;
-        setTimeout(()=>{ const r=document.createElement('div'); r.className='bubble-row';
-          r.innerHTML=`<div class="bubble"><span class="typing"><i></i><i></i><i></i></span></div>`; body.appendChild(r); body.scrollTop=body.scrollHeight;
-          setTimeout(()=>{ r.querySelector('.bubble').innerHTML='Perfecto. Lo reviso en cuanto lo subas.<span class="b-time">ahora</span>'; body.scrollTop=body.scrollHeight; },1100);
-        },500);
+        // [de-mock] Eliminada la auto-respuesta falsa ("Perfecto. Lo reviso..."). El mensaje
+        // se envía de verdad a /api/messages; el destinatario lo ve en su bandeja.
       };
+      if (!body || !send) return;
       send.addEventListener('click',push);
       input.addEventListener('keydown',e=>{ if(e.key==='Enter')push(); });
       body.scrollTop=body.scrollHeight;
