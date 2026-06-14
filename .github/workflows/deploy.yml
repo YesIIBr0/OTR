@@ -69,16 +69,27 @@ jobs:
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
-      - name: Sincronizar compose + scripts al VPS
+      - name: Sincronizar compose + scripts al VPS (con reintentos)
         run: |
-          rsync -az \
-            --exclude '.git' --exclude 'node_modules' --exclude '.next' \
-            --exclude 'prisma/dev.db' --exclude 'prisma/dev.db-journal' --exclude 'prisma/schema.prisma' \
-            --exclude '.env' --exclude '.env.local' --exclude '.env.production' --exclude 'var/uploads' \
-            -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes" \
-            ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/otr/"
-      - name: Deploy en el VPS (login ghcr efímero + pull + up + healthcheck)
+          SSH_OPTS="-i $HOME/.ssh/deploy_key -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o ServerAliveInterval=15"
+          ok=0
+          for i in 1 2 3; do
+            if rsync -az \
+              --exclude '.git' --exclude 'node_modules' --exclude '.next' \
+              --exclude 'prisma/dev.db' --exclude 'prisma/dev.db-journal' --exclude 'prisma/schema.prisma' \
+              --exclude '.env' --exclude '.env.local' --exclude '.env.production' --exclude 'var/uploads' \
+              -e "ssh $SSH_OPTS" \
+              ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/otr/"; then ok=1; break; fi
+            echo "rsync intento $i falló — reintento en 20s"; sleep 20
+          done
+          [ "$ok" = 1 ] || { echo "rsync agotó los reintentos"; exit 1; }
+      - name: Deploy en el VPS (login ghcr efímero + pull + up + healthcheck, con reintentos)
         run: |
-          echo "${{ github.token }}" | ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-            'docker login ghcr.io -u "${{ github.actor }}" --password-stdin && bash /opt/otr/scripts/deploy.sh'
+          SSH_OPTS="-i $HOME/.ssh/deploy_key -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o ServerAliveInterval=15"
+          ok=0
+          for i in 1 2 3; do
+            if echo "${{ github.token }}" | ssh $SSH_OPTS "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+              'docker login ghcr.io -u "${{ github.actor }}" --password-stdin && bash /opt/otr/scripts/deploy.sh'; then ok=1; break; fi
+            echo "deploy intento $i falló — reintento en 20s"; sleep 20
+          done
+          [ "$ok" = 1 ] || { echo "deploy agotó los reintentos"; exit 1; }
