@@ -1274,7 +1274,31 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     // S.course/S.courseIndex/S.lesson navegan cualquiera vía window.__course; las
     // pantallas de lección buscan window.__lesson entre todos estos items.
     coursesContent: (() => {
-      const src = isTeacher ? [] : (studentModules as any[]);
+      // PROFESOR/ADMIN: "Vista previa como alumno" — sus cursos impartidos en el shape
+      // de alumno, con secciones/actividades OCULTAS filtradas (igual que lo ve el
+      // estudiante) y sin gating de progreso (el profesor no tiene avance) para poder
+      // recorrer todo. Reutiliza S.course/S.lesson/S.assignment/S.quiz tal cual.
+      if (isTeacher) {
+        return (taughtCourses as any[]).map((c: any) => ({
+          id: c.code, dbId: c.id, code: c.code,
+          name: esc(pickLang(c.name, c.nameEn)), coach: esc(c.coachName),
+          color: c.color, progress: 0,
+          summary: esc(pickLang(c.summary, c.summaryEn)),
+          format: esc(c.format), modality: esc(c.modality),
+          layout: c.layout || "modules",
+          modules: (c.modules || []).filter((m: any) => !m.hidden).map((m: any) => ({
+            t: esc(m.title), done: false, locked: false,
+            items: (m.lessons || []).filter((l: any) => !l.hidden).map((l: any) => ({
+              id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: false, doneByMe: false,
+              locked: false, grade: null, dur: l.dur, due: l.due,
+              dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
+              videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
+              quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
+            })),
+          })),
+        }));
+      }
+      const src = (studentModules as any[]);
       const byCourse = new Map<string, any[]>();
       src.forEach((m) => {
         const arr = byCourse.get(m.courseId) || [];

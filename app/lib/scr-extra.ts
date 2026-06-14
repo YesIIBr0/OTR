@@ -190,7 +190,7 @@ export const S = {
           <div class="row" style="gap:6px;flex:none">
             <button class="btn ${edit ? "btn-primary" : "btn-soft"} btn-sm" data-toggle-edit title="Mostrar/ocultar controles de edición">${IC.sliders} Modo edición: ${edit ? "ON" : "OFF"}</button>
             <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${esc(c.name)}">${IC.pencil} Configuración</button>
-            <button class="btn btn-ghost btn-sm" data-go="course">${IC.play} Vista previa</button>
+            <button class="btn btn-ghost btn-sm" onclick="window.__course='${esc(c.code)}';go('course')">${IC.play} Vista previa (como alumno)</button>
           </div>
         </div>
       </div>`;

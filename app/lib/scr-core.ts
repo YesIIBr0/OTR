@@ -416,7 +416,14 @@ function activeItemsFlat() {
       const avgGrade = (DB.myGrades && typeof DB.myGrades.avg === 'number') ? DB.myGrades.avg : null;
       const hasAvg = avgGrade != null && (DB.myGrades?.submitted || 0) > 0;
 
+      // Barra de "vista previa" para el profesor/admin (ve el curso como alumno) con
+      // botón de volver al constructor.
+      const isPreview = (DB.me?.role === 'teacher' || DB.me?.role === 'admin');
+      const previewBar = isPreview
+        ? `<div class="card card-pad fade-up" style="--d:0;margin-bottom:14px;background:color-mix(in srgb,var(--otr-sky) 8%,#fff);border-color:var(--otr-sky)"><div class="row between vcenter" style="gap:10px;flex-wrap:wrap"><span class="row vcenter" style="gap:8px;font-size:13px"><span style="display:flex;width:16px;color:var(--otr-sky-lo)">${IC.eye}</span><b>Vista previa</b> — así ve este curso un alumno</span><button class="btn btn-soft btn-sm" data-go="course-builder">${IC.chevL} Volver al constructor</button></div></div>`
+        : '';
       return `
+      ${previewBar}
       ${selector}
       <div class="course-hero fade-up" style="--d:0">
         <div class="ch-banner" style="background:linear-gradient(120deg,${c.color},var(--otr-navy))">
