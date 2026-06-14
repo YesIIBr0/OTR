@@ -31,6 +31,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!enrolled) return bad("No estás inscrito en este curso", 403);
   }
 
+  // [P2] Gating: no se puede rendir el examen si su lección está bloqueada por prerrequisito.
+  if (quiz.lesson?.releaseAfterId) {
+    const prereqDone = await db.lessonProgress.findUnique({
+      where: { userId_lessonId: { userId: user.id, lessonId: quiz.lesson.releaseAfterId } },
+      select: { done: true },
+    });
+    if (!prereqDone?.done) return bad("Completa la lección previa primero", 403);
+  }
+
   const body = await readJson<Body>(req);
   const answers = body.answers && typeof body.answers === "object" ? body.answers : {};
 
@@ -55,6 +64,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const percent = total ? Math.round((score / total) * 100) : 0;
   const passed = percent >= quiz.passScore;
   const lessonTitle = quiz.lesson.title;
+
+  // [P2] Auto-completar: aprobar el examen marca su lección como completada y
+  // recalcula el progreso del curso (así se desbloquea la lección siguiente si la usa de prereq).
+  if (passed && courseId) {
+    await db.lessonProgress.upsert({
+      where: { userId_lessonId: { userId: user.id, lessonId: quiz.lessonId } },
+      create: { userId: user.id, lessonId: quiz.lessonId, done: true },
+      update: { done: true },
+    });
+    const courseLessons = await db.lesson.findMany({ where: { module: { courseId } }, select: { id: true } });
+    const doneCount = await db.lessonProgress.count({ where: { userId: user.id, done: true, lessonId: { in: courseLessons.map((l) => l.id) } } });
+    const prog = courseLessons.length ? Math.round((doneCount / courseLessons.length) * 100) : 0;
+    await db.enrollment.updateMany({ where: { userId: user.id, courseId }, data: { progress: prog } });
+  }
 
   // --- XP solo-si-mejora: lógica EXACTA de /api/quiz-attempts ---
   const prevBest = await db.quizAttempt.findFirst({

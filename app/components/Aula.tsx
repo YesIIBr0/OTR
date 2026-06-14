@@ -130,6 +130,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
       const inner = fields.map((f) => f.type === "select"
         ? `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><select class="select" data-f="${f.name}">${(f.options || []).map((o: any) => `<option value="${o.value}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("")}</select></div>`
+        : f.type === "richtext"
+          ? `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", "Negrita"], ["italic", "<i>I</i>", "Cursiva"], ["formatBlock:h3", "H", "Subtítulo"], ["insertUnorderedList", "• Lista", "Lista"], ["createLink", "🔗", "Enlace"], ["removeFormat", "⨯", "Quitar formato"]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" data-f="${f.name}" data-rich="1" contenteditable="true" style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div></div>`
         : f.type === "textarea"
           ? `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><textarea class="input" data-f="${f.name}" rows="6" placeholder="${f.ph || ""}" style="resize:vertical;min-height:96px;font-family:inherit;line-height:1.5">${f.value || ""}</textarea></div>`
           : `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><input class="input" data-f="${f.name}"${f.type === "number" ? ` type="number" min="0" max="100"` : ""} placeholder="${f.ph || ""}" value="${f.value != null ? f.value : ""}"/></div>`
@@ -137,10 +139,20 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body">${inner}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:4px 0 0"></p></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button><button class="btn btn-primary" data-ok>Guardar</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
+      // [P1] Editor rico: la barra aplica comandos al contenteditable. mousedown+preventDefault preserva la selección.
+      scrim.querySelectorAll("[data-rcmd]").forEach((b: any) => b.addEventListener("mousedown", (ev: any) => {
+        ev.preventDefault();
+        const cmd = String(b.dataset.rcmd);
+        const editor = b.closest(".field")?.querySelector("[data-rich]") as HTMLElement | null;
+        editor?.focus();
+        if (cmd.startsWith("formatBlock:")) document.execCommand("formatBlock", false, cmd.split(":")[1]);
+        else if (cmd === "createLink") { const url = window.prompt("URL del enlace:"); if (url) document.execCommand("createLink", false, url); }
+        else document.execCommand(cmd, false);
+      }));
       const close = () => scrim.remove();
       scrim.addEventListener("click", (e: any) => { if (e.target === scrim || e.target.closest("[data-x]")) close(); });
       scrim.querySelector("[data-ok]")?.addEventListener("click", async () => {
-        const values: any = {}; scrim.querySelectorAll("[data-f]").forEach((el: any) => (values[el.dataset.f] = el.value));
+        const values: any = {}; scrim.querySelectorAll("[data-f]").forEach((el: any) => (values[el.dataset.f] = el.dataset.rich ? el.innerHTML : el.value));
         const okBtn = scrim.querySelector("[data-ok]") as HTMLElement; okBtn.textContent = "Guardando…";
         try { await onSubmit(values); close(); } catch (err: any) { const e = scrim.querySelector(".fm-err") as HTMLElement; e.textContent = err.message || "Error"; e.style.display = "block"; okBtn.textContent = "Guardar"; }
       });
@@ -179,17 +191,34 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "videoKind", label: "Video", type: "select", value: "none", options: [
           { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Cloudflare Stream (UID)" }] },
         { name: "videoSrc", label: "URL de YouTube o UID de Cloudflare", ph: "https://youtu.be/… o el UID" },
-        { name: "contentHtml", label: "Contenido de la lección", type: "textarea", ph: "Escribe el contenido (admite <b>, <h2>, <ul>, <li>…)" },
+        { name: "contentHtml", label: "Contenido de la lección", type: "richtext", ph: "Escribe el contenido…" },
       ], async (v) => { await api("/api/lessons", v); toast("Contenido creado", "ok"); await refresh(); });
     }
     function openEditLesson(id: string, l: any) {
+      // [P2] Candidatos a prerrequisito: las demás lecciones del MISMO curso.
+      let courseLessons: any[] = [];
+      for (const tc of ((DB as any).teacherCourses || [])) {
+        const lessons = tc.modules.flatMap((m: any) => m.lessons);
+        if (lessons.some((x: any) => x.id === id)) courseLessons = lessons;
+      }
+      const prereqOptions = [{ value: "", label: "— Sin prerrequisito —" }, ...courseLessons.filter((x: any) => x.id !== id).map((x: any) => ({ value: x.id, label: x.title }))];
       formModal("Editar lección", [
         { name: "title", label: "Título", value: l.title },
+        { name: "type", label: "Tipo", type: "select", value: l.type || "lesson", options: [
+          { value: "lesson", label: "Lección" }, { value: "video", label: "Video" }, { value: "quiz", label: "Examen" },
+          { value: "assign", label: "Tarea" }, { value: "mic", label: "Grabación" }, { value: "file", label: "Archivo" }] },
+        { name: "dur", label: "Duración (opcional)", value: l.dur || "", ph: "15 min" },
+        { name: "releaseAfterId", label: "Prerrequisito (completar antes de desbloquear)", type: "select", value: l.releaseAfterId || "", options: prereqOptions },
         { name: "videoKind", label: "Video", type: "select", value: l.videoKind || "none", options: [
           { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Cloudflare Stream (UID)" }] },
         { name: "videoSrc", label: "URL de YouTube o UID de Cloudflare", value: l.videoSrc || "" },
-        { name: "contentHtml", label: "Contenido de la lección", type: "textarea", value: l.contentHtml || "" },
+        { name: "contentHtml", label: "Contenido de la lección", type: "richtext", value: l.contentHtml || "" },
       ], async (v) => { await api(`/api/lessons/${id}`, v, "PATCH"); toast("Lección actualizada", "ok"); await refresh(); });
+    }
+    function openEditModule(id: string, title: string) {
+      formModal("Editar módulo", [
+        { name: "title", label: "Título del módulo", value: title },
+      ], async (v) => { await api(`/api/modules/${id}`, v, "PATCH"); toast("Módulo actualizado", "ok"); await refresh(); });
     }
     function openCreateMenu() {
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
@@ -305,7 +334,9 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           { value: "online", label: "Online" }, { value: "presencial", label: "Presencial" }, { value: "híbrido", label: "Híbrido" }] },
         { name: "capacity", label: "Cupo (capacidad)", value: c?.capacity || "", ph: "20" },
         { name: "summary", label: "Resumen del programa", type: "textarea", value: c?.summary || "", ph: "Describe de qué trata este programa…" },
-      ], async (v) => { await api(`/api/courses/${id}`, v, "PATCH"); toast("Curso actualizado", "ok"); await refresh(); });
+        { name: "published", label: "Estado", type: "select", value: (c?.published === false ? "false" : "true"), options: [
+          { value: "true", label: "Publicado (visible en el catálogo)" }, { value: "false", label: "Borrador (oculto del catálogo)" }] },
+      ], async (v) => { if (v.published !== undefined) v.published = v.published === "true"; await api(`/api/courses/${id}`, v, "PATCH"); toast("Curso actualizado", "ok"); await refresh(); });
     }
 
     function openEditProfile() {
@@ -431,8 +462,50 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (delEl) {
         e.preventDefault();
         const [kind, id] = delEl.getAttribute("data-del")!.split(":");
+        const msg = kind === "course"
+          ? "¿Eliminar el curso completo? Se borran sus módulos, lecciones y exámenes. No se puede deshacer."
+          : kind === "module"
+          ? "¿Eliminar el módulo y TODAS sus lecciones? No se puede deshacer."
+          : "¿Eliminar esta lección? No se puede deshacer.";
+        if (!window.confirm(msg)) return;
         const url = kind === "course" ? `/api/courses/${id}` : kind === "module" ? `/api/modules/${id}` : `/api/lessons/${id}`;
         api(url, null, "DELETE").then(() => { toast("Eliminado", "ok"); refresh(); }).catch((err: any) => toast(err.message, "danger"));
+        return;
+      }
+      // [P1] Editar módulo (lápiz en la gestión de contenido)
+      const editModEl = t.closest("[data-edit-module]") as HTMLElement | null;
+      if (editModEl) { e.preventDefault(); openEditModule(editModEl.getAttribute("data-edit-module")!, editModEl.dataset.title || ""); return; }
+      // [P1] Reordenar módulos (↑/↓): deriva el orden de los hermanos desde DB.teacherCourses
+      const rmEl = t.closest("[data-reorder-module]") as HTMLElement | null;
+      if (rmEl) {
+        e.preventDefault();
+        const [courseId, moduleId, dir] = rmEl.getAttribute("data-reorder-module")!.split(":");
+        const course = ((DB as any).teacherCourses || []).find((c: any) => c.id === courseId);
+        if (course) {
+          const ids = course.modules.map((m: any) => m.id);
+          const i = ids.indexOf(moduleId); const j = dir === "up" ? i - 1 : i + 1;
+          if (i >= 0 && j >= 0 && j < ids.length) {
+            [ids[i], ids[j]] = [ids[j], ids[i]];
+            api("/api/modules/reorder", { courseId, orderedIds: ids }, "POST").then(() => refresh()).catch((err: any) => toast(err.message, "danger"));
+          }
+        }
+        return;
+      }
+      // [P1] Reordenar lecciones (↑/↓)
+      const rlEl = t.closest("[data-reorder-lesson]") as HTMLElement | null;
+      if (rlEl) {
+        e.preventDefault();
+        const [moduleId, lessonId, dir] = rlEl.getAttribute("data-reorder-lesson")!.split(":");
+        let mod: any = null;
+        for (const c of ((DB as any).teacherCourses || [])) for (const m of c.modules) if (m.id === moduleId) mod = m;
+        if (mod) {
+          const ids = mod.lessons.map((l: any) => l.id);
+          const i = ids.indexOf(lessonId); const j = dir === "up" ? i - 1 : i + 1;
+          if (i >= 0 && j >= 0 && j < ids.length) {
+            [ids[i], ids[j]] = [ids[j], ids[i]];
+            api("/api/lessons/reorder", { moduleId, orderedIds: ids }, "POST").then(() => refresh()).catch((err: any) => toast(err.message, "danger"));
+          }
+        }
         return;
       }
       const editEl = t.closest("[data-edit-course]") as HTMLElement | null;

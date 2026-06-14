@@ -179,7 +179,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
           include: { messages: { orderBy: { position: "asc" }, take: 200 } },
         })
       : Promise.resolve([] as any[]),
-    db.course.findMany({ orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true } }),
+    db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true } }),
     // Mapa de módulos para gestión de contenido: solo profesor/admin.
     isTeacher ? db.module.findMany({ orderBy: { position: "asc" }, select: { id: true, courseId: true, title: true } }) : Promise.resolve([]),
     // Cursos impartidos (con reseñas para el perfil del coach): solo profesor/admin.
@@ -246,8 +246,29 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   // inscrito (meEnrollments ya viene ordenado por course.position asc). Si no hay
   // ninguna inscripción → [] (no se fuerza PF-101). El profesor mantiene PF-101.
   const firstEnrolledCourseId = !isTeacher ? (meEnrollments[0]?.courseId ?? null) : null;
-  // Coach del curso principal (solo aplica a STUDENT); resuelto ya desde el Promise.all principal.
-  const studentCoach = !isTeacher ? (mainCourse?.teacher ?? null) : null;
+  const firstTaughtCourseId = isTeacher ? (taughtCourses[0]?.id ?? null) : null;
+  // [P0 de-mock] El "curso principal" ya NO es el hardcoded PF-101:
+  //   · estudiante → su PRIMER curso inscrito (coach/reseñas/programas REALES de ese curso)
+  //   · profesor   → su PRIMER curso impartido (roster real para el dashboard)
+  const [studentMainCourse, taughtRoster] = await Promise.all([
+    (!isTeacher && firstEnrolledCourseId)
+      ? db.course.findUnique({
+          where: { id: firstEnrolledCourseId },
+          include: {
+            teacher: { select: { id: true, name: true, email: true, initials: true, headline: true, bio: true, teachingStyle: true, formats: true, location: true } },
+            reviews: { include: { student: true }, orderBy: { createdAt: "desc" } },
+          },
+        })
+      : Promise.resolve(null),
+    (isTeacher && firstTaughtCourseId)
+      ? db.enrollment.findMany({ where: { courseId: firstTaughtCourseId }, include: { user: true }, orderBy: { user: { xp: "desc" } }, take: 200 })
+      : Promise.resolve([] as any[]),
+  ]);
+  // mainCourse efectivo (estudiante) + coach REAL de su curso (ya no PF-101/saul).
+  const effMainCourse: any = isTeacher ? null : studentMainCourse;
+  const studentCoach = !isTeacher ? (studentMainCourse?.teacher ?? null) : null;
+  // base.teacher: profesor → él mismo; estudiante → coach del curso en que está inscrito.
+  const headCoach: any = isTeacher ? me : studentCoach;
   const [
     myProgress, mySubs, myQuizzes, enrolledLessons, pendingSubs, quizRows, studentModules,
     coachPrograms, myReviewRow, activityEvents,
@@ -290,8 +311,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
         })
       : Promise.resolve([]),
     // Mi reseña del curso principal: solo depende de me + mainCourse (ya resueltos) → paralelo.
-    me && mainCourse
-      ? db.review.findUnique({ where: { courseId_studentId: { courseId: mainCourse.id, studentId: me.id } } })
+    me && effMainCourse
+      ? db.review.findUnique({ where: { courseId_studentId: { courseId: effMainCourse.id, studentId: me.id } } })
       : Promise.resolve(null),
     // Spine ActivityEvent (PRD §4 + §8): últimos 60 eventos del usuario, UNA sola
     // consulta para dos consumidores — DB.activity usa los primeros 15 (desc) y
@@ -383,7 +404,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   // TODOS los cursos inscritos (Moodle multi-curso), así que filtramos al primero
   // para mantener el contrato del dashboard; coursesContent (abajo) trae el resto.
   const modulesForDashboard = isTeacher
-    ? pfModules
+    ? ((taughtCourses[0]?.modules as any[]) ?? [])
     : (studentModules as any[]).filter((m) => m.courseId === firstEnrolledCourseId);
 
   // Mapa lessonId -> quiz (forma del contrato). Para alumno sin 'correct'.
@@ -399,6 +420,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
 
   // Conjunto de ids de lecciones completadas por el usuario (progreso real).
   const doneSet = new Set((myProgress || []).map((p: any) => p.lessonId));
+
+  // [P2] Gating de prerrequisito: una lección está bloqueada si su releaseAfter
+  // (lección previa requerida) aún no está completada. Respeta el 'locked' estático
+  // que el profesor haya puesto a mano.
+  const lessonLocked = (l: any): boolean =>
+    l?.locked === true || (l?.releaseAfterId ? !doneSet.has(l.releaseAfterId) : false);
 
   // Total de lecciones por curso inscrito y cuántas ha completado el alumno.
   const totalByCourse = new Map<string, number>();
@@ -527,7 +554,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     // STUDENT: el coach del curso principal con sus programas y reseñas.
     // coachPrograms ya se cargó en paralelo arriba (Promise.all).
     const coach = studentCoach;
-    coachProfile = buildCoachProfile(coach, coachPrograms, mainCourse?.reviews ?? []);
+    coachProfile = buildCoachProfile(coach, coachPrograms, effMainCourse?.reviews ?? []);
   }
 
   // --- Mi reseña (del usuario actual para el curso principal) ---------------
@@ -1217,8 +1244,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       // PRD §11.3 / §2.2: estudiante sin placement aún (placedAt null) → P1/Aula.tsx lo enruta al placement.
       needsPlacement: me?.role === "STUDENT" && !me?.placedAt,
       avatarUrl: safeUrl(me?.avatarUrl) },
-    teacher: { name: esc(teacher?.name), email: teacher?.email, initials: esc(teacher?.initials), role: "teacher",
-      headline: esc(teacher?.headline), bio: esc(teacher?.bio), teachingStyle: esc(teacher?.teachingStyle), formats: esc(teacher?.formats), location: esc(teacher?.location) },
+    teacher: { name: esc(headCoach?.name), email: headCoach?.email, initials: esc(headCoach?.initials), role: "teacher",
+      headline: esc(headCoach?.headline), bio: esc(headCoach?.bio), teachingStyle: esc(headCoach?.teachingStyle), formats: esc(headCoach?.formats), location: esc(headCoach?.location) },
     levels: levels.map((l) => ({ id: l.name.toLowerCase(), name: l.name, range: l.range, color: l.color })),
     xp: me?.xp ?? 0,
     xpNext,
@@ -1232,7 +1259,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     courseModules: modulesForDashboard.map((m) => ({
       t: esc(m.title), done: m.done, locked: m.locked,
       items: m.lessons.map((l) => ({
-        id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id), locked: l.locked, grade: l.grade, dur: l.dur, due: l.due,
+        id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id), locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
         videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
         // Examen real adjunto solo a lecciones type='quiz' (null si no tiene).
         quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
@@ -1259,7 +1286,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
           t: esc(m.title), done: m.done, locked: m.locked,
           items: m.lessons.map((l: any) => ({
             id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id),
-            locked: l.locked, grade: l.grade, dur: l.dur, due: l.due,
+            locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
             videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
             quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
           })),
@@ -1341,7 +1368,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   // Un STUDENT NUNCA recibe gradebook, students, manage, teacherCourses ni
   // reviewsReceived. Solo se añaden para TEACHER/ADMIN.
   if (isTeacher) {
-    base.students = pfStudents.map((e) => ({
+    base.students = (taughtRoster as any[]).map((e) => ({
       id: e.user.id, n: esc(e.user.name), i: esc(e.user.initials), lvl: e.user.level, xp: e.user.xp,
       grade: e.grade, att: e.attendance, eng: e.engagement, trend: e.trend, risk: e.risk, last: e.lastAccess,
     }));
@@ -1368,9 +1395,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       modules: allModules.map((m) => ({ id: m.id, courseId: m.courseId, title: esc(m.title) })),
     };
     base.teacherCourses = taughtCourses.map((c: any) => ({
-      id: c.id, code: c.code, name: esc(c.name), color: c.color,
+      id: c.id, code: c.code, name: esc(c.name), color: c.color, published: c.published,
       format: esc(c.format), modality: esc(c.modality), capacity: c.capacity, summary: esc(c.summary),
-      modules: c.modules.map((m: any) => ({ id: m.id, title: esc(m.title), lessons: m.lessons.map((l: any) => ({ id: l.id, title: esc(l.title), type: l.type, videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml })) })),
+      modules: c.modules.map((m: any) => ({ id: m.id, title: esc(m.title), lessons: m.lessons.map((l: any) => ({ id: l.id, title: esc(l.title), type: l.type, dur: l.dur, videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml, releaseAfterId: l.releaseAfterId || null })) })),
     }));
     base.reviewsReceived = reviewsReceived;
   }

@@ -29,6 +29,15 @@ export async function POST(req: Request) {
     if (!enrolled) return bad("No estás inscrito en este curso", 403);
   }
 
+  // [P2] Gating: no se puede completar una lección cuyo prerrequisito no esté hecho.
+  if (done && lesson?.releaseAfterId) {
+    const prereqDone = await db.lessonProgress.findUnique({
+      where: { userId_lessonId: { userId: user.id, lessonId: lesson.releaseAfterId } },
+      select: { done: true },
+    });
+    if (!prereqDone?.done) return bad("Completa la lección previa primero", 403);
+  }
+
   // Upsert del progreso por el unique (userId, lessonId).
   const prev = await db.lessonProgress.findUnique({
     where: { userId_lessonId: { userId: user.id, lessonId } },

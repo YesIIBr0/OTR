@@ -28,6 +28,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const n = Number(body.capacity);
     data.capacity = body.capacity === "" || Number.isNaN(n) ? null : n;
   }
+  // [P1] Borrador/publicado: toggle explícito y validado (no por el loop genérico de strings).
+  if (typeof body.published === "boolean") data.published = body.published;
   const course = await db.course.update({ where: { id }, data });
   return NextResponse.json({ ok: true, course });
 }

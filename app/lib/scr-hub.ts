@@ -327,7 +327,7 @@ export const S = {
         }
         // navegar vía la delegación data-go existente de Aula.tsx
         const tmp = document.createElement("a");
-        tmp.setAttribute("data-go", "hub");
+        tmp.setAttribute("data-go", "dashboard");
         tmp.style.display = "none";
         root.appendChild(tmp); tmp.click(); tmp.remove();
       });

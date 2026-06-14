@@ -14,8 +14,8 @@ type Role = "student" | "parent" | "teacher";
 export default function Auth() {
   const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("analia.reyes@otr.do");
-  const [password, setPassword] = useState("otr1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [role, setRole] = useState<Role>("student");
   const [birthYear, setBirthYear] = useState("");
@@ -374,11 +374,6 @@ export default function Auth() {
             </button>
           )}
 
-          {mode === "login" && (
-            <p className="faint" style={{ textAlign: "center", marginTop: 18, fontSize: 12 }}>
-              Demo: <b>analia.reyes@otr.do</b> (alumna) · <b>saul@otr.do</b> (profesor) — contraseña <b>otr1234</b>
-            </p>
-          )}
         </div>
       </div>
     </div>

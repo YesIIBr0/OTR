@@ -148,10 +148,12 @@ model LessonProgress {
   id       String  @id @default(cuid())
   userId   String
   lessonId String
+  lesson   Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   done     Boolean @default(true)
 
   @@unique([userId, lessonId])
   @@index([userId])
+  @@index([lessonId])
 }
 
 model Module {
@@ -185,6 +187,11 @@ model Lesson {
   titleEn     String?                   // PRD §17.3: i18n estructural — variante EN
   contentHtmlEn String?                 // (null = sin traducir → cae al ES)
   quiz        Quiz?                      // si type=quiz, el examen creado por el profesor
+  progress    LessonProgress[]           // [P0] FK inverso: borrar la lección limpia su progreso
+  // [P2] Prerrequisito: la lección que debe completarse antes de desbloquear esta.
+  releaseAfterId String?
+  releaseAfter   Lesson?  @relation("LessonRelease", fields: [releaseAfterId], references: [id], onDelete: SetNull)
+  releaseGates   Lesson[] @relation("LessonRelease")
 
   @@index([moduleId])
 }

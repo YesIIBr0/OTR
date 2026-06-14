@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   }>(req);
   const activity = clean(body.activity, 160) || "Entrega";
   const kind = clean(body.kind, 24) || "audio";
-  const courseCode = clean(body.courseCode, 24) || "PF-101";
+  const courseCode = clean(body.courseCode, 24) || "";
 
   // Verifica que el usuario esté INSCRITO en el curso (courseCode→course→enrollment)
   // antes de crear la entrega.

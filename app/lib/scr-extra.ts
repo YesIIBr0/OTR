@@ -45,7 +45,7 @@ export const S = {
           <div class="page-sub">Aún no tienes cursos. Usa el botón <b>+ Crear</b> arriba para empezar.</div></div></div>
           <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Sin cursos todavía</h4><p>Crea tu primer curso con "+ Crear → Nuevo curso".</p></div></div>`;
       }
-      const lesson = (l) => {
+      const lesson = (l, mid) => {
         // Estado del examen (mismo criterio que el panel de S.teacher).
         const isQuiz = l.type === 'quiz';
         const quizInDb = (DB.quizByLesson || {})[l.id];
@@ -56,13 +56,13 @@ export const S = {
           : '';
         return `<div class="row between vcenter" style="padding:7px 0 7px 18px;font-size:13px;color:var(--text-2)">
         <span class="row vcenter" style="gap:8px;min-width:0"><span style="display:flex;width:15px;color:var(--text-3);flex:none">${C.typeIcon(l.type)}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.title)}</span>${l.videoKind && l.videoKind !== 'none' ? `<span class="badge sky" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.video} ${l.videoKind === 'youtube' ? 'YouTube' : 'Stream'}</span>` : ''}${quizBadge}</span>
-        <span class="row" style="gap:4px;flex:none">${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ''}<button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar lección">${IC.pencil}</button>
+        <span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:up" title="Subir">↑</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:down" title="Bajar">↓</button>${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ''}<button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar lección">${IC.pencil}</button>
         <button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" style="color:var(--danger)" title="Eliminar lección">${IC.close}</button></span></div>`;
       };
-      const mod = (m) => `<div style="border-top:1px solid var(--border);padding:12px 0 6px">
+      const mod = (m, cid) => `<div style="border-top:1px solid var(--border);padding:12px 0 6px">
         <div class="row between vcenter" style="margin-bottom:4px"><b class="row vcenter" style="gap:7px;font-size:13.5px"><span style="display:flex;width:14px;color:var(--text-3)">${IC.grid}</span>${esc(m.title)}</b>
-          <button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar módulo</button></div>
-        ${m.lessons.map(lesson).join("") || '<div class="faint" style="font-size:12px;padding:6px 0 0 18px">Sin lecciones — añade con "+ Crear"</div>'}
+          <span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="Subir módulo">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="Bajar módulo">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="Editar módulo">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar módulo</button></span></div>
+        ${m.lessons.map((l) => lesson(l, m.id)).join("") || '<div class="faint" style="font-size:12px;padding:6px 0 0 18px">Sin lecciones — añade con "+ Crear"</div>'}
       </div>`;
       const course = (c, i = 0) => `<div class="card card-pad fade-up" style="margin-bottom:14px;--d:${i}">
         <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
@@ -72,7 +72,7 @@ export const S = {
             <button class="btn btn-quiet btn-sm" data-del="course:${c.id}" style="color:var(--danger)">${IC.flag} Eliminar</button>
           </div>
         </div>
-        ${c.modules.map(mod).join("") || '<div class="faint" style="font-size:12px;margin-top:10px">Sin módulos todavía — añade con "+ Crear → Nuevo módulo"</div>'}
+        ${c.modules.map((m) => mod(m, c.id)).join("") || '<div class="faint" style="font-size:12px;margin-top:10px">Sin módulos todavía — añade con "+ Crear → Nuevo módulo"</div>'}
       </div>`;
       return `
       <div class="page-head"><div><p class="eyebrow">Profesor</p><div class="page-title">Gestión de contenido</div>

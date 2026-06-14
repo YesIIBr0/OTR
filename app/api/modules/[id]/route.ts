@@ -3,6 +3,20 @@ import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { teacherOwnsModule } from "../../../lib/authz";
 
+// [P1] Editar el módulo (título). Allowlist explícita (anti mass-assignment).
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const { id } = await params;
+  if (!(await teacherOwnsModule(id, user))) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  const body = await req.json().catch(() => ({}));
+  const data: Record<string, unknown> = {};
+  if (body.title != null) data.title = String(body.title).slice(0, 120);
+  if (!Object.keys(data).length) return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });
+  const updated = await db.module.update({ where: { id }, data });
+  return NextResponse.json({ ok: true, module: updated });
+}
+
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });

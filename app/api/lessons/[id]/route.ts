@@ -20,6 +20,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (body.videoKind != null) data.videoKind = kind;
   if (body.videoSrc !== undefined) data.videoSrc = normalizeVideoSrc(kind, body.videoSrc);
   if (body.contentHtml !== undefined) data.contentHtml = sanitizeHtml(body.contentHtml);
+  if (body.releaseAfterId !== undefined) data.releaseAfterId = body.releaseAfterId || null;
   const updated = await db.lesson.update({ where: { id }, data });
   return NextResponse.json({ ok: true, lesson: updated });
 }
