@@ -18,6 +18,8 @@ export const IC = (() => {
     user: w('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
     mic: w('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/>'),
     video: w('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>'),
+    grip: w('<circle cx="9" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.2" fill="currentColor" stroke="none"/>'),
+    copy: w('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4.5A.5.5 0 0 1 4 14.5V4.5A.5.5 0 0 1 4.5 4h10a.5.5 0 0 1 .5.5V5"/>'),
     search: w('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'),
     bell: w('<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 19a2 2 0 0 0 4 0"/>'),
     menu: w('<path d="M4 7h16M4 12h16M4 17h16"/>'),

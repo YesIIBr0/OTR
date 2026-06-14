@@ -366,3 +366,18 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
   .btn-navy:active{transform:none}
   .btn-primary::after{display:none}
 }
+
+/* ============================================================
+   Course Builder v2 — drag & drop, inline rename, autoguardado
+   ============================================================ */
+.drag-grip{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;color:var(--text-3);cursor:grab;opacity:.3;transition:opacity .15s;flex:none}
+.drag-grip:active{cursor:grabbing}
+.secblk:hover .drag-grip,.lrow:hover .drag-grip{opacity:.85}
+.sortable-ghost{opacity:.4}
+.drop-target{outline:2px dashed var(--otr-sky);outline-offset:2px;border-radius:10px}
+.insert-line{height:2px;background:var(--otr-sky);border-radius:2px;margin:1px 0;box-shadow:0 0 4px color-mix(in srgb,var(--otr-sky) 50%,transparent)}
+.sec-dropzone.drop-target{border-color:var(--otr-sky);color:var(--otr-sky)}
+.save-chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text-2);padding:3px 10px;border-radius:100px;border:1px solid var(--border);background:var(--surface)}
+.save-chip.saving{color:var(--otr-sky);border-color:color-mix(in srgb,var(--otr-sky) 45%,var(--border))}
+.save-chip.saved{color:#1E8C16;border-color:color-mix(in srgb,#1E8C16 40%,var(--border))}
+.inline-rename-input{font:inherit;font-size:13.5px;font-weight:700;padding:2px 6px;border:1.5px solid var(--otr-sky);border-radius:6px;background:#fff;min-width:140px;max-width:100%}

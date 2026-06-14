@@ -10,7 +10,17 @@ import { esc } from "./esc";
 function fmtDue(iso) {
   try { const d = new Date(iso); if (isNaN(d.getTime())) return ""; return d.toLocaleDateString("es", { day: "numeric", month: "short" }); } catch { return ""; }
 }
-// Fila de ACTIVIDAD (lección). edit=true muestra los controles de autoría (estilo Moodle).
+// Chip de autoguardado en el hero del builder (Guardando… / Guardado).
+function saveChip(root, state) {
+  const el = root && root.querySelector("[data-save-chip]");
+  if (!el) return;
+  if (!state) { el.style.display = "none"; return; }
+  el.style.display = "inline-flex";
+  el.className = "save-chip " + (state === "saving" ? "saving" : "saved");
+  el.textContent = state === "saving" ? "Guardando…" : "Guardado";
+  if (state === "saved") { clearTimeout(el.__t); el.__t = setTimeout(() => { el.style.display = "none"; }, 1600); }
+}
+// Fila de ACTIVIDAD (lección). edit=true: arrastrable (grip), renombrable (doble-clic), con controles.
 function lessonRow(l, mid, edit) {
   const isQuiz = l.type === "quiz";
   const quizInDb = (DB.quizByLesson || {})[l.id];
@@ -26,26 +36,30 @@ function lessonRow(l, mid, edit) {
   const dueBadge = isAssign && l.dueAt ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${IC.calendar || ""} Entrega ${fmtDue(l.dueAt)}</span>` : "";
   const ptsBadge = isAssign && l.maxPoints != null ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${l.maxPoints} pts</span>` : "";
   const hiddenBadge = l.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Oculta</span>` : "";
+  const grip = edit ? `<span class="drag-grip" title="Arrastra para reordenar">${IC.grip}</span>` : "";
+  const titleSpan = `<span class="lrow-title" ${edit ? `data-inline-rename="lesson:${l.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}" ${edit ? `title="Doble-clic para renombrar"` : ""}>${esc(l.title)}</span>`;
   const controls = edit
-    ? `<span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="lesson:${l.id}" title="${l.hidden ? "Mostrar al alumno" : "Ocultar al alumno"}">${IC.eye}</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:up" title="Subir">↑</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:down" title="Bajar">↓</button>${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ""}<button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar actividad">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" style="color:var(--danger)" title="Eliminar">${IC.close}</button></span>`
+    ? `<span class="row" style="gap:3px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="lesson:${l.id}" title="${l.hidden ? "Mostrar al alumno" : "Ocultar al alumno"}">${IC.eye}</button>${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ""}<button class="btn btn-quiet btn-sm" data-duplicate="lesson:${l.id}" title="Duplicar">${IC.copy}</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:up" title="Subir">↑</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:down" title="Bajar">↓</button><button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar actividad">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" style="color:var(--danger)" title="Eliminar">${IC.close}</button></span>`
     : "";
-  return `<div class="row between vcenter" style="padding:7px 0 7px 18px;font-size:13px;color:var(--text-2)${l.hidden ? ";opacity:.5" : ""}">
-    <span class="row vcenter" style="gap:8px;min-width:0"><span style="display:flex;width:15px;color:var(--text-3);flex:none">${C.typeIcon(l.type)}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.title)}</span>${videoBadge}${quizBadge}${dueBadge}${ptsBadge}${hiddenBadge}</span>
+  return `<div class="row between vcenter lrow" ${edit ? `draggable="true" data-drag="lesson:${l.id}:${mid}"` : ""} style="padding:7px 0 7px ${edit ? "4px" : "18px"};font-size:13px;color:var(--text-2)${l.hidden ? ";opacity:.5" : ""}">
+    <span class="row vcenter" style="gap:6px;min-width:0">${grip}<span style="display:flex;width:15px;color:var(--text-3);flex:none">${C.typeIcon(l.type)}</span>${titleSpan}${videoBadge}${quizBadge}${dueBadge}${ptsBadge}${hiddenBadge}</span>
     ${controls}</div>`;
 }
-// Bloque de SECCIÓN (módulo) con sus actividades. edit gobierna los affordances. Colapsable.
+// Bloque de SECCIÓN (módulo). edit: arrastrable, renombrable (doble-clic), colapsable.
 function sectionBlock(m, cid, edit) {
   const ctrls = edit
-    ? `<span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="module:${m.id}" title="${m.hidden ? "Mostrar al alumno" : "Ocultar al alumno"}">${IC.eye}</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="Subir sección">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="Bajar sección">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="Renombrar sección">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar</button></span>`
+    ? `<span class="row" style="gap:3px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="module:${m.id}" title="${m.hidden ? "Mostrar al alumno" : "Ocultar al alumno"}">${IC.eye}</button><button class="btn btn-quiet btn-sm" data-duplicate="module:${m.id}" title="Duplicar sección">${IC.copy}</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="Subir sección">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="Bajar sección">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="Renombrar sección">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar</button></span>`
     : "";
   const rows = (m.lessons || []).map((l) => lessonRow(l, m.id, edit)).join("")
     || `<div class="faint" style="font-size:12px;padding:6px 0 0 18px">Sin actividades todavía.</div>`;
   const add = edit
     ? `<div style="padding:10px 0 2px 18px"><button class="btn btn-soft btn-sm" data-open-chooser="${m.id}">${IC.plus} Añadir actividad o recurso</button></div>`
     : "";
-  return `<div class="secblk" data-sec="${m.id}" style="border-top:1px solid var(--border);padding:12px 0 6px${m.hidden ? ";opacity:.55" : ""}">
-    <div class="row between vcenter" style="margin-bottom:4px">
-      <b class="row vcenter" data-acc-sec="${m.id}" style="gap:7px;font-size:13.5px;cursor:pointer;min-width:0"><span class="sec-chev" style="display:flex;width:12px;color:var(--text-3);transition:transform .2s">${IC.chevD}</span><span style="display:flex;width:14px;color:var(--text-3);flex:none">${IC.grid}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.title)}</span>${m.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Oculta</span>` : ""}</b>${ctrls}
+  const grip = edit ? `<span class="drag-grip" title="Arrastra para reordenar la sección">${IC.grip}</span>` : "";
+  return `<div class="secblk" data-sec="${m.id}" ${edit ? `draggable="true" data-drag="module:${m.id}:${cid}"` : ""} style="border-top:1px solid var(--border);padding:12px 0 6px${m.hidden ? ";opacity:.55" : ""}">
+    <div class="row between vcenter" style="margin-bottom:4px;gap:6px">
+      ${grip}
+      <b class="row vcenter" data-acc-sec="${m.id}" style="gap:7px;font-size:13.5px;cursor:pointer;min-width:0;flex:1"><span class="sec-chev" style="display:flex;width:12px;color:var(--text-3);transition:transform .2s;flex:none">${IC.chevD}</span><span style="display:flex;width:14px;color:var(--text-3);flex:none">${IC.grid}</span><span class="sec-title" ${edit ? `data-inline-rename="module:${m.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}">${esc(m.title)}</span>${m.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Oculta</span>` : ""}</b>${ctrls}
     </div>
     <div class="sec-body" data-sec-body="${m.id}">${rows}${add}</div>
   </div>`;
@@ -62,23 +76,11 @@ function mountQuizButtons(root) {
       window.otrOpenQuizBuilder(btn.getAttribute("data-lesson"), btn.getAttribute("data-title"));
   });
 }
-// Interacciones del builder: colapsar secciones (chevron) + "colapsar/expandir todo".
+// Interacciones del builder: colapsar, drag&drop (reordenar) e inline-rename (doble-clic).
 function mountBuilder(root) {
   if (!root) return;
   mountQuizButtons(root);
-  if (!root.__builderBound) {
-    root.__builderBound = true;
-    root.addEventListener("click", (e) => {
-      const h = e.target.closest && e.target.closest("[data-acc-sec]");
-      if (!h || !root.contains(h)) return;
-      const blk = h.closest(".secblk"); if (!blk) return;
-      const body = blk.querySelector("[data-sec-body]"); const chev = h.querySelector(".sec-chev");
-      if (!body) return;
-      const collapsed = body.style.display === "none";
-      body.style.display = collapsed ? "" : "none";
-      if (chev) chev.style.transform = collapsed ? "" : "rotate(-90deg)";
-    });
-  }
+  // Botón "Colapsar/Expandir todo" (se re-renderiza cada vez → bind por elemento).
   const ca = root.querySelector("[data-collapse-all]");
   if (ca && !ca.__bound) {
     ca.__bound = true;
@@ -90,6 +92,87 @@ function mountBuilder(root) {
       ca.textContent = anyOpen ? "Expandir todo" : "Colapsar todo";
     });
   }
+  if (root.__builderBound) return;
+  root.__builderBound = true;
+
+  // Colapsar sección al clic en su cabecera.
+  root.addEventListener("click", (e) => {
+    const h = e.target.closest && e.target.closest("[data-acc-sec]");
+    if (!h || !root.contains(h)) return;
+    if (e.target.closest("[data-inline-rename] input")) return; // no colapsar mientras se renombra
+    const blk = h.closest(".secblk"); if (!blk) return;
+    const body = blk.querySelector("[data-sec-body]"); const chev = h.querySelector(".sec-chev");
+    if (!body) return;
+    const collapsed = body.style.display === "none";
+    body.style.display = collapsed ? "" : "none";
+    if (chev) chev.style.transform = collapsed ? "" : "rotate(-90deg)";
+  });
+
+  // Inline rename (doble-clic en el título de sección o actividad).
+  root.addEventListener("dblclick", (e) => {
+    const span = e.target.closest && e.target.closest("[data-inline-rename]");
+    if (!span || !root.contains(span) || span.querySelector("input")) return;
+    e.preventDefault(); e.stopPropagation();
+    const [kind, id] = span.getAttribute("data-inline-rename").split(":");
+    const orig = span.textContent;
+    const input = document.createElement("input");
+    input.className = "inline-rename-input"; input.value = orig;
+    span.textContent = ""; span.appendChild(input);
+    input.focus(); input.select();
+    let done = false;
+    const finish = (save) => {
+      if (done) return; done = true;
+      const val = input.value.trim();
+      span.textContent = save && val ? val : orig;
+      if (save && val && val !== orig) {
+        const url = kind === "module" ? `/api/modules/${id}` : `/api/lessons/${id}`;
+        saveChip(root, "saving");
+        window.api(url, { title: val }, "PATCH").then(() => saveChip(root, "saved")).catch(() => { saveChip(root, ""); span.textContent = orig; window.toast?.("No se pudo renombrar", "danger"); });
+      }
+    };
+    input.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); finish(true); } else if (ev.key === "Escape") { ev.preventDefault(); finish(false); } });
+    input.addEventListener("blur", () => finish(true));
+  });
+
+  // Drag & drop nativo: reordenar DENTRO de su lista (secciones o actividades de una sección).
+  let drag = null;
+  const parse = (el) => { const a = (el.getAttribute("data-drag") || "").split(":"); return { kind: a[0], id: a[1], parent: a[2] }; };
+  const siblings = (el, kind, parent) => Array.from(el.parentNode.children).filter((c) => {
+    if (!c.getAttribute) return false; const d = parse(c); return d.kind === kind && d.parent === parent;
+  });
+  root.addEventListener("dragstart", (e) => {
+    const row = e.target.closest && e.target.closest("[data-drag]");
+    if (!row || !root.contains(row)) return;
+    const d = parse(row);
+    drag = { row, ...d, orig: siblings(row, d.kind, d.parent).map((c) => parse(c).id) };
+    row.classList.add("sortable-ghost");
+    try { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", d.id); } catch {}
+  });
+  root.addEventListener("dragover", (e) => {
+    if (!drag) return;
+    const over = e.target.closest && e.target.closest("[data-drag]");
+    if (!over || over === drag.row) return;
+    const od = parse(over);
+    if (od.kind !== drag.kind || od.parent !== drag.parent) return; // P0: solo dentro de la misma lista
+    e.preventDefault();
+    const rect = over.getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    over.parentNode.insertBefore(drag.row, after ? over.nextSibling : over);
+  });
+  root.addEventListener("drop", (e) => { if (drag) e.preventDefault(); });
+  root.addEventListener("dragend", () => {
+    if (!drag) return;
+    drag.row.classList.remove("sortable-ghost");
+    const now = siblings(drag.row, drag.kind, drag.parent).map((c) => parse(c).id);
+    const changed = now.length === drag.orig.length && now.some((id, i) => id !== drag.orig[i]);
+    if (changed) {
+      saveChip(root, "saving");
+      const url = drag.kind === "module" ? "/api/modules/reorder" : "/api/lessons/reorder";
+      const body = drag.kind === "module" ? { courseId: drag.parent, orderedIds: now } : { moduleId: drag.parent, orderedIds: now };
+      window.api(url, body, "POST").then(() => saveChip(root, "saved")).catch(() => { saveChip(root, ""); window.toast?.("No se pudo guardar el orden", "danger"); });
+    }
+    drag = null;
+  });
 }
 
 export const S = {
@@ -187,7 +270,8 @@ export const S = {
             <div style="min-width:0"><div class="row vcenter" style="gap:9px;flex-wrap:wrap"><h2 style="font-size:19px;font-weight:750">${esc(c.code)} · ${esc(c.name)}</h2>${pub}</div>
             <div class="faint" style="font-size:12.5px;margin-top:3px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"} · ${lessons} ${lessons === 1 ? "actividad" : "actividades"}${c.format ? ` · ${esc(c.format)}` : ""}${c.modality ? ` · ${esc(c.modality)}` : ""}</div></div>
           </div>
-          <div class="row" style="gap:6px;flex:none">
+          <div class="row vcenter" style="gap:6px;flex:none">
+            <span class="save-chip" data-save-chip style="display:none"></span>
             <button class="btn ${edit ? "btn-primary" : "btn-soft"} btn-sm" data-toggle-edit title="Mostrar/ocultar controles de edición">${IC.sliders} Modo edición: ${edit ? "ON" : "OFF"}</button>
             <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${esc(c.name)}">${IC.pencil} Configuración</button>
             <button class="btn btn-ghost btn-sm" onclick="window.__course='${esc(c.code)}';go('course')">${IC.play} Vista previa (como alumno)</button>

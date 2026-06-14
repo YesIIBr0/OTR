@@ -5,6 +5,7 @@ import { SCREENS, ROUTES } from "../lib/screens";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
+import { COURSE_TEMPLATES } from "../lib/course-templates";
 
 export default function Aula({ data, user }: { data: any; user: any }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -158,11 +159,77 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       });
     }
 
-    function openCreateCourse() {
-      formModal("Nuevo curso", [
-        { name: "name", label: "Nombre completo del curso", ph: "Public Forum II" },
+    // Modal de progreso para tareas largas (aplicar plantilla / duplicar).
+    function progressModal(title: string) {
+      const scrim = document.createElement("div"); scrim.className = "modal-scrim";
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:400px"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body"><p class="muted" data-prog style="font-size:13.5px">Preparando…</p><div style="height:8px;background:var(--n-150,#e8edf3);border-radius:100px;overflow:hidden;margin-top:10px"><div data-progbar style="height:100%;width:0;background:var(--otr-sky);transition:width .25s"></div></div></div></div>`;
+      document.body.appendChild(scrim);
+      enter(scrim.querySelector(".modal") as HTMLElement);
+      return {
+        update: (d: number, total: number) => {
+          const p = scrim.querySelector("[data-prog]"); const b = scrim.querySelector("[data-progbar]") as HTMLElement;
+          if (p) p.textContent = `Creando contenido… (${d}/${total})`;
+          if (b) b.style.width = Math.round((d / Math.max(1, total)) * 100) + "%";
+        },
+        close: () => scrim.remove(),
+      };
+    }
+    // Aplica una plantilla a un curso recién creado: orquesta POST modules → lessons (→ quizzes).
+    async function applyTemplate(courseId: string, tpl: any) {
+      const sections = tpl.sections || [];
+      let total = 0; sections.forEach((s: any) => { total += 1 + (s.lessons?.length || 0); });
+      let done = 0;
+      const prog = progressModal(`Creando "${tpl.name}"…`);
+      try {
+        for (const s of sections) {
+          const md = await api("/api/modules", { courseId, title: s.title });
+          const moduleId = md?.module?.id; done++; prog.update(done, total);
+          if (!moduleId) continue;
+          for (const ls of (s.lessons || [])) {
+            const ld = await api("/api/lessons", { moduleId, title: ls.title, type: ls.type, dur: ls.dur, contentHtml: ls.contentHtml, submitKinds: ls.submitKinds, maxPoints: ls.maxPoints });
+            done++; prog.update(done, total);
+            const lessonId = ld?.lesson?.id;
+            if (lessonId && ls.type === "quiz" && ls.questions && ls.questions.length) {
+              try { await api("/api/quizzes", { lessonId, questions: ls.questions }); } catch {}
+            }
+          }
+        }
+        prog.close(); toast("Curso creado desde plantilla", "ok");
+      } catch (e: any) { prog.close(); toast("Se creó el curso, pero falló parte de la plantilla: " + (e?.message || ""), "warn"); }
+    }
+    // Paso 0: galería "¿Cómo quieres empezar?" — en blanco o desde una plantilla OTR.
+    function openCourseStart() {
+      const scrim = document.createElement("div"); scrim.className = "modal-scrim";
+      const blank = `<button class="tile click" data-tpl="" style="text-align:left;padding:14px;cursor:pointer;border:1.5px dashed var(--border);background:var(--surface)">
+        <b style="font-size:13.5px;display:block">${IC.plus} En blanco</b><span class="faint" style="font-size:12px;display:block;margin-top:3px">Empieza un curso vacío y constrúyelo tú.</span></button>`;
+      const cards = (COURSE_TEMPLATES || []).map((tp: any) => {
+        const secs = (tp.sections || []).length;
+        const acts = (tp.sections || []).reduce((n: number, s: any) => n + (s.lessons?.length || 0), 0);
+        return `<button class="tile click" data-tpl="${esc(tp.id)}" style="text-align:left;padding:14px;cursor:pointer;border:1px solid var(--border);background:var(--surface)">
+          <div class="row vcenter" style="gap:7px"><b style="font-size:13.5px">${esc(tp.name)}</b><span class="badge sky" style="flex:none">${esc(tp.level)}</span></div>
+          <span class="faint" style="font-size:12px;line-height:1.4;display:block;margin-top:4px">${esc(tp.desc)}</span>
+          <span class="faint" style="font-size:11px;display:block;margin-top:6px">${secs} secciones · ${acts} actividades · ${esc(tp.format)}</span>
+        </button>`;
+      }).join("");
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:680px"><div class="modal-head"><h3>¿Cómo quieres empezar tu curso?</h3></div><div class="modal-body"><div class="grid g-2" style="gap:10px">${blank}${cards}</div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button></div></div>`;
+      document.body.appendChild(scrim);
+      enter(scrim.querySelector(".modal") as HTMLElement);
+      const close = () => scrim.remove();
+      scrim.addEventListener("click", (e: any) => {
+        if (e.target === scrim || e.target.closest("[data-x]")) { close(); return; }
+        const pick = e.target.closest("[data-tpl]");
+        if (!pick) return;
+        const tid = pick.getAttribute("data-tpl");
+        close();
+        const tpl = tid ? (COURSE_TEMPLATES || []).find((x: any) => x.id === tid) : null;
+        openCreateCourse(tpl);
+      });
+    }
+    function openCreateCourse(tpl?: any) {
+      formModal(tpl ? `Nuevo curso · ${tpl.name}` : "Nuevo curso", [
+        { name: "name", label: "Nombre completo del curso", value: tpl ? tpl.name : "", ph: "Public Forum II" },
         { name: "code", label: "Código corto (único)", ph: "PF-201" },
-        { name: "format", label: "Formato / categoría", type: "select", value: "Public Forum", options: [
+        { name: "format", label: "Formato / categoría", type: "select", value: tpl ? tpl.format : "Public Forum", options: [
           { value: "Public Forum", label: "Public Forum" }, { value: "Lincoln-Douglas", label: "Lincoln-Douglas" }, { value: "Parlamentario", label: "Parlamentario" }, { value: "Policy", label: "Policy" }, { value: "Oratoria", label: "Oratoria" }, { value: "Otro", label: "Otro" }] },
         { name: "modality", label: "Modalidad", type: "select", value: "online", options: [
           { value: "online", label: "Online" }, { value: "presencial", label: "Presencial" }, { value: "híbrido", label: "Híbrido" }] },
@@ -170,19 +237,49 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "color", label: "Color del curso", type: "select", value: "#2E8BD0", options: [
           { value: "#2E8BD0", label: "Azul cielo" }, { value: "#0C2340", label: "Navy" }, { value: "#4FA9E8", label: "Azul claro" }, { value: "#2CAA20", label: "Verde" }, { value: "#64748B", label: "Gris" }] },
         { name: "next", label: "Próximo tema (opcional)", ph: "Introducción al formato" },
-        { name: "summary", label: "Resumen del programa", type: "textarea", ph: "Describe de qué trata este programa…" },
+        { name: "summary", label: "Resumen del programa", type: "textarea", value: tpl ? tpl.summary : "", ph: "Describe de qué trata este programa…" },
         { name: "published", label: "Visibilidad", type: "select", value: "false", options: [
           { value: "false", label: "Borrador (oculto — constrúyelo primero)" }, { value: "true", label: "Publicado (visible en el catálogo)" }] },
       ], async (v) => {
         v.published = v.published === "true";
         if (v.capacity === "") delete v.capacity;
         const d = await api("/api/courses", v);
-        toast("Curso creado — añade sus secciones", "ok");
+        const newId = d?.course?.id;
+        if (tpl && newId) await applyTemplate(newId, tpl);
+        else toast("Curso creado — añade sus secciones", "ok");
         await refresh();
         // Flujo Moodle: entrar directo al constructor del curso recién creado.
-        const newId = d?.course?.id;
         if (newId) { (window as any).__builderCourseId = newId; try { sessionStorage.setItem("otr_builder_course", newId); } catch {} renderApp("course-builder"); }
       });
+    }
+    // Duplicar (clonar) una actividad o sección orquestando los POST existentes.
+    async function duplicateEntity(kind: string, id: string) {
+      const tcs = (DB as any).teacherCourses || [];
+      const dupLesson = async (moduleId: string, l: any) => {
+        const ld = await api("/api/lessons", { moduleId, title: l.title + " (copia)", type: l.type, dur: l.dur, contentHtml: l.contentHtml, videoKind: l.videoKind, videoSrc: l.videoSrc, dueAt: l.dueAt, submitKinds: l.submitKinds, maxPoints: l.maxPoints });
+        const newId = ld?.lesson?.id;
+        const q = (DB as any).quizByLesson?.[l.id];
+        if (newId && l.type === "quiz" && q?.questions?.length) {
+          try { await api("/api/quizzes", { lessonId: newId, title: q.title, passScore: q.passScore, questions: q.questions.map((qq: any) => ({ prompt: qq.prompt, options: (qq.options || []).map((o: any) => ({ text: o.text, correct: !!o.correct })) })) }); } catch {}
+        }
+      };
+      try {
+        if (kind === "lesson") {
+          let moduleId: any = null, found: any = null;
+          for (const c of tcs) for (const m of c.modules) for (const l of m.lessons) if (l.id === id) { moduleId = m.id; found = l; }
+          if (!found) return;
+          await dupLesson(moduleId, found); toast("Actividad duplicada", "ok");
+        } else if (kind === "module") {
+          let courseId: any = null, mod: any = null;
+          for (const c of tcs) for (const m of c.modules) if (m.id === id) { courseId = c.id; mod = m; }
+          if (!mod) return;
+          const md = await api("/api/modules", { courseId, title: mod.title + " (copia)" });
+          const newMod = md?.module?.id;
+          if (newMod) for (const l of (mod.lessons || [])) await dupLesson(newMod, l);
+          toast("Sección duplicada", "ok");
+        }
+        await refresh();
+      } catch (err: any) { toast(err?.message || "No se pudo duplicar", "danger"); }
     }
     function openCreateModule(courseId?: string) {
       const courses = DB.manage?.courses || [];
@@ -646,7 +743,9 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (addModEl) { e.preventDefault(); openCreateModule(addModEl.getAttribute("data-add-module")!); return; }
       const addLesEl = t.closest("[data-add-lesson]") as HTMLElement | null;
       if (addLesEl) { e.preventDefault(); openCreateLesson(addLesEl.getAttribute("data-add-lesson")!); return; }
-      if (t.closest('[data-action="new-course"]')) { e.preventDefault(); openCreateCourse(); return; }
+      if (t.closest('[data-action="new-course"]')) { e.preventDefault(); openCourseStart(); return; }
+      const dupEl = t.closest("[data-duplicate]") as HTMLElement | null;
+      if (dupEl) { e.preventDefault(); const [dk, di] = dupEl.getAttribute("data-duplicate")!.split(":"); duplicateEntity(dk, di); return; }
       // Constructor de curso estilo Moodle.
       const goBuilderEl = t.closest("[data-go-builder]") as HTMLElement | null;
       if (goBuilderEl) { e.preventDefault(); const cid = goBuilderEl.getAttribute("data-go-builder")!; (window as any).__builderCourseId = cid; try { sessionStorage.setItem("otr_builder_course", cid); } catch {} renderApp("course-builder"); return; }
