@@ -42,8 +42,8 @@ export const S = {
       const courses = DB.teacherCourses || [];
       if (!courses.length) {
         return `<div class="page-head"><div><p class="eyebrow">Profesor</p><div class="page-title">Gestión de contenido</div>
-          <div class="page-sub">Aún no tienes cursos. Usa el botón <b>+ Crear</b> arriba para empezar.</div></div></div>
-          <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Sin cursos todavía</h4><p>Crea tu primer curso con "+ Crear → Nuevo curso".</p></div></div>`;
+          <div class="page-sub">Crea tu primer curso y empieza a añadirle módulos y lecciones.</div></div></div>
+          <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Sin cursos todavía</h4><p>Crea tu primer curso para empezar a construir su contenido.</p><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} Nuevo curso</button></div></div>`;
       }
       const lesson = (l, mid) => {
         // Estado del examen (mismo criterio que el panel de S.teacher).
@@ -61,22 +61,24 @@ export const S = {
       };
       const mod = (m, cid) => `<div style="border-top:1px solid var(--border);padding:12px 0 6px">
         <div class="row between vcenter" style="margin-bottom:4px"><b class="row vcenter" style="gap:7px;font-size:13.5px"><span style="display:flex;width:14px;color:var(--text-3)">${IC.grid}</span>${esc(m.title)}</b>
-          <span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="Subir módulo">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="Bajar módulo">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="Editar módulo">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar módulo</button></span></div>
-        ${m.lessons.map((l) => lesson(l, m.id)).join("") || '<div class="faint" style="font-size:12px;padding:6px 0 0 18px">Sin lecciones — añade con "+ Crear"</div>'}
+          <span class="row" style="gap:4px;flex:none"><button class="btn btn-soft btn-sm" data-add-lesson="${m.id}" title="Añadir lección a este módulo">${IC.plus} Lección</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="Subir módulo">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="Bajar módulo">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="Editar módulo">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar módulo</button></span></div>
+        ${m.lessons.map((l) => lesson(l, m.id)).join("") || `<div class="row vcenter" style="gap:10px;padding:6px 0 0 18px"><span class="faint" style="font-size:12px">Sin lecciones todavía.</span><button class="btn btn-soft btn-sm" data-add-lesson="${m.id}">${IC.plus} Añadir lección</button></div>`}
       </div>`;
       const course = (c, i = 0) => `<div class="card card-pad fade-up" style="margin-bottom:14px;--d:${i}">
         <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
           <div class="row vcenter" style="gap:10px;min-width:0">${C.courseDot(c.color)}<b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${esc(c.name)}</b></div>
           <div class="row" style="gap:6px;flex:none">
+            <button class="btn btn-soft btn-sm" data-add-module="${c.id}" title="Añadir módulo a este curso">${IC.plus} Módulo</button>
             <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${esc(c.name)}">${IC.pencil} Editar</button>
             <button class="btn btn-quiet btn-sm" data-del="course:${c.id}" style="color:var(--danger)">${IC.flag} Eliminar</button>
           </div>
         </div>
-        ${c.modules.map((m) => mod(m, c.id)).join("") || '<div class="faint" style="font-size:12px;margin-top:10px">Sin módulos todavía — añade con "+ Crear → Nuevo módulo"</div>'}
+        ${c.modules.map((m) => mod(m, c.id)).join("") || `<div class="row vcenter" style="gap:10px;margin-top:10px"><span class="faint" style="font-size:12px">Sin módulos todavía.</span><button class="btn btn-soft btn-sm" data-add-module="${c.id}">${IC.plus} Añadir primer módulo</button></div>`}
       </div>`;
       return `
       <div class="page-head"><div><p class="eyebrow">Profesor</p><div class="page-title">Gestión de contenido</div>
-      <div class="page-sub">Edita y elimina tus cursos, módulos y lecciones · usa <b>+ Crear</b> para añadir</div></div></div>
+      <div class="page-sub">Crea cursos y añade módulos y lecciones dentro de cada uno</div></div></div>
+      <div class="row" style="margin-bottom:14px"><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} Nuevo curso</button></div>
       ${courses.map(course).join("")}`;
     },
     // El constructor de examen vive en scr-teacher.ts y se expone como

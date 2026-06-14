@@ -170,19 +170,21 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "summary", label: "Resumen del programa", type: "textarea", ph: "Describe de qué trata este programa…" },
       ], async (v) => { await api("/api/courses", v); toast("Curso creado", "ok"); await refresh(); });
     }
-    function openCreateModule() {
+    function openCreateModule(courseId?: string) {
       const courses = DB.manage?.courses || [];
+      if (!courses.length) { toast("Primero crea un curso", "warn"); return; }
       formModal("Nuevo módulo", [
-        { name: "courseId", label: "Curso", type: "select", options: courses.map((c: any) => ({ value: c.id, label: `${c.code} · ${c.name}` })) },
+        { name: "courseId", label: "Curso", type: "select", value: courseId || courses[0]?.id, options: courses.map((c: any) => ({ value: c.id, label: `${c.code} · ${c.name}` })) },
         { name: "title", label: "Título del módulo", ph: "Unidad 4 · Estrategia" },
       ], async (v) => { await api("/api/modules", v); toast("Módulo creado", "ok"); await refresh(); });
     }
-    function openCreateLesson() {
+    function openCreateLesson(moduleId?: string) {
       const courses = DB.manage?.courses || [];
       const modules = DB.manage?.modules || [];
+      if (!modules.length) { toast("Primero crea un módulo dentro de un curso", "warn"); return; }
       const cmap: any = Object.fromEntries(courses.map((c: any) => [c.id, c.code]));
       formModal("Nueva lección / contenido", [
-        { name: "moduleId", label: "Módulo", type: "select", options: modules.map((m: any) => ({ value: m.id, label: `${cmap[m.courseId] || ""} · ${m.title}` })) },
+        { name: "moduleId", label: "Módulo", type: "select", value: moduleId || modules[0]?.id, options: modules.map((m: any) => ({ value: m.id, label: `${cmap[m.courseId] || ""} · ${m.title}` })) },
         { name: "title", label: "Título", ph: "Claim · Warrant · Impact" },
         { name: "type", label: "Tipo", type: "select", options: [
           { value: "lesson", label: "Lección" }, { value: "video", label: "Video" }, { value: "quiz", label: "Examen" },
@@ -566,6 +568,13 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         if (found) openEditLesson(lid!, found);
         return;
       }
+      // Construir contenido DENTRO del curso (estilo Moodle): el botón pre-selecciona
+      // el curso/módulo de contexto, sin desplegable global.
+      const addModEl = t.closest("[data-add-module]") as HTMLElement | null;
+      if (addModEl) { e.preventDefault(); openCreateModule(addModEl.getAttribute("data-add-module")!); return; }
+      const addLesEl = t.closest("[data-add-lesson]") as HTMLElement | null;
+      if (addLesEl) { e.preventDefault(); openCreateLesson(addLesEl.getAttribute("data-add-lesson")!); return; }
+      if (t.closest('[data-action="new-course"]')) { e.preventDefault(); openCreateCourse(); return; }
       if (t.closest('[data-action="edit-profile"]')) { e.preventDefault(); openEditProfile(); return; }
       if (t.closest("#burger")) { root.querySelector(".app")?.classList.toggle("drawer-open"); return; }
       if (t.closest("#bell")) { e.stopPropagation(); toggleNotif(); return; }

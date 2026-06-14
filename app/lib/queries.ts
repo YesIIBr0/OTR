@@ -181,7 +181,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       : Promise.resolve([] as any[]),
     db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true } }),
     // Mapa de módulos para gestión de contenido: solo profesor/admin.
-    isTeacher ? db.module.findMany({ orderBy: { position: "asc" }, select: { id: true, courseId: true, title: true } }) : Promise.resolve([]),
+    isTeacher ? db.module.findMany({ where: { course: { teacher: { email } } }, orderBy: { position: "asc" }, select: { id: true, courseId: true, title: true } }) : Promise.resolve([]),
     // Cursos impartidos (con reseñas para el perfil del coach): solo profesor/admin.
     isTeacher
       ? db.course.findMany({ where: { teacher: { email } }, include: { modules: { include: { lessons: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } }, reviews: { include: { student: true }, orderBy: { createdAt: "desc" } } }, orderBy: { position: "asc" } })
@@ -1391,8 +1391,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     base.pendingSubs = pendingSubs;
 
     base.gradebook = { cols, rows: gbRows };
+    // Gestión de contenido: SOLO los cursos del propio profesor (borradores incluidos),
+    // no los publicados globales — así un curso recién creado o en borrador sí aparece
+    // en el desplegable de "Nuevo módulo" y se le puede añadir contenido.
     base.manage = {
-      courses: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(c.name) })),
+      courses: taughtCourses.map((c: any) => ({ id: c.id, code: c.code, name: esc(c.name) })),
       modules: allModules.map((m) => ({ id: m.id, courseId: m.courseId, title: esc(m.title) })),
     };
     base.teacherCourses = taughtCourses.map((c: any) => ({
