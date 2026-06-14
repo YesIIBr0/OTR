@@ -25,7 +25,7 @@ after=$(docker image inspect "$IMG" --format '{{.Id}}' 2>/dev/null || echo none)
 [ "$before" = "$after" ] && exit 0
 
 echo "$(date -u) ▸ nueva imagen detectada — redeploy"
-docker compose --env-file .env.production up -d
+docker compose --env-file .env.production up -d --remove-orphans
 docker compose exec -T web npx prisma db push --skip-generate >/dev/null 2>&1 || true
 
 for i in $(seq 1 20); do

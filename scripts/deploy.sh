@@ -19,7 +19,7 @@ say "Bajando la imagen pre-construida desde ghcr.io…"
 docker compose --env-file .env.production pull web
 
 say "Levantando contenedores (sin build en el VPS)…"
-docker compose --env-file .env.production up -d
+docker compose --env-file .env.production up -d --remove-orphans
 
 say "Aplicando el esquema a la base de datos (db push)…"
 docker compose exec -T web npx prisma db push --skip-generate
