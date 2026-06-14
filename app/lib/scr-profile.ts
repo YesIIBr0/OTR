@@ -212,8 +212,9 @@ export const S = {};
             ${location ? `<span class="faint" style="font-size:12.5px">· ${esc(location)}</span>` : ''}
           </div>
           ${bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(bio)}</p>` : ''}
-          <div class="row" style="gap:8px;margin-top:12px">
+          <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
             <button class="btn btn-primary btn-sm" data-action="edit-coach">${IC.pencil} Editar perfil</button>
+            <button class="btn btn-soft btn-sm" data-action="edit-coach-market">${IC.sliders} Perfil de marketplace</button>
           </div>
         </div>
         <div class="row" style="gap:0">

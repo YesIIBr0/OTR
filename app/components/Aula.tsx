@@ -356,6 +356,53 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       formModal("Editar perfil", fields, async (v) => { await api("/api/profile", v, "PATCH"); toast("Perfil actualizado", "ok"); await refresh(); });
     }
 
+    // Editor del perfil de MARKETPLACE del coach (lo que ve un alumno/padre al reservar):
+    // tarifa, idiomas, especialidades, tiempo de respuesta, video, credenciales, política
+    // y paquetes. Antes estos campos solo se cargaban a mano en la base de datos.
+    async function openEditCoachMarketplace() {
+      let cp: any = {};
+      try { const d = await api("/api/coach-profile", null, "GET"); cp = (d && d.profile) || {}; } catch {}
+      const centsToUsd = (c: any) => (c ? String(Math.round(Number(c)) / 100) : "");
+      const pkgUsd = (sessions: number) => {
+        const p = (cp.packages || []).find((x: any) => Number(x.sessions) === sessions);
+        return p ? String(Math.round(Number(p.priceCents)) / 100) : "";
+      };
+      formModal("Perfil de coach · marketplace", [
+        { name: "active", label: "Visibilidad en el marketplace", type: "select", value: cp.active === false ? "off" : "on", options: [
+          { value: "on", label: "Visible — los alumnos pueden reservar" }, { value: "off", label: "Oculto — no aparece en el marketplace" }] },
+        { name: "hourlyUsd", label: "Tarifa por hora (USD)", value: centsToUsd(cp.hourlyCents), ph: "45" },
+        { name: "languages", label: "Idiomas (separados por coma)", value: cp.languages || "", ph: "es,en" },
+        { name: "specialties", label: "Especialidades", value: cp.specialties || "", ph: "Public Forum, Lincoln-Douglas, Oratoria" },
+        { name: "responseTime", label: "Tiempo de respuesta", value: cp.responseTime || "", ph: "Responde en ~2 h" },
+        { name: "introVideoUrl", label: "Video de presentación (URL de YouTube)", value: cp.introVideoUrl || "", ph: "https://youtu.be/…" },
+        { name: "credentials", label: "Credenciales", type: "textarea", value: cp.credentials || "", ph: "Head Coach · 15+ torneos internacionales · ex-seleccionado nacional" },
+        { name: "cancelPolicy", label: "Política de cancelación", type: "textarea", value: cp.cancelPolicy || "", ph: "Cancelación gratis hasta 24 h antes de la sesión." },
+        { name: "pkgSingle", label: "Precio · 1 sesión (USD)", value: pkgUsd(1), ph: "45" },
+        { name: "pkg5", label: "Precio · paquete de 5 (USD)", value: pkgUsd(5), ph: "200" },
+        { name: "pkg10", label: "Precio · paquete de 10 (USD)", value: pkgUsd(10), ph: "380" },
+      ], async (v) => {
+        const usdToCents = (s: any) => { const n = parseFloat(String(s ?? "").replace(/[^0-9.]/g, "")); return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null; };
+        const pk: any[] = [];
+        const s1 = usdToCents(v.pkgSingle); if (s1) pk.push({ name: "Single", sessions: 1, priceCents: s1 });
+        const s5 = usdToCents(v.pkg5); if (s5) pk.push({ name: "5-pack", sessions: 5, priceCents: s5 });
+        const s10 = usdToCents(v.pkg10); if (s10) pk.push({ name: "10-pack", sessions: 10, priceCents: s10 });
+        const body: any = {
+          active: v.active === "on",
+          languages: v.languages,
+          specialties: v.specialties,
+          responseTime: v.responseTime,
+          introVideoUrl: v.introVideoUrl,
+          credentials: v.credentials,
+          cancelPolicy: v.cancelPolicy,
+          packages: pk,
+        };
+        const hc = usdToCents(v.hourlyUsd); if (hc) body.hourlyCents = hc;
+        await api("/api/coach-profile", body, "PATCH");
+        toast("Perfil de coach actualizado", "ok");
+        await refresh();
+      });
+    }
+
     const SKILLS = ["Confianza", "Estructura", "Evidencia", "Refutación", "Cross-ex", "Delivery"];
     async function openEvalSkills(userId: string, name: string) {
       let prefill: any = {};
@@ -525,6 +572,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (notifOpen && !t.closest("#notif-panel") && !t.closest("#bell")) toggleNotif(false);
       if (t.closest('[data-action="new-resource"]')) { e.preventDefault(); openNewResource(); return; }
       if (t.closest('[data-action="edit-coach"]')) { e.preventDefault(); openEditProfile(); return; }
+      if (t.closest('[data-action="edit-coach-market"]')) { e.preventDefault(); openEditCoachMarketplace(); return; }
       const starEl = t.closest(".star") as HTMLElement | null;
       if (starEl) {
         e.preventDefault();

@@ -16,10 +16,11 @@ import { S as parent } from "./scr-parent";
 import { S as lifetime } from "./scr-lifetime";
 import { S as coachwork } from "./scr-coachwork";
 import { S as admin } from "./scr-admin";
+import { S as adminUsers } from "./scr-admin-users";
 import { S as mybookings } from "./scr-mybookings";
 import { S as placement } from "./scr-placement";
 
-export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...kit, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...mybookings, ...placement };
+export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...kit, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...adminUsers, ...mybookings, ...placement };
 
 export const ROUTES = {
   dashboard:      { screen:'dashboard',    nav:'dashboard',    crumbs:['Inicio'] },
@@ -73,5 +74,7 @@ export const ROUTES = {
   membership:     { screen:'membership',   nav:'membership',   crumbs:['Cuenta','Membresía'] },
   // Consola de moderación (PRD §3.3 admin console mínima, §7.4 reportes) → scr-admin.ts.
   admin:          { screen:'adminConsole', nav:'admin',        crumbs:['Administración','Moderación'], role:'admin' },
+  // Admin → Gestión de usuarios (PRD §3.3): roles, verificación de coach, suspensión → scr-admin-users.ts.
+  'admin-users':  { screen:'adminUsers',   nav:'admin-users',  crumbs:['Administración','Gestión de usuarios'], role:'admin' },
   // 'kit' APAGADA (PRD-estricto): herramienta interna de diseño, no es producto.
 };

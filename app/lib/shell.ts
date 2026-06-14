@@ -50,7 +50,9 @@ const NAV = {
       { r:'coachwork', ic:'calendar', k:'nav.coachwork', l:'Reservas e ingresos' },
       { r:'course', ic:'book', k:'nav.catalog', l:'Cursos' },
       { r:'manage', ic:'sliders', k:'nav.manage', l:'Gestionar' },
-      { r:'coach', ic:'user', k:'nav.profile', l:'Mi perfil' },
+      // "Mi perfil" abre el perfil EDITABLE del coach (S.profile→renderCoachSelf con
+      // botones de edición), no la vista pública de solo lectura (r:'coach').
+      { r:'profile', ic:'user', k:'nav.profile', l:'Mi perfil' },
     ]},
     // 'gradebook' apagada (PRD-estricto): el feedback es por ballots/rúbricas, no matriz de notas.
     // [roles] "Niveles" (progresión de ESTUDIANTE: XP/racha/skill-graph) NO va para el
@@ -73,6 +75,7 @@ const NAV = {
   admin: [
     { gk:'group.main', group:'Administración', items:[
       { r:'admin', ic:'flag', k:'nav.admin', l:'Moderación' },
+      { r:'admin-users', ic:'users', l:'Usuarios' },
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
       { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
     ]},

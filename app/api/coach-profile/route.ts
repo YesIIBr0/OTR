@@ -17,7 +17,7 @@
 // y packages con priceLabel "$X".
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
-import { ok, bad, readJson, clean } from "../../lib/api";
+import { ok, bad, readJson, clean, safeUrl } from "../../lib/api";
 import { logActivitySafe } from "../../lib/activity";
 
 const ROLES = new Set(["TEACHER", "COACH", "ADMIN"]);
@@ -62,6 +62,8 @@ function shapeProfile(p: ProfileWithRels) {
     active: p.active,
     hourlyCents: p.hourlyCents,
     hourlyLabel: usdLabel(p.hourlyCents),
+    introVideoUrl: p.introVideoUrl ?? "",
+    credentials: p.credentials ?? "",
     specialties: p.specialties ?? "",
     languages: p.languages,
     responseTime: p.responseTime ?? "",
@@ -95,11 +97,14 @@ export async function GET() {
 
 type PatchBody = {
   hourlyCents?: unknown;
+  introVideoUrl?: unknown;
+  credentials?: unknown;
   specialties?: unknown;
   languages?: unknown;
   responseTime?: unknown;
   cancelPolicy?: unknown;
   active?: unknown;
+  packages?: unknown;
   addAvailability?: unknown;
   removeAvailabilityId?: unknown;
 };
@@ -112,14 +117,17 @@ export async function PATCH(req: Request) {
   const body = await readJson<PatchBody>(req);
   const hasFields =
     body.hourlyCents !== undefined ||
+    body.introVideoUrl !== undefined ||
+    body.credentials !== undefined ||
     body.specialties !== undefined ||
     body.languages !== undefined ||
     body.responseTime !== undefined ||
     body.cancelPolicy !== undefined ||
     body.active !== undefined;
+  const hasPackages = body.packages !== undefined;
   const hasAdd = body.addAvailability !== undefined;
   const hasRemove = body.removeAvailabilityId !== undefined;
-  if (!hasFields && !hasAdd && !hasRemove) return bad("Nada que actualizar", 400);
+  if (!hasFields && !hasPackages && !hasAdd && !hasRemove) return bad("Nada que actualizar", 400);
 
   let profile = await db.coachProfile.findUnique({ where: { userId: user.id } });
 
@@ -127,6 +135,8 @@ export async function PATCH(req: Request) {
   if (hasFields) {
     const data: {
       hourlyCents?: number;
+      introVideoUrl?: string | null;
+      credentials?: string;
       specialties?: string;
       languages?: string;
       responseTime?: string;
@@ -140,6 +150,9 @@ export async function PATCH(req: Request) {
       }
       data.hourlyCents = cents;
     }
+    // introVideoUrl: acepta http/https o ruta relativa; vacío/ inválido → null (limpia).
+    if (body.introVideoUrl !== undefined) data.introVideoUrl = safeUrl(body.introVideoUrl);
+    if (body.credentials !== undefined) data.credentials = clean(body.credentials, 280);
     if (body.specialties !== undefined) data.specialties = clean(body.specialties, 160);
     if (body.languages !== undefined) data.languages = clean(body.languages, 40);
     if (body.responseTime !== undefined) data.responseTime = clean(body.responseTime, 60);
@@ -151,6 +164,36 @@ export async function PATCH(req: Request) {
       : await db.coachProfile.create({
           data: { userId: user.id, hourlyCents: 4000, active: true, ...data },
         });
+  }
+
+  // --- Paquetes (Single / 5-pack / 10-pack): reemplaza el set completo ----------
+  // El UI manda el array entero; vacío → borra todos (el marketplace cae a precios
+  // indicativos derivados de hourlyCents). Crea el perfil on-the-fly si hace falta.
+  if (hasPackages) {
+    profile =
+      profile ??
+      (await db.coachProfile.create({ data: { userId: user.id, hourlyCents: 4000, active: true } }));
+
+    const raw = Array.isArray(body.packages) ? body.packages : [];
+    const pkgs = raw
+      .map((p, i) => {
+        const o = (p ?? {}) as { name?: unknown; sessions?: unknown; priceCents?: unknown; discountPct?: unknown };
+        const priceCents = Math.round(Number(o.priceCents));
+        const sessions = Math.max(1, Math.round(Number(o.sessions) || 1));
+        if (!Number.isFinite(priceCents) || priceCents < 100 || priceCents > 1_000_000) return null;
+        return {
+          coachId: profile!.id,
+          name: clean(o.name, 40) || `${sessions} ${sessions === 1 ? "sesión" : "sesiones"}`,
+          sessions,
+          priceCents,
+          discountPct: Math.min(90, Math.max(0, Math.round(Number(o.discountPct) || 0))),
+          position: i,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+
+    await db.coachPackage.deleteMany({ where: { coachId: profile.id } });
+    if (pkgs.length) await db.coachPackage.createMany({ data: pkgs });
   }
 
   // --- Alta de franja de disponibilidad semanal --------------------------------
