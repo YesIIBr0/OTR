@@ -16,14 +16,14 @@ import { ok, bad, readJson, clean } from "../../../lib/api";
 import { logActivitySafe } from "../../../lib/activity";
 import { dateLabel, timeLabel } from "../../../lib/consultations";
 
-const ACTIONS = new Set(["approve", "complete", "cancel"]);
+const ACTIONS = new Set(["approve", "complete", "cancel", "recording"]);
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
 
   const { id } = await params;
-  const body = await readJson<{ action?: string; status?: string }>(req);
+  const body = await readJson<{ action?: string; status?: string; recordingUrl?: string }>(req);
   // Alias: el UI también puede mandar { status } — se mapea a la acción canónica.
   const statusAlias: Record<string, string> =
     { CONFIRMED: "approve", COMPLETED: "complete", CANCELLED: "cancel" };
@@ -104,6 +104,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       booking: { id, status: "COMPLETED" },
       escrow: { status: "RELEASED", amountCents: amount, takeRatePct, payoutCents },
     });
+  }
+
+  // --- recording: el coach adjunta el enlace de grabación de la sesión (visible para el padre) ---
+  if (action === "recording") {
+    if (!isAdmin && !isCoachOwner) return bad("Solo el coach puede adjuntar la grabación", 403);
+    const recordingUrl = clean(body.recordingUrl, 1000);
+    if (!/^https?:\/\//i.test(recordingUrl)) return bad("Enlace inválido (debe ser una URL http/https)", 400);
+    await db.booking.update({ where: { id }, data: { recordingUrl } });
+    return ok({ booking: { id, recordingUrl } });
   }
 
   // --- cancel: dueños de la reserva (alumno, padre designado, coach) o ADMIN ---

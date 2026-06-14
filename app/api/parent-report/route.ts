@@ -63,11 +63,16 @@ export async function GET(req: Request) {
   // --- Asistencia del mes: COMPLETED vs (CONFIRMED + COMPLETED) por slotAt en el mes ---
   const monthBookings = await db.booking.findMany({
     where: { studentId, slotAt: { gte: monthStart, lt: nextMonth } },
-    select: { id: true, status: true },
+    select: { id: true, status: true, slotAt: true, recordingUrl: true },
   });
   const scheduled = monthBookings.filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED").length;
   const attended = monthBookings.filter((b) => b.status === "COMPLETED").length;
   const attendancePct = scheduled > 0 ? Math.round((attended / scheduled) * 100) : 0;
+
+  // [P0-9] Grabaciones de sesiones COMPLETADAS del mes — visibilidad parental.
+  const recordings = monthBookings
+    .filter((b) => b.status === "COMPLETED" && b.recordingUrl)
+    .map((b) => ({ id: b.id, date: b.slotAt, url: b.recordingUrl }));
 
   // --- Skills actuales (no son del mes: es el estado vigente) ---
   const skillRows = await db.studentSkill.findMany({
@@ -120,6 +125,7 @@ export async function GET(req: Request) {
     attendance: { attended, scheduled, pct: attendancePct },
     spendCents,
     spendLabel: money(spendCents),
+    recordings,
   };
 
   const report = {
@@ -152,6 +158,7 @@ export async function GET(req: Request) {
         spend: "Inversión del mes",
         nextStep: "Próximo paso",
         print: "Imprimir reporte",
+        sessionRecordings: "Grabaciones de sesiones",
       },
       skills: skillRows.map((r) => ({ name: r.skill, score: r.score })),
       achievements: certificates.map((c) => ({ id: c.id, title: c.title, issuedAt: c.issuedAt })),
@@ -178,6 +185,7 @@ export async function GET(req: Request) {
         spend: "This month's spend",
         nextStep: "Next step",
         print: "Print report",
+        sessionRecordings: "Session recordings",
       },
       // Skills: el nombre se traduce para display; el dato (score) es el mismo.
       skills: skillRows.map((r) => ({ name: SKILL_EN[r.skill] || r.skill, score: r.score })),

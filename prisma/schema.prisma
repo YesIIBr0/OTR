@@ -634,6 +634,7 @@ model Booking {
   status      String        @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED | DISPUTED
   consentBy   String?       // parentId si el alumno es menor
   videoUrl    String?       // sala on-platform
+  recordingUrl String?      // [P0-9] enlace de grabación de la sesión (coach lo adjunta; el padre lo ve)
   createdAt   DateTime      @default(now())
   escrow      EscrowTxn?
   session     CoachSession?
