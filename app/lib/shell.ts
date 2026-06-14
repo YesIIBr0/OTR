@@ -53,9 +53,10 @@ const NAV = {
       { r:'coach', ic:'user', k:'nav.profile', l:'Mi perfil' },
     ]},
     // 'gradebook' apagada (PRD-estricto): el feedback es por ballots/rúbricas, no matriz de notas.
+    // [roles] "Niveles" (progresión de ESTUDIANTE: XP/racha/skill-graph) NO va para el
+    // profesor/coach — no es su concepto. El profesor ve a sus alumnos en "Participantes".
     { gk:'group.progress', group:'Centro de progreso', items:[
       { r:'participants', ic:'users', k:'nav.participants', l:'Participantes' },
-      { r:'progress', ic:'levels', k:'nav.progress', l:'Niveles' },
     ]},
   ],
   // FAMILIA (PRD §11) — vista role-scoped: portal del hijo + marketplace + mensajes.
@@ -80,7 +81,7 @@ const NAV = {
 
 const TABBAR = {
   student: [ {r:'dashboard',ic:'home',k:'nav.dashboard',l:'Inicio'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'course',ic:'book',k:'nav.course',l:'Aprender'},{r:'lifetime',ic:'award',k:'nav.lifetime',l:'Trayectoria'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
-  teacher: [ {r:'teacher',ic:'grid',k:'nav.workspace',l:'Panel'},{r:'coachwork',ic:'calendar',k:'nav.coachwork',l:'Reservas'},{r:'participants',ic:'users',k:'nav.participants',l:'Alumnos'},{r:'progress',ic:'levels',k:'nav.progress',l:'Niveles'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
+  teacher: [ {r:'teacher',ic:'grid',k:'nav.workspace',l:'Panel'},{r:'coachwork',ic:'calendar',k:'nav.coachwork',l:'Reservas'},{r:'participants',ic:'users',k:'nav.participants',l:'Alumnos'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   parent: [ {r:'parent',ic:'users',k:'nav.parent',l:'Familia'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
 };
 

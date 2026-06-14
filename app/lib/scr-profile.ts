@@ -53,7 +53,20 @@ export const S = {};
   /* ---------------- PROGRESO / NIVELES ---------------- */
   S.progress = {
     render() {
-      const pct = Math.round(((DB.xp-DB.xpLevelStart)/(DB.xpNext-DB.xpLevelStart))*100);
+      // [fix de-mock] TODO dinámico desde los datos REALES del usuario.
+      // (Antes estaba hardcodeado a 'Varsity' + racha de 12 + 3 eventos falsos.)
+      const levels = DB.levels || [];
+      const curName = (DB.me && DB.me.level) || (levels[0] && levels[0].name) || 'Novato';
+      let curIndex = levels.findIndex((l) => (l.name || '').toLowerCase() === String(curName).toLowerCase());
+      if (curIndex < 0) curIndex = 0;
+      const nextLevel = levels[curIndex + 1] || null;
+      const xp = Number(DB.xp) || 0;
+      const xpStart = Number(DB.xpLevelStart) || 0;
+      const xpNext = Number(DB.xpNext) || xpStart;
+      const toNext = Math.max(0, xpNext - xp);
+      const pct = xpNext > xpStart ? Math.round(((xp - xpStart) / (xpNext - xpStart)) * 100) : 100;
+      const streak = Number(DB.me && DB.me.streak) || 0;
+      const recent = (DB.activity || []).slice(0, 4); // eventos REALES (DB.activity ya viene escapado)
       // Las 6 dimensiones del radar OTR, en orden fijo. Se leen de DB.skills (del estudiante).
       const SKILL_DIMS = ['Confianza','Estructura','Evidencia','Refutación','Cross-ex','Delivery'];
       const skillMap = {};
@@ -63,16 +76,15 @@ export const S = {};
       return `
       <div class="page-head fade-up" style="--d:0"><div><div class="page-title">Progreso y niveles</div>
       <div class="page-sub">Tu camino de Novato a Elite en el sistema OTR</div></div>
-      ${C.levelBadge('Varsity')}</div>
+      ${C.levelBadge(curName)}</div>
 
       <div class="card card-pad fade-up" style="--d:1;margin-bottom:18px">
         <div class="level-track">
-          ${DB.levels.map(l=>{
-            const order=['novato','jv','varsity','elite'].indexOf(l.id);
-            const cur=l.id==='varsity', done=order<2, locked=order>2;
+          ${levels.map((l, i) => {
+            const cur = i === curIndex, done = i < curIndex, locked = i > curIndex;
             return `<div class="level-node ${cur?'cur':''} ${locked?'locked':''}">
               <div class="ln-badge" style="background:${cur?'linear-gradient(135deg,var(--otr-sky),var(--otr-sky-lo))':done?'linear-gradient(135deg,#B4B4A7,#89897D)':'linear-gradient(135deg,'+l.color+','+l.color+')'}">${esc((l.name||'')[0])}</div>
-              <div class="ln-name">${esc(l.name)}${done?` <span style="display:inline-flex;width:14px;height:14px;color:var(--ok);vertical-align:-2px">${IC.check}</span>`:cur?'':''}</div>
+              <div class="ln-name">${esc(l.name)}${done?` <span style="display:inline-flex;width:14px;height:14px;color:var(--ok);vertical-align:-2px">${IC.check}</span>`:''}</div>
               <div class="ln-range">${esc(l.range)}</div>
             </div>`;
           }).join('')}
@@ -81,9 +93,9 @@ export const S = {};
 
       <div class="split fade-up rail-320" style="--d:2">
         <div class="card card-pad">
-          <div class="row between vcenter"><div><div class="eyebrow" style="margin-bottom:2px">Tu progreso</div><b style="font-size:15px">Camino a Elite</b></div><span class="muted tnum" style="font-size:13px">${DB.xp.toLocaleString('es')} / ${DB.xpNext.toLocaleString('es')} XP</span></div>
+          <div class="row between vcenter"><div><div class="eyebrow" style="margin-bottom:2px">Tu progreso</div><b style="font-size:15px">${nextLevel ? 'Camino a ' + esc(nextLevel.name) : 'Nivel máximo'}</b></div><span class="muted tnum" style="font-size:13px">${xp.toLocaleString('es')} / ${xpNext.toLocaleString('es')} XP</span></div>
           <div style="margin:14px 0 7px">${C.bar(pct,{cls:'thick navy'})}</div>
-          <div class="row between" style="font-size:12px;color:var(--text-2)"><span class="badge sky">Varsity</span><span class="tnum">${DB.xpNext-DB.xp} XP para Elite</span></div>
+          <div class="row between" style="font-size:12px;color:var(--text-2)"><span class="badge sky">${esc(curName)}</span><span class="tnum">${nextLevel ? toNext.toLocaleString('es') + ' XP para ' + esc(nextLevel.name) : '¡Nivel máximo alcanzado!'}</span></div>
 
           <div class="divider"></div>
           <div class="row between vcenter" style="margin-bottom:4px">
@@ -100,18 +112,19 @@ export const S = {};
         <div class="stack" style="gap:16px">
           <div class="card card-pad" style="text-align:center">
             <div class="eyebrow" style="margin-bottom:10px">Racha</div>
-            <span class="streak" style="font-size:14px">${IC.flame} ${DB.me.streak} días</span>
+            <span class="streak" style="font-size:14px">${IC.flame} ${streak} días</span>
             <div style="margin-top:10px;font-size:12.5px" class="muted">Racha de entrenamiento. ¡No la rompas!</div>
             <div class="row wrap" style="gap:5px;margin-top:14px;justify-content:center">
-              ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:4px;background:${i<12?'var(--otr-sky)':'var(--n-150)'}"></span>`).join('')}
+              ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:4px;background:${i<Math.min(streak,14)?'var(--otr-sky)':'var(--n-150)'}"></span>`).join('')}
             </div>
           </div>
           <div class="card">
             <div class="card-head"><h3>Subidas recientes</h3></div>
             <div class="card-body" style="padding:8px 16px 12px">
-              ${[['Subiste a Varsity','+500 XP','hace 6 días'],['Insignia: Semifinalista','+250 XP','hace 1 sem'],['Racha de 7 días','+100 XP','hace 1 sem']].map(r=>`
+              ${recent.length ? recent.map(ev=>`
                 <div class="agenda-item"><span class="when-dot" style="background:var(--otr-gold)"></span>
-                <div><div class="ai-t">${r[0]}</div><div class="ai-c sky">${r[1]}</div></div><span class="ai-w">${r[2]}</span></div>`).join('')}
+                <div><div class="ai-t">${ev.title || ''}</div>${ev.xp ? `<div class="ai-c sky">+${ev.xp} XP</div>` : (ev.detail ? `<div class="ai-c sky">${ev.detail}</div>` : '')}</div><span class="ai-w">${ev.when || ''}</span></div>`).join('')
+                : `<div class="empty" style="padding:22px"><p class="muted" style="font-size:13px;text-align:center">Aún sin actividad — completa lecciones, exámenes y debates para ver tus subidas aquí.</p></div>`}
             </div>
           </div>
         </div>
