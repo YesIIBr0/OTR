@@ -13,6 +13,8 @@ export async function getSessionUser() {
   if (!session) return null;
   const user = await db.user.findUnique({ where: { id: session.userId } });
   if (!user) return null;
+  // [P0-7] Suspendido por moderación → sin sesión válida (queda fuera al instante en cada request).
+  if (user.suspended) return null;
   // La sesión queda ligada a la contraseña actual: si cambió, deja de ser válida (m4).
   if (passwordFingerprint(user.passwordHash) !== session.fp) return null;
   return user;

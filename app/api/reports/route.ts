@@ -87,21 +87,37 @@ export async function PATCH(req: Request) {
   if (!user) return bad("No autenticado", 401);
   if (user.role !== "ADMIN") return bad("Solo administradores", 403);
 
-  const body = await readJson<{ reportId?: string; status?: string; resolution?: string }>(req);
+  const body = await readJson<{ reportId?: string; status?: string; resolution?: string; action?: string }>(req);
   const reportId = clean(body.reportId, 64);
   const status = clean(body.status, 16).toUpperCase();
   const resolution = clean(body.resolution, 500);
+  const action = clean(body.action, 16).toLowerCase(); // "" | "suspend" | "unsuspend"
 
   if (!reportId) return bad("Falta el reporte");
-  if (!["REVIEWED", "DISMISSED"].includes(status)) return bad("Estado inválido");
-
-  const existing = await db.report.findUnique({ where: { id: reportId }, select: { id: true } });
+  const existing = await db.report.findUnique({ where: { id: reportId } });
   if (!existing) return bad("Reporte no encontrado", 404);
 
+  // [P0-7] Acción de moderación: suspender / reactivar al usuario objetivo del reporte.
+  if (action === "suspend" || action === "unsuspend") {
+    let targetUserId: string | null = null;
+    if (existing.targetType === "user") targetUserId = existing.targetId;
+    else if (existing.targetType === "coach") {
+      const cp = await db.coachProfile.findUnique({ where: { id: existing.targetId }, select: { userId: true } });
+      targetUserId = cp?.userId ?? existing.targetId;
+    }
+    if (!targetUserId) return bad("Este reporte no apunta a un usuario suspendible", 400);
+    await db.user.update({ where: { id: targetUserId }, data: { suspended: action === "suspend" } });
+    await db.report.update({
+      where: { id: reportId },
+      data: { status: "REVIEWED", resolution: resolution || (action === "suspend" ? "Usuario suspendido" : "Usuario reactivado") },
+    });
+    return ok({ suspended: action === "suspend", userId: targetUserId });
+  }
+
+  if (!["REVIEWED", "DISMISSED"].includes(status)) return bad("Estado inválido");
   await db.report.update({
     where: { id: reportId },
     data: { status, resolution: resolution || null },
   });
-
   return ok();
 }

@@ -32,6 +32,7 @@ model User {
   debateVol     Float        @default(0.06)
   debateTier    String       @default("Novato") // Novato→Bronze→Silver→Gold→Platinum→Diamond→Master→Grandmaster
   coachVerified Boolean      @default(false) // PRD: verificación de coach (marketplace)
+  suspended     Boolean      @default(false) // [P0-7] moderación: suspendido → sesión inválida
   // --- PRD §13: membresía (suscripción simulada — Stripe se cablea después) ---
   membership      String    @default("free") // free | pro | elite
   membershipSince DateTime?
