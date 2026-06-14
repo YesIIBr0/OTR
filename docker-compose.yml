@@ -14,10 +14,12 @@
 # ============================================================
 services:
   web:
+    # En CI la imagen se construye en GitHub y se publica en ghcr; el VPS solo la BAJA
+    # (docker compose pull). `build:` se conserva para construir en local/dev si hace falta.
     build:
       context: .
       dockerfile: Dockerfile
-    image: otr-academy:latest
+    image: ghcr.io/yesiibr0/otr:latest
     restart: unless-stopped
     depends_on:
       postgres:
