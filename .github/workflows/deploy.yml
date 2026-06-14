@@ -1,0 +1,70 @@
+name: CI + Deploy (staging VPS)
+
+# Buenas prácticas:
+#  · CI gate (typecheck + prisma validate) en CADA push y PR → nunca se despliega código roto.
+#  · Deploy SOLO en push a main (no en PRs), por SSH con llave dedicada + host key fijado.
+#  · Secretos en GitHub Secrets (la llave privada y el host NUNCA están en el repo).
+#  · Concurrencia: un solo deploy a la vez (no se pisan).
+#  · Sin acciones de terceros para el SSH (se maneja a mano → menos superficie de supply-chain).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-vps-staging
+  cancel-in-progress: false
+
+jobs:
+  ci-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------- CI GATE (corre siempre: push y PR) ----------
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Generar cliente Prisma (para el typecheck)
+        run: npx prisma generate
+      - name: Validar ambos schemas Prisma
+        run: |
+          npx prisma validate
+          npx prisma validate --schema prisma/schema.postgres.prisma
+      - name: Typecheck (tsc --noEmit)
+        run: npx tsc --noEmit
+
+      # ---------- DEPLOY (solo push a main o disparo manual; NUNCA en PRs) ----------
+      - name: Preparar SSH (llave + host key fijado)
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Subir código al VPS (rsync por SSH)
+        if: github.event_name != 'pull_request'
+        run: |
+          rsync -az \
+            --exclude '.git' --exclude 'node_modules' --exclude '.next' \
+            --exclude 'prisma/dev.db' --exclude 'prisma/dev.db-journal' \
+            --exclude 'prisma/schema.prisma' \
+            --exclude '.env' --exclude '.env.local' --exclude '.env.production' \
+            --exclude 'var/uploads' \
+            -e "ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes" \
+            ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/otr/"
+
+      - name: Ejecutar deploy en el VPS (build + db push + healthcheck)
+        if: github.event_name != 'pull_request'
+        run: |
+          ssh -i ~/.ssh/deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts -o IdentitiesOnly=yes \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" 'bash /opt/otr/scripts/deploy.sh'
