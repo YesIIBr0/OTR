@@ -30,6 +30,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
   // [P1] Borrador/publicado: toggle explícito y validado (no por el loop genérico de strings).
   if (typeof body.published === "boolean") data.published = body.published;
+  // Layout de la vista del alumno (validado contra lista blanca, nunca string libre).
+  if (typeof body.layout === "string" && ["modules", "grid", "single"].includes(body.layout)) data.layout = body.layout;
   const course = await db.course.update({ where: { id }, data });
   return NextResponse.json({ ok: true, course });
 }

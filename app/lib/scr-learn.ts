@@ -82,6 +82,12 @@ function priorQuizAttempt() {
         (course && course.code) ||
         (DB.courses && DB.courses[0] && DB.courses[0].code) || "";
       const due = L && L.due ? esc(L.due) : "";
+      // Fecha límite real (dueAt) con fallback al label legacy (due); y puntos de la actividad.
+      const dueAtIso = L && L.dueAt ? L.dueAt : null;
+      const dueLabel = dueAtIso
+        ? (() => { try { const d = new Date(dueAtIso); return isNaN(d.getTime()) ? due : d.toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }); } catch { return due; } })()
+        : due;
+      const maxPoints = (L && L.maxPoints != null) ? L.maxPoints : 100;
 
       // ¿El alumno ya entregó esta actividad? mySubmissions está indexado por el
       // nombre de la actividad (DB lo guardó con esc(), igual que L.t).
@@ -133,7 +139,7 @@ function priorQuizAttempt() {
           <div class="page-title" style="font-size:22px;margin-top:2px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</div>
           ${course && course.name ? `<div class="page-sub" style="margin-top:2px">${course.name}</div>` : ''}
         </div>
-        ${due ? `<span class="badge warn" style="height:28px;align-self:flex-start">${IC.clock} ${due}</span>` : ''}
+        ${dueLabel ? `<span class="badge warn" style="height:28px;align-self:flex-start">${IC.clock} Entrega: ${dueLabel}</span>` : ''}
       </div>
 
       ${prevCard}
@@ -177,10 +183,12 @@ function priorQuizAttempt() {
 
         <div class="stack" style="gap:16px">
           <div class="card">
-            <div class="card-head"><h3>Rúbrica</h3><span class="badge">/ 100 pts</span></div>
+            <div class="card-head"><h3>Calificación</h3><span class="badge">/ ${maxPoints} pts</span></div>
             <div class="card-body" style="padding:6px 16px 14px">
-              ${[['Estructura (CWI)','30'],['Claridad y voz','25'],['Evidencia','25'],['Tiempo y cierre','20']].map(r=>`
-                <div class="rubric-row"><span>${r[0]}</span><span class="badge sky" style="margin-left:auto">${r[1]} pts</span></div>`).join('')}
+              ${maxPoints === 100
+                ? [['Estructura (CWI)','30'],['Claridad y voz','25'],['Evidencia','25'],['Tiempo y cierre','20']].map(r=>`
+                <div class="rubric-row"><span>${r[0]}</span><span class="badge sky" style="margin-left:auto">${r[1]} pts</span></div>`).join('')
+                : `<div class="muted" style="font-size:13px;padding:6px 0">Esta entrega vale <b>${maxPoints} puntos</b>. Tu coach la revisará y te dará una nota con feedback.</div>`}
             </div>
           </div>
           <button class="btn btn-primary btn-lg btn-block" id="asg-submit">${prev ? "Re-entregar" : "Entregar"}</button>

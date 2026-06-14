@@ -89,6 +89,8 @@ model Course {
   format       String?      // PF | LD | Parli | Oratoria | ...
   modality     String       @default("online") // online | presencial | híbrido
   capacity     Int?         // cupo
+  // --- Personalización (estilo Moodle) ---
+  layout       String       @default("modules") // modules (acordeón) | grid (tarjetas) | single (una sección por página)
   modules      Module[]
   enrollments  Enrollment[]
   reviews      Review[]
@@ -167,6 +169,7 @@ model Module {
   position Int      @default(0)
   done     Boolean  @default(false)
   locked   Boolean  @default(false)
+  hidden   Boolean  @default(false) // visibilidad de autoría (ojo) — distinto de locked (gating de progreso)
   lessons  Lesson[]
 
   @@index([courseId])
@@ -183,7 +186,12 @@ model Lesson {
   locked   Boolean @default(false)
   grade    String?
   dur      String?
-  due      String?
+  due      String?                   // label legacy (texto libre); dueAt es la fecha real
+  hidden   Boolean @default(false)   // visibilidad de autoría (ojo) — distinto de locked
+  // --- Apartado de entrega (tarea/grabación, estilo Moodle) ---
+  dueAt        DateTime?             // fecha límite real
+  submitKinds  String?               // CSV de tipos de entrega permitidos: audio,video,file,text (null = todos)
+  maxPoints    Int?                  // puntos de la actividad (null = 100 por defecto en UI)
   videoKind   String  @default("none") // none | youtube | cloudflare | upload
   videoSrc    String?                   // youtube: ID; cloudflare: UID; upload: /uploads/...
   contentHtml String?                   // contenido de la lección (HTML ya sanitizado)

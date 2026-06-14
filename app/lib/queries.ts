@@ -283,7 +283,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     me ? db.quizAttempt.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
     // Lecciones (id + courseId) de los cursos en que está inscrito, para el % real.
     meEnrollments.length
-      ? db.lesson.findMany({ where: { module: { courseId: { in: [...enrolledIds] } } }, select: { id: true, module: { select: { courseId: true } } } })
+      ? db.lesson.findMany({ where: { module: { courseId: { in: [...enrolledIds] } } }, select: { id: true, hidden: true, module: { select: { courseId: true, hidden: true } } } })
       : Promise.resolve([]),
     // Entregas pendientes (no calificadas) de los cursos del profesor.
     isTeacher && taughtCodes.length
@@ -434,6 +434,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   (enrolledLessons || []).forEach((l: any) => {
     const cid = l.module?.courseId;
     if (!cid) return;
+    if (l.hidden || l.module?.hidden) return; // lo oculto por el profesor no cuenta para el progreso del alumno
     totalByCourse.set(cid, (totalByCourse.get(cid) || 0) + 1);
     if (doneSet.has(l.id)) doneByCourse.set(cid, (doneByCourse.get(cid) || 0) + 1);
   });
@@ -1256,11 +1257,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       color: e.course.color, progress: courseProgress(e.course.id), next: esc(e.course.next),
       students: e.course.studentsCount, lessons: e.course.lessonsCount, due: e.due,
       format: esc(e.course.format), modality: esc(e.course.modality), capacity: e.course.capacity, summary: esc(pickLang(e.course.summary, e.course.summaryEn)),
+      layout: e.course.layout || "modules",
     })),
-    courseModules: modulesForDashboard.map((m) => ({
+    // Dashboard: solo secciones/actividades VISIBLES para el alumno (filtra hidden).
+    courseModules: modulesForDashboard.filter((m: any) => !m.hidden).map((m) => ({
       t: esc(m.title), done: m.done, locked: m.locked,
-      items: m.lessons.map((l) => ({
+      items: m.lessons.filter((l: any) => !l.hidden).map((l) => ({
         id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id), locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
+        dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
         videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
         // Examen real adjunto solo a lecciones type='quiz' (null si no tiene).
         quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
@@ -1283,11 +1287,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
         color: e.course.color, progress: courseProgress(e.course.id),
         summary: esc(pickLang(e.course.summary, e.course.summaryEn)),
         format: esc(e.course.format), modality: esc(e.course.modality),
-        modules: (byCourse.get(e.course.id) || []).map((m: any) => ({
+        layout: e.course.layout || "modules",
+        // Solo secciones/actividades VISIBLES para el alumno (filtra hidden).
+        modules: (byCourse.get(e.course.id) || []).filter((m: any) => !m.hidden).map((m: any) => ({
           t: esc(m.title), done: m.done, locked: m.locked,
-          items: m.lessons.map((l: any) => ({
+          items: m.lessons.filter((l: any) => !l.hidden).map((l: any) => ({
             id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id),
             locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
+            dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
             videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
             quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
           })),
@@ -1399,9 +1406,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       modules: allModules.map((m) => ({ id: m.id, courseId: m.courseId, title: esc(m.title) })),
     };
     base.teacherCourses = taughtCourses.map((c: any) => ({
-      id: c.id, code: c.code, name: esc(c.name), color: c.color, published: c.published,
+      id: c.id, code: c.code, name: esc(c.name), color: c.color, published: c.published, layout: c.layout || "modules",
       format: esc(c.format), modality: esc(c.modality), capacity: c.capacity, summary: esc(c.summary),
-      modules: c.modules.map((m: any) => ({ id: m.id, title: esc(m.title), lessons: m.lessons.map((l: any) => ({ id: l.id, title: esc(l.title), type: l.type, dur: l.dur, videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml, releaseAfterId: l.releaseAfterId || null })) })),
+      modules: c.modules.map((m: any) => ({ id: m.id, title: esc(m.title), hidden: !!m.hidden, lessons: m.lessons.map((l: any) => ({ id: l.id, title: esc(l.title), type: l.type, dur: l.dur, due: l.due, hidden: !!l.hidden, dueAt: l.dueAt ? l.dueAt.toISOString() : null, submitKinds: l.submitKinds ?? null, maxPoints: l.maxPoints ?? null, videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml, releaseAfterId: l.releaseAfterId || null })) })),
     }));
     base.reviewsReceived = reviewsReceived;
   }

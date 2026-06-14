@@ -134,7 +134,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           ? `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", "Negrita"], ["italic", "<i>I</i>", "Cursiva"], ["formatBlock:h3", "H", "Subtítulo"], ["insertUnorderedList", "• Lista", "Lista"], ["createLink", "🔗", "Enlace"], ["removeFormat", "⨯", "Quitar formato"]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" data-f="${f.name}" data-rich="1" contenteditable="true" style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div></div>`
         : f.type === "textarea"
           ? `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><textarea class="input" data-f="${f.name}" rows="6" placeholder="${f.ph || ""}" style="resize:vertical;min-height:96px;font-family:inherit;line-height:1.5">${f.value || ""}</textarea></div>`
-          : `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><input class="input" data-f="${f.name}"${f.type === "number" ? ` type="number" min="0" max="100"` : ""} placeholder="${f.ph || ""}" value="${f.value != null ? f.value : ""}"/></div>`
+          : `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><input class="input" data-f="${f.name}"${f.type === "number" ? ` type="number" min="0" max="1000"` : f.type === "date" ? ` type="date"` : ""} placeholder="${f.ph || ""}" value="${f.value != null ? f.value : ""}"/></div>`
       ).join("");
       scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body">${inner}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:4px 0 0"></p></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button><button class="btn btn-primary" data-ok>Guardar</button></div></div>`;
       document.body.appendChild(scrim);
@@ -195,6 +195,15 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     const LESSON_TYPES = [
       { value: "lesson", label: "Lección" }, { value: "video", label: "Video" }, { value: "quiz", label: "Examen" },
       { value: "assign", label: "Tarea" }, { value: "mic", label: "Grabación" }, { value: "file", label: "Archivo" }];
+    // Presets de tipos de entrega permitidos para tareas (apartado de entrega).
+    const SUBMIT_KIND_OPTS = [
+      { value: "", label: "Todos (audio, video, archivo, texto)" },
+      { value: "file", label: "Solo archivo" },
+      { value: "text", label: "Solo texto" },
+      { value: "audio", label: "Solo audio (grabación)" },
+      { value: "video", label: "Solo video" },
+      { value: "file,text", label: "Archivo o texto" },
+    ];
     // presetType: cuando viene del Activity Chooser, el tipo ya está elegido → se oculta
     // el select de tipo y se envía ese type. Sin preset, el formulario lo deja elegir.
     function openCreateLesson(moduleId?: string, presetType?: string) {
@@ -213,10 +222,18 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Cloudflare Stream (UID)" }] });
       fields.push({ name: "videoSrc", label: "URL de YouTube o UID de Cloudflare", ph: "https://youtu.be/… o el UID" });
       fields.push({ name: "contentHtml", label: presetType === "assign" || presetType === "mic" ? "Instrucciones para el alumno" : "Contenido de la actividad", type: "richtext", ph: "Escribe el contenido…" });
+      if (presetType === "assign" || presetType === "mic") {
+        fields.push({ name: "dueAt", label: "Fecha límite (opcional)", type: "date" });
+        fields.push({ name: "submitKinds", label: "Tipos de entrega permitidos", type: "select", value: "", options: SUBMIT_KIND_OPTS });
+        fields.push({ name: "maxPoints", label: "Puntos (máximo, opcional)", type: "number", ph: "100" });
+      }
       formModal(presetType ? `Nueva actividad · ${typeLabel}` : "Nueva lección / contenido", fields, async (v) => {
-        await api("/api/lessons", { ...v, type: presetType || v.type });
+        const d = await api("/api/lessons", { ...v, type: presetType || v.type });
         toast("Actividad creada", "ok");
         await refresh();
+        // Si es un examen, abrir el constructor de preguntas directo (flujo redondo estilo Moodle).
+        const created = d?.lesson;
+        if (created && (presetType || v.type) === "quiz" && (window as any).otrOpenQuizBuilder) (window as any).otrOpenQuizBuilder(created.id, created.title);
       });
     }
     // Activity chooser estilo Moodle: grid de tipos con icono + descripción.
@@ -253,18 +270,22 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         if (lessons.some((x: any) => x.id === id)) courseLessons = lessons;
       }
       const prereqOptions = [{ value: "", label: "— Sin prerrequisito —" }, ...courseLessons.filter((x: any) => x.id !== id).map((x: any) => ({ value: x.id, label: x.title }))];
-      formModal("Editar lección", [
+      const efields: any[] = [
         { name: "title", label: "Título", value: l.title },
-        { name: "type", label: "Tipo", type: "select", value: l.type || "lesson", options: [
-          { value: "lesson", label: "Lección" }, { value: "video", label: "Video" }, { value: "quiz", label: "Examen" },
-          { value: "assign", label: "Tarea" }, { value: "mic", label: "Grabación" }, { value: "file", label: "Archivo" }] },
+        { name: "type", label: "Tipo", type: "select", value: l.type || "lesson", options: LESSON_TYPES },
         { name: "dur", label: "Duración (opcional)", value: l.dur || "", ph: "15 min" },
         { name: "releaseAfterId", label: "Prerrequisito (completar antes de desbloquear)", type: "select", value: l.releaseAfterId || "", options: prereqOptions },
         { name: "videoKind", label: "Video", type: "select", value: l.videoKind || "none", options: [
           { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Cloudflare Stream (UID)" }] },
         { name: "videoSrc", label: "URL de YouTube o UID de Cloudflare", value: l.videoSrc || "" },
-        { name: "contentHtml", label: "Contenido de la lección", type: "richtext", value: l.contentHtml || "" },
-      ], async (v) => { await api(`/api/lessons/${id}`, v, "PATCH"); toast("Lección actualizada", "ok"); await refresh(); });
+        { name: "contentHtml", label: "Contenido de la actividad", type: "richtext", value: l.contentHtml || "" },
+      ];
+      if (l.type === "assign" || l.type === "mic") {
+        efields.push({ name: "dueAt", label: "Fecha límite (opcional)", type: "date", value: l.dueAt ? String(l.dueAt).slice(0, 10) : "" });
+        efields.push({ name: "submitKinds", label: "Tipos de entrega permitidos", type: "select", value: l.submitKinds || "", options: SUBMIT_KIND_OPTS });
+        efields.push({ name: "maxPoints", label: "Puntos (máximo, opcional)", type: "number", value: l.maxPoints != null ? l.maxPoints : "" });
+      }
+      formModal("Editar actividad", efields, async (v) => { await api(`/api/lessons/${id}`, v, "PATCH"); toast("Actividad actualizada", "ok"); await refresh(); });
     }
     function openEditModule(id: string, title: string) {
       formModal("Editar módulo", [
@@ -385,6 +406,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           { value: "online", label: "Online" }, { value: "presencial", label: "Presencial" }, { value: "híbrido", label: "Híbrido" }] },
         { name: "capacity", label: "Cupo (capacidad)", value: c?.capacity || "", ph: "20" },
         { name: "summary", label: "Resumen del programa", type: "textarea", value: c?.summary || "", ph: "Describe de qué trata este programa…" },
+        { name: "layout", label: "Layout (cómo lo ve el alumno)", type: "select", value: c?.layout || "modules", options: [
+          { value: "modules", label: "Módulos (acordeón) — lista de secciones" }, { value: "grid", label: "Cuadrícula — tarjeta por sección" }, { value: "single", label: "Una sección por página" }] },
         { name: "published", label: "Estado", type: "select", value: (c?.published === false ? "false" : "true"), options: [
           { value: "true", label: "Publicado (visible en el catálogo)" }, { value: "false", label: "Borrador (oculto del catálogo)" }] },
       ], async (v) => { if (v.published !== undefined) v.published = v.published === "true"; await api(`/api/courses/${id}`, v, "PATCH"); toast("Curso actualizado", "ok"); await refresh(); });
@@ -630,6 +653,20 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const chooserEl = t.closest("[data-open-chooser]") as HTMLElement | null;
       if (chooserEl) { e.preventDefault(); openActivityChooser(chooserEl.getAttribute("data-open-chooser")!); return; }
       if (t.closest("[data-toggle-edit]")) { e.preventDefault(); const cur = (window as any).__editMode !== false; (window as any).__editMode = !cur; try { sessionStorage.setItem("otr_edit_mode", !cur ? "1" : "0"); } catch {} renderApp(currentRoute); return; }
+      // Mostrar/ocultar una sección o actividad al alumno (ojo).
+      const hideEl = t.closest("[data-toggle-hidden]") as HTMLElement | null;
+      if (hideEl) {
+        e.preventDefault();
+        const [kind, hid] = hideEl.getAttribute("data-toggle-hidden")!.split(":");
+        let cur = false;
+        for (const c of ((DB as any).teacherCourses || [])) {
+          if (kind === "module") { const m = c.modules.find((x: any) => x.id === hid); if (m) cur = !!m.hidden; }
+          else { for (const m of c.modules) { const l = m.lessons.find((x: any) => x.id === hid); if (l) { cur = !!l.hidden; break; } } }
+        }
+        const url = kind === "module" ? `/api/modules/${hid}` : `/api/lessons/${hid}`;
+        api(url, { hidden: !cur }, "PATCH").then(() => { toast(!cur ? "Oculto al alumno" : "Visible para el alumno", "ok"); return refresh(); }).catch((err: any) => toast(err.message || "Error", "danger"));
+        return;
+      }
       if (t.closest('[data-action="edit-profile"]')) { e.preventDefault(); openEditProfile(); return; }
       if (t.closest("#burger")) { root.querySelector(".app")?.classList.toggle("drawer-open"); return; }
       if (t.closest("#bell")) { e.stopPropagation(); toggleNotif(); return; }

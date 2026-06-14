@@ -21,6 +21,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (body.videoSrc !== undefined) data.videoSrc = normalizeVideoSrc(kind, body.videoSrc);
   if (body.contentHtml !== undefined) data.contentHtml = sanitizeHtml(body.contentHtml);
   if (body.releaseAfterId !== undefined) data.releaseAfterId = body.releaseAfterId || null;
+  // Mostrar/ocultar la actividad al alumno (ojo) — distinto de locked (prerrequisito).
+  if (typeof body.hidden === "boolean") data.hidden = body.hidden;
+  // Apartado de entrega (tarea/grabación): fecha límite real, tipos permitidos y puntos.
+  if (body.dueAt !== undefined) { const d = body.dueAt ? new Date(body.dueAt) : null; data.dueAt = d && !Number.isNaN(d.getTime()) ? d : null; }
+  if (body.submitKinds !== undefined) {
+    const allowed = ["audio", "video", "file", "text"];
+    const arr = String(body.submitKinds || "").split(",").map((s) => s.trim().toLowerCase()).filter((s) => allowed.includes(s));
+    data.submitKinds = arr.length ? arr.join(",") : null;
+  }
+  if (body.maxPoints !== undefined) { const n = Number(body.maxPoints); data.maxPoints = body.maxPoints === "" || Number.isNaN(n) ? null : Math.max(0, Math.min(1000, Math.round(n))); }
   const updated = await db.lesson.update({ where: { id }, data });
   return NextResponse.json({ ok: true, lesson: updated });
 }

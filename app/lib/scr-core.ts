@@ -364,8 +364,34 @@ function activeItemsFlat() {
           </div>`
         : '';
 
-      const modules = cMods.length
-        ? cMods.map((m,mi)=>`
+      // Layout de la vista del alumno (personalizable por el coach): modules (acordeón,
+      // default) | grid (tarjeta por sección) | single (todas las secciones en una página).
+      const layout = c.layout || 'modules';
+      const itemRow = (it: any) => `
+        <div class="mitem ${it.doneByMe?'done':''} ${it.locked?'lock':''}" ${!it.locked?`onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
+          <div class="mi-ic">${it.doneByMe?IC.check:C.typeIcon(it.type)}</div>
+          <div class="mi-t">${esc(it.t)}</div>
+          <div class="mi-meta">${it.grade?C.badge(esc(it.grade),'ok'):''}${it.due?`<span style="color:var(--warn)">${esc(it.due)}</span>`:''}${it.dur?`<span>${esc(it.dur)}</span>`:''}${it.locked?IC.lock:''}</div>
+        </div>`;
+      const secIc = (m: any, mi: number) => `<span class="mh-ic ${m.done?'done':m.locked?'lock':''}" style="width:24px;height:24px;font-size:12px;flex:none">${m.done?IC.check:m.locked?IC.lock:`<b>${mi+1}</b>`}</span>`;
+      const emptyMods = `<div class="card"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Contenido en camino</h4><p>Tu coach está montando los módulos. En cuanto publique, entrenas.</p></div></div>`;
+      let modules;
+      if (!cMods.length) {
+        modules = emptyMods;
+      } else if (layout === 'grid') {
+        modules = `<div class="grid g-2" style="gap:14px">${cMods.map((m,mi)=>`
+          <div class="card card-pad fade-up" style="--d:${Math.min(mi,6)}">
+            <div class="row vcenter between" style="gap:10px;margin-bottom:10px"><b class="row vcenter" style="gap:8px;font-size:14px;min-width:0">${secIc(m,mi)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.t)}</span></b><span class="badge sky" style="flex:none">${m.items.length}</span></div>
+            <div class="stack" style="gap:3px">${m.items.map(itemRow).join('') || `<div class="faint" style="font-size:12px">Sin actividades.</div>`}</div>
+          </div>`).join('')}</div>`;
+      } else if (layout === 'single') {
+        modules = `<div class="stack" style="gap:16px">${cMods.map((m,mi)=>`
+          <div class="card card-pad fade-up" style="--d:${Math.min(mi,6)}">
+            <div class="row vcenter" style="gap:8px;margin-bottom:8px">${secIc(m,mi)}<b style="font-size:14.5px">${esc(m.t)}</b>${m.done?'<span class="badge ok" style="flex:none">Completada</span>':m.locked?'<span class="badge" style="flex:none">Bloqueada</span>':''}</div>
+            <div class="module-items" style="display:block">${m.items.map(itemRow).join('') || `<div class="faint" style="font-size:12px;padding:6px 0">Sin actividades.</div>`}</div>
+          </div>`).join('')}</div>`;
+      } else {
+        modules = cMods.map((m,mi)=>`
         <div class="module ${mi===1?'open':''}">
           <div class="module-head" data-acc>
             <div class="mh-ic ${m.done?'done':m.locked?'lock':''}">${m.done?IC.check:m.locked?IC.lock:`<b>${mi+1}</b>`}</div>
@@ -373,15 +399,10 @@ function activeItemsFlat() {
             <span class="chev">${IC.chevD}</span>
           </div>
           <div class="module-items">
-            ${m.items.map(it=>`
-              <div class="mitem ${it.doneByMe?'done':''} ${it.locked?'lock':''}" ${!it.locked?`onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
-                <div class="mi-ic">${it.doneByMe?IC.check:C.typeIcon(it.type)}</div>
-                <div class="mi-t">${esc(it.t)}</div>
-                <div class="mi-meta">${it.grade?C.badge(esc(it.grade),'ok'):''}${it.due?`<span style="color:var(--warn)">${esc(it.due)}</span>`:''}${it.dur?`<span>${esc(it.dur)}</span>`:''}${it.locked?IC.lock:''}</div>
-              </div>`).join('')}
+            ${m.items.map(itemRow).join('')}
           </div>
-        </div>`).join('')
-        : `<div class="card"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>Contenido en camino</h4><p>Tu coach está montando los módulos. En cuanto publique, entrenas.</p></div></div>`;
+        </div>`).join('');
+      }
 
       // "Continuar": próxima actividad NO completada del curso ACTIVO. Fija
       // window.__lesson (y __quizLesson si aplica) y enruta por tipo antes de navegar.

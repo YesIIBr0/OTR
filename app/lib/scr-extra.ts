@@ -6,6 +6,10 @@ import { IC } from "./icons";
 import { esc } from "./esc";
 
 /* ---- Helpers de autoría reutilizados por "Mis cursos" y el constructor de curso ---- */
+// Fecha de entrega legible (de un ISO) → "15 nov".
+function fmtDue(iso) {
+  try { const d = new Date(iso); if (isNaN(d.getTime())) return ""; return d.toLocaleDateString("es", { day: "numeric", month: "short" }); } catch { return ""; }
+}
 // Fila de ACTIVIDAD (lección). edit=true muestra los controles de autoría (estilo Moodle).
 function lessonRow(l, mid, edit) {
   const isQuiz = l.type === "quiz";
@@ -18,30 +22,38 @@ function lessonRow(l, mid, edit) {
   const videoBadge = l.videoKind && l.videoKind !== "none"
     ? `<span class="badge sky" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.video} ${l.videoKind === "youtube" ? "YouTube" : "Stream"}</span>`
     : "";
+  const isAssign = l.type === "assign" || l.type === "mic";
+  const dueBadge = isAssign && l.dueAt ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${IC.calendar || ""} Entrega ${fmtDue(l.dueAt)}</span>` : "";
+  const ptsBadge = isAssign && l.maxPoints != null ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${l.maxPoints} pts</span>` : "";
+  const hiddenBadge = l.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Oculta</span>` : "";
   const controls = edit
-    ? `<span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:up" title="Subir">↑</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:down" title="Bajar">↓</button>${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ""}<button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar actividad">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" style="color:var(--danger)" title="Eliminar">${IC.close}</button></span>`
+    ? `<span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="lesson:${l.id}" title="${l.hidden ? "Mostrar al alumno" : "Ocultar al alumno"}">${IC.eye}</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:up" title="Subir">↑</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:down" title="Bajar">↓</button>${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ""}<button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar actividad">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" style="color:var(--danger)" title="Eliminar">${IC.close}</button></span>`
     : "";
-  return `<div class="row between vcenter" style="padding:7px 0 7px 18px;font-size:13px;color:var(--text-2)">
-    <span class="row vcenter" style="gap:8px;min-width:0"><span style="display:flex;width:15px;color:var(--text-3);flex:none">${C.typeIcon(l.type)}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.title)}</span>${videoBadge}${quizBadge}</span>
+  return `<div class="row between vcenter" style="padding:7px 0 7px 18px;font-size:13px;color:var(--text-2)${l.hidden ? ";opacity:.5" : ""}">
+    <span class="row vcenter" style="gap:8px;min-width:0"><span style="display:flex;width:15px;color:var(--text-3);flex:none">${C.typeIcon(l.type)}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.title)}</span>${videoBadge}${quizBadge}${dueBadge}${ptsBadge}${hiddenBadge}</span>
     ${controls}</div>`;
 }
-// Bloque de SECCIÓN (módulo) con sus actividades. edit gobierna los affordances.
+// Bloque de SECCIÓN (módulo) con sus actividades. edit gobierna los affordances. Colapsable.
 function sectionBlock(m, cid, edit) {
   const ctrls = edit
-    ? `<span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="Subir sección">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="Bajar sección">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="Renombrar sección">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar</button></span>`
+    ? `<span class="row" style="gap:4px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="module:${m.id}" title="${m.hidden ? "Mostrar al alumno" : "Ocultar al alumno"}">${IC.eye}</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="Subir sección">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="Bajar sección">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="Renombrar sección">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar</button></span>`
     : "";
   const rows = (m.lessons || []).map((l) => lessonRow(l, m.id, edit)).join("")
     || `<div class="faint" style="font-size:12px;padding:6px 0 0 18px">Sin actividades todavía.</div>`;
   const add = edit
     ? `<div style="padding:10px 0 2px 18px"><button class="btn btn-soft btn-sm" data-open-chooser="${m.id}">${IC.plus} Añadir actividad o recurso</button></div>`
     : "";
-  return `<div style="border-top:1px solid var(--border);padding:12px 0 6px">
-    <div class="row between vcenter" style="margin-bottom:4px"><b class="row vcenter" style="gap:7px;font-size:13.5px"><span style="display:flex;width:14px;color:var(--text-3)">${IC.grid}</span>${esc(m.title)}</b>${ctrls}</div>
-    ${rows}${add}</div>`;
+  return `<div class="secblk" data-sec="${m.id}" style="border-top:1px solid var(--border);padding:12px 0 6px${m.hidden ? ";opacity:.55" : ""}">
+    <div class="row between vcenter" style="margin-bottom:4px">
+      <b class="row vcenter" data-acc-sec="${m.id}" style="gap:7px;font-size:13.5px;cursor:pointer;min-width:0"><span class="sec-chev" style="display:flex;width:12px;color:var(--text-3);transition:transform .2s">${IC.chevD}</span><span style="display:flex;width:14px;color:var(--text-3);flex:none">${IC.grid}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.title)}</span>${m.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Oculta</span>` : ""}</b>${ctrls}
+    </div>
+    <div class="sec-body" data-sec-body="${m.id}">${rows}${add}</div>
+  </div>`;
 }
-// Cablea los botones "Examen" (data-tm=quiz) al quiz builder global (window.otrOpenQuizBuilder).
+// Cablea los botones "Examen" (data-tm=quiz) al quiz builder global. Guardado anti-doble-bind.
 function mountQuizButtons(root) {
-  if (!root) return;
+  if (!root || root.__quizBtnsBound) return;
+  root.__quizBtnsBound = true;
   root.addEventListener("click", (e) => {
     const btn = e.target.closest && e.target.closest('[data-tm="quiz"]');
     if (!btn || !root.contains(btn)) return;
@@ -49,6 +61,35 @@ function mountQuizButtons(root) {
     if (typeof window !== "undefined" && window.otrOpenQuizBuilder)
       window.otrOpenQuizBuilder(btn.getAttribute("data-lesson"), btn.getAttribute("data-title"));
   });
+}
+// Interacciones del builder: colapsar secciones (chevron) + "colapsar/expandir todo".
+function mountBuilder(root) {
+  if (!root) return;
+  mountQuizButtons(root);
+  if (!root.__builderBound) {
+    root.__builderBound = true;
+    root.addEventListener("click", (e) => {
+      const h = e.target.closest && e.target.closest("[data-acc-sec]");
+      if (!h || !root.contains(h)) return;
+      const blk = h.closest(".secblk"); if (!blk) return;
+      const body = blk.querySelector("[data-sec-body]"); const chev = h.querySelector(".sec-chev");
+      if (!body) return;
+      const collapsed = body.style.display === "none";
+      body.style.display = collapsed ? "" : "none";
+      if (chev) chev.style.transform = collapsed ? "" : "rotate(-90deg)";
+    });
+  }
+  const ca = root.querySelector("[data-collapse-all]");
+  if (ca && !ca.__bound) {
+    ca.__bound = true;
+    ca.addEventListener("click", () => {
+      const bodies = Array.from(root.querySelectorAll("[data-sec-body]"));
+      const anyOpen = bodies.some((b) => b.style.display !== "none");
+      bodies.forEach((b) => { b.style.display = anyOpen ? "none" : ""; });
+      root.querySelectorAll(".sec-chev").forEach((c) => { c.style.transform = anyOpen ? "rotate(-90deg)" : ""; });
+      ca.textContent = anyOpen ? "Expandir todo" : "Colapsar todo";
+    });
+  }
 }
 
 export const S = {
@@ -157,10 +198,11 @@ export const S = {
         ? mods.map((m) => sectionBlock(m, c.id, edit)).join("")
         : `<div class="empty" style="padding:24px"><div class="ill">${IC.grid}</div><h4>Sin secciones todavía</h4><p>Añade tu primera sección para organizar el contenido del curso.</p>${edit ? `<button class="btn btn-primary btn-sm" data-add-module="${c.id}">${IC.plus} Añadir sección</button>` : ""}</div>`;
       const addSection = edit && mods.length ? `<div style="border-top:1px solid var(--border);padding:14px 0 2px"><button class="btn btn-soft btn-sm" data-add-module="${c.id}">${IC.plus} Añadir sección</button></div>` : "";
-      const body = `<div class="card card-pad fade-up" style="--d:1">${sections}${addSection}</div>`;
+      const tools = mods.length ? `<div class="row between vcenter" style="margin-bottom:2px"><span class="faint" style="font-size:12px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"}</span><button class="btn btn-quiet btn-sm" data-collapse-all>Colapsar todo</button></div>` : "";
+      const body = `<div class="card card-pad fade-up" style="--d:1">${tools}${sections}${addSection}</div>`;
       return head + hero + body;
     },
-    mount(root) { mountQuizButtons(root); },
+    mount(root) { mountBuilder(root); },
   },
 
   search: {
