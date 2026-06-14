@@ -18,7 +18,8 @@ die() { printf '\n\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 say "Bajando la imagen pre-construida desde ghcr.io…"
 docker compose --env-file .env.production pull web
 
-say "Levantando contenedores (sin build en el VPS)…"
+say "Recreando contenedores desde cero (evita conflictos de nombre/huérfanos)…"
+docker compose --env-file .env.production down --remove-orphans
 docker compose --env-file .env.production up -d --remove-orphans
 
 say "Aplicando el esquema a la base de datos (db push)…"

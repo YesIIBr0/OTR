@@ -25,6 +25,11 @@ after=$(docker image inspect "$IMG" --format '{{.Id}}' 2>/dev/null || echo none)
 [ "$before" = "$after" ] && exit 0
 
 echo "$(date -u) ▸ nueva imagen detectada — redeploy"
+# down --remove-orphans limpia TODOS los contenedores del proyecto POR ETIQUETA (incluido un
+# huérfano renombrado <hash>_otr-web-1 que un recreate interrumpido deja en este VPS de 1 CPU
+# y que provoca "container name already in use" + 502). up recrea desde cero. ~10-15s de
+# downtime SOLO cuando hay imagen nueva (push a main), a cambio de deploys deterministas.
+docker compose --env-file .env.production down --remove-orphans
 docker compose --env-file .env.production up -d --remove-orphans
 docker compose exec -T web npx prisma db push --skip-generate >/dev/null 2>&1 || true
 
