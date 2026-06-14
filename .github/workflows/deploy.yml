@@ -42,7 +42,7 @@ jobs:
       - name: Typecheck (tsc --noEmit)
         run: npx tsc --noEmit
 
-  build-and-deploy:
+  build-and-push:
     needs: ci
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -53,7 +53,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ---------- Construir la imagen EN EL RUNNER y publicarla en ghcr ----------
+      # Construir la imagen EN EL RUNNER de GitHub y publicarla en ghcr.io.
+      # El DEPLOY NO se hace aquí: lo hace el VPS solo (VPS-pull) — un cron en el VPS
+      # corre scripts/vps-pull.sh cada 2 min, baja esta imagen y redespliega si cambió.
+      # Así NO hay SSH entrante desde GitHub → inmune a los drops de red de Hostinger.
       - name: Login a ghcr.io
         run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
       - name: Build + push (cliente Prisma = Postgres)
@@ -62,34 +65,3 @@ jobs:
           docker build -t ghcr.io/yesiibr0/otr:latest -t "ghcr.io/yesiibr0/otr:${{ github.sha }}" .
           docker push ghcr.io/yesiibr0/otr:latest
           docker push "ghcr.io/yesiibr0/otr:${{ github.sha }}"
-
-      # ---------- Deploy: el VPS solo BAJA la imagen (no construye) ----------
-      - name: Preparar SSH (llave + host key fijado)
-        run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
-          printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
-      - name: Sincronizar compose + scripts al VPS (con reintentos)
-        run: |
-          SSH_OPTS="-i $HOME/.ssh/deploy_key -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o ServerAliveInterval=15"
-          ok=0
-          for i in 1 2 3; do
-            if rsync -az \
-              --exclude '.git' --exclude 'node_modules' --exclude '.next' \
-              --exclude 'prisma/dev.db' --exclude 'prisma/dev.db-journal' --exclude 'prisma/schema.prisma' \
-              --exclude '.env' --exclude '.env.local' --exclude '.env.production' --exclude 'var/uploads' \
-              -e "ssh $SSH_OPTS" \
-              ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/opt/otr/"; then ok=1; break; fi
-            echo "rsync intento $i falló — reintento en 20s"; sleep 20
-          done
-          [ "$ok" = 1 ] || { echo "rsync agotó los reintentos"; exit 1; }
-      - name: Deploy en el VPS (login ghcr efímero + pull + up + healthcheck, con reintentos)
-        run: |
-          SSH_OPTS="-i $HOME/.ssh/deploy_key -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o IdentitiesOnly=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o ServerAliveInterval=15"
-          ok=0
-          for i in 1 2 3; do
-            if echo "${{ github.token }}" | ssh $SSH_OPTS "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
-              'docker login ghcr.io -u "${{ github.actor }}" --password-stdin && bash /opt/otr/scripts/deploy.sh'; then ok=1; break; fi
-            echo "deploy intento $i falló — reintento en 20s"; sleep 20
-          done
-          [ "$ok" = 1 ] || { echo "deploy agotó los reintentos"; exit 1; }
