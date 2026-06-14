@@ -52,6 +52,8 @@ model User {
   enrollments   Enrollment[]
   reviewsGiven  Review[]     @relation("ReviewAuthor")
   reviewsGot    Review[]     @relation("ReviewTeacher")
+  submissions   Submission[]   // [P0-11] FK inverso: borrar usuario limpia sus entregas
+  quizAttempts  QuizAttempt[]  // [P0-11] FK inverso: borrar usuario limpia sus intentos
 }
 
 model Level {
@@ -294,6 +296,7 @@ model Notification {
 model QuizAttempt {
   id          String   @id @default(cuid())
   userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userName    String
   lessonTitle String
   score       Int
@@ -407,6 +410,7 @@ model ChatMessage {
 model Submission {
   id           String  @id @default(cuid())
   userId       String
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userName     String
   courseCode   String  @default("PF-101")
   activity     String

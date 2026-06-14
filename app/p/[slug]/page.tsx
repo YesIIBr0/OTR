@@ -41,7 +41,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const { slug } = await params;
 
   const user = await db.user.findUnique({ where: { publicSlug: slug } });
-  if (!user || !user.publicProfile) notFound();
+  // [P0-2] Nunca exponer públicamente el perfil de un menor, aunque lo tenga "habilitado".
+  if (!user || !user.publicProfile || user.ageBand === "minor") notFound();
 
   // Carga en paralelo: skill graph, credenciales, historia de rating,
   // récord competitivo, ledger (timeline) y cursos.

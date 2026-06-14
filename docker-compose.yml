@@ -24,7 +24,7 @@ services:
         condition: service_healthy
     environment:
       # Apunta a la BD del servicio postgres (host = nombre del servicio).
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-otr}:${POSTGRES_PASSWORD:-otr}@postgres:5432/${POSTGRES_DB:-otr_aula}?schema=public&connection_limit=30&pool_timeout=20"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-otr}:${POSTGRES_PASSWORD:-otr}@postgres:5432/${POSTGRES_DB:-otr_aula}?schema=public&connection_limit=50&pool_timeout=20"
       AUTH_SECRET: "${AUTH_SECRET}"
       APP_URL: "${APP_URL}"
       SMTP_URL: "${SMTP_URL}"

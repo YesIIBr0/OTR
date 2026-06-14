@@ -49,6 +49,10 @@ export async function POST(req: Request) {
     (await db.coachProfile.findUnique({ where: { userId: coachKey }, include }));
   if (!profile || !profile.active) return bad("Coach no encontrado", 404);
   if (profile.userId === user.id) return bad("No puedes reservar una sesión contigo mismo", 400);
+  // [P0-5] Solo coaches VERIFICADOS reciben reservas (PRD §7.4/§7.6 — sirven a menores;
+  // sin verificación de identidad/credenciales no se permite reservar con ellos).
+  const coachVerifiedRow = await db.user.findUnique({ where: { id: profile.userId }, select: { coachVerified: true } });
+  if (!coachVerifiedRow?.coachVerified) return bad("Este coach aún no está verificado", 403);
 
   // Paquete opcional: sin packageId la sesión se cobra a la tarifa por hora del
   // coach (el UI deriva paquetes sugeridos sin id cuando el coach no publicó).

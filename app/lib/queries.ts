@@ -173,7 +173,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     // se incluyen para no romper. me?.id puede faltar (sin sesión) → [].
     me
       ? db.conversation.findMany({
-          where: { OR: [{ participants: { some: { userId: me.id } } }, { participants: { none: {} } }] },
+          where: { participants: { some: { userId: me.id } } },
           orderBy: { position: "asc" },
           take: 50,
           include: { messages: { orderBy: { position: "asc" }, take: 200 } },
@@ -342,6 +342,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     // leaderboard.rows: top 50 usuarios por debateRating desc.
     me
       ? db.user.findMany({
+          where: { ageBand: { not: "minor" } }, // [P0-2] menores fuera del ranking público
           orderBy: { debateRating: "desc" },
           take: 50,
           select: { id: true, name: true, initials: true, debateRating: true, debateTier: true },

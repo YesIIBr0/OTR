@@ -20,10 +20,9 @@ export async function GET() {
     include: { participants: true, messages: { orderBy: { position: "asc" } } },
   });
 
-  const visible = all.filter((c) => {
-    if (c.participants.length === 0) return true; // legacy: sin scoping → visible
-    return c.participants.some((p) => p.userId === user.id);
-  });
+  // [P0-4] Solo conversaciones donde el usuario es participante registrado.
+  // (Eliminado el fallback legacy "sin participantes → visible", que filtraba chats ajenos.)
+  const visible = all.filter((c) => c.participants.some((p) => p.userId === user.id));
 
   // Mantiene el shape que espera la pantalla de mensajes (scr-community: ini/name/
   // when/last/unread/online/navy en la lista; me/body/when en las burbujas).
@@ -65,16 +64,14 @@ export async function POST(req: Request) {
   }
   if (!convId) return bad("Sin conversación", 400);
 
-  // Autorización: el emisor debe ser participante de la conversación.
-  // Fallback legacy: si la conversación no tiene NINGÚN participante registrado
-  // (seed previo a §7.4), se permite para no romper instalaciones existentes.
+  // [P0-4] Autorización estricta: el emisor DEBE ser participante registrado.
+  // (Eliminado el fallback legacy que permitía escribir en conversaciones sin
+  // participantes — era un hueco de autorización.)
   const participants = await db.conversationParticipant.findMany({
     where: { conversationId: convId },
   });
-  if (participants.length > 0) {
-    const isParticipant = participants.some((p) => p.userId === user.id);
-    if (!isParticipant) return bad("No autorizado en esta conversación", 403);
-  }
+  const isParticipant = participants.some((p) => p.userId === user.id);
+  if (!isParticipant) return bad("No autorizado en esta conversación", 403);
 
   // Trust & Safety: si el emisor es menor, o algún participante de la conversación
   // es menor, enmascaramos datos de contacto antes de persistir.

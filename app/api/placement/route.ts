@@ -54,12 +54,13 @@ export async function POST(req: Request) {
     });
   }
 
-  // Marca al usuario como ya ubicado (placedAt=now) → deja de ser "nuevo sin placement".
-  await db.user.update({ where: { id: user.id }, data: { placedAt: new Date() } });
-
+  // [P0-8] Nivel de debut sugerido por el promedio del placement.
   const vals = SKILLS.map((s) => clamped[s]);
   const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
   const level = levelFor(avg);
+  // Marca al usuario como ubicado (placedAt) Y fija su nivel inicial — antes solo guardaba
+  // placedAt y el nivel calculado se descartaba (el alumno quedaba sin rango de debut).
+  await db.user.update({ where: { id: user.id }, data: { placedAt: new Date(), level } });
 
   await logActivitySafe({
     userId: user.id,
