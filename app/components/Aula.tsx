@@ -160,15 +160,29 @@ export default function Aula({ data, user }: { data: any; user: any }) {
 
     function openCreateCourse() {
       formModal("Nuevo curso", [
-        { name: "name", label: "Nombre del curso", ph: "Public Forum II" },
-        { name: "code", label: "Código único", ph: "PF-201" },
-        { name: "next", label: "Siguiente tema", ph: "Introducción al formato" },
-        { name: "format", label: "Formato", ph: "Public Forum" },
+        { name: "name", label: "Nombre completo del curso", ph: "Public Forum II" },
+        { name: "code", label: "Código corto (único)", ph: "PF-201" },
+        { name: "format", label: "Formato / categoría", type: "select", value: "Public Forum", options: [
+          { value: "Public Forum", label: "Public Forum" }, { value: "Lincoln-Douglas", label: "Lincoln-Douglas" }, { value: "Parlamentario", label: "Parlamentario" }, { value: "Policy", label: "Policy" }, { value: "Oratoria", label: "Oratoria" }, { value: "Otro", label: "Otro" }] },
         { name: "modality", label: "Modalidad", type: "select", value: "online", options: [
           { value: "online", label: "Online" }, { value: "presencial", label: "Presencial" }, { value: "híbrido", label: "Híbrido" }] },
-        { name: "capacity", label: "Cupo (capacidad)", ph: "20" },
+        { name: "capacity", label: "Cupo (capacidad, opcional)", ph: "20" },
+        { name: "color", label: "Color del curso", type: "select", value: "#2E8BD0", options: [
+          { value: "#2E8BD0", label: "Azul cielo" }, { value: "#0C2340", label: "Navy" }, { value: "#4FA9E8", label: "Azul claro" }, { value: "#2CAA20", label: "Verde" }, { value: "#64748B", label: "Gris" }] },
+        { name: "next", label: "Próximo tema (opcional)", ph: "Introducción al formato" },
         { name: "summary", label: "Resumen del programa", type: "textarea", ph: "Describe de qué trata este programa…" },
-      ], async (v) => { await api("/api/courses", v); toast("Curso creado", "ok"); await refresh(); });
+        { name: "published", label: "Visibilidad", type: "select", value: "false", options: [
+          { value: "false", label: "Borrador (oculto — constrúyelo primero)" }, { value: "true", label: "Publicado (visible en el catálogo)" }] },
+      ], async (v) => {
+        v.published = v.published === "true";
+        if (v.capacity === "") delete v.capacity;
+        const d = await api("/api/courses", v);
+        toast("Curso creado — añade sus secciones", "ok");
+        await refresh();
+        // Flujo Moodle: entrar directo al constructor del curso recién creado.
+        const newId = d?.course?.id;
+        if (newId) { (window as any).__builderCourseId = newId; try { sessionStorage.setItem("otr_builder_course", newId); } catch {} renderApp("course-builder"); }
+      });
     }
     function openCreateModule(courseId?: string) {
       const courses = DB.manage?.courses || [];
@@ -178,23 +192,58 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "title", label: "Título del módulo", ph: "Unidad 4 · Estrategia" },
       ], async (v) => { await api("/api/modules", v); toast("Módulo creado", "ok"); await refresh(); });
     }
-    function openCreateLesson(moduleId?: string) {
+    const LESSON_TYPES = [
+      { value: "lesson", label: "Lección" }, { value: "video", label: "Video" }, { value: "quiz", label: "Examen" },
+      { value: "assign", label: "Tarea" }, { value: "mic", label: "Grabación" }, { value: "file", label: "Archivo" }];
+    // presetType: cuando viene del Activity Chooser, el tipo ya está elegido → se oculta
+    // el select de tipo y se envía ese type. Sin preset, el formulario lo deja elegir.
+    function openCreateLesson(moduleId?: string, presetType?: string) {
       const courses = DB.manage?.courses || [];
       const modules = DB.manage?.modules || [];
-      if (!modules.length) { toast("Primero crea un módulo dentro de un curso", "warn"); return; }
+      if (!modules.length) { toast("Primero crea una sección dentro del curso", "warn"); return; }
       const cmap: any = Object.fromEntries(courses.map((c: any) => [c.id, c.code]));
-      formModal("Nueva lección / contenido", [
-        { name: "moduleId", label: "Módulo", type: "select", value: moduleId || modules[0]?.id, options: modules.map((m: any) => ({ value: m.id, label: `${cmap[m.courseId] || ""} · ${m.title}` })) },
-        { name: "title", label: "Título", ph: "Claim · Warrant · Impact" },
-        { name: "type", label: "Tipo", type: "select", options: [
-          { value: "lesson", label: "Lección" }, { value: "video", label: "Video" }, { value: "quiz", label: "Examen" },
-          { value: "assign", label: "Tarea" }, { value: "mic", label: "Grabación" }, { value: "file", label: "Archivo" }] },
-        { name: "dur", label: "Duración (opcional)", ph: "15 min" },
-        { name: "videoKind", label: "Video", type: "select", value: "none", options: [
-          { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Cloudflare Stream (UID)" }] },
-        { name: "videoSrc", label: "URL de YouTube o UID de Cloudflare", ph: "https://youtu.be/… o el UID" },
-        { name: "contentHtml", label: "Contenido de la lección", type: "richtext", ph: "Escribe el contenido…" },
-      ], async (v) => { await api("/api/lessons", v); toast("Contenido creado", "ok"); await refresh(); });
+      const typeLabel = (LESSON_TYPES.find((t) => t.value === presetType)?.label) || "Actividad";
+      const fields: any[] = [
+        { name: "moduleId", label: "Sección (módulo)", type: "select", value: moduleId || modules[0]?.id, options: modules.map((m: any) => ({ value: m.id, label: `${cmap[m.courseId] || ""} · ${m.title}` })) },
+      ];
+      if (!presetType) fields.push({ name: "type", label: "Tipo", type: "select", options: LESSON_TYPES });
+      fields.push({ name: "title", label: "Título", ph: "Claim · Warrant · Impact" });
+      fields.push({ name: "dur", label: "Duración (opcional)", ph: "15 min" });
+      fields.push({ name: "videoKind", label: "Video", type: "select", value: "none", options: [
+        { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Cloudflare Stream (UID)" }] });
+      fields.push({ name: "videoSrc", label: "URL de YouTube o UID de Cloudflare", ph: "https://youtu.be/… o el UID" });
+      fields.push({ name: "contentHtml", label: presetType === "assign" || presetType === "mic" ? "Instrucciones para el alumno" : "Contenido de la actividad", type: "richtext", ph: "Escribe el contenido…" });
+      formModal(presetType ? `Nueva actividad · ${typeLabel}` : "Nueva lección / contenido", fields, async (v) => {
+        await api("/api/lessons", { ...v, type: presetType || v.type });
+        toast("Actividad creada", "ok");
+        await refresh();
+      });
+    }
+    // Activity chooser estilo Moodle: grid de tipos con icono + descripción.
+    function openActivityChooser(moduleId: string) {
+      const ITEMS = [
+        { type: "lesson", label: "Lección (página)", desc: "Página de contenido enriquecido (texto, imágenes, listas).", ic: IC.book },
+        { type: "video", label: "Video", desc: "Clase en video desde YouTube o Cloudflare Stream.", ic: IC.play },
+        { type: "quiz", label: "Examen", desc: "Cuestionario de opción múltiple autocalificable.", ic: IC.doc },
+        { type: "assign", label: "Tarea", desc: "El alumno entrega un trabajo (archivo, texto o audio) para calificar.", ic: IC.pencil },
+        { type: "mic", label: "Grabación", desc: "El alumno graba y entrega un audio de práctica de oratoria.", ic: IC.mic },
+        { type: "file", label: "Archivo / recurso", desc: "Material descargable (PDF, plantilla) o enlace adjunto.", ic: IC.file },
+      ];
+      const scrim = document.createElement("div"); scrim.className = "modal-scrim";
+      const cards = ITEMS.map((it) => `
+        <button class="tile click" data-pick="${it.type}" style="text-align:left;padding:13px;display:flex;gap:11px;align-items:flex-start;cursor:pointer;border:1px solid var(--border);background:var(--surface)">
+          <span style="display:flex;width:22px;height:22px;color:var(--otr-sky-lo);flex:none;margin-top:1px">${it.ic}</span>
+          <span style="min-width:0"><b style="font-size:13.5px;display:block">${it.label}</b><span class="faint" style="font-size:12px;line-height:1.4;display:block;margin-top:2px">${it.desc}</span></span>
+        </button>`).join("");
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>Añadir actividad o recurso</h3></div><div class="modal-body"><div class="grid g-2" style="gap:10px">${cards}</div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button></div></div>`;
+      document.body.appendChild(scrim);
+      enter(scrim.querySelector(".modal") as HTMLElement);
+      const close = () => scrim.remove();
+      scrim.addEventListener("click", (e: any) => {
+        if (e.target === scrim || e.target.closest("[data-x]")) { close(); return; }
+        const pick = e.target.closest("[data-pick]");
+        if (pick) { close(); openCreateLesson(moduleId, pick.getAttribute("data-pick")); }
+      });
     }
     function openEditLesson(id: string, l: any) {
       // [P2] Candidatos a prerrequisito: las demás lecciones del MISMO curso.
@@ -575,6 +624,12 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const addLesEl = t.closest("[data-add-lesson]") as HTMLElement | null;
       if (addLesEl) { e.preventDefault(); openCreateLesson(addLesEl.getAttribute("data-add-lesson")!); return; }
       if (t.closest('[data-action="new-course"]')) { e.preventDefault(); openCreateCourse(); return; }
+      // Constructor de curso estilo Moodle.
+      const goBuilderEl = t.closest("[data-go-builder]") as HTMLElement | null;
+      if (goBuilderEl) { e.preventDefault(); const cid = goBuilderEl.getAttribute("data-go-builder")!; (window as any).__builderCourseId = cid; try { sessionStorage.setItem("otr_builder_course", cid); } catch {} renderApp("course-builder"); return; }
+      const chooserEl = t.closest("[data-open-chooser]") as HTMLElement | null;
+      if (chooserEl) { e.preventDefault(); openActivityChooser(chooserEl.getAttribute("data-open-chooser")!); return; }
+      if (t.closest("[data-toggle-edit]")) { e.preventDefault(); const cur = (window as any).__editMode !== false; (window as any).__editMode = !cur; try { sessionStorage.setItem("otr_edit_mode", !cur ? "1" : "0"); } catch {} renderApp(currentRoute); return; }
       if (t.closest('[data-action="edit-profile"]')) { e.preventDefault(); openEditProfile(); return; }
       if (t.closest("#burger")) { root.querySelector(".app")?.classList.toggle("drawer-open"); return; }
       if (t.closest("#bell")) { e.stopPropagation(); toggleNotif(); return; }

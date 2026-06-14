@@ -47,7 +47,10 @@ export const ROUTES = {
   teacher:        { screen:'teacher',      nav:'teacher',      crumbs:['Profesor','Tracking'], role:'teacher' },
   // 'gradebook' APAGADA (PRD-estricto): el feedback del PDF son ballots/rúbricas (§6.5) y session tools (§7.5), no una matriz de notas.
   participants:   { screen:'participants', nav:'participants', crumbs:['Profesor','Participantes'], role:'teacher' },
-  manage:         { screen:'manage',       nav:'manage',       crumbs:['Profesor','Gestión de contenido'], role:'teacher' },
+  manage:         { screen:'manage',       nav:'manage',       crumbs:['Profesor','Mis cursos'], role:'teacher' },
+  // Constructor de curso estilo Moodle (secciones + actividades). El courseId va en
+  // window.__builderCourseId (ruta plana, sin params) → ver S.courseBuilder.
+  'course-builder': { screen:'courseBuilder', nav:'manage',     crumbs:['Profesor','Constructor de curso'], role:'teacher' },
   // 'arsenal' APAGADA (PRD-estricto): no existe en el PDF — el "motion library" (§6.4) es otra cosa y es Fase 2.
   coach:          { screen:'coach',        nav:'profile',      crumbs:['OTR','Coach'] },
   // 'hub' APAGADA (PRD-estricto): el HQ del PDF es el Dashboard (§4); Learn = Cursos + Mi aprendizaje.

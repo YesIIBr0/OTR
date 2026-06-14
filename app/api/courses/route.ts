@@ -22,6 +22,9 @@ export async function POST(req: Request) {
   const summary = clean(body.summary, 600) || null;
   const capacity = body.capacity;
   const cap = capacity != null && capacity !== "" && !Number.isNaN(Number(capacity)) ? Number(capacity) : null;
+  // Visibilidad (flujo Moodle: crear como borrador y publicar al terminar). Default true
+  // para no cambiar el comportamiento histórico si el cliente no manda el campo.
+  const published = body.published === undefined ? true : !!body.published;
   const course = await db.course.create({
     data: {
       name, code, color, next,
@@ -31,6 +34,7 @@ export async function POST(req: Request) {
       modality: ["online", "presencial", "híbrido"].includes(modalityRaw) ? modalityRaw : "online",
       capacity: cap,
       summary,
+      published,
     },
   });
   return NextResponse.json({ ok: true, course });
