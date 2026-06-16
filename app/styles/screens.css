@@ -27,7 +27,7 @@
 .hello-card .h-row{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
 .hello-card h2{font-size:22px;font-weight:800;letter-spacing:var(--track-tight)}
 /* Racha = LOGRO → chip dorado suave (el dorado nunca es interactivo) */
-.streak{display:inline-flex;align-items:center;gap:7px;background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent);color:var(--otr-gold-lo);padding:7px 13px;border-radius:var(--r-pill);font-weight:600;font-size:13px}
+.streak{display:inline-flex;align-items:center;gap:7px;background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent);color:var(--otr-gold-text);padding:7px 13px;border-radius:var(--r-pill);font-weight:600;font-size:13px}
 .streak .ic{width:16px;height:16px;color:var(--otr-gold)}
 
 .course-card{display:flex;flex-direction:column;gap:0;overflow:hidden;cursor:pointer}

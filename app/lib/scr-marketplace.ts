@@ -454,7 +454,7 @@ function renderProfile(state) {
 
       <div class="card card-pad fade-up" style="--d:2">
         <div class="row between vcenter"><b style="font-size:13.5px">Reseñas</b><span class="badge sky">${c.reviews}</span></div>
-        <p class="faint" style="font-size:11.5px;margin-top:4px">Solo alumnos con reserva completada pueden dejar reseña (verified-booking-only).</p>
+        <p class="faint" style="font-size:11.5px;margin-top:4px">Solo quienes completaron una sesión con este coach pueden dejar reseña.</p>
         ${reviews.length ? `<div class="stack" style="gap:0;margin-top:6px">${reviews.slice(0, 6).map((r) => `
           <div style="padding:12px 0;border-bottom:1px solid var(--border)">
             <div class="row vcenter" style="gap:9px">

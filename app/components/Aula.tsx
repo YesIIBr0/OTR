@@ -320,8 +320,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       fields.push({ name: "title", label: "Título", ph: "Claim · Warrant · Impact" });
       fields.push({ name: "dur", label: "Duración (opcional)", ph: "15 min" });
       fields.push({ name: "videoKind", label: "Video", type: "select", value: "none", options: [
-        { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Cloudflare Stream (UID)" }] });
-      fields.push({ name: "videoSrc", label: "URL de YouTube o UID de Cloudflare", ph: "https://youtu.be/… o el UID" });
+        { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Video alojado en OTR (ID)" }] });
+      fields.push({ name: "videoSrc", label: "Enlace de YouTube o ID del video", ph: "https://youtu.be/… o el ID del video" });
       fields.push({ name: "contentHtml", label: presetType === "assign" || presetType === "mic" ? "Instrucciones para el alumno" : "Contenido de la actividad", type: "richtext", ph: "Escribe el contenido…" });
       if (presetType === "assign" || presetType === "mic") {
         fields.push({ name: "dueAt", label: "Fecha límite (opcional)", type: "date" });
@@ -341,7 +341,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     function openActivityChooser(moduleId: string) {
       const ITEMS = [
         { type: "lesson", label: "Lección (página)", desc: "Página de contenido enriquecido (texto, imágenes, listas).", ic: IC.book },
-        { type: "video", label: "Video", desc: "Clase en video desde YouTube o Cloudflare Stream.", ic: IC.play },
+        { type: "video", label: "Video", desc: "Clase en video desde YouTube o subida a OTR.", ic: IC.play },
         { type: "quiz", label: "Examen", desc: "Cuestionario de opción múltiple autocalificable.", ic: IC.doc },
         { type: "assign", label: "Tarea", desc: "El alumno entrega un trabajo (archivo, texto o audio) para calificar.", ic: IC.pencil },
         { type: "mic", label: "Grabación", desc: "El alumno graba y entrega un audio de práctica de oratoria.", ic: IC.mic },
@@ -377,8 +377,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "dur", label: "Duración (opcional)", value: l.dur || "", ph: "15 min" },
         { name: "releaseAfterId", label: "Prerrequisito (completar antes de desbloquear)", type: "select", value: l.releaseAfterId || "", options: prereqOptions },
         { name: "videoKind", label: "Video", type: "select", value: l.videoKind || "none", options: [
-          { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Cloudflare Stream (UID)" }] },
-        { name: "videoSrc", label: "URL de YouTube o UID de Cloudflare", value: l.videoSrc || "" },
+          { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Video alojado en OTR (ID)" }] },
+        { name: "videoSrc", label: "Enlace de YouTube o ID del video", value: l.videoSrc || "" },
         { name: "contentHtml", label: "Contenido de la actividad", type: "richtext", value: l.contentHtml || "" },
       ];
       if (l.type === "assign" || l.type === "mic") {
@@ -436,7 +436,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "url", label: "URL (opcional)", ph: "https://…" },
         { name: "contentHtml", label: "Contenido", type: "textarea", ph: "Escribe el contenido (admite <b>, <h2>, <ul>, <li>…)" },
         { name: "gated", label: "Acceso", type: "select", value: "no", options: [
-          { value: "no", label: "Público" }, { value: "yes", label: "Solo inscritos (gated)" }] },
+          { value: "no", label: "Público" }, { value: "yes", label: "Solo inscritos" }] },
       ], async (v) => {
         await api("/api/resources", { ...v, gated: v.gated === "yes" });
         toast("Recurso creado", "ok"); await refresh();

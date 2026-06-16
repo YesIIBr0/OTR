@@ -35,9 +35,11 @@ const NAV = {
     { gk:'group.marketplace', group:'Marketplace', items:[
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
       { r:'my-bookings', ic:'calendar', k:'nav.mybookings', l:'Mis reservas' },
+      // [CNV-03] Membresía (free→Pro) elevada por encima de Mensajes: es la palanca
+      // de ingreso más desaprovechada y antes quedaba como último ítem del grupo.
+      { r:'membership', ic:'star', k:'nav.membership', l:'Membresía' },
       // 'messages' se conserva SOLO como canal coach↔alumno (permitido en marketplace).
       { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes', badge:'2' },
-      { r:'membership', ic:'star', k:'nav.membership', l:'Membresía' },
     ]},
   ],
   // PROFESOR / COACH — Coach Workspace reusa 'teacher'/'manage'/'gradebook'.
@@ -50,6 +52,9 @@ const NAV = {
       { r:'coachwork', ic:'calendar', k:'nav.coachwork', l:'Reservas e ingresos' },
       { r:'course', ic:'book', k:'nav.catalog', l:'Cursos' },
       { r:'manage', ic:'sliders', k:'nav.manage', l:'Gestionar' },
+      // [NAV-03] Mensajes: el coach no tenía entrada a su único canal con alumnos/padres
+      // (consultas pre-reserva del marketplace). La ruta ya existe; solo faltaba exponerla.
+      { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes' },
       // "Mi perfil" abre el perfil EDITABLE del coach (S.profile→renderCoachSelf con
       // botones de edición), no la vista pública de solo lectura (r:'coach').
       { r:'profile', ic:'user', k:'nav.profile', l:'Mi perfil' },
@@ -84,7 +89,7 @@ const NAV = {
 
 const TABBAR = {
   student: [ {r:'dashboard',ic:'home',k:'nav.dashboard',l:'Inicio'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'course',ic:'book',k:'nav.course',l:'Aprender'},{r:'lifetime',ic:'award',k:'nav.lifetime',l:'Trayectoria'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
-  teacher: [ {r:'teacher',ic:'grid',k:'nav.workspace',l:'Panel'},{r:'coachwork',ic:'calendar',k:'nav.coachwork',l:'Reservas'},{r:'participants',ic:'users',k:'nav.participants',l:'Alumnos'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
+  teacher: [ {r:'teacher',ic:'grid',k:'nav.workspace',l:'Panel'},{r:'coachwork',ic:'calendar',k:'nav.coachwork',l:'Reservas'},{r:'participants',ic:'users',k:'nav.participants',l:'Alumnos'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   parent: [ {r:'parent',ic:'users',k:'nav.parent',l:'Familia'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
 };
 

@@ -366,7 +366,7 @@ export const S = {};
           <option value="none" ${curKind==='none'?'selected':''}>Sin video</option>
           <option value="upload" ${curKind==='upload'?'selected':''}>Subir archivo (MP4)</option>
           <option value="youtube" ${curKind==='youtube'?'selected':''}>YouTube (pegar URL)</option>
-          <option value="cloudflare" ${curKind==='cloudflare'?'selected':''}>Cloudflare Stream (UID)</option>
+          <option value="cloudflare" ${curKind==='cloudflare'?'selected':''}>Video alojado en OTR (ID)</option>
         </select>
       </div>
 
@@ -377,8 +377,8 @@ export const S = {};
       </div>
 
       <div class="field lv-block" data-for="link" style="margin-bottom:6px;display:none">
-        <label class="label" id="lv-src-label">URL de YouTube o UID de Cloudflare</label>
-        <input class="input" id="lv-src" placeholder="https://youtu.be/… o el UID" value="${(curKind==='youtube'||curKind==='cloudflare')?esc(l.videoSrc||''):''}"/>
+        <label class="label" id="lv-src-label">Enlace de YouTube o ID del video</label>
+        <input class="input" id="lv-src" placeholder="https://youtu.be/… o el ID del video" value="${(curKind==='youtube'||curKind==='cloudflare')?esc(l.videoSrc||''):''}"/>
       </div>`;
 
     const m = buildModal({ title: `Video · ${esc(lessonTitle || "Lección")}`, bodyHtml: body, okLabel: "Guardar video" });
@@ -396,7 +396,7 @@ export const S = {};
         el.style.display = show ? "" : "none";
       });
       if (k === "youtube") srcLabel.textContent = "URL de YouTube";
-      else if (k === "cloudflare") srcLabel.textContent = "UID de Cloudflare Stream";
+      else if (k === "cloudflare") srcLabel.textContent = "ID del video alojado en OTR";
     }
     kindSel.addEventListener("change", syncBlocks);
     syncBlocks();
@@ -572,7 +572,7 @@ export const S = {};
           </tbody>
         </table>
       </div>
-      <p class="faint row vcenter" style="font-size:12px;margin-top:12px;gap:6px"><span style="display:flex;width:14px">${IC.lock}</span>Toca cualquier celda para calificar · las notas se sincronizan con el gradebook de Moodle.</p>`;
+      <p class="faint row vcenter" style="font-size:12px;margin-top:12px;gap:6px"><span style="display:flex;width:14px">${IC.lock}</span>Toca cualquier celda para calificar · las notas se guardan al instante.</p>`;
     }
   };
 

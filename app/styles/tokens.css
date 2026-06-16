@@ -14,9 +14,11 @@
   --otr-green-hi:#54C247;    /* gradiente claro / hover sobre oscuro */
   --otr-green-lo:#1E8C16;    /* hover acción / gradiente oscuro */
   --otr-green-pale:#E1F2DE;  /* tintes · cards · hover suave */
+  --otr-green-text:#176B11;  /* texto verde SOBRE tinte pálido (--action-soft) → WCAG AA ≥4.5:1 */
   --otr-gold:#F2B814;        /* LOGRO: wins · badges · rank-ups · certs (sobrio) */
-  --otr-gold-lo:#C8920C;     /* dorado para texto (contraste) */
+  --otr-gold-lo:#C8920C;     /* dorado para fondos/iconos (NO texto sobre pálido: 2.4:1) */
   --otr-gold-pale:#FBEFCB;   /* tinte de logro */
+  --otr-gold-text:#5A4206;   /* texto dorado SOBRE tinte de logro (--otr-gold-pale) → WCAG AA ~6.8:1 */
   --otr-white:#FFFFFF;
 
   /* ---- Alias legacy → marca (re-skinea var(--otr-navy/sky) existentes) ---- */

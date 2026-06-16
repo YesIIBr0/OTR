@@ -107,11 +107,11 @@ function activeItemsFlat() {
       } else if ((DB.debateRank?.provisional)) {
         // Curso al día y sin rating real: el PRD pide empujar al primer debate de práctica.
         na = { eyebrow: 'Tu siguiente paso', title: 'Juega tu primer debate de práctica',
-          sub: 'Aún sin rondas. Estrena tu rating en un simulacro.', cta: 'Practicar debate', ic: IC.mic, onclick: `go('coach')` };
+          sub: 'Aún sin rondas. Estrena tu rating en un simulacro.', cta: 'Practicar debate', ic: IC.mic, onclick: `window.__debateTab='practice';go('debate')` };
       } else {
         // Todo al día: reservar sesión con el coach para seguir subiendo.
         na = { eyebrow: 'Tu siguiente paso', title: 'Reserva una sesión con tu coach',
-          sub: 'Vas al día. Una sesión 1:1 te acerca al siguiente tier.', cta: 'Ver coach', ic: IC.headset, onclick: `go('coach')` };
+          sub: 'Vas al día. Una sesión 1:1 te acerca al siguiente tier.', cta: 'Reservar sesión', ic: IC.headset, onclick: `go('explore')` };
       }
 
       const heroNext = `
@@ -180,7 +180,7 @@ function activeItemsFlat() {
           </div>
           ${recos.length
             ? `<div class="grid g-3">${recoCards}</div>`
-            : `<div class="empty" style="padding:24px"><div class="ill">${IC.target}</div><h4>Vas con todo</h4><p>Ya estás en todos los programas disponibles. Una sesión 1:1 con tu coach te lleva más lejos.</p><button class="btn btn-soft btn-sm" onclick="go('coach')">Ver coach ${IC.arrowR}</button></div>`}
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.target}</div><h4>Vas con todo</h4><p>Ya estás en todos los programas disponibles. Una sesión 1:1 con tu coach te lleva más lejos.</p><button class="btn btn-soft btn-sm" onclick="go('explore')">Reservar sesión ${IC.arrowR}</button></div>`}
         </div>`;
 
       /* ---- ④ UPCOMING SESSIONS (reservas REALES del usuario, PRD §4.2 ④) ----
@@ -266,9 +266,9 @@ function activeItemsFlat() {
           </div>
           ${dr.provisional
             ? `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">Rating provisional. Tu primera ronda lo pone en juego.</p>
-               <button class="btn btn-primary btn-sm" style="width:100%" onclick="go('coach')">${IC.mic} Juega tu primer debate de práctica</button>`
+               <button class="btn btn-primary btn-sm" style="width:100%" onclick="window.__debateTab='practice';go('debate')">${IC.mic} Juega tu primer debate de práctica</button>`
             : `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">Cada ronda adjudicada te acerca al siguiente tier.</p>
-               <button class="btn btn-soft btn-sm" style="width:100%" onclick="go('coach')">Ver historial ${IC.arrowR}</button>`}
+               <button class="btn btn-soft btn-sm" style="width:100%" onclick="window.__debateTab='history';go('debate')">Ver historial ${IC.arrowR}</button>`}
         </div>`;
 
       /* ---- ⑥ ACHIEVEMENTS (badges recientes + "X para el siguiente") ---- */
