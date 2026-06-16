@@ -61,9 +61,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
 
     let toastWrap: HTMLElement | null = null;
     function toast(msg: string, tone?: string) {
-      if (!toastWrap) { toastWrap = document.createElement("div"); toastWrap.className = "toast-wrap"; document.body.appendChild(toastWrap); }
+      // [A11Y-02] El contenedor de toasts es una región viva: los lectores de pantalla
+      // anuncian cada toast. Los de error (danger) usan role="alert" (asertivo).
+      if (!toastWrap) { toastWrap = document.createElement("div"); toastWrap.className = "toast-wrap"; toastWrap.setAttribute("aria-live", "polite"); toastWrap.setAttribute("aria-atomic", "false"); document.body.appendChild(toastWrap); }
       const ic = tone === "ok" ? IC.checkCircle : tone === "warn" ? IC.clock : tone === "danger" ? IC.flag : IC.bell;
-      const t = document.createElement("div"); t.className = "toast " + (tone || "");
+      const t = document.createElement("div"); t.className = "toast " + (tone || ""); t.setAttribute("role", tone === "danger" ? "alert" : "status");
       t.innerHTML = `<span class="ti">${ic}</span>${msg}`;
       toastWrap.appendChild(t);
       setTimeout(() => { t.style.opacity = "0"; t.style.transform = "translateY(8px) scale(.98)"; t.style.transition = "opacity .3s var(--ease), transform .3s var(--ease)"; setTimeout(() => t.remove(), 300); }, 2600);
@@ -800,9 +802,66 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (inp && inp.matches?.(".searchbox input") && e.key === "Enter") {
         (window as any).__q = (inp as HTMLInputElement).value;
         renderApp("search");
+        return;
+      }
+      // [A11Y-01] Activa con Enter/Espacio los contenedores clicables marcados como
+      // role=button (filas de lección, tarjetas, <tr>) → operables por teclado.
+      if ((e.key === "Enter" || e.key === " ") && inp?.matches?.('[role="button"][tabindex]')) {
+        e.preventDefault();
+        inp.click();
       }
     };
     root.addEventListener("keydown", onKey);
+
+    // [A11Y-03] Accesibilidad de modales, CENTRALIZADA: cualquier .modal-scrim que se
+    // monte (hay 6+ sitios que los crean, sin un helper común) recibe aria-modal,
+    // aria-labelledby al título, foco inicial, trampa de Tab, cierre con Escape y
+    // retorno de foco al disparador. Un MutationObserver evita tocar los 6 sitios.
+    let mdlSeq = 0;
+    const mdlFocusables = (scope: HTMLElement) => Array.from(scope.querySelectorAll<HTMLElement>(
+      'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[contenteditable="true"],[tabindex]:not([tabindex="-1"])'
+    )).filter((el) => el.offsetParent !== null);
+    const enhanceModal = (scrim: HTMLElement) => {
+      const dialog = scrim.querySelector(".modal") as HTMLElement | null;
+      if (!dialog) return;
+      dialog.setAttribute("aria-modal", "true");
+      const h = dialog.querySelector("h3");
+      if (h) { if (!h.id) h.id = "mdl-title-" + (++mdlSeq); dialog.setAttribute("aria-labelledby", h.id); }
+      (scrim as any).__trigger = document.activeElement;
+      const f = mdlFocusables(dialog);
+      if (f.length) f[0].focus();
+      else { dialog.setAttribute("tabindex", "-1"); dialog.focus(); }
+    };
+    const onModalKey = (e: KeyboardEvent) => {
+      const scrims = document.querySelectorAll(".modal-scrim");
+      if (!scrims.length) return;
+      const scrim = scrims[scrims.length - 1] as HTMLElement;
+      if (e.key === "Escape") {
+        // Solo cierran con Escape los modales con affordance de cerrar ([data-x]);
+        // los de progreso (sin botón) lo ignoran a propósito.
+        const x = scrim.querySelector("[data-x]") as HTMLElement | null;
+        if (x) { e.preventDefault(); x.click(); }
+      } else if (e.key === "Tab") {
+        const f = mdlFocusables(scrim);
+        if (!f.length) { e.preventDefault(); return; }
+        const first = f[0], last = f[f.length - 1], a = document.activeElement as HTMLElement;
+        if (e.shiftKey && (a === first || !scrim.contains(a))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (a === last || !scrim.contains(a))) { e.preventDefault(); first.focus(); }
+      }
+    };
+    const mdlObserver = new MutationObserver((muts) => {
+      for (const m of muts) {
+        m.addedNodes.forEach((n) => { if (n instanceof HTMLElement && n.classList?.contains("modal-scrim")) enhanceModal(n); });
+        m.removedNodes.forEach((n) => {
+          if (n instanceof HTMLElement && n.classList?.contains("modal-scrim")) {
+            const trig = (n as any).__trigger as HTMLElement | null;
+            if (trig && document.body.contains(trig)) { try { trig.focus(); } catch {} }
+          }
+        });
+      }
+    });
+    mdlObserver.observe(document.body, { childList: true });
+    document.addEventListener("keydown", onModalKey, true);
 
     let startRoute = state.role === "admin" ? "admin" : state.role === "teacher" ? "teacher" : state.role === "parent" ? "parent" : "dashboard";
     // Estudiante nuevo sin placement (PRD §2.2 Journey A): arranca en la auto-evaluación
@@ -810,7 +869,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     if (state.role === "student" && data?.me?.needsPlacement) startRoute = "placement";
     try { if (sessionStorage.getItem("otr_onboard")) { startRoute = "onboarding"; sessionStorage.removeItem("otr_onboard"); } } catch {}
     renderApp(startRoute);
-    return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); };
+    return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); };
   }, []);
 
   return <div ref={ref} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: initialHtml }} />;

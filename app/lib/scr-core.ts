@@ -162,7 +162,7 @@ function activeItemsFlat() {
       const enrolledCodes = new Set(courses.map(c=>c.code));
       const recos = (DB.catalog || []).filter(c=>!c.enrolled && !enrolledCodes.has(c.code)).slice(0,3);
       const recoCards = recos.map(c=>`
-        <div class="tile course-card click" onclick="go('catalog')">
+        <div class="tile course-card click" role="button" tabindex="0" onclick="go('catalog')">
           <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C0C0C))">
             <span class="cc-code">${esc(c.code)}</span>
           </div>
@@ -368,7 +368,7 @@ function activeItemsFlat() {
       // default) | grid (tarjeta por sección) | single (todas las secciones en una página).
       const layout = c.layout || 'modules';
       const itemRow = (it: any) => `
-        <div class="mitem ${it.doneByMe?'done':''} ${it.locked?'lock':''}" ${!it.locked?`onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
+        <div class="mitem ${it.doneByMe?'done':''} ${it.locked?'lock':''}" ${!it.locked?`role="button" tabindex="0" onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
           <div class="mi-ic">${it.doneByMe?IC.check:C.typeIcon(it.type)}</div>
           <div class="mi-t">${esc(it.t)}</div>
           <div class="mi-meta">${it.grade?C.badge(esc(it.grade),'ok'):''}${it.due?`<span style="color:var(--warn)">${esc(it.due)}</span>`:''}${it.dur?`<span>${esc(it.dur)}</span>`:''}${it.locked?IC.lock:''}</div>
@@ -502,7 +502,7 @@ function activeItemsFlat() {
         <table class="tbl">
           <thead><tr><th>Actividad</th><th>Unidad</th><th>Tipo</th><th class="center">Estado</th><th class="num">Nota</th></tr></thead>
           <tbody>
-            ${all.length ? all.map(it=>`<tr style="cursor:pointer" ${!it.locked?`onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
+            ${all.length ? all.map(it=>`<tr style="cursor:pointer" ${!it.locked?`role="button" tabindex="0" onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
               <td><div class="row vcenter" style="gap:10px"><span style="display:flex;width:18px;color:var(--text-2)">${C.typeIcon(it.type)}</span><b style="font-weight:600">${esc(it.t)}</b></div></td>
               <td><span class="tag-soft">${esc(it.unit)}</span></td>
               <td class="muted" style="text-transform:capitalize">${({video:'Video',lesson:'Lección',quiz:'Quiz',assign:'Tarea',mic:'Grabación'})[it.type]||esc(it.type)}</td>

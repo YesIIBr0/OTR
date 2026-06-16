@@ -155,7 +155,7 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
         <div class="spacer"></div>
         <div class="searchbox desk-only">
           <span style="display:flex;width:16px;height:16px">${IC.search}</span>
-          <input placeholder="${t('top.search', lang)}" />
+          <input aria-label="${t('top.search', lang)}" placeholder="${t('top.search', lang)}" />
         </div>
         <div class="lang-toggle" role="group" aria-label="${t('top.lang', lang)}" style="display:flex;align-items:center;gap:2px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:100px;padding:3px;margin-right:8px">
           ${['es','en'].map(lg => `<button type="button" class="${lg===lang?'on':''}" data-lang="${lg}" onclick="window.otrSetLang&&window.otrSetLang('${lg}')" style="border:0;cursor:pointer;font-family:inherit;font-weight:600;font-size:11.5px;padding:4px 9px;border-radius:100px;transition:.2s;background:${lg===lang?'var(--otr-navy)':'transparent'};color:${lg===lang?'#fff':'var(--text-2)'}">${lg.toUpperCase()}</button>`).join('')}
