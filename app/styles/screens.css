@@ -130,7 +130,7 @@
 
 /* ---------------- QUIZ ---------------- */
 .quiz-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
-.quiz-timer{display:inline-flex;align-items:center;gap:8px;background:var(--warn-soft);color:var(--warn);font-weight:700;padding:7px 13px;border-radius:var(--r-pill);font-variant-numeric:tabular-nums}
+.quiz-timer{display:inline-flex;align-items:center;gap:8px;background:var(--warn-soft);color:var(--otr-gold-text);font-weight:700;padding:7px 13px;border-radius:var(--r-pill);font-variant-numeric:tabular-nums}
 .q-card{border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;padding:24px;box-shadow:var(--sh-1);max-width:760px;margin:0 auto}
 .q-num{font-size:12px;font-weight:700;color:var(--action);letter-spacing:.06em;text-transform:uppercase}
 .q-text{font-size:18px;font-weight:650;line-height:1.4;margin:8px 0 20px}
@@ -173,7 +173,7 @@
 .risk-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
 .risk-row:last-child{border-bottom:0}
 .eng-pill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:var(--r-pill)}
-.eng-Alto{background:var(--ok-soft);color:var(--ok)} .eng-Medio{background:var(--warn-soft);color:var(--warn)} .eng-Bajo{background:var(--danger-soft);color:var(--danger)}
+.eng-Alto{background:var(--ok-soft);color:var(--ok)} .eng-Medio{background:var(--warn-soft);color:var(--otr-gold-text)} .eng-Bajo{background:var(--danger-soft);color:var(--danger)}
 .trend-up{color:var(--ok)} .trend-down{color:var(--danger)} .trend-flat{color:var(--text-3)}
 
 /* gradebook */

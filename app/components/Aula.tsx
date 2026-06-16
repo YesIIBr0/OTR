@@ -135,14 +135,26 @@ export default function Aula({ data, user }: { data: any; user: any }) {
 
     function formModal(title: string, fields: any[], onSubmit: (v: any) => Promise<void>) {
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
-      const inner = fields.map((f) => f.type === "select"
-        ? `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><select class="select" data-f="${f.name}">${(f.options || []).map((o: any) => `<option value="${o.value}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("")}</select></div>`
-        : f.type === "richtext"
-          ? `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", "Negrita"], ["italic", "<i>I</i>", "Cursiva"], ["formatBlock:h3", "H", "Subtítulo"], ["insertUnorderedList", "• Lista", "Lista"], ["createLink", "🔗", "Enlace"], ["removeFormat", "⨯", "Quitar formato"]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" data-f="${f.name}" data-rich="1" contenteditable="true" style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div></div>`
-        : f.type === "textarea"
-          ? `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><textarea class="input" data-f="${f.name}" rows="6" placeholder="${f.ph || ""}" style="resize:vertical;min-height:96px;font-family:inherit;line-height:1.5">${f.value || ""}</textarea></div>`
-          : `<div class="field" style="margin-bottom:12px"><label class="label">${f.label}</label><input class="input" data-f="${f.name}"${f.type === "number" ? ` type="number" min="0" max="1000"` : f.type === "date" ? ` type="date"` : ""} placeholder="${f.ph || ""}" value="${f.value != null ? f.value : ""}"/></div>`
-      ).join("");
+      // [A11Y-06 / UIC-04 / UIC-05] Cada campo recibe un id único para enlazar label↔control
+      // (for/id), marca visual de requerido (.req con asterisco) y un hueco de hint en línea
+      // (aria-describedby) donde la validación de cliente escribe el error del campo concreto.
+      const fmBase = "fmf-" + Math.random().toString(36).slice(2, 7);
+      const inner = fields.map((f, i) => {
+        const fid = `${fmBase}-${i}`;
+        const hintId = `${fid}-hint`;
+        const req = f.req ? ' aria-required="true"' : "";
+        const reqMark = f.req ? ` <span class="req" aria-hidden="true">*</span>` : "";
+        const lbl = `<label class="label" for="${fid}">${f.label}${reqMark}</label>`;
+        const hint = `<p class="fm-fieldhint" id="${hintId}" role="alert" style="color:var(--danger);font-size:12px;margin:4px 0 0;display:none"></p>`;
+        const wrap = (ctrl: string) => `<div class="field" style="margin-bottom:12px">${lbl}${ctrl}${hint}</div>`;
+        return f.type === "select"
+          ? wrap(`<select class="select" id="${fid}" data-f="${f.name}" aria-describedby="${hintId}"${req}>${(f.options || []).map((o: any) => `<option value="${o.value}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("")}</select>`)
+          : f.type === "richtext"
+            ? wrap(`<div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", "Negrita"], ["italic", "<i>I</i>", "Cursiva"], ["formatBlock:h3", "H", "Subtítulo"], ["insertUnorderedList", "• Lista", "Lista"], ["createLink", "🔗", "Enlace"], ["removeFormat", "⨯", "Quitar formato"]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" id="${fid}" data-f="${f.name}" data-rich="1" contenteditable="true" aria-describedby="${hintId}"${req} style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div>`)
+            : f.type === "textarea"
+              ? wrap(`<textarea class="input" id="${fid}" data-f="${f.name}" rows="6" placeholder="${f.ph || ""}" aria-describedby="${hintId}"${req} style="resize:vertical;min-height:96px;font-family:inherit;line-height:1.5">${f.value || ""}</textarea>`)
+              : wrap(`<input class="input" id="${fid}" data-f="${f.name}"${f.type === "number" ? ` type="number" min="0" max="1000"` : f.type === "date" ? ` type="date"` : ""} placeholder="${f.ph || ""}" value="${f.value != null ? f.value : ""}" aria-describedby="${hintId}"${req}/>`);
+      }).join("");
       scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body">${inner}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:4px 0 0"></p></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button><button class="btn btn-primary" data-ok>Guardar</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
@@ -158,8 +170,36 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       }));
       const close = () => scrim.remove();
       scrim.addEventListener("click", (e: any) => { if (e.target === scrim || e.target.closest("[data-x]")) close(); });
+      // Limpia el estado de error de un control (al editarlo o al revalidar).
+      const clearFieldErr = (el: HTMLElement) => {
+        el.classList.remove("err"); el.removeAttribute("aria-invalid");
+        const h = el.parentElement?.querySelector(".fm-fieldhint") as HTMLElement | null;
+        if (h) { h.textContent = ""; h.style.display = "none"; }
+      };
+      // [UIC-05] Al editar, retira la marca de error en línea de ese campo.
+      scrim.querySelectorAll("[data-f]").forEach((el: any) => {
+        el.addEventListener("input", () => clearFieldErr(el));
+        el.addEventListener("change", () => clearFieldErr(el));
+      });
       scrim.querySelector("[data-ok]")?.addEventListener("click", async () => {
         const values: any = {}; scrim.querySelectorAll("[data-f]").forEach((el: any) => (values[el.dataset.f] = el.dataset.rich ? el.innerHTML : el.value));
+        // [UIC-04 / UIC-05 / A11Y-06] Validación en cliente ANTES de llamar a la API:
+        // marca cada campo requerido vacío con aria-invalid + hint en línea y enfoca el primero,
+        // en vez de mostrar una sola frase genérica del backend tras llenar todo el formulario.
+        let firstBad: HTMLElement | null = null;
+        fields.forEach((f, i) => {
+          if (!f.req) return;
+          const el = scrim.querySelector(`[data-f="${f.name}"]`) as HTMLElement | null;
+          if (!el) return;
+          const raw = (el as any).dataset.rich ? (el.textContent || "").trim() : String((el as any).value || "").trim();
+          if (!raw) {
+            el.classList.add("err"); el.setAttribute("aria-invalid", "true");
+            const h = el.parentElement?.querySelector(".fm-fieldhint") as HTMLElement | null;
+            if (h) { h.textContent = `${f.label} es obligatorio.`; h.style.display = "block"; }
+            if (!firstBad) firstBad = el;
+          }
+        });
+        if (firstBad) { (firstBad as HTMLElement).focus(); return; }
         const okBtn = scrim.querySelector("[data-ok]") as HTMLElement; okBtn.textContent = "Guardando…";
         try { await onSubmit(values); close(); } catch (err: any) { const e = scrim.querySelector(".fm-err") as HTMLElement; e.textContent = err.message || "Error"; e.style.display = "block"; okBtn.textContent = "Guardar"; }
       });
@@ -233,8 +273,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     }
     function openCreateCourse(tpl?: any) {
       formModal(tpl ? `Nuevo curso · ${tpl.name}` : "Nuevo curso", [
-        { name: "name", label: "Nombre completo del curso", value: tpl ? tpl.name : "", ph: "Public Forum II" },
-        { name: "code", label: "Código corto (único)", ph: "PF-201" },
+        { name: "name", label: "Nombre completo del curso", value: tpl ? tpl.name : "", ph: "Public Forum II", req: true },
+        { name: "code", label: "Código corto (único)", ph: "PF-201", req: true },
         { name: "format", label: "Formato / categoría", type: "select", value: tpl ? tpl.format : "Public Forum", options: [
           { value: "Public Forum", label: "Public Forum" }, { value: "Lincoln-Douglas", label: "Lincoln-Douglas" }, { value: "Parlamentario", label: "Parlamentario" }, { value: "Policy", label: "Policy" }, { value: "Oratoria", label: "Oratoria" }, { value: "Otro", label: "Otro" }] },
         { name: "modality", label: "Modalidad", type: "select", value: "online", options: [
@@ -292,7 +332,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (!courses.length) { toast("Primero crea un curso", "warn"); return; }
       formModal("Nuevo módulo", [
         { name: "courseId", label: "Curso", type: "select", value: courseId || courses[0]?.id, options: courses.map((c: any) => ({ value: c.id, label: `${c.code} · ${c.name}` })) },
-        { name: "title", label: "Título del módulo", ph: "Unidad 4 · Estrategia" },
+        { name: "title", label: "Título del módulo", ph: "Unidad 4 · Estrategia", req: true },
       ], async (v) => { await api("/api/modules", v); toast("Módulo creado", "ok"); await refresh(); });
     }
     const LESSON_TYPES = [
@@ -319,7 +359,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "moduleId", label: "Sección (módulo)", type: "select", value: moduleId || modules[0]?.id, options: modules.map((m: any) => ({ value: m.id, label: `${cmap[m.courseId] || ""} · ${m.title}` })) },
       ];
       if (!presetType) fields.push({ name: "type", label: "Tipo", type: "select", options: LESSON_TYPES });
-      fields.push({ name: "title", label: "Título", ph: "Claim · Warrant · Impact" });
+      fields.push({ name: "title", label: "Título", ph: "Claim · Warrant · Impact", req: true });
       fields.push({ name: "dur", label: "Duración (opcional)", ph: "15 min" });
       fields.push({ name: "videoKind", label: "Video", type: "select", value: "none", options: [
         { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Video alojado en OTR (ID)" }] });

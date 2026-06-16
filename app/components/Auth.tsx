@@ -256,15 +256,16 @@ export default function Auth() {
                 </div>
 
                 <div className="field" style={{ marginBottom: 14 }}>
-                  <label className="label">Nombre completo</label>
-                  <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" />
+                  <label className="label" htmlFor="auth-name">Nombre completo <span className="faint" style={{ fontWeight: 500 }}>(requerido)</span></label>
+                  <input id="auth-name" className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" required aria-required="true" />
                 </div>
 
                 {/* Age-gate (PRD §11.3): el estudiante declara su año de nacimiento. */}
                 {role === "student" && (
                   <div className="field" style={{ marginBottom: 14 }}>
-                    <label className="label">Año de nacimiento</label>
+                    <label className="label" htmlFor="auth-birthyear">Año de nacimiento <span className="faint" style={{ fontWeight: 500 }}>(requerido)</span></label>
                     <input
+                      id="auth-birthyear"
                       className="input"
                       type="number"
                       inputMode="numeric"
@@ -273,36 +274,42 @@ export default function Auth() {
                       placeholder="Ej: 2008"
                       min={new Date().getFullYear() - 100}
                       max={new Date().getFullYear() - 5}
+                      required
+                      aria-required="true"
+                      aria-invalid={error ? true : undefined}
+                      aria-describedby="auth-birthyear-hint"
                     />
-                    <span className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>Si eres menor de 18, tu cuenta se configura para uso con tutor.</span>
+                    <span id="auth-birthyear-hint" className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>Si eres menor de 18, tu cuenta se configura para uso con tutor.</span>
                   </div>
                 )}
 
                 {/* Padre/madre: vínculo opcional con el correo del hijo/a. */}
                 {role === "parent" && (
                   <div className="field" style={{ marginBottom: 14 }}>
-                    <label className="label">Correo de tu hijo/a <span className="muted" style={{ fontWeight: 500 }}>(opcional)</span></label>
+                    <label className="label" htmlFor="auth-child-email">Correo de tu hijo/a <span className="muted" style={{ fontWeight: 500 }}>(opcional)</span></label>
                     <input
+                      id="auth-child-email"
                       className="input"
                       type="email"
                       value={childEmail}
                       onChange={(e) => setChildEmail(e.target.value)}
                       placeholder="estudiante@correo.com"
+                      aria-describedby="auth-child-email-hint"
                     />
-                    <span className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>Vincula su cuenta ahora o más tarde desde el Portal de Familias.</span>
+                    <span id="auth-child-email-hint" className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>Vincula su cuenta ahora o más tarde desde el Portal de Familias.</span>
                   </div>
                 )}
 
                 {role === "teacher" && (
                   <>
                     <div className="field" style={{ marginBottom: 14 }}>
-                      <label className="label">Titular <span className="muted" style={{ fontWeight: 500 }}>(opcional)</span></label>
-                      <input className="input" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Head Coach · Public Forum" />
+                      <label className="label" htmlFor="auth-headline">Titular <span className="muted" style={{ fontWeight: 500 }}>(opcional)</span></label>
+                      <input id="auth-headline" className="input" value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder="Head Coach · Public Forum" />
                     </div>
                     <div className="field" style={{ marginBottom: 14 }}>
-                      <label className="label">¿Qué enseñas? <span className="muted" style={{ fontWeight: 500 }}>(opcional)</span></label>
-                      <input className="input" value={formats} onChange={(e) => setFormats(e.target.value)} placeholder="Public Forum, Lincoln-Douglas, Oratoria" />
-                      <span className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>Separa los formatos con comas.</span>
+                      <label className="label" htmlFor="auth-formats">¿Qué enseñas? <span className="muted" style={{ fontWeight: 500 }}>(opcional)</span></label>
+                      <input id="auth-formats" className="input" value={formats} onChange={(e) => setFormats(e.target.value)} placeholder="Public Forum, Lincoln-Douglas, Oratoria" aria-describedby="auth-formats-hint" />
+                      <span id="auth-formats-hint" className="faint" style={{ fontSize: 11.5, marginTop: 2 }}>Separa los formatos con comas.</span>
                     </div>
                   </>
                 )}
@@ -312,16 +319,16 @@ export default function Auth() {
             {/* Correo: en login, registro y recuperación */}
             {mode !== "reset" && (
               <div className="field" style={{ marginBottom: 14 }}>
-                <label className="label">Correo</label>
-                <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" />
+                <label className="label" htmlFor="auth-email">Correo{mode === "register" && <span className="faint" style={{ fontWeight: 500 }}> (requerido)</span>}</label>
+                <input id="auth-email" className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" required aria-required="true" />
               </div>
             )}
 
             {/* Contraseña: login y registro */}
             {(mode === "login" || mode === "register") && (
               <div className="field" style={{ marginBottom: 14 }}>
-                <label className="label">Contraseña</label>
-                <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                <label className="label" htmlFor="auth-password">Contraseña{mode === "register" && <span className="faint" style={{ fontWeight: 500 }}> (requerido)</span>}</label>
+                <input id="auth-password" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required aria-required="true" />
               </div>
             )}
 
@@ -329,17 +336,17 @@ export default function Auth() {
             {mode === "reset" && (
               <>
                 <div className="field" style={{ marginBottom: 14 }}>
-                  <label className="label">Nueva contraseña</label>
-                  <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" />
+                  <label className="label" htmlFor="auth-new-password">Nueva contraseña</label>
+                  <input id="auth-new-password" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" required aria-required="true" aria-invalid={error ? true : undefined} />
                 </div>
                 <div className="field" style={{ marginBottom: 14 }}>
-                  <label className="label">Confirmar contraseña</label>
-                  <input className="input" type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="Repite la contraseña" />
+                  <label className="label" htmlFor="auth-confirm-password">Confirmar contraseña</label>
+                  <input id="auth-confirm-password" className="input" type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder="Repite la contraseña" required aria-required="true" aria-invalid={error ? true : undefined} />
                 </div>
               </>
             )}
 
-            {error && <p style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
+            {error && <p id="auth-error" role="alert" style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
             <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading}>
               {loading ? "…" : submitLabel}
