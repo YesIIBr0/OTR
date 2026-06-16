@@ -478,6 +478,16 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         renderApp("certificate");
       } catch (e: any) { toast(e.message || "Programa no completado", "danger"); }
     }
+    // [COACH-05] Publicar / pasar a borrador un curso sin abrir el modal de Configuración.
+    // PATCH /api/courses/[id] {published} (allowlisted + teacherOwnsCourse). Publicar lo hace
+    // visible en el catálogo del alumno — antes el único camino era el formulario completo.
+    async function doPublishCourse(id: string, publish: boolean) {
+      try {
+        await api(`/api/courses/${encodeURIComponent(id)}`, { published: publish }, "PATCH");
+        toast(publish ? "Curso publicado — visible en el catálogo" : "Curso pasado a borrador", "ok");
+        await refresh();
+      } catch (e: any) { toast(e.message || "Error", "danger"); }
+    }
     function openNewThread() {
       formModal("Nueva discusión", [
         { name: "title", label: "Título", ph: "¿Cómo estructurar un rebuttal?" },
@@ -794,6 +804,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       }
       const editEl = t.closest("[data-edit-course]") as HTMLElement | null;
       if (editEl) { e.preventDefault(); openEditCourse(editEl.getAttribute("data-edit-course")!, editEl.dataset.name || ""); return; }
+      const pubEl = t.closest("[data-publish-course]") as HTMLElement | null;
+      if (pubEl) { e.preventDefault(); doPublishCourse(pubEl.getAttribute("data-publish-course")!, pubEl.dataset.pub !== "1"); return; }
       const editLessonEl = t.closest("[data-edit-lesson]") as HTMLElement | null;
       if (editLessonEl) {
         e.preventDefault();

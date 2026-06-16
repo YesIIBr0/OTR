@@ -273,6 +273,7 @@ export const S = {
           <div class="row vcenter" style="gap:6px;flex:none">
             <span class="save-chip" data-save-chip style="display:none"></span>
             <button class="btn ${edit ? "btn-primary" : "btn-soft"} btn-sm" data-toggle-edit title="Mostrar/ocultar controles de edición">${IC.sliders} Modo edición: ${edit ? "ON" : "OFF"}</button>
+            <button class="btn ${c.published === false ? "btn-primary" : "btn-ghost"} btn-sm" data-publish-course="${c.id}" data-pub="${c.published === false ? "0" : "1"}" title="Publicar o pasar a borrador sin abrir Configuración">${c.published === false ? `${IC.check} Publicar curso` : `${IC.eye} Pasar a borrador`}</button>
             <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${esc(c.name)}">${IC.pencil} Configuración</button>
             <button class="btn btn-ghost btn-sm" onclick="window.__course='${esc(c.code)}';go('course')">${IC.play} Vista previa (como alumno)</button>
           </div>

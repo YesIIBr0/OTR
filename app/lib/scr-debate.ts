@@ -308,7 +308,7 @@ function viewPractice() {
     </div>`;
 
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Entrena bajo presión</p><div class="page-title" style="font-size:20px">Práctica</div><div class="page-sub">Cronometra un flujo PF completo y registra el resultado — cada ronda mueve tu rating</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Entrena bajo presión</p><div class="page-title" style="font-size:20px">Práctica</div><div class="page-sub">Cronometra un flujo PF completo y registra el resultado. La práctica queda en tu historial; tu rating solo se mueve en rondas adjudicadas por un coach.</div></div></div>
     <div class="split">${timer}<div class="stack" style="gap:16px">${finder}</div></div>`;
 }
 
