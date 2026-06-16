@@ -599,6 +599,7 @@ export const S = {};
         <td><div style="width:120px">${C.bar(Math.min(98,s.xp/55),{cls:'thin'})}</div></td>
         <td class="num faint" style="font-size:12px">${esc(s.last)}</td>
         <td class="center"><div class="row vcenter" style="gap:6px;justify-content:flex-end">
+          <button class="btn btn-soft btn-sm" data-adjudicate="${s.id}" data-name="${esc(s.n)}">Adjudicar</button>
           <button class="btn btn-ghost btn-sm" data-action="eval-skills" data-user="${s.id}" data-name="${esc(s.n)}">Evaluar</button>
           <button class="icon-btn" style="width:30px;height:30px" data-go="messages" title="Enviar mensaje">${IC.msg}</button>
         </div></td>
@@ -668,5 +669,47 @@ export const S = {};
         apply();
       });
       search && search.addEventListener("input", apply);
+
+      // [§6.5/§7.5] Adjudicar una ronda del alumno: el coach llena la rúbrica → el backend
+      // mueve el rating Glicko del ALUMNO, escribe el ballot y nudgea sus skills (§8.2).
+      const CRIT = [
+        ["Argumentation", "Argumentación"], ["Rebuttal", "Refutación"], ["Delivery", "Delivery"],
+        ["Evidence/Research", "Evidencia"], ["Crossfire", "Cross-ex"],
+      ];
+      const fld = (label, html) => `<div class="field" style="margin-bottom:12px"><label class="label">${label}</label>${html}</div>`;
+      body.querySelectorAll("[data-adjudicate]").forEach((btn) =>
+        btn.addEventListener("click", () => {
+          const uid = btn.getAttribute("data-adjudicate");
+          const name = btn.getAttribute("data-name") || "alumno";
+          const rubric = CRIT.map(([k, es]) =>
+            `<div class="row vcenter between" style="gap:10px;margin-bottom:8px"><span style="font-size:13px">${es}</span><input class="input bl-score" data-c="${k}" type="number" min="0" max="10" step="1" value="7" style="width:80px"/></div>`).join("");
+          const bodyHtml =
+            fld("Resultado", `<select class="select" id="bl-result"><option value="WIN">Victoria</option><option value="LOSS">Derrota</option><option value="DRAW">Empate</option></select>`) +
+            fld("Formato", `<select class="select" id="bl-format"><option value="PF">Public Forum</option><option value="LD">Lincoln-Douglas</option><option value="Policy">Policy</option><option value="Parli">Parlamentario</option></select>`) +
+            fld("Oponente <span class='muted' style='font-weight:500'>(opcional)</span>", `<input class="input" id="bl-opp" placeholder="Equipo o escuela rival"/>`) +
+            fld("Rúbrica (0–10) — mueve el rating y el Skill Graph", rubric) +
+            fld("Comentarios del juez <span class='muted' style='font-weight:500'>(opcional)</span>", `<textarea class="input" id="bl-comments" rows="3" placeholder="Feedback para el alumno…" style="resize:vertical;min-height:72px"></textarea>`);
+          const m = buildModal({ title: `Adjudicar ronda · ${name}`, bodyHtml, okLabel: "Adjudicar y publicar" });
+          m.okBtn.addEventListener("click", async () => {
+            const result = m.body.querySelector("#bl-result").value;
+            const format = m.body.querySelector("#bl-format").value;
+            const opponent = m.body.querySelector("#bl-opp").value.trim();
+            const comments = m.body.querySelector("#bl-comments").value.trim();
+            const scores = Array.from(m.body.querySelectorAll(".bl-score")).map((i) => ({ criterion: i.getAttribute("data-c"), score: Number(i.value) }));
+            m.okBtn.disabled = true; m.okBtn.textContent = "Adjudicando…";
+            try {
+              const d = await window.api("/api/debates", { targetUserId: uid, result, format, opponent, source: "OTR", ballot: { comments, scores } });
+              m.close();
+              const before = d?.ratingBefore, after = d?.ratingAfter;
+              const delta = (typeof after === "number" && typeof before === "number") ? after - before : 0;
+              const mv = delta ? ` · ${before}→${after} (${delta > 0 ? "+" : ""}${delta})` : "";
+              window.toast?.(`Ronda adjudicada para ${name}${mv}${d?.promoted ? ` · ¡ascendió a ${d.tierAfter}!` : ""}`, "ok");
+            } catch (e) {
+              m.okBtn.disabled = false; m.okBtn.textContent = "Adjudicar y publicar";
+              m.showErr((e && e.message) || "No se pudo adjudicar la ronda");
+            }
+          });
+        }),
+      );
     }
   };

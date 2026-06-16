@@ -57,6 +57,7 @@ export async function POST(req: Request) {
     roundLabel?: string;
     opponentRating?: unknown;
     adjudicated?: unknown;
+    targetUserId?: string;
     ballot?: {
       judge?: string;
       comments?: string;
@@ -87,6 +88,30 @@ export async function POST(req: Request) {
   // el historial con adjudicated=false: SÍ se guarda el DebateRecord (y su
   // ballot/skill nudge) pero NO se crea RatingUpdate ni se mueve el rating.
   const isJudgeRole = user.role === "TEACHER" || user.role === "ADMIN";
+
+  // [§6.5/§7.5] Adjudicación coach→alumno: un TEACHER/ADMIN puede adjudicar la ronda de
+  // UN ALUMNO (body.targetUserId). El rating, el ballot (rúbrica) y los nudges de skill
+  // se aplican al ALUMNO (subject), no al coach; el coach queda registrado en adjudicatedBy.
+  // Authz de relación (T&S §7.4 — nadie escribe en el rating de un menor sin vínculo de
+  // coaching): ADMIN puede a cualquier alumno; TEACHER solo a alumnos con reserva con él o
+  // inscritos en un curso que imparte. Sin targetUserId → flujo original (auto-reporte propio).
+  const targetUserId = clean(body.targetUserId, 64);
+  let subject = user;
+  if (targetUserId && targetUserId !== user.id) {
+    if (!isJudgeRole) return bad("Solo un coach o admin puede adjudicar la ronda de otro alumno", 403);
+    const target = await db.user.findUnique({ where: { id: targetUserId } });
+    if (!target) return bad("Alumno no encontrado", 404);
+    if (target.role !== "STUDENT") return bad("Solo se adjudican rondas de alumnos", 400);
+    if (user.role === "TEACHER") {
+      const booked = await db.booking.count({ where: { coachId: user.id, studentId: target.id } });
+      const enrolled = booked > 0 ? 1 : await db.enrollment.count({ where: { userId: target.id, course: { teacher: { email: user.email } } } });
+      if (booked === 0 && enrolled === 0) return bad("Solo puedes adjudicar rondas de tus alumnos (con reserva contigo o inscritos en tu curso)", 403);
+    }
+    subject = target;
+  }
+  // El rating SOLO se mueve en rondas adjudicadas. isJudgeRole es true tanto al auto-
+  // registrar un coach como al adjudicar a un alumno → ambos adjudican; un alumno que
+  // auto-reporta (isJudgeRole=false) queda en el historial SIN mover su rating.
   const adjudicated = isJudgeRole; // server-trusted: el rol decide, no el cliente
 
   // Rating del oponente: NUNCA confíes en un opponentRating arbitrario de un alumno.
@@ -94,16 +119,16 @@ export async function POST(req: Request) {
   // Si no, anclamos al propio rating del usuario → resultado ~neutral en Glicko-2
   // (cualquier movimiento residual igualmente se descarta porque no se adjudica).
   let opponentRating = Number(body.opponentRating);
-  if (!adjudicated || !Number.isFinite(opponentRating)) opponentRating = user.debateRating;
+  if (!adjudicated || !Number.isFinite(opponentRating)) opponentRating = subject.debateRating;
   opponentRating = Math.max(100, Math.min(4000, opponentRating));
 
-  // --- Estado de rating actual del usuario (terna Glicko-2). ---
-  const ratingBefore = user.debateRating;
-  const tierBefore = user.debateTier;
+  // --- Estado de rating actual del DEBATIENTE (subject) — terna Glicko-2. ---
+  const ratingBefore = subject.debateRating;
+  const tierBefore = subject.debateTier;
 
   // --- Recalcular con un solo oponente adjudicado. ---
   const next = updateRating(
-    { rating: user.debateRating, rd: user.debateRd, vol: user.debateVol },
+    { rating: subject.debateRating, rd: subject.debateRd, vol: subject.debateVol },
     [{ rating: opponentRating, rd: DEFAULT_OPP_RD, score: scoreFor(result) }],
   );
   // Si NO se adjudica, el rating no se mueve: after == before, tier intacto.
@@ -114,7 +139,7 @@ export async function POST(req: Request) {
   // --- Crear el DebateRecord (marca quién adjudicó, si aplica). ---
   const record = await db.debateRecord.create({
     data: {
-      userId: user.id, format, side, opponent, partner, result, source, eventName, roundLabel,
+      userId: subject.id, format, side, opponent, partner, result, source, eventName, roundLabel,
       adjudicated,
       adjudicatedBy: adjudicated ? user.id : null,
     },
@@ -123,7 +148,7 @@ export async function POST(req: Request) {
   if (adjudicated) {
     // --- Actualizar la terna de rating + tier del usuario. ---
     await db.user.update({
-      where: { id: user.id },
+      where: { id: subject.id },
       data: {
         debateRating: ratingAfter,
         debateRd: next.rd,
@@ -151,7 +176,7 @@ export async function POST(req: Request) {
   const skillBumps: Record<string, number> = {};
   const skillBumpLedger: Array<{ skill: string; before: number; after: number }> = [];
   if (body.ballot && Array.isArray(body.ballot.scores) && body.ballot.scores.length) {
-    const judge = clean(body.ballot.judge, 120) || null;
+    const judge = clean(body.ballot.judge, 120) || (subject.id !== user.id ? (user.name || "Coach OTR") : null);
     const comments = clean(body.ballot.comments, 4000) || null;
     const recordingUrl = safeVideoUrl(body.ballot.recordingUrl, 400);
 
@@ -187,14 +212,14 @@ export async function POST(req: Request) {
 
       for (const [skill, target] of Object.entries(skillBumps)) {
         const existing = await db.studentSkill.findUnique({
-          where: { userId_skill: { userId: user.id, skill } },
+          where: { userId_skill: { userId: subject.id, skill } },
         });
         const current = existing?.score ?? 0;
         const blended = clampSkill(current + (target - current) * 0.3);
         await db.studentSkill.upsert({
-          where: { userId_skill: { userId: user.id, skill } },
+          where: { userId_skill: { userId: subject.id, skill } },
           update: { score: blended },
-          create: { userId: user.id, skill, score: blended },
+          create: { userId: subject.id, skill, score: blended },
         });
         // §8.2: atribución exacta — guarda el antes/después real del nudge.
         skillBumpLedger.push({ skill, before: current, after: blended });
@@ -209,7 +234,7 @@ export async function POST(req: Request) {
   const vs = opponent ? ` vs ${opponent}` : "";
   const where = eventName ? ` · ${eventName}` : "";
   await logActivitySafe({
-    userId: user.id,
+    userId: subject.id,
     type,
     title: `${verb} ronda ${format}${vs}${where}`,
     detail: roundLabel || null,
