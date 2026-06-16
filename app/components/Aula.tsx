@@ -460,6 +460,20 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         setTimeout(() => refresh(), 400);
       } catch (e: any) { toast(e.message || "Error", "danger"); }
     }
+    // [LEARN-1] Reclamar el diploma al completar un programa al 100%. El endpoint ya existía
+    // (POST /api/certificates recalcula el progreso REAL y hace upsert), pero ninguna pantalla
+    // lo invocaba: el alumno terminaba el curso y nunca recibía su certificado. courseId aquí
+    // es el id de BD real (coursesContent.dbId), no el code.
+    async function doClaimCert(courseId: string) {
+      if (!courseId) return;
+      try {
+        const d = await api("/api/certificates", { courseId });
+        (window as any).__cert = d?.certificate?.id || null;
+        toast("¡Certificado emitido!", "ok");
+        await refresh();
+        renderApp("certificate");
+      } catch (e: any) { toast(e.message || "Programa no completado", "danger"); }
+    }
     function openNewThread() {
       formModal("Nueva discusión", [
         { name: "title", label: "Título", ph: "¿Cómo estructurar un rebuttal?" },
@@ -680,6 +694,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (t.closest('[data-action="logout"]')) { e.preventDefault(); api("/api/auth/logout").finally(() => location.reload()); return; }
       const enrollEl = t.closest("[data-enroll]") as HTMLElement | null;
       if (enrollEl) { e.preventDefault(); doEnroll(enrollEl.getAttribute("data-enroll")!); return; }
+      const certEl = t.closest("[data-claim-cert]") as HTMLElement | null;
+      if (certEl) { e.preventDefault(); doClaimCert(certEl.getAttribute("data-claim-cert")!); return; }
       if (t.closest('[data-action="new-thread"]')) { e.preventDefault(); openNewThread(); return; }
       if (t.closest('[data-action="grade-subs"]')) { e.preventDefault(); openGradeSubs(); return; }
       const markEl = t.closest('[data-action="mark-lesson-done"]') as HTMLElement | null;

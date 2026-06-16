@@ -463,6 +463,9 @@ function activeItemsFlat() {
             <b style="font-size:14px">Tu progreso</b>
             <div class="row vcenter between" style="margin:14px 0 8px"><span class="muted" style="font-size:13px">${doneActs} de ${totalActs} actividades</span><b class="sky">${c.progress}%</b></div>
             ${C.bar(c.progress)}
+            ${(c.dbId && totalActs > 0 && doneActs === totalActs)
+              ? `<button class="btn btn-primary btn-block" style="margin-top:14px" data-claim-cert="${esc(c.dbId)}">${IC.award} Reclamar certificado</button>`
+              : ''}
             ${hasAvg ? `<div class="divider"></div>
             <div class="row between" style="font-size:13px"><span class="muted">Promedio actual</span><b>${avgGrade}%</b></div>` : ''}
           </div>
