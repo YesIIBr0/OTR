@@ -28,7 +28,7 @@ import { TZ_OFFSET, dateLabel, timeLabel } from "../../lib/consultations";
 const DURATION_MIN = 60; // sesión de coaching estándar
 const MS_MIN = 60 * 1000;
 const MS_HOUR = 3600 * 1000;
-const LEAD_MS = 1 * MS_HOUR; // no reservar dentro de la próxima hora
+const LEAD_MS = 12 * MS_HOUR; // [BOOKING-6] 12h — consistente con el slot picker del marketplace (antes 1h: UI y backend usaban reglas distintas para el mismo concepto)
 const HORIZON_MS = 60 * 24 * MS_HOUR; // hasta 60 días adelante
 
 export async function POST(req: Request) {

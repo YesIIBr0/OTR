@@ -558,7 +558,10 @@ function priorQuizAttempt() {
       // (sin barra de scrub/tiempos falsos).
       const stageInner = hasVideo ? embed : `
             <div class="pstripes"></div>
-            <div class="player-bigplay" style="cursor:default;opacity:.6">${IC.play}</div>`;
+            <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(255,255,255,.55)">
+              <span style="display:flex;width:38px;height:38px">${IC.clock}</span>
+              <span style="font-size:13px;font-weight:600">Video en preparación</span>
+            </div>`;
       // Siguiente lección NO completada dentro del MISMO curso (para el CTA "Siguiente").
       let nextItem: any = null;
       if (course) {
