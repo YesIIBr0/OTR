@@ -120,6 +120,7 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
       </a>`).join('')}
   `).join('') + `
     <div class="sb-group">${t('group.system', lang)}</div>
+    <a class="sb-item ${activeNav==='settings'?'active':''}" href="#settings" data-go="settings">${IC.settings}<span class="lbl">Ajustes</span></a>
     <a class="sb-item" href="#" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></a>`;
 
   const tabbar = (TABBAR[role]||TABBAR.student).map(it =>
