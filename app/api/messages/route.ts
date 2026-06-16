@@ -37,7 +37,11 @@ export async function GET() {
     navy: c.navy,
     messages: c.messages.map((m) => ({
       id: m.id,
-      me: m.me,
+      // [CROSS-01] me se computa POR USUARIO: una burbuja es "mía" solo si la envié yo.
+      // Antes devolvía el `me` almacenado (siempre true para el creador) → el receptor
+      // veía los mensajes ajenos a la derecha como propios. Fallback legacy: filas sin
+      // senderId (anteriores a la migración) caen a su `me` guardado.
+      me: m.senderId ? m.senderId === user.id : m.me,
       body: m.body,
       when: m.timeLabel,
     })),
@@ -99,7 +103,10 @@ export async function POST(req: Request) {
 
   const count = await db.chatMessage.count({ where: { conversationId: convId } });
   const message = await db.chatMessage.create({
-    data: { conversationId: convId, me: true, body, timeLabel: "ahora", position: count },
+    // [CROSS-01] senderId = quién lo envió (lo usa el GET para computar `me` por usuario).
+    // me:true se conserva para la respuesta optimista del emisor; el GET ignora el `me`
+    // almacenado cuando hay senderId.
+    data: { conversationId: convId, senderId: user.id, me: true, body, timeLabel: "ahora", position: count },
   });
   await db.conversation.update({
     where: { id: convId },
