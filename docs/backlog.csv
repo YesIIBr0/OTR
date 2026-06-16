@@ -1,0 +1,31 @@
+id,title,lens,severity,priority,effort,door,status
+SEC-1,Open redirect en recordingUrl (whitelist de dominios),security,Critical,P0,S,reversible,done
+SEC-2,Seed guard de produccion saltable + password demo,security,High,P0,XS,reversible,done
+SEC-3,Rate-limiter RAM cap + IP real (no spoofeable),security,High,P0,S,reversible,done
+SEC-4,Guard de rol en el router del SPA,security,Medium,P1,S,reversible,done
+DATA-1,Backup automatizado de la BD (local),data,Critical,P0,M,reversible,done
+DATA-1b,Backup OFFSITE (B2/S3),data,Critical,P0,S,reversible,todo
+PROD-1,Sala de video on-platform (flujo roto),product,Critical,P0,XL,reversible,todo
+DATA-2,FK Booking/Escrow -> User (dinero huerfano),data,Critical,P0,M,irreversible,todo
+PROD-2,SMTP real (reset de contrasena no llega),product,High,P0,S,reversible,todo
+DATA-3,FK huerfanas restantes (Review/Upload/Activity/Guardianship),data,High,P1,M,irreversible,todo
+DATA-4,Contadores en transaccion + recompute,data,High,P1,S,reversible,todo
+DATA-5,Migraciones versionadas (prisma migrate),data,Medium,P1,M,irreversible,todo
+REL-2,Idempotencia webhook Stripe,reliability,High,P1,M,reversible,todo
+ESC-2,Grace period en deploys (SIGTERM),reliability,High,P1,S,reversible,todo
+PERF-1,Cache de estaticos en getAppData,performance,High,P1,M,reversible,todo
+QUAL-1,Tests P0 (bookings + quizzes) + quitar @ts-nocheck,quality,High,P1,XL,reversible,todo
+REL-1,Logging estructurado (pino) + Sentry,reliability,Medium,P1,M,reversible,todo
+PROC-1,Anadir lint/tests al gate de CI,process,High,P1,S,reversible,todo
+TEAM-1,Bus factor = 1 (documentar + 2o dev),team,High,P1,M,reversible,partial
+ESC-3,Prueba de carga k6 (baseline),reliability,High,P2,M,reversible,todo
+DEPS-1,Upgrade majors (Next16/Prisma7/TS6) + Renovate,deps,Medium,P2,M,reversible,todo
+DEPS-2,CVEs postcss/esbuild,deps,Medium,P2,S,reversible,todo
+SEC-6,Rate-limit por user.id en endpoints sensibles,security,Medium,P2,M,reversible,todo
+DATA-6,Indice Booking.packageId + Prisma timeout/pool,data,Medium,P2,S,reversible,todo
+SEC-3b,Roles como enum + epoch de sesion,security,Medium,P2,M,irreversible,todo
+SOBRA-1,Eliminar dead-code (legacy js/css, site/, _incoming/, pantallas fantasma),quality,Low,P2,S,reversible,todo
+ESC-1,PM2 cluster + Redis + PgBouncer,reliability,High,P3,L,reversible,todo
+ARCH-1,Code-split SPA + partir getAppData,architecture,Medium,P3,L,reversible,todo
+UX-1,a11y de modales (dialog/inert),ux,Medium,P3,M,reversible,todo
+DOCS-1,Runbooks + API docs (OpenAPI),docs,Medium,P3,M,reversible,partial
