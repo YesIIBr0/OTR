@@ -225,8 +225,8 @@ export default function Auth() {
 
           {notice && (
             <p style={{
-              color: "var(--otr-sky-hi, #2CAA20)", background: "rgba(44,170,32,0.10)",
-              border: "1px solid rgba(44,170,32,0.30)", borderRadius: 10,
+              color: "var(--ok, #1E8C16)", background: "var(--ok-soft, #E1F2DE)",
+              border: "1px solid color-mix(in srgb, var(--otr-green) 30%, transparent)", borderRadius: 10,
               fontSize: 13, padding: "10px 12px", marginBottom: 14, lineHeight: 1.45,
             }}>{notice}</p>
           )}
@@ -350,7 +350,7 @@ export default function Auth() {
           {mode === "login" && (
             <p style={{ textAlign: "center", marginTop: 14, fontSize: 12.5 }}>
               <button type="button" onClick={() => switchMode("forgot")}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--otr-sky-hi, #2CAA20)", fontWeight: 600 }}>
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--link, #1E8C16)", fontWeight: 600 }}>
                 ¿Olvidaste tu contraseña?
               </button>
             </p>
@@ -394,8 +394,8 @@ function RoleCard({ active, onClick, title, desc }: { active: boolean; onClick: 
   const [hover, setHover] = useState(false);
   const [focus, setFocus] = useState(false);
   // El anillo de foco accesible se ve incluso cuando la tarjeta está seleccionada.
-  const ring = "0 0 0 3px rgba(44,170,32,0.30)";
-  const boxShadow = focus ? ring : active ? "0 0 0 3px rgba(44,170,32,0.18)" : hover ? "var(--sh-2, 0 4px 12px rgba(12,12,12,0.10))" : "none";
+  const ring = "var(--ring, 0 0 0 3px rgba(44,170,32,0.35))";
+  const boxShadow = focus ? ring : active ? "0 0 0 3px color-mix(in srgb, var(--otr-green) 18%, transparent)" : hover ? "var(--sh-2, 0 4px 12px rgba(12,12,12,0.10))" : "none";
   return (
     <button
       type="button"
@@ -414,8 +414,8 @@ function RoleCard({ active, onClick, title, desc }: { active: boolean; onClick: 
         borderRadius: 12,
         cursor: "pointer",
         outline: "none",
-        border: `1.5px solid ${active || hover || focus ? "var(--otr-sky, #2CAA20)" : "var(--border-strong, rgba(0,0,0,0.12))"}`,
-        background: active ? "rgba(44,170,32,0.10)" : "var(--otr-white, #fff)",
+        border: `1.5px solid ${active || hover || focus ? "var(--otr-green, #2CAA20)" : "var(--border-strong, rgba(0,0,0,0.12))"}`,
+        background: active ? "var(--action-soft, #E1F2DE)" : "var(--otr-white, #fff)",
         boxShadow,
         transition: "border-color .18s var(--ease, cubic-bezier(.2,.7,.2,1)), background .18s var(--ease, cubic-bezier(.2,.7,.2,1)), box-shadow .18s var(--ease, cubic-bezier(.2,.7,.2,1))",
       }}
