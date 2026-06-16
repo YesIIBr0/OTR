@@ -12,7 +12,7 @@
 // el estado del ledger; al integrar Stripe se mapearán a transfer/refund reales.
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
-import { ok, bad, readJson, clean } from "../../../lib/api";
+import { ok, bad, readJson, clean, safeVideoUrl } from "../../../lib/api";
 import { logActivitySafe } from "../../../lib/activity";
 import { dateLabel, timeLabel } from "../../../lib/consultations";
 
@@ -109,8 +109,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // --- recording: el coach adjunta el enlace de grabación de la sesión (visible para el padre) ---
   if (action === "recording") {
     if (!isAdmin && !isCoachOwner) return bad("Solo el coach puede adjuntar la grabación", 403);
-    const recordingUrl = clean(body.recordingUrl, 1000);
-    if (!/^https?:\/\//i.test(recordingUrl)) return bad("Enlace inválido (debe ser una URL http/https)", 400);
+    const recordingUrl = safeVideoUrl(body.recordingUrl, 1000);
+    if (!recordingUrl) return bad("Enlace inválido: debe ser un video de YouTube, Vimeo o Cloudflare Stream", 400);
     await db.booking.update({ where: { id }, data: { recordingUrl } });
     return ok({ booking: { id, recordingUrl } });
   }

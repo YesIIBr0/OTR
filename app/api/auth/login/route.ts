@@ -1,11 +1,11 @@
 import { db } from "../../../lib/db";
 import { setSession } from "../../../lib/auth";
 import { verifyPassword } from "../../../lib/auth-crypto";
-import { ok, bad, readJson, clean } from "../../../lib/api";
+import { ok, bad, readJson, clean, clientIp } from "../../../lib/api";
 import { rateLimit } from "../../../lib/rate-limit";
 
 export async function POST(req: Request) {
-  const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
+  const ip = clientIp(req);
   const data = await readJson<{ email?: string; password?: string }>(req);
   const email = clean(data.email, 160).toLowerCase();
   const password = String(data.password ?? "");

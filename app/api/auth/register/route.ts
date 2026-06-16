@@ -1,13 +1,13 @@
 import { db } from "../../../lib/db";
 import { setSession } from "../../../lib/auth";
 import { hashPassword } from "../../../lib/auth-crypto";
-import { ok, bad, readJson, clean } from "../../../lib/api";
+import { ok, bad, readJson, clean, clientIp } from "../../../lib/api";
 import { rateLimit } from "../../../lib/rate-limit";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export async function POST(req: Request) {
-  const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
+  const ip = clientIp(req);
   const rl = rateLimit(`register:${ip}`, 5, 10 * 60 * 1000);
   if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
 

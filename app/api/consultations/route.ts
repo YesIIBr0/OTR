@@ -4,7 +4,7 @@
 //          (Los leads traen PII de visitantes — PRD Trust & Safety: nunca expuestos
 //          a cuentas TEACHER, que son auto-registrables.)
 import { db } from "../../lib/db";
-import { ok, bad, readJson, clean } from "../../lib/api";
+import { ok, bad, readJson, clean, clientIp } from "../../lib/api";
 import { getSessionUser } from "../../lib/auth";
 import { rateLimit } from "../../lib/rate-limit";
 import { sendMail } from "../../lib/mail";
@@ -19,7 +19,7 @@ const CONSULTA_ENABLED = false;
 export async function POST(req: Request) {
   if (!CONSULTA_ENABLED) return bad("Las consultas están desactivadas en esta fase", 410);
   // Anti-spam público: 5 reservas / 10 min por IP.
-  const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
+  const ip = clientIp(req);
   const rl = rateLimit(`consult:${ip}`, 5, 10 * 60 * 1000);
   if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
 

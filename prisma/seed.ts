@@ -6,12 +6,13 @@
 //  borra en orden seguro por FKs y vuelve a sembrar. Funciona igual en
 //  SQLite (dev) y PostgreSQL (Hostinger) — el código Prisma es idéntico.
 //
-//  Usuarios sembrados (password de todos: "otr1234"):
+//  Usuarios sembrados (password: env SEED_PASSWORD, o una generada que se imprime al sembrar):
 //    · saul@otr.do            → Saúl (TEACHER / Head Coach)
 //    · analia.reyes@otr.do    → Analía (STUDENT "me" del Aula)
 //    · + 7 estudiantes del roster de Public Forum I
 // ============================================================
 import { PrismaClient } from "@prisma/client";
+import { randomBytes } from "crypto";
 import { hashPassword } from "../app/lib/auth-crypto";
 
 const db = new PrismaClient();
@@ -27,16 +28,19 @@ async function main() {
   //     Para forzar (primer despliegue / reset intencional): SEED_FORCE=1
   // ----------------------------------------------------------------
   const force = process.env.SEED_FORCE === "1";
+  // Guard de PRODUCCIÓN: SIEMPRE activo, incluso con SEED_FORCE=1 (antes estaba dentro del
+  // if(!force) y era saltable → OPS-6). El seed BORRA toda la base; en producción exige un
+  // override explícito y SEPARADO para que no se dispare por accidente ni por un script.
+  if (process.env.NODE_ENV === "production" && process.env.SEED_ALLOW_PROD !== "1") {
+    console.error("✗ Abortado: NODE_ENV=production. El seed BORRA TODO. Para forzarlo de verdad usa SEED_ALLOW_PROD=1 ADEMÁS de SEED_FORCE=1.");
+    await db.$disconnect();
+    process.exit(1);
+  }
   if (!force) {
     const users = await db.user.count();
     if (users > 0) {
       console.error(`✗ Abortado: la base ya tiene ${users} usuario(s). El seed BORRARÍA todo.`);
       console.error("  Si de verdad quieres re-sembrar (¡pierdes los datos!), corre con SEED_FORCE=1.");
-      await db.$disconnect();
-      process.exit(1);
-    }
-    if (process.env.NODE_ENV === "production") {
-      console.error("✗ Abortado: NODE_ENV=production. Usa SEED_FORCE=1 sólo en el primer despliegue.");
       await db.$disconnect();
       process.exit(1);
     }
@@ -97,7 +101,11 @@ async function main() {
   // ----------------------------------------------------------------
   //  2) USUARIOS — perfiles SEPARADOS (coach real + roster real)
   // ----------------------------------------------------------------
-  const pw = hashPassword("otr1234");
+  // Password de las cuentas demo: de SEED_PASSWORD, o una aleatoria que se imprime (ya no
+  // hardcodeada "otr1234" en el repo público → SEC-4/OPS-6).
+  const SEED_PW = process.env.SEED_PASSWORD || randomBytes(6).toString("base64url");
+  if (!process.env.SEED_PASSWORD) console.log(`→ Password de las cuentas demo (generada — guárdala): ${SEED_PW}`);
+  const pw = hashPassword(SEED_PW);
 
   // Coach / Head Coach — perfil completo (cara profesor del Hub)
   await db.user.create({
@@ -1595,7 +1603,7 @@ async function main() {
   console.log(`  · Marketplace:   ${coachProfiles} coaches · ${bookings} bookings (escrow demo)`);
   console.log(`  · Lifetime §8:   ${certificates} certificados · ${journeyEvents} eventos de journey (Analía)`);
   console.log("  · Membresía §13: Analía PRO (simulada) · perfil público /p/analia-reyes");
-  console.log("  · Login demo:    saul@otr.do / analia.reyes@otr.do — password: otr1234");
+  console.log("  · Login demo:    saul@otr.do / analia.reyes@otr.do — password: ver arriba (SEED_PASSWORD o la generada)");
 }
 
 main()

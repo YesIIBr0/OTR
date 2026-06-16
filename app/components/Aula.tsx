@@ -43,9 +43,13 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       } catch { /* defensivo: nunca bloquea la navegación */ }
     }
 
+    const ROLE_HOME: any = { admin: "admin", teacher: "teacher", parent: "parent", student: "dashboard" };
     function renderApp(r: string) {
-      const def = (ROUTES as any)[r];
+      let def = (ROUTES as any)[r];
       if (!def) return;
+      // Guard de rol en el cliente: si la ruta exige un rol distinto al actual, redirige al
+      // home del rol (el backend ya rechaza los datos, pero esto evita pintar UI ajena).
+      if (def.role && def.role !== state.role) { r = ROLE_HOME[state.role] || "dashboard"; def = (ROUTES as any)[r]; if (!def) return; }
       teardownRecorder();
       currentRoute = r;
       root.innerHTML = renderShell(def.nav, def.crumbs, (SCREENS as any)[def.screen].render(state), state.role);

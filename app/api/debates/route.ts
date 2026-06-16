@@ -8,7 +8,7 @@
 // con su rating real (si se conoce) o el default 1500/RD 350.
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
-import { ok, bad, readJson, clean, safeUrl } from "../../lib/api";
+import { ok, bad, readJson, clean, safeUrl, safeVideoUrl } from "../../lib/api";
 import { logActivitySafe } from "../../lib/activity";
 import { updateRating, tierFor } from "../../lib/glicko2";
 
@@ -153,7 +153,7 @@ export async function POST(req: Request) {
   if (body.ballot && Array.isArray(body.ballot.scores) && body.ballot.scores.length) {
     const judge = clean(body.ballot.judge, 120) || null;
     const comments = clean(body.ballot.comments, 4000) || null;
-    const recordingUrl = safeUrl(body.ballot.recordingUrl, 400);
+    const recordingUrl = safeVideoUrl(body.ballot.recordingUrl, 400);
 
     // Filtrar a criterios válidos con score 0-10.
     const rows = body.ballot.scores

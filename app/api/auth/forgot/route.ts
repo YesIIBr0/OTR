@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
 import { db } from "../../../lib/db";
-import { ok, bad, readJson, clean } from "../../../lib/api";
+import { ok, bad, readJson, clean, clientIp } from "../../../lib/api";
 import { rateLimit } from "../../../lib/rate-limit";
 import { hashToken, sendPasswordReset } from "../../../lib/mail";
 
@@ -8,7 +8,7 @@ import { hashToken, sendPasswordReset } from "../../../lib/mail";
 // filtrar si el correo existe. Si el usuario existe: crea un token de un solo uso
 // (hasheado en DB) y envía el enlace de recuperación por correo.
 export async function POST(req: Request) {
-  const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
+  const ip = clientIp(req);
   const rl = rateLimit(`forgot:${ip}`, 5, 10 * 60 * 1000);
   if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
 
