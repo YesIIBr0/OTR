@@ -93,18 +93,22 @@ export const S = {};
   /* ---------------- MENSAJERÍA ---------------- */
   S.messages = {
     render() {
-      const convo = DB.messages.map((m,i)=>`
-        <div class="convo ${i===0?'active':''}" data-convo="${i}">
-          <div class="avatar ${m.navy?'':''}" style="background:${m.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${esc(m.ini)}${m.online?'<span class="online-dot"></span>':''}</div>
+      // [CROSS-02] Conversación ACTIVA seleccionable (window.__convo). Antes el thread
+      // siempre mostraba DB.chat (la 1ª conversación) sin importar cuál tocaras.
+      const list = DB.messages || [];
+      const active = Math.max(0, Math.min((window.__convo | 0), list.length - 1));
+      const convo = list.map((m,i)=>`
+        <div class="convo ${i===active?'active':''}" data-convo="${i}" role="button" tabindex="0" style="cursor:pointer">
+          <div class="avatar" style="background:${m.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${esc(m.ini)}${m.online?'<span class="online-dot"></span>':''}</div>
           <div class="convo-main"><div class="convo-top"><b>${esc(m.name)}</b><span class="faint" style="font-size:11.5px">${esc(m.when)}</span></div>
           <div class="convo-last">${esc(m.last)}</div></div>
           ${m.unread?`<span class="unread-pill">${m.unread}</span>`:''}
         </div>`).join('');
-      const bubbles = DB.chat.map(c=>`
+      const head = list[active] || null; // conversación seleccionada
+      const bubbles = (head && Array.isArray(head.messages) ? head.messages : []).map(c=>`
         <div class="bubble-row ${c.me?'me':''}">
           <div class="bubble">${esc(c.body)}<span class="b-time">${esc(c.when)}</span></div>
         </div>`).join('');
-      const head = (DB.messages || [])[0] || null; // conversación seleccionada REAL; null → estado vacío
       return `
       <div class="page-head" style="margin-bottom:14px"><div><div class="eyebrow">Comunidad</div><div class="page-title" style="margin-top:2px">Mensajes</div>
       <div class="page-sub">Habla con tus coaches y compañeros</div></div></div>
@@ -133,16 +137,28 @@ export const S = {};
       </div>`;
     },
     mount(root){
+      const list = DB.messages || [];
+      const active = Math.max(0, Math.min((window.__convo | 0), list.length - 1));
+      // [CROSS-02] Cambiar de conversación: clic (o Enter/Espacio) fija __convo y re-renderiza.
+      root.querySelectorAll('[data-convo]').forEach((el)=>{
+        const open=()=>{ window.__convo = parseInt(el.getAttribute('data-convo'),10) || 0; window.go && window.go('messages'); };
+        el.addEventListener('click', open);
+        el.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
+      });
       const body=root.querySelector('#mt-body'), input=root.querySelector('#chat-input'), send=root.querySelector('#chat-send');
+      if (!body || !send) return;
+      const conv = list[active] || null;
+      const convId = conv && conv.id;
       const push=()=>{ const v=input.value.trim(); if(!v)return;
-        fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body:v})}).catch(()=>{});
+        // [CROSS-03] Enviar a la conversación ACTIVA. Antes el POST no llevaba conversationId
+        // y el backend lo mandaba siempre al primer hilo del seed. El mensaje se envía de
+        // verdad a /api/messages; el destinatario lo ve en su bandeja (sin auto-respuesta falsa).
+        fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convId?{conversationId:convId,body:v}:{body:v})}).catch(()=>{});
+        if (conv && Array.isArray(conv.messages)) conv.messages.push({ me:true, body:v, when:'ahora' });
         const div=document.createElement('div'); div.className='bubble-row me';
         div.innerHTML=`<div class="bubble">${esc(v)}<span class="b-time">ahora</span></div>`;
         body.appendChild(div); input.value=''; body.scrollTop=body.scrollHeight;
-        // [de-mock] Eliminada la auto-respuesta falsa ("Perfecto. Lo reviso..."). El mensaje
-        // se envía de verdad a /api/messages; el destinatario lo ve en su bandeja.
       };
-      if (!body || !send) return;
       send.addEventListener('click',push);
       input.addEventListener('keydown',e=>{ if(e.key==='Enter')push(); });
       body.scrollTop=body.scrollHeight;

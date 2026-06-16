@@ -1342,8 +1342,17 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       id: mainThread.id, title: esc(mainThread.title), tag: esc(mainThread.tag),
       posts: mainThread.posts.map((p) => ({ author: esc(p.author), ini: esc(p.initials), role: p.role, when: p.whenLabel, op: p.op, body: esc(p.body) })),
     } : { id: "", title: "", tag: "", posts: [] },
-    messages: convos.map((c) => ({ ini: esc(c.initials), name: esc(c.name), last: esc(c.lastLabel), when: c.whenLabel, unread: c.unread, online: c.online, navy: c.navy })),
-    chat: (convos[0]?.messages ?? []).map((m) => ({ me: m.me, body: esc(m.body), when: m.timeLabel })),
+    // [CROSS-02/03] Cada conversación trae su id + sus mensajes (me computado por usuario,
+    // consistente con CROSS-01) para que la pantalla pueda CAMBIAR de chat y enviar al hilo
+    // correcto. Antes solo se exponía el resumen + DB.chat (la 1ª conversación), por eso el
+    // thread mostraba siempre lo mismo y el envío iba al primer hilo.
+    messages: convos.map((c) => ({
+      id: c.id, ini: esc(c.initials), name: esc(c.name), last: esc(c.lastLabel), when: c.whenLabel,
+      unread: c.unread, online: c.online, navy: c.navy,
+      messages: (c.messages ?? []).map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
+    })),
+    // Legacy: mensajes de la 1ª conversación (se conserva por compatibilidad).
+    chat: (convos[0]?.messages ?? []).map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
     // VENTA POR CURSO APAGADA (PRD §13.1): los cursos son valor de la membresía —
     // price 0 → la UI muestra "Gratis"/Inscribirme y /api/checkout inscribe directo.
     catalog: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(pickLang(c.name, c.nameEn)), coach: esc(c.coachName), color: c.color, price: 0, enrolled: enrolledIds.has(c.id),

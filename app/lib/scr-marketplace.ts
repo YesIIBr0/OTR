@@ -334,15 +334,22 @@ function bookedPanel(b) {
   </div>`;
 }
 
-function bookingCard(c, canBook) {
+function bookingCard(c, canBook, role) {
   const w = window;
   const booked = (w.__mkBooked || {})[c.id];
   if (booked) return bookedPanel(booked);
   if (!canBook) {
+    // [PARENT-2] Solo el alumno puede reservar (POST /api/bookings exige STUDENT). El padre
+    // veía el panel de reserva completo y al confirmar recibía un 403. Copy-guía por rol.
+    const msg = role === "parent"
+      ? "Pídele a tu hijo/a que reserve desde su cuenta. Aquí tú apruebas la sesión y autorizas el pago — cada reserva pasa por ti."
+      : role === "admin"
+      ? "Vista de administración: las reservas las inician los estudiantes desde su propia cuenta."
+      : "Los estudiantes pueden reservar sesiones desde este perfil. Como coach, gestiona tu perfil y tu disponibilidad desde tu espacio de coach.";
     return `
     <div class="card card-pad">
       <b style="font-size:13.5px">Reservas</b>
-      <p class="muted" style="font-size:12.5px;margin-top:6px">Los estudiantes pueden reservar sesiones desde este perfil. Como coach, gestiona tu perfil y tu disponibilidad desde tu espacio de coach.</p>
+      <p class="muted" style="font-size:12.5px;margin-top:6px">${msg}</p>
     </div>`;
   }
   const sel = selState();
@@ -410,7 +417,10 @@ function renderProfile(state) {
   const detail = w.__mkDetail && w.__mkDetail.id === id ? w.__mkDetail.data : null;
   const loading = !detail && !(w.__mkDetailFail === id);
   const c = normCoach({ ...(base || { id }), ...(detail || {}) });
-  const canBook = (state && state.role) !== "teacher";
+  // [PARENT-2] Solo el alumno puede reservar (el backend exige STUDENT). El rol se pasa a
+  // bookingCard para mostrar copy-guía a padre/coach/admin en vez de un CTA imposible.
+  const role = (state && state.role) || "";
+  const canBook = role === "student";
   const specs = String(c.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean);
   const reviews = c.reviewsList;
 
@@ -472,7 +482,7 @@ function renderProfile(state) {
     </div>
 
     <div class="stack" style="gap:16px">
-      <div class="fade-up" style="--d:1" id="mk-booking">${bookingCard(c, canBook)}</div>
+      <div class="fade-up" style="--d:1" id="mk-booking">${bookingCard(c, canBook, role)}</div>
       ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2"><b style="font-size:13px">Política de cancelación</b><p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:6px">${esc(c.cancelPolicy)}</p></div>` : ""}
     </div>
   </div>`;
