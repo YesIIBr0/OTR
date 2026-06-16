@@ -16,6 +16,20 @@ import { ok, bad, readJson, clean } from "../../../lib/api";
 // role es String libre en el schema; este set es la fuente de verdad de valores válidos.
 const ROLES = new Set(["STUDENT", "PARENT", "TEACHER", "COACH", "ADMIN"]);
 
+// ENT-03 — Búsqueda tolerante a MAYÚSCULAS/minúsculas SIN romper SQLite dev.
+// El conector SQLite NO soporta `mode:"insensitive"` (lanza al compilar el query) y
+// `tsc` se genera contra ese cliente, así que el filtro es provider-agnóstico: generamos
+// variantes de caso de la query (como se escribió, minúsculas, MAYÚSCULAS y Capitalizada)
+// y hacemos OR de `contains` contra cada una. Resuelve el caso dominante ("GMAIL" encuentra
+// "...@gmail.com", "reyes" encuentra "Reyes") sin Postgres ni LOWER() en SQL crudo.
+// NOTA: NO es acento-insensible (buscar "maria" no halla "María"); eso exige normalizar el
+// dato almacenado y queda fuera de alcance — ver docs/ux-audit para el follow-up provider-aware.
+function caseVariants(q: string): string[] {
+  const lower = q.toLowerCase();
+  const cap = lower.charAt(0).toUpperCase() + lower.slice(1);
+  return Array.from(new Set([q, lower, q.toUpperCase(), cap]));
+}
+
 const SELECT = {
   id: true,
   name: true,
@@ -37,7 +51,7 @@ export async function GET(req: Request) {
   const roleFilter = clean(url.searchParams.get("role"), 16).toUpperCase();
 
   const where: Prisma.UserWhereInput = {};
-  if (q) where.OR = [{ name: { contains: q } }, { email: { contains: q } }];
+  if (q) where.OR = caseVariants(q).flatMap((v) => [{ name: { contains: v } }, { email: { contains: v } }]);
   if (ROLES.has(roleFilter)) where.role = roleFilter;
 
   const [users, total] = await Promise.all([

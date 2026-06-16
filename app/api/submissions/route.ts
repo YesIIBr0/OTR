@@ -30,6 +30,12 @@ export async function POST(req: Request) {
   const fileUrl = safeUrl(body.fileUrl, 400);
   const fileName = clean(body.fileName, 200) || null;
   const textBody = clean(body.textBody, 5000) || null;
+
+  // BE-01 — Guard de entrega vacía (defensa en profundidad server-side). La UI ya valida
+  // (scr-learn.ts), pero un POST directo con {} creaba una Submission con fileUrl/fileName/
+  // textBody en null y devolvía 200 OK. Rechazamos si no hay ni archivo ni texto.
+  if (!fileUrl && !textBody) return bad("Adjunta un archivo o escribe tu respuesta antes de entregar", 400);
+
   const submission = await db.submission.create({
     data: { userId: user.id, userName: user.name, activity, kind, courseCode, fileUrl, fileName, textBody },
   });
