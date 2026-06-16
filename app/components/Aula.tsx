@@ -904,10 +904,14 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     document.addEventListener("keydown", onModalKey, true);
 
     let startRoute = state.role === "admin" ? "admin" : state.role === "teacher" ? "teacher" : state.role === "parent" ? "parent" : "dashboard";
-    // Estudiante nuevo sin placement (PRD §2.2 Journey A): arranca en la auto-evaluación
-    // de 3 min, que tras enviarse navega al dashboard con el radar ya poblado.
+    // [ONBOARDING-1] Orden correcto del arranque: el placement del alumno nuevo (PRD §2.2
+    // Journey A) DEBE ganar sobre el flag de onboarding del registro — antes `otr_onboard`
+    // lo pisaba y el alumno nunca hacía su evaluación inicial (radar vacío para siempre).
+    // Consumimos el flag siempre (no se queda pegado), pero placement tiene prioridad.
+    let justRegistered = false;
+    try { justRegistered = !!sessionStorage.getItem("otr_onboard"); sessionStorage.removeItem("otr_onboard"); } catch {}
     if (state.role === "student" && data?.me?.needsPlacement) startRoute = "placement";
-    try { if (sessionStorage.getItem("otr_onboard")) { startRoute = "onboarding"; sessionStorage.removeItem("otr_onboard"); } } catch {}
+    else if (justRegistered) startRoute = "onboarding";
     renderApp(startRoute);
     return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); };
   }, []);

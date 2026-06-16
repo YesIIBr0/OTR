@@ -172,6 +172,12 @@ function bookingRow(b, opts = {}) {
          <button class="btn btn-primary btn-sm" data-cw-complete="${esc(b.id)}">Completar sesión</button>
          <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">Cancelar</button>
        </div>`
+    // [COACH-01] PENDING (esperando consentimiento del padre): el coach puede RECHAZARLA.
+    // Antes no se renderizaba ninguna acción y la reserva quedaba atascada en su agenda.
+    : opts.actions && b.status === "PENDING"
+    ? `<div class="row" style="gap:8px;flex:none">
+         <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">Rechazar reserva</button>
+       </div>`
     : "";
   return `
   <div class="row vcenter wrap" style="gap:12px;padding:13px 0;border-bottom:1px solid var(--border)">

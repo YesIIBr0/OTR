@@ -155,7 +155,9 @@ function activeItemsFlat() {
           ${hasSkills
             ? `<div style="margin-top:12px">${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${c[0]}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
               <button class="btn btn-soft btn-sm" style="margin-top:12px" onclick="go('progress')">Ver progreso ${IC.arrowR}</button></div>`
-            : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.award}</div><h4>Mide tus 6 habilidades</h4><p>Completa tu primera lección para empezar.</p></div>`}
+            : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.award}</div><h4>Mide tus 6 habilidades</h4>${DB.me?.needsPlacement
+                ? `<p>Tu evaluación inicial fija tu punto de partida en 3 minutos.</p><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="go('placement')">Haz tu evaluación inicial ${IC.arrowR}</button>`
+                : `<p>Completa tu primera lección para empezar.</p>`}</div>`}
         </div>`;
 
       /* ---- ③ RECOMMENDED FOR YOU (cursos no inscritos / práctica) ---- */

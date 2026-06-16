@@ -87,6 +87,7 @@ function upcomingRow(b) {
       ${cd ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.clock}</span>&nbsp;${esc(cd)}</span>` : ""}
     </div>
     ${join}
+    <button class="btn btn-ghost btn-sm" data-mb-cancel="${esc(b.id)}" style="flex:none;color:var(--danger)">Cancelar</button>
   </div>`;
 }
 
@@ -169,6 +170,44 @@ S.myBookings = {
         const url = btn.getAttribute("data-mb-join") || "";
         if (!url) return;
         w.open?.(url, "_blank", "noopener,noreferrer");
+      }),
+    );
+
+    // [BOOKING-1] Cancelar una reserva propia (PENDING/CONFIRMED). El backend ya lo
+    // soporta (PATCH action:'cancel' → escrow REFUNDED); antes el alumno no tenía
+    // NINGUNA salida desde la app. Refresca re-pidiendo app-data y re-renderizando.
+    const softRefresh = async () => {
+      try {
+        const r = await fetch("/api/app-data");
+        if (r.ok) { const fresh = await r.json(); const role = DB.me?.role; Object.assign(DB, fresh); if (role) DB.me = { ...(fresh.me || {}), role }; }
+      } catch { /* silencioso */ }
+      if (w.go) w.go("my-bookings");
+    };
+    root.querySelectorAll("[data-mb-cancel]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-mb-cancel");
+        if (!id) return;
+        if (btn.getAttribute("data-armed") !== "1") {
+          btn.setAttribute("data-armed", "1");
+          const t0 = btn.textContent;
+          btn.textContent = "¿Cancelar? Tocar de nuevo";
+          setTimeout(() => {
+            if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
+          }, 4000);
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = "Cancelando…";
+        try {
+          await w.api(`/api/bookings/${encodeURIComponent(id)}`, { action: "cancel" }, "PATCH");
+          w.toast?.("Reserva cancelada — tu pago se reembolsa", "ok");
+          await softRefresh();
+        } catch (e) {
+          w.toast?.((e && e.message) || "No se pudo cancelar la reserva", "danger");
+          btn.disabled = false;
+          btn.removeAttribute("data-armed");
+          btn.textContent = "Cancelar";
+        }
       }),
     );
   },

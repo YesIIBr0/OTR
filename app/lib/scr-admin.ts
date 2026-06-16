@@ -75,6 +75,9 @@ function reportCard(r, d) {
         </span>
       </div>
       <div class="row" style="gap:8px;flex:none">
+        ${!reviewed && (r.targetType === "user" || r.targetType === "coach")
+          ? `<button class="btn btn-sm" data-rep-suspend="${esc(r.id)}" style="background:var(--danger);color:#fff">Suspender al usuario</button>`
+          : ""}
         ${reviewed
           ? ""
           : `<button class="btn btn-soft btn-sm" data-rep-review="${esc(r.id)}">Marcar revisado</button>`}
@@ -195,6 +198,38 @@ S.adminConsole = {
     );
     root.querySelectorAll("[data-rep-dismiss]").forEach((btn) =>
       btn.addEventListener("click", () => resolve(btn, btn.getAttribute("data-rep-dismiss"), "DISMISSED"))
+    );
+
+    // [ADMIN-1] Accionar al infractor desde la cola: suspende al usuario/coach reportado
+    // (PATCH action:'suspend' → el backend suspende y marca el reporte REVIEWED). Confirmación
+    // de dos toques por ser destructivo. Antes no había forma de cerrar el ciclo de moderación.
+    const suspendUser = async (btn, id) => {
+      if (!id) return;
+      if (btn.getAttribute("data-armed") !== "1") {
+        btn.setAttribute("data-armed", "1");
+        const t0 = btn.textContent;
+        btn.textContent = "¿Confirmar suspensión? Tocar de nuevo";
+        setTimeout(() => {
+          if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
+        }, 4000);
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "Suspendiendo…";
+      try {
+        await w.api("/api/reports", { reportId: id, action: "suspend" }, "PATCH");
+        (Array.isArray(st.reports) ? st.reports : []).forEach((r) => { if (r.id === id) r.status = "REVIEWED"; });
+        w.toast?.("Usuario suspendido · reporte marcado revisado", "ok");
+        repaint();
+      } catch (e) {
+        w.toast?.((e && e.message) || "No se pudo suspender al usuario", "danger");
+        btn.disabled = false;
+        btn.removeAttribute("data-armed");
+        btn.textContent = "Suspender al usuario";
+      }
+    };
+    root.querySelectorAll("[data-rep-suspend]").forEach((btn) =>
+      btn.addEventListener("click", () => suspendUser(btn, btn.getAttribute("data-rep-suspend")))
     );
   },
 };

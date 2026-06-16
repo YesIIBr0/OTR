@@ -173,6 +173,7 @@ function childCard(k, i) {
             <span style="display:inline-flex;width:16px;height:16px;color:var(--otr-sky-lo);flex:none">${IC.calendar}</span>
             <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600">${esc(x.t)}</span>
             ${x.d ? `<span class="faint" style="font-size:12px;flex:none">${esc(x.d)}</span>` : ""}
+            ${u.id ? `<button class="btn btn-ghost btn-sm" data-pcancel="${esc(u.id)}" style="flex:none;color:var(--danger);padding:2px 9px;font-size:12px">Cancelar</button>` : ""}
           </div>`;
         }).join("")}</div>`
       : `<p class="faint" style="font-size:12px;margin-top:6px">Sin sesiones agendadas — explora coaches con tu hijo/a desde el marketplace.</p>`}
@@ -500,6 +501,41 @@ S.parentPortal = {
           w.toast?.((e && e.message) || "No se pudo actualizar la reserva", "danger");
           btn.disabled = false;
           btn.textContent = approve ? "Aprobar" : "Rechazar";
+        }
+      })
+    );
+
+    // [PARENT-1] Cancelar una sesión CONFIRMADA del hijo (el padre designado puede cancelar
+    // según /api/bookings/[id]). Antes solo se podía aprobar/rechazar pendientes; una vez
+    // confirmada no había salida. Confirmación de dos toques + mutación local + repaint.
+    root.querySelectorAll("[data-pcancel]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-pcancel");
+        if (!id) return;
+        if (btn.getAttribute("data-armed") !== "1") {
+          btn.setAttribute("data-armed", "1");
+          const t0 = btn.textContent;
+          btn.textContent = "¿Cancelar? Tocar de nuevo";
+          setTimeout(() => {
+            if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
+          }, 4000);
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = "Cancelando…";
+        try {
+          await w.api(`/api/bookings/${encodeURIComponent(id)}`, { status: "CANCELLED" }, "PATCH");
+          const lists = [];
+          if (DB.parent && Array.isArray(DB.parent.children)) lists.push(...DB.parent.children);
+          if (Array.isArray(w.__parentFallback)) lists.push(...w.__parentFallback);
+          lists.forEach((k) => { if (Array.isArray(k.upcoming)) k.upcoming = k.upcoming.filter((u) => u.id !== id); });
+          w.toast?.("Sesión cancelada", "warn");
+          repaint();
+        } catch (e) {
+          w.toast?.((e && e.message) || "No se pudo cancelar la sesión", "danger");
+          btn.disabled = false;
+          btn.removeAttribute("data-armed");
+          btn.textContent = "Cancelar";
         }
       })
     );
