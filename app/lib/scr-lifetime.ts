@@ -109,10 +109,6 @@ function identityHero(lt) {
         ${meta.length ? `<p class="muted" style="font-size:13px;margin-top:6px">${meta.join(' <span class="dot-sep"></span> ')}</p>` : ""}
         ${id.languages.length ? `<div class="row wrap" style="gap:6px;margin-top:10px">${id.languages.map((l) => `<span class="chip soft" style="height:24px;font-size:11.5px;font-weight:600">${esc(l)}</span>`).join("")}</div>` : ""}
       </div>
-      <div class="stack" style="gap:6px;align-self:center;text-align:right;min-width:150px">
-        <span class="faint" style="font-size:11.5px">Todo lo que hay aquí es real:</span>
-        <span style="font-size:13px;font-weight:650;color:var(--otr-navy)">cada punto es atribuible a tu trabajo.</span>
-      </div>
     </div>
   </div>`;
 }
@@ -173,7 +169,6 @@ function skillRows(skills) {
               <span class="faint" style="font-size:11.5px;flex:none;margin-left:12px">${esc(e.whenLabel || "")}</span>
             </div>`).join("")
           : `<p class="faint" style="font-size:12.5px">Aún sin eventos atribuidos. Tus próximas lecciones, rondas y ballots moverán esta habilidad.</p>`}
-        <p class="faint" style="font-size:11.5px;margin-top:8px">Sin cajas negras: cada cambio de tu Skill Graph apunta a un evento real.</p>
       </div>`;
     return `
     <div data-lpskill="${esc(key)}" style="cursor:pointer" title="Ver qué movió esta habilidad">
@@ -193,7 +188,7 @@ function skillGraphCard(lt) {
     <div class="card fade-up" style="--d:1;margin-bottom:18px"><div class="empty">
       <div class="ill">${IC.target}</div>
       <h4>Tu Skill Graph se está formando</h4>
-      <p>Completa lecciones y rondas adjudicadas: cada evento alimenta tus habilidades, con atribución completa.</p>
+      <p>Completa lecciones y rondas adjudicadas: cada evento alimenta tus habilidades.</p>
       <button class="btn btn-primary btn-sm" onclick="go('course')">${IC.book} Ir a mis cursos</button>
     </div></div>`;
   }
@@ -207,7 +202,7 @@ function skillGraphCard(lt) {
     <div class="row" style="gap:28px;flex-wrap:wrap;align-items:flex-start;margin-top:14px">
       <div style="flex:0 1 360px;min-width:260px">${radarSvg(skills)}</div>
       <div style="flex:1 1 300px;min-width:260px">
-        <p class="faint" style="font-size:12.5px;margin-bottom:8px">Toca una habilidad para ver exactamente qué la movió.</p>
+        <p class="faint" style="font-size:12.5px;margin-bottom:8px">Toca una habilidad para ver qué la movió.</p>
         ${skillRows(skills)}
       </div>
     </div>
@@ -499,7 +494,7 @@ function membershipHero(m) {
       <div style="max-width:560px">
         <p class="eyebrow" style="color:var(--otr-sky-hi)">Membresía</p>
         <h2 class="brand-font" style="margin-top:2px">Tu plan: OTR ${esc(label)}</h2>
-        <p style="color:rgba(234,242,251,.78);font-size:13.5px;margin-top:10px">Tu esfuerzo ya está construyendo evidencia. Tu plan decide qué tan rápido — y qué tanto de esa evidencia puedes mostrar.</p>
+        <p style="color:rgba(234,242,251,.78);font-size:13.5px;margin-top:10px">Tu plan decide cuánto entrenas y cuánto de tu progreso puedes mostrar.</p>
         ${m.sinceLabel ? `<p style="color:rgba(234,242,251,.6);font-size:12px;margin-top:6px">En este plan ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}
       </div>
       <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22);align-self:flex-start"><span class="dot" style="background:var(--otr-sky-hi)"></span>OTR ${esc(label)}</span>
@@ -516,7 +511,7 @@ function tierCards(m) {
   const freeCard = `
   <div class="tile fade-up" style="--d:1;display:flex;flex-direction:column">
     <div class="eyebrow" style="margin-bottom:2px">Free</div>
-    <b style="font-size:15px">Tu historia empieza aquí</b>
+    <b style="font-size:15px">Empieza gratis</b>
     <div class="row vcenter" style="gap:6px;margin-top:10px"><span class="brand-font tnum" style="font-size:30px;font-weight:800;color:var(--otr-navy)">US$0</span><span class="faint" style="font-size:12px">para siempre</span></div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
       ${featureLi("Perfil + Skill Graph básico")}

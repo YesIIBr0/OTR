@@ -92,6 +92,20 @@ function statusBadge(status) {
   return status ? `<span class="badge">${esc(status)}</span>` : "";
 }
 
+/* ---------------- tira de upsell contextual a OTR Pro (logro/oro) ----------------
+   [CNV-03] El único gancho a Pro vivía enterrado en la pestaña Analytics. Esta tira
+   compacta (oro = logro, tokens de contraste --otr-gold-text) siembra el upsell donde
+   el deseo competitivo es visible — Leaderboard y Torneos — sin tapar el contenido ni
+   duplicar el bloque grande de Analytics. data-go="membership" lo enruta el shell. */
+function proUpsellStrip(line) {
+  return `
+  <div class="fade-up" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:var(--r-md,14px);background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent)">
+    <span style="display:inline-flex;width:18px;height:18px;color:var(--otr-gold-text);flex:none">${IC.star}</span>
+    <span style="flex:1;min-width:200px;font-size:13px;color:var(--otr-gold-text)">${line}</span>
+    <button class="btn btn-sm" style="flex:none;background:var(--otr-gold);color:#0C0C0C;font-weight:700" data-go="membership">Ver OTR Pro</button>
+  </div>`;
+}
+
 /* ---------------- panel HERO navy (rating GRANDE + tier) ---------------- */
 function heroPanel(d) {
   const nt = nextTier(d.tier);
@@ -330,6 +344,7 @@ function viewLeaderboard() {
     </tr>`).join("");
   return `
     <div class="page-head fade-up"><div><p class="eyebrow">El cohort</p><div class="page-title" style="font-size:20px">Leaderboard</div><div class="page-sub">Ranking por rating Glicko-2 — solo cuentan las rondas adjudicadas</div></div></div>
+    ${proUpsellStrip("¿Listo para subir de tier? Descubre todo lo que incluye OTR Pro.")}
     ${meRow}
     <div class="table-wrap scroll-m fade-up">
       <table class="tbl">
@@ -362,6 +377,7 @@ function viewTournaments() {
     </div>`).join("");
   return `
     <div class="page-head fade-up"><div><p class="eyebrow">Compite de verdad</p><div class="page-title" style="font-size:20px">Torneos</div><div class="page-sub">Inscríbete a torneos OTR y externos — tus rondas adjudicadas mueven tu rating</div></div></div>
+    ${proUpsellStrip("Llega a los torneos con ventaja. Conoce OTR Pro.")}
     <div class="grid g-3">${cards}</div>`;
 }
 
@@ -400,7 +416,7 @@ function viewAnalytics(d) {
   const criteria = Array.isArray(a.criteria) ? a.criteria : [];
   const hasAny = byFormat.length || bySide.length || criteria.length;
   if (!hasAny) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.chart}</div><h4>Tus números están por escribirse</h4><p>Acumula rondas adjudicadas con ballots y verás tu desglose por formato, lado y criterio.</p></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.chart}</div><h4>Aún sin datos</h4><p>Juega rondas adjudicadas para ver tu desglose por formato y lado.</p></div></div>`;
   }
   const formatCard = `
     <div class="card card-pad fade-up">

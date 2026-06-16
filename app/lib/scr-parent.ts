@@ -109,7 +109,7 @@ function consentRow(child, pc, i) {
     <div class="notif-ic warn" style="width:38px;height:38px;border-radius:10px;flex:none">${IC.lock}</div>
     <div style="flex:1;min-width:0">
       <b style="font-size:13.5px">${esc(child.name)} quiere reservar con ${esc(pc.coachName || "un coach")}</b>
-      <div class="faint" style="font-size:12px;margin-top:2px">${esc(pc.slotLabel || "")}${pc.priceLabel ? ` · ${esc(pc.priceLabel)} (queda en escrow hasta completar la sesión)` : ""}</div>
+      <div class="faint" style="font-size:12px;margin-top:2px">${esc(pc.slotLabel || "")}${pc.priceLabel ? ` · ${esc(pc.priceLabel)}` : ""}</div>
     </div>
     <div class="row" style="gap:6px;flex:none">
       <button class="btn btn-primary btn-sm" data-consent="${esc(pc.bookingId)}" data-act="ok">${IC.check} Aprobar</button>
@@ -410,7 +410,7 @@ S.parentPortal = {
         <b style="font-size:14px">Aprobaciones pendientes</b>
         <span class="badge warn"><span class="dot"></span>${consents.length} por revisar</span>
       </div>
-      <p class="muted" style="font-size:12.5px;margin-top:4px">Ninguna sesión con coach se confirma sin tu aprobación. El pago queda en custodia (escrow) hasta que la sesión se complete.</p>
+      <p class="muted" style="font-size:12.5px;margin-top:4px">Ninguna sesión con coach se confirma sin tu aprobación.</p>
       <div class="stack" style="gap:0;margin-top:6px">${consents.map((x, i) => consentRow(x.child, x.pc, i)).join("")}</div>
     </div>` : ""}
 

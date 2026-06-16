@@ -303,8 +303,7 @@ function consentGate() {
     return `
     <div class="alert warn" style="margin-top:14px"><span class="ai">${IC.lock}</span>
       <div><div class="at">Candado de consentimiento parental</div>
-      Eres menor de edad: al reservar, le enviaremos la solicitud a tu padre, madre o tutor.
-      La sesión queda <b>pendiente</b> hasta que la apruebe desde su Portal de familia.</div>
+      Eres menor: tu reserva necesita la aprobación de tu tutor antes de confirmarse.</div>
     </div>`;
   }
   if (!band) {

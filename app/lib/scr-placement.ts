@@ -46,7 +46,7 @@ S.placement = {
             <label for="pl-${esc(d.key)}" style="display:block"><b style="font-size:14.5px">${esc(d.key)}</b></label>
             <p class="faint" style="font-size:12.5px;margin-top:3px;line-height:1.45">${esc(d.desc)}</p>
           </div>
-          <output class="badge sky pl-out" data-out="${esc(d.key)}" style="min-width:46px;text-align:center;font-variant-numeric:tabular-nums">50</output>
+          <output class="badge pl-out" data-out="${esc(d.key)}" style="min-width:46px;text-align:center;font-variant-numeric:tabular-nums">—</output>
         </div>
         <input
           id="pl-${esc(d.key)}"
@@ -64,7 +64,16 @@ S.placement = {
       <div class="page-stack" style="max-width:720px;margin:0 auto">
         ${hero}
         ${sliders}
-        <div class="row between vcenter fade-up" style="--d:7;margin-top:6px;gap:12px;flex-wrap:wrap">
+        <div class="fade-up" style="--d:7;margin:10px 0 2px">
+          <div class="row between vcenter" style="font-size:12.5px;color:var(--text-2);margin-bottom:6px">
+            <span>Has ubicado <b id="pl-count" style="color:var(--text)">0</b> de ${DIMS.length} habilidades</span>
+            <span class="faint">Mueve cada barra para continuar</span>
+          </div>
+          <div style="height:8px;background:var(--n-150);border-radius:100px;overflow:hidden" role="progressbar" aria-valuemin="0" aria-valuemax="${DIMS.length}" aria-label="Progreso del placement">
+            <div id="pl-progress-fill" style="height:100%;width:0;background:var(--otr-green);transition:width .25s var(--ease)"></div>
+          </div>
+        </div>
+        <div class="row between vcenter fade-up" style="--d:8;margin-top:6px;gap:12px;flex-wrap:wrap">
           <p class="faint" style="font-size:12.5px;margin:0">Podrás afinar todo esto más adelante con tu coach.</p>
           <button class="btn btn-primary" id="pl-submit">Fijar mi punto de partida ${IC.arrowR}</button>
         </div>
@@ -74,21 +83,41 @@ S.placement = {
   mount(root) {
     if (!root) return;
 
-    // Reflejo en vivo del valor de cada slider en su <output> + aria-valuenow.
+    const ranges = Array.from(root.querySelectorAll(".pl-range"));
+    const btn = root.querySelector("#pl-submit");
+    const fill = root.querySelector("#pl-progress-fill");
+    const countEl = root.querySelector("#pl-count");
+    const total = ranges.length || 6;
+    const touchedCount = () => ranges.filter((r) => r.getAttribute("data-touched") === "1").length;
+
+    // Refleja el progreso: cuántas barras YA fueron ubicadas (tocadas) sobre el total.
+    const syncProgress = () => {
+      const n = touchedCount();
+      if (countEl) countEl.textContent = String(n);
+      if (fill) fill.style.width = `${Math.round((n / total) * 100)}%`;
+      if (btn) btn.disabled = n < total;
+    };
+
+    // Reflejo en vivo del valor de UNA barra ya tocada en su <output> + aria.
     const syncOne = (range) => {
       const skill = range.getAttribute("data-skill");
       const out = root.querySelector(`[data-out="${CSS && CSS.escape ? CSS.escape(skill) : skill}"]`);
-      if (out) out.textContent = String(range.value);
+      if (out) { out.textContent = String(range.value); out.classList.add("sky"); }
       range.setAttribute("aria-valuenow", String(range.value));
+      range.setAttribute("aria-label", `${skill} — del 0 al 100, ubicado en ${range.value}`);
+      range.style.opacity = "1";
     };
-    const ranges = Array.from(root.querySelectorAll(".pl-range"));
     ranges.forEach((r) => {
-      r.addEventListener("input", () => syncOne(r));
-      syncOne(r);
+      r.addEventListener("input", () => {
+        if (r.getAttribute("data-touched") !== "1") { r.setAttribute("data-touched", "1"); syncProgress(); }
+        syncOne(r);
+      });
     });
+    syncProgress();
 
-    const btn = root.querySelector("#pl-submit");
     btn?.addEventListener("click", async () => {
+      // Anti-inercia: solo se envía cuando las 6 barras fueron ubicadas a mano.
+      if (touchedCount() < total) { window.toast?.(`Aún te faltan ${total - touchedCount()} habilidades por ubicar`, "warn"); return; }
       const scores = {};
       ranges.forEach((r) => {
         const skill = r.getAttribute("data-skill");
