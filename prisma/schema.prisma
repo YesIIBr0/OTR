@@ -55,6 +55,16 @@ model User {
   reviewsGot    Review[]     @relation("ReviewTeacher")
   submissions   Submission[]   // [P0-11] FK inverso: borrar usuario limpia sus entregas
   quizAttempts  QuizAttempt[]  // [P0-11] FK inverso: borrar usuario limpia sus intentos
+  // [DATA-2/3] Integridad referencial: relaciones inversas a User (sin huérfanos).
+  bookingsAsStudent  Booking[]       @relation("BookingStudent")
+  bookingsAsCoach    Booking[]       @relation("BookingCoach")
+  bookingsConsented  Booking[]       @relation("BookingConsent")
+  reportsFiled       Report[]        @relation("ReportReporter")
+  passwordResets     PasswordReset[] @relation("UserPasswordResets")
+  uploads            Upload[]        @relation("UserUploads")
+  activityEvents     ActivityEvent[] @relation("UserActivity")
+  guardiansAsParent  Guardianship[]  @relation("GuardianParent")
+  guardiansAsStudent Guardianship[]  @relation("GuardianStudent")
 }
 
 model Level {
@@ -103,9 +113,9 @@ model Review {
   courseId  String
   course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   teacherId String
-  teacher   User     @relation("ReviewTeacher", fields: [teacherId], references: [id])
+  teacher   User     @relation("ReviewTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
   studentId String
-  student   User     @relation("ReviewAuthor", fields: [studentId], references: [id])
+  student   User     @relation("ReviewAuthor", fields: [studentId], references: [id], onDelete: Cascade)
   rating    Int      // 1-5
   body      String?
   createdAt DateTime @default(now())
@@ -394,6 +404,7 @@ model ConversationParticipant {
 model Report {
   id         String   @id @default(cuid())
   reporterId String
+  reporter   User     @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
   targetType String   // user | message | conversation | booking | coach
   targetId   String
   reason     String
@@ -444,6 +455,7 @@ model Submission {
 model PasswordReset {
   id        String    @id @default(cuid())
   userId    String
+  user      User      @relation("UserPasswordResets", fields: [userId], references: [id], onDelete: Cascade)
   tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
@@ -456,6 +468,7 @@ model PasswordReset {
 model Upload {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation("UserUploads", fields: [userId], references: [id], onDelete: Cascade)
   kind      String   @default("file") // avatar | submission | resource | video | image | file
   filename  String   // nombre en disco (cuid + ext)
   original  String   // nombre original
@@ -497,6 +510,7 @@ model ConsultationBooking {
 model ActivityEvent {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation("UserActivity", fields: [userId], references: [id], onDelete: Cascade)
   type      String   // lesson_done | debate_win | debate_loss | session_done | badge_earned | cert_earned | skill_up | tournament_result | booking_made ...
   source    String   @default("")
   refId     String?
@@ -514,7 +528,9 @@ model ActivityEvent {
 model Guardianship {
   id           String   @id @default(cuid())
   parentId     String   // User(PARENT)
+  parent       User     @relation("GuardianParent", fields: [parentId], references: [id], onDelete: Restrict)
   studentId    String   // User(STUDENT)
+  student      User     @relation("GuardianStudent", fields: [studentId], references: [id], onDelete: Restrict)
   status       String   @default("ACTIVE") // PENDING | ACTIVE | REVOKED
   consentLevel String   @default("full")   // full | progress_only
   // PRD §11.3: umbral de aprobación per-booking configurable. null = aprobar cada
@@ -646,9 +662,15 @@ model Booking {
   createdAt   DateTime      @default(now())
   escrow      EscrowTxn?
   session     CoachSession?
+  // [DATA-2] FK a User: protege el ledger de escrow. Restrict = no borrar usuario con
+  // reservas vivas. consentBy → SetNull.
+  student     User          @relation("BookingStudent", fields: [studentId], references: [id], onDelete: Restrict)
+  coach       User          @relation("BookingCoach", fields: [coachId], references: [id], onDelete: Restrict)
+  consenter   User?         @relation("BookingConsent", fields: [consentBy], references: [id], onDelete: SetNull)
 
   @@index([studentId])
   @@index([coachId, slotAt])
+  @@index([packageId]) // [DATA-6] "Mis reservas" filtra/junta por paquete
 }
 
 model EscrowTxn {
