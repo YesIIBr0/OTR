@@ -201,25 +201,11 @@ function viewOverview(d) {
         : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>Sin eventos en el radar</h4><p>Cuando se abran torneos los verás aquí. Llega entrenado.</p></div>`}
     </div>`;
 
-  const formCard = `
-    <div class="card card-pad">
-      <div class="eyebrow" style="margin-bottom:8px">Forma reciente</div>
-      ${d.recentForm.length
-        ? d.recentForm.slice(0, 5).map((f) => {
-            const rs = resultStyle(f.result);
-            return `<div class="row between vcenter" style="padding:8px 0;border-bottom:1px solid var(--border)">
-              <span class="row vcenter" style="gap:9px"><span class="badge ${rs.tone}" style="min-width:50px;justify-content:center;font-weight:800">${rs.label}</span><span style="font-size:13px">${esc(f.opponent || "Rival")}</span></span>
-              <span class="tnum" style="font-weight:700;color:${deltaColor(f.delta)}">${deltaLabel(f.delta)}</span>
-            </div>`;
-          }).join("")
-        : `<p class="faint" style="font-size:13px">Sin rondas recientes.</p>`}
-    </div>`;
-
   return `
     ${kpis}
     <div class="split fade-up" style="--d:0">
       <div class="stack" style="gap:16px">${recentCard}</div>
-      <div class="stack" style="gap:16px">${nextEventCard}${formCard}</div>
+      <div class="stack" style="gap:16px">${nextEventCard}</div>
     </div>`;
 }
 
@@ -295,7 +281,7 @@ function viewPractice() {
         <div class="muted" id="pf-phase" style="font-size:13.5px;margin-top:4px">Pulsa "Iniciar" para empezar el Constructive</div>
       </div>
       <div class="bar thin navy" style="margin:8px 0 16px"><i id="pf-bar" style="width:0%"></i></div>
-      <div class="row" style="gap:8px;justify-content:center">
+      <div class="row" style="gap:var(--s-2);justify-content:center">
         <button class="btn btn-primary btn-sm" id="pf-start">${IC.play} Iniciar</button>
         <button class="btn btn-soft btn-sm" id="pf-next">Siguiente fase ${IC.arrowR}</button>
         <button class="btn btn-ghost btn-sm" id="pf-reset">${IC.refresh} Reiniciar</button>
@@ -376,7 +362,7 @@ function viewTournaments() {
       </div>
     </div>`).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Compite de verdad</p><div class="page-title" style="font-size:20px">Torneos</div><div class="page-sub">Inscríbete a torneos OTR y externos — tus rondas adjudicadas mueven tu rating</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Compite de verdad</p><div class="page-title" style="font-size:20px">Torneos</div><div class="page-sub">Inscríbete a torneos OTR y externos</div></div></div>
     ${proUpsellStrip("Llega a los torneos con ventaja. Conoce OTR Pro.")}
     <div class="grid g-3">${cards}</div>`;
 }

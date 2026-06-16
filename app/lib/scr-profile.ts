@@ -113,7 +113,7 @@ export const S = {};
           <div class="card card-pad" style="text-align:center">
             <div class="eyebrow" style="margin-bottom:10px">Racha</div>
             <span class="streak" style="font-size:14px">${IC.flame} ${streak} días</span>
-            <div style="margin-top:10px;font-size:12.5px" class="muted">Racha de entrenamiento. ¡No la rompas!</div>
+            <div style="margin-top:10px;font-size:12.5px" class="muted">¡No la rompas!</div>
             <div class="row wrap" style="gap:5px;margin-top:14px;justify-content:center">
               ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:4px;background:${i<Math.min(streak,14)?'var(--otr-sky)':'var(--n-150)'}"></span>`).join('')}
             </div>
@@ -281,8 +281,7 @@ export const S = {};
           <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${esc(me.location)}` : ''}</div>
           ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(me.bio)}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px">
-            <button class="btn btn-ghost btn-sm" data-action="edit-profile">${IC.pencil} Editar perfil</button>
-            <button class="btn btn-ghost btn-sm" data-action="edit-profile">${IC.settings} Ajustes</button>
+            <button class="btn btn-primary btn-sm" data-action="edit-profile">${IC.pencil} Editar perfil</button>
           </div>
         </div>
         <div class="row" style="gap:0">

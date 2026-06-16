@@ -198,7 +198,7 @@ function viewAgenda() {
       <div class="ill">${IC.calendar}</div>
       <h4>Aún sin reservas</h4>
       <p>Tu perfil del marketplace trabaja por ti: cuando un alumno reserve una sesión, aparecerá aquí.</p>
-      <button class="btn btn-soft btn-sm" data-go="explore">Ver mi perfil en el marketplace</button>
+      <button class="btn btn-ghost btn-sm" data-go="explore">Ver mi perfil en el marketplace</button>
     </div></div>`;
   }
 
@@ -215,7 +215,7 @@ function viewAgenda() {
       <b style="font-size:14px">Próximas sesiones</b>
       <span class="badge sky">${upcoming.length}</span>
     </div>
-    <p class="faint" style="font-size:12px;margin-top:4px">Completa la sesión para liberar el pago del escrow. Las reservas de menores quedan pendientes hasta el consentimiento parental.</p>
+    <p class="faint" style="font-size:12px;margin-top:4px">Completa la sesión para liberar el pago del escrow.</p>
     ${upcoming.length
       ? `<div style="margin-top:6px">${upcoming.map((b) => bookingRow(b, { actions: true })).join("")}</div>`
       : `<p class="muted" style="font-size:13px;margin-top:12px">No tienes sesiones próximas — tu perfil del marketplace sigue trabajando por ti.</p>`}
@@ -250,7 +250,7 @@ function viewEarnings() {
   </div>
 
   <div class="alert info fade-up" style="--d:1;margin-bottom:18px"><span class="ai">${IC.lock}</span>
-    <div><div class="at">Transparencia total</div>OTR retiene ${e.takeRate}% por sesión — pagos siempre vía escrow, nunca peer-to-peer. Los fondos se liberan a tu favor cuando marcas la sesión como completada.</div>
+    <div><div class="at">Transparencia total</div>OTR retiene ${e.takeRate}% por sesión; el resto se libera vía escrow cuando marcas la sesión como completada.</div>
   </div>
 
   <div class="table-wrap fade-up" style="--d:2">
@@ -386,7 +386,7 @@ S.coachwork = {
     <div class="page-head fade-up"><div>
       <p class="eyebrow">Espacio de coach</p>
       <div class="page-title">Reservas e ingresos</div>
-      <div class="page-sub">Tu agenda de sesiones, tus payouts con escrow transparente y tu disponibilidad</div>
+      <div class="page-sub">Reservas, pagos con escrow y disponibilidad — todo dentro de OTR</div>
     </div></div>
     ${subTabs(tab)}
     <div class="fade-up" style="--d:2" id="cw-body">${renderTab(tab)}</div>`;

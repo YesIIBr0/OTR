@@ -280,7 +280,7 @@ function activeItemsFlat() {
         <div class="card card-pad">
           <div class="row between vcenter" style="margin-bottom:12px">
             <div><div class="eyebrow" style="margin-bottom:2px">Logros</div><b style="font-size:15px">${earned.length} de ${badges.length}</b></div>
-            ${C.levelBadge(myLevel)}
+            <span class="badge gold">${IC.medal} ${earned.length}</span>
           </div>
           <div class="row wrap" style="gap:7px">
             ${earned.slice(0,6).map(b=>`<span class="badge gold" title="${esc(b.d||'')}">${IC.medal} ${esc(b.n)}</span>`).join('') || `<span class="muted" style="font-size:12.5px">Sin insignias todavía. Completa tu primera lección para ganar la primera.</span>`}
@@ -298,7 +298,7 @@ function activeItemsFlat() {
       const roster = (DB.students || []).slice(0, 5);
       const leaderboard = roster.length
         ? `<div class="card fade-up" style="--d:4;margin-top:18px">
-            <div class="card-head"><h3>Leaderboard del cohort</h3><a href="#" onclick="return false" style="font-size:12.5px">Ver todo</a></div>
+            <div class="card-head"><h3>Leaderboard del cohort</h3></div>
             <div class="card-body" style="padding:6px 16px 12px">
               ${roster.map((s,i)=>`<div class="agenda-item">
                 <span class="badge ${i<3?'gold':''}" style="min-width:26px;justify-content:center">${i+1}</span>
@@ -432,18 +432,18 @@ function activeItemsFlat() {
         </div>
         <div class="ch-body">
           <div style="flex:1;min-width:220px">
-            <h2 style="font-size:20px;font-weight:800;letter-spacing:var(--track-tight)">${esc(c.name)}</h2>
+            <h2 style="font-size:var(--fs-20);font-weight:800;letter-spacing:var(--track-tight)">${esc(c.name)}</h2>
             <div class="row vcenter wrap" style="gap:10px 12px;margin-top:8px;font-size:13px;color:var(--text-2)">
               <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${esc(c.coach)}</span>
               ${meta.students!=null?`<span class="dot-sep"></span><span>${meta.students} estudiantes</span>`:''}
               ${meta.lessons!=null?`<span class="dot-sep"></span><span>${meta.lessons} lecciones</span>`:''}
             </div>
           </div>
-          <div class="row vcenter" style="gap:18px">
+          <div class="row vcenter" style="gap:var(--s-5)">
             ${C.ring(c.progress, 64)}
-            <div class="stack" style="gap:8px">
+            <div class="stack" style="gap:var(--s-2)">
               ${continueBtn}
-              <button class="btn btn-ghost btn-sm" onclick="go('course-index')">Índice del curso</button>
+              <button class="btn btn-ghost btn-sm" onclick="go('course-index')">Ver índice</button>
             </div>
           </div>
         </div>
@@ -567,7 +567,7 @@ function activeItemsFlat() {
       </div>
       <div class="lesson-wrap fade-up" style="--d:1">
         <div>
-          <h1 class="page-title" style="font-size:28px;margin-bottom:14px">${title}</h1>
+          <h1 class="page-title" style="font-size:var(--fs-28);margin-bottom:var(--s-4)">${title}</h1>
           ${embed ? `<div class="player-stage" style="margin-bottom:18px">${embed}</div>` : ""}
           ${body}
           <div class="lesson-nav row vcenter between" style="gap:10px">

@@ -395,10 +395,10 @@ function priorQuizAttempt() {
       <div class="quiz-head fade-up" style="--d:0">
         <div>
           <div class="eyebrow">Examen de unidad</div>
-          <div class="page-title" style="font-size:20px;margin-top:2px">${esc(quiz.title || 'Examen')}</div>
-          <div class="page-sub" style="margin-top:2px">${total} pregunta${total!==1?'s':''} · aprobado con ${esc(String(passScore))}%${attempt ? ` · ya completado · mejor: ${esc(String(attempt.best))}%` : ""}</div>
+          <div class="page-title" style="font-size:var(--fs-20);margin-top:2px">${esc(quiz.title || 'Examen')}</div>
+          <div class="page-sub" style="margin-top:2px">${total} pregunta${total!==1?'s':''} · aprobado con ${esc(String(passScore))}%</div>
         </div>
-        <span class="quiz-timer">${IC.doc} <span>${total} ítem${total!==1?'s':''}</span></span>
+
       </div>
       ${doneBanner}
       <div id="qz-body" style="${attempt ? "display:none" : ""}">
@@ -534,11 +534,7 @@ function priorQuizAttempt() {
           </div>
         </div>
       </div>
-      <div class="grid g-3 fade-up" style="--d:1;margin-bottom:18px">
-        <div class="tile">${C.kpi('Correctas',score,{ic:'checkCircle'})}</div>
-        <div class="tile">${C.kpi('Total',total,{ic:'grid'})}</div>
-        <div class="tile">${C.kpi('Resultado',passed?'Aprobado':'A reforzar',{ic:'chart'})}</div>
-      </div>
+
       <div class="card fade-up" style="--d:2">
         <div class="card-head"><h3>Revisión</h3></div>
         <div class="card-body" style="padding:8px 16px">
@@ -615,7 +611,7 @@ function priorQuizAttempt() {
 
       const mainCourseName = (DB.courses && DB.courses[0] && DB.courses[0].name) || null;
       const head = `
-      <div class="page-head fade-up" style="--d:0"><div><div class="page-title">Mis calificaciones</div><div class="page-sub">${mainCourseName ? esc(mainCourseName) + ' · ' : ''}promedio ponderado</div></div>${mainCourseName ? `<div class="seg"><button class="on">${esc(mainCourseName)}</button><button>Todos los cursos</button></div>` : ''}</div>`;
+      <div class="page-head fade-up" style="--d:0"><div><div class="page-title">Mis calificaciones</div><div class="page-sub">${mainCourseName ? esc(mainCourseName) + ' · ' : ''}promedio ponderado</div></div></div>`;
 
       if (!g.total) {
         return `${head}

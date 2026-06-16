@@ -28,15 +28,15 @@ export const ROUTES = {
   catalog:        { screen:'catalog',      nav:'catalog',      crumbs:['Catálogo'] },
   // Crumbs genéricos (Moodle multi-curso): el nombre real del curso/lección se
   // muestra en el hero de cada pantalla, no se hardcodea aquí.
-  course:         { screen:'course',       nav:'course',       crumbs:['Mis cursos'] },
-  'course-index': { screen:'courseIndex',  nav:'course',       crumbs:['Mis cursos','Índice'] },
+  course:         { screen:'course',       nav:'course',       crumbs:['Mi aprendizaje'] },
+  'course-index': { screen:'courseIndex',  nav:'course',       crumbs:['Mi aprendizaje','Índice'] },
   lesson:         { screen:'lesson',       nav:'course',       crumbs:['Mi aprendizaje','Lección'] },
   assignment:     { screen:'assignment',   nav:'course',       crumbs:['Mi aprendizaje','Entrega'] },
   quiz:           { screen:'quiz',         nav:'course',       crumbs:['Mi aprendizaje','Examen'] },
   'quiz-results': { screen:'quizResults',  nav:'course',       crumbs:['Mi aprendizaje','Resultados'] },
   player:         { screen:'player',       nav:'player',       crumbs:['Mi aprendizaje','Lección'] },
-  progress:       { screen:'progress',     nav:'progress',     crumbs:['Mi progreso'] },
-  badges:         { screen:'badges',       nav:'badges',       crumbs:['Logros'] },
+  progress:       { screen:'progress',     nav:'progress',     crumbs:['Centro de progreso','Niveles'] },
+  badges:         { screen:'badges',       nav:'badges',       crumbs:['Centro de progreso','Logros'] },
   // RE-REGISTRADA: el alumno necesita ver sus notas + el feedback del coach (S.grades).
   grades:         { screen:'grades',       nav:'grades',       crumbs:['Centro de progreso','Mis calificaciones'] },
   // APAGADAS (PRD-estricto §15): 'forum'/'forum-thread' (discussion boards =

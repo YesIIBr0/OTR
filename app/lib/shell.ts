@@ -50,7 +50,9 @@ const NAV = {
     { gk:'group.workspace', group:'Espacio de coach', items:[
       { r:'teacher', ic:'grid', k:'nav.workspace', l:'Panel de coach' },
       { r:'coachwork', ic:'calendar', k:'nav.coachwork', l:'Reservas e ingresos' },
-      { r:'course', ic:'book', k:'nav.catalog', l:'Cursos' },
+      // [SHELL-NAV-01] Quitado el item suelto 'course' (vista de alumno sin contexto):
+      // duplicaba 'Gestionar' y rompía el modelo mental del coach. La vista-como-alumno
+      // sigue accesible contextual desde "Vista previa" dentro del constructor (scr-extra.ts).
       { r:'manage', ic:'sliders', k:'nav.manage', l:'Gestionar' },
       // [NAV-03] Mensajes: el coach no tenía entrada a su único canal con alumnos/padres
       // (consultas pre-reserva del marketplace). La ruta ya existe; solo faltaba exponerla.

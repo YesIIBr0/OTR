@@ -133,7 +133,7 @@ function childCard(k, i) {
           ${k.ageBand === "minor" ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.lock}</span>Menor — protegido</span>` : ""}
           ${pendingLink ? `<span class="badge warn"><span class="dot"></span>Esperando su consentimiento</span>` : ""}
         </div>
-        <div class="faint" style="font-size:12px;margin-top:3px">Su mes en claro — progreso, asistencia y gasto</div>
+
       </div>
       <div style="text-align:right;flex:none">
         <span class="faint" style="font-size:11px;display:block">Gasto del mes</span>
@@ -333,7 +333,7 @@ function membershipCard(kids) {
     </div>`;
   }).join("");
   return `
-  <div class="card card-pad fade-up" style="--d:2;border-color:var(--otr-sky)">
+  <div class="card card-pad fade-up" style="--d:2">
     <div class="row vcenter" style="gap:8px">
       <span style="display:inline-flex;width:15px;height:15px;color:var(--otr-sky-lo)">${IC.star}</span>
       <b style="font-size:13.5px">Membresía y facturación</b>

@@ -76,7 +76,7 @@ function reportCard(r, d) {
       </div>
       <div class="row" style="gap:8px;flex:none">
         ${reviewed
-          ? `<span class="badge sky" style="align-self:center">${IC.check} En revisión</span>`
+          ? ""
           : `<button class="btn btn-soft btn-sm" data-rep-review="${esc(r.id)}">Marcar revisado</button>`}
         <button class="btn btn-ghost btn-sm" data-rep-dismiss="${esc(r.id)}">Descartar</button>
       </div>
@@ -103,8 +103,8 @@ function viewBody() {
     return `
     <div class="card fade-up"><div class="empty">
       <div class="ill">${IC.checkCircle}</div>
-      <h4>Sin reportes pendientes — todo en orden</h4>
-      <p>No hay reportes abiertos ni en revisión. Cuando alguien reporte un usuario, mensaje o reserva, aparecerá aquí para que lo resuelvas.</p>
+      <h4>Todo en orden — sin reportes pendientes</h4>
+      <p>Cuando alguien reporte un usuario, mensaje o reserva, aparecerá aquí.</p>
     </div></div>`;
   }
 
@@ -125,10 +125,9 @@ S.adminConsole = {
       <div class="page-sub">Revisa y resuelve los reportes de la comunidad — usuarios, mensajes y reservas</div>
     </div></div>
 
-    <div class="grid g-3 fade-up" style="--d:1;margin-bottom:18px">
+    <div class="grid g-2 fade-up" style="--d:1;margin-bottom:18px">
       <div class="tile">${C.kpi("Reportes abiertos", String(open), { ic: "flag" })}</div>
       <div class="tile">${C.kpi("En la cola", String(reports.length), { ic: "doc" })}</div>
-      <div class="tile">${C.kpi("Estado", open ? "Requiere atención" : "Al día", { ic: "checkCircle" })}</div>
     </div>
 
     <div class="fade-up" style="--d:2" id="mod-body">${viewBody()}</div>`;

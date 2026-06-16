@@ -241,7 +241,7 @@ function renderGrid() {
   <div class="page-head"><div>
     <p class="eyebrow">Marketplace</p>
     <div class="page-title">Coaches</div>
-    <div class="page-sub">Entrena con los coaches más dominantes del país — reservas seguras y pagos protegidos, todo dentro de OTR</div>
+    <div class="page-sub">Entrena 1:1 con los coaches de debate y oratoria de OTR</div>
   </div>
   <span class="badge sky">${list.length} coach${list.length === 1 ? "" : "es"}</span></div>
 
@@ -400,7 +400,6 @@ function bookingCard(c, canBook) {
       ${isMinor() ? "Solicitar aprobación y reservar" : "Confirmar reserva"}
     </button>
     <button class="btn btn-soft btn-block btn-sm" data-go="messages" style="margin-top:8px">${IC.msg} Enviar mensaje</button>
-    <p class="faint" style="font-size:11px;margin-top:10px;text-align:center">Sesiones y pagos siempre dentro de OTR — nunca por fuera.</p>
   </div>`;
 }
 

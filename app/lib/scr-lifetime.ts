@@ -202,7 +202,6 @@ function skillGraphCard(lt) {
     <div class="row" style="gap:28px;flex-wrap:wrap;align-items:flex-start;margin-top:14px">
       <div style="flex:0 1 360px;min-width:260px">${radarSvg(skills)}</div>
       <div style="flex:1 1 300px;min-width:260px">
-        <p class="faint" style="font-size:12.5px;margin-bottom:8px">Toca una habilidad para ver qué la movió.</p>
         ${skillRows(skills)}
       </div>
     </div>
@@ -497,7 +496,7 @@ function membershipHero(m) {
         <p style="color:rgba(234,242,251,.78);font-size:13.5px;margin-top:10px">Tu plan decide cuánto entrenas y cuánto de tu progreso puedes mostrar.</p>
         ${m.sinceLabel ? `<p style="color:rgba(234,242,251,.6);font-size:12px;margin-top:6px">En este plan ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}
       </div>
-      <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22);align-self:flex-start"><span class="dot" style="background:var(--otr-sky-hi)"></span>OTR ${esc(label)}</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22);align-self:flex-start"><span class="dot" style="background:var(--otr-sky-hi)"></span>Plan vigente</span>
     </div>
   </div>`;
 }

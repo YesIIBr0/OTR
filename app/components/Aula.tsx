@@ -284,8 +284,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           { value: "#2E8BD0", label: "Azul cielo" }, { value: "#0C2340", label: "Navy" }, { value: "#4FA9E8", label: "Azul claro" }, { value: "#2CAA20", label: "Verde" }, { value: "#64748B", label: "Gris" }] },
         { name: "next", label: "Próximo tema (opcional)", ph: "Introducción al formato" },
         { name: "summary", label: "Resumen del programa", type: "textarea", value: tpl ? tpl.summary : "", ph: "Describe de qué trata este programa…" },
-        { name: "published", label: "Visibilidad", type: "select", value: "false", options: [
-          { value: "false", label: "Borrador (oculto — constrúyelo primero)" }, { value: "true", label: "Publicado (visible en el catálogo)" }] },
+        { name: "published", label: "Estado", type: "select", value: "false", options: [
+          { value: "false", label: "Borrador (oculto del catálogo)" }, { value: "true", label: "Publicado (visible en el catálogo)" }] },
       ], async (v) => {
         v.published = v.published === "true";
         if (v.capacity === "") delete v.capacity;
@@ -448,7 +448,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       scrim.addEventListener("click", (e: any) => {
         if (e.target === scrim || e.target.closest("[data-x]")) { close(); return; }
         const c = e.target.closest("[data-c]");
-        if (c) { close(); const k = c.dataset.c; if (k === "course") openCreateCourse(); else if (k === "module") openCreateModule(); else openCreateLesson(); }
+        if (c) { close(); const k = c.dataset.c; if (k === "course") openCourseStart(); else if (k === "module") openCreateModule(); else openCreateLesson(); }
       });
     }
 
@@ -519,7 +519,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             <div class="field" style="margin:0"><label class="label">Nota (0-100)</label><input class="input gsub-grade" type="number" min="0" max="100" style="width:96px" placeholder="0-100" value="${s.grade ?? ""}"/></div>
             <button class="btn btn-primary btn-sm gsub-save" style="align-self:flex-end">Guardar</button>
           </div>
-        </div>`).join("") : `<div class="empty" style="padding:20px"><b>Sin entregas todavía</b><p>Cuando un alumno entregue una grabación, aparecerá aquí.</p></div>`;
+        </div>`).join("") : `<div class="empty" style="padding:20px"><b>Sin entregas todavía</b><p>Cuando un alumno entregue una tarea, aparecerá aquí.</p></div>`;
       scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>Calificar entregas</h3></div><div class="modal-body">${rows}</div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cerrar</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);

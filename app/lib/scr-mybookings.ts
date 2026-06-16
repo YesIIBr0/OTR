@@ -120,7 +120,7 @@ S.myBookings = {
     <div class="page-head fade-up"><div>
       <p class="eyebrow">Marketplace</p>
       <div class="page-title">Mis reservas</div>
-      <div class="page-sub">Tus sesiones de coaching reservadas — únete a las próximas y revisa tu historial</div>
+      <div class="page-sub">Tus sesiones de coaching reservadas</div>
     </div></div>`;
 
     if (!all.length) {
@@ -139,7 +139,7 @@ S.myBookings = {
         <b style="font-size:14px">Próximas</b>
         <span class="badge sky">${upcoming.length}</span>
       </div>
-      <p class="faint" style="font-size:12px;margin-top:4px">La sala de video se abre dentro de OTR. Las reservas pendientes esperan el consentimiento de un tutor.</p>
+      <p class="faint" style="font-size:12px;margin-top:4px">La sala de video se abre dentro de OTR.</p>
       ${upcoming.length
         ? `<div style="margin-top:6px">${upcoming.map(upcomingRow).join("")}</div>`
         : `<p class="muted" style="font-size:13px;margin-top:12px">No tienes sesiones próximas — <a href="#" data-go="explore" style="color:var(--otr-sky-lo);font-weight:600">explora coaches</a> para reservar una.</p>`}

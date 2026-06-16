@@ -69,7 +69,7 @@ export const S = {};
         <div class="page-title">Seguimiento del grupo</div>
         <div class="page-sub">Tracking total · ${DB.students.length} estudiante${DB.students.length===1?'':'s'} en ${courseCount} curso${courseCount===1?'':'s'}</div></div>
         <div class="row" style="gap:8px">
-          <button class="btn btn-primary btn-sm" data-action="grade-subs">${IC.chart} Calificar</button>
+          <button class="btn btn-ghost btn-sm" data-action="grade-subs">${IC.chart} Calificar</button>
         </div>
       </div>
 
@@ -172,7 +172,7 @@ export const S = {};
         <div class="page-head" style="margin-bottom:14px">
           <div><p class="eyebrow">Gestión de contenido</p>
           <div class="page-title" style="font-size:22px">Estructura del curso</div>
-          <div class="page-sub">Cursos → Módulos → Lecciones → Examen · sube video real y construye exámenes</div></div>
+          <div class="page-sub">Cursos → Módulos → Lecciones → Examen</div></div>
           <div class="row" style="gap:8px">
             <button class="btn btn-ghost btn-sm" data-tm="resource">${IC.plus} Recurso (archivo)</button>
             <button class="btn btn-primary btn-sm" onclick="go('manage')">${IC.sliders} Editor completo</button>
