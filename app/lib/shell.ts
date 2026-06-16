@@ -20,6 +20,7 @@ const NAV = {
     { gk:'group.main', group:'Principal', items:[
       { r:'dashboard', ic:'home', k:'nav.dashboard', l:'Inicio' },
       { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
+      { r:'events', ic:'calendar', l:'Eventos' },
     ]},
     // Learn según PDF §3.1: Courses + My Learning ('hub' y 'arsenal' apagadas — no están en el PDF).
     { gk:'group.learn', group:'Aprender', items:[

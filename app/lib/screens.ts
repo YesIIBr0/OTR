@@ -19,8 +19,9 @@ import { S as adminUsers } from "./scr-admin-users";
 import { S as mybookings } from "./scr-mybookings";
 import { S as placement } from "./scr-placement";
 import { S as settings } from "./scr-settings";
+import { S as events } from "./scr-events";
 
-export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...adminUsers, ...mybookings, ...placement, ...settings };
+export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...adminUsers, ...mybookings, ...placement, ...settings, ...events };
 
 export const ROUTES = {
   dashboard:      { screen:'dashboard',    nav:'dashboard',    crumbs:['Inicio'] },
@@ -77,6 +78,8 @@ export const ROUTES = {
   membership:     { screen:'membership',   nav:'membership',   crumbs:['Cuenta','Membresía'] },
   // Ajustes (PRD §3.1 ⚙️ Settings): hub de cuenta/idioma/notificaciones/privacidad → scr-settings.ts.
   settings:       { screen:'settings',     nav:'settings',     crumbs:['Cuenta','Ajustes'] },
+  // Eventos (PRD §3.1 📅 Events): seminarios, sesiones en vivo y torneos → scr-events.ts.
+  events:         { screen:'events',       nav:'events',       crumbs:['Eventos'] },
   // Consola de moderación (PRD §3.3 admin console mínima, §7.4 reportes) → scr-admin.ts.
   admin:          { screen:'adminConsole', nav:'admin',        crumbs:['Administración','Moderación'], role:'admin' },
   // Admin → Gestión de usuarios (PRD §3.3): roles, verificación de coach, suspensión → scr-admin-users.ts.
