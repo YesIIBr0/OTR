@@ -5,7 +5,6 @@ import { S as learn } from "./scr-learn";
 import { S as teacher } from "./scr-teacher";
 import { S as profile } from "./scr-profile";
 import { S as community } from "./scr-community";
-import { S as kit } from "./scr-kit";
 import { S as extra } from "./scr-extra";
 import { S as arsenal } from "./scr-arsenal";
 import { S as hub } from "./scr-hub";
@@ -20,7 +19,7 @@ import { S as adminUsers } from "./scr-admin-users";
 import { S as mybookings } from "./scr-mybookings";
 import { S as placement } from "./scr-placement";
 
-export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...kit, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...adminUsers, ...mybookings, ...placement };
+export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...adminUsers, ...mybookings, ...placement };
 
 export const ROUTES = {
   dashboard:      { screen:'dashboard',    nav:'dashboard',    crumbs:['Inicio'] },
@@ -79,5 +78,4 @@ export const ROUTES = {
   admin:          { screen:'adminConsole', nav:'admin',        crumbs:['Administración','Moderación'], role:'admin' },
   // Admin → Gestión de usuarios (PRD §3.3): roles, verificación de coach, suspensión → scr-admin-users.ts.
   'admin-users':  { screen:'adminUsers',   nav:'admin-users',  crumbs:['Administración','Gestión de usuarios'], role:'admin' },
-  // 'kit' APAGADA (PRD-estricto): herramienta interna de diseño, no es producto.
 };
