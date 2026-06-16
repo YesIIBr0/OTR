@@ -537,46 +537,6 @@ export const S = {};
   }
 
   /* ============================================================
-     GRADEBOOK
-     ============================================================ */
-  S.gradebook = {
-    render() {
-      const gb=DB.gradebook;
-      const cls=v=> v==='—'?'none':(+v>=85?'hi':(+v>=70?'mid':'lo'));
-      return `
-      <div class="page-head"><div><p class="eyebrow">Calificador</p>
-      <div class="page-title">Public Forum I</div>
-      <div class="page-sub">${gb.rows.length} estudiantes · ${gb.cols.length} actividades</div></div>
-      <div class="row" style="gap:8px"><button class="btn btn-ghost btn-sm">${IC.download} Exportar CSV</button>
-      <button class="btn btn-ghost btn-sm">${IC.settings} Configurar</button></div></div>
-
-      <div class="row wrap" style="gap:8px;margin-bottom:16px">
-        <span class="chip active">Todas</span><span class="chip">Sin calificar</span><span class="chip">Unidad 1</span><span class="chip">Unidad 2</span>
-      </div>
-
-      <div class="gb-wrap fade-up">
-        <table class="gb">
-          <thead><tr><th class="stick" style="text-align:left">Estudiante</th>
-            ${gb.cols.map(c=>`<th>${c}</th>`).join('')}<th>Promedio</th></tr></thead>
-          <tbody>
-            ${gb.rows.map(r=>{
-              const nums=r.g.filter(x=>x!=='—').map(Number);
-              const avg=nums.length?Math.round(nums.reduce((a,b)=>a+b,0)/nums.length):'—';
-              return `<tr><td class="stick"><div class="cell-user">${C.avatar(r.i,{size:'sm'})}<span class="nm">${esc(r.n)}</span></div></td>
-                ${r.g.map(v=>`<td><span class="gcell ${cls(v)}">${v}</span></td>`).join('')}
-                <td><b class="gcell ${cls(String(avg))}">${avg}${avg!=='—'?'%':''}</b></td></tr>`;
-            }).join('')}
-            <tr style="background:var(--surface-2)"><td class="stick" style="background:var(--surface-2)"><b style="font-weight:700">Media actividad</b></td>
-              ${gb.cols.map((_,ci)=>{ const nums=gb.rows.map(r=>r.g[ci]).filter(x=>x!=='—').map(Number); const a=nums.length?Math.round(nums.reduce((x,y)=>x+y,0)/nums.length):'—'; return `<td><b class="tnum">${a}${a!=='—'?'%':''}</b></td>`; }).join('')}
-              <td></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="faint row vcenter" style="font-size:12px;margin-top:12px;gap:6px"><span style="display:flex;width:14px">${IC.lock}</span>Toca cualquier celda para calificar · las notas se guardan al instante.</p>`;
-    }
-  };
-
-  /* ============================================================
      PARTICIPANTES
      ============================================================ */
   S.participants = {
