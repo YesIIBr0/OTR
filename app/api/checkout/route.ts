@@ -41,10 +41,11 @@ export async function POST(req: Request) {
   // sin precio (gratis) → inscripción directa
   const existing = await db.enrollment.findUnique({ where: { userId_courseId: { userId: user.id, courseId } } });
   if (!existing) {
-    await db.enrollment.create({
-      data: { userId: user.id, courseId, status: "ACTIVE", source: "FREE", lastAccess: "ahora" },
-    });
-    await db.course.update({ where: { id: courseId }, data: { studentsCount: { increment: 1 } } });
+    // [DATA-4] Atómico: inscripción + contador en una transacción.
+    await db.$transaction([
+      db.enrollment.create({ data: { userId: user.id, courseId, status: "ACTIVE", source: "FREE", lastAccess: "ahora" } }),
+      db.course.update({ where: { id: courseId }, data: { studentsCount: { increment: 1 } } }),
+    ]);
   }
   return NextResponse.json({ ok: true, enrolled: true });
 }

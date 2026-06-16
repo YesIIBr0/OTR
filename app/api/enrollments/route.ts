@@ -14,9 +14,10 @@ export async function POST(req: Request) {
   if (course.priceCents > 0) return NextResponse.json({ error: "Este programa requiere pago" }, { status: 402 });
   const existing = await db.enrollment.findUnique({ where: { userId_courseId: { userId: user.id, courseId } } });
   if (existing) return NextResponse.json({ ok: true, already: true });
-  const enrollment = await db.enrollment.create({
-    data: { userId: user.id, courseId, status: "ACTIVE", source: "FREE", lastAccess: "ahora" },
-  });
-  await db.course.update({ where: { id: courseId }, data: { studentsCount: { increment: 1 } } });
+  // [DATA-4] Atómico: la inscripción y el contador suben juntos o no suben (sin desincronizar).
+  const [enrollment] = await db.$transaction([
+    db.enrollment.create({ data: { userId: user.id, courseId, status: "ACTIVE", source: "FREE", lastAccess: "ahora" } }),
+    db.course.update({ where: { id: courseId }, data: { studentsCount: { increment: 1 } } }),
+  ]);
   return NextResponse.json({ ok: true, enrollment });
 }

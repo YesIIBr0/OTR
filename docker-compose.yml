@@ -21,6 +21,9 @@ services:
       dockerfile: Dockerfile
     image: ghcr.io/yesiibr0/otr:latest
     restart: unless-stopped
+    # [ESC-2] Da 30s a la app para drenar requests en curso (quiz/entrega/pago) antes de
+    # matar el contenedor en cada redeploy, en vez de cortar en seco.
+    stop_grace_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
