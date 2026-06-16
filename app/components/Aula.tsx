@@ -457,7 +457,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const d = await api("/api/checkout", { courseId });
         if (d.url) { location.href = d.url; return; }
         toast("¡Inscrito!", "ok");
-        setTimeout(() => refresh(), 400);
+        await refresh();
+        // [LEARN-2] Entrar directo al curso recién inscrito (antes solo refrescaba el catálogo
+        // y el alumno se quedaba ahí sin un siguiente paso claro). __course indexa por code.
+        const enrolled = ((DB as any).coursesContent || []).find((c: any) => c.dbId === courseId || c.id === courseId);
+        if (enrolled) { (window as any).__course = enrolled.code; renderApp("course"); }
       } catch (e: any) { toast(e.message || "Error", "danger"); }
     }
     // [LEARN-1] Reclamar el diploma al completar un programa al 100%. El endpoint ya existía

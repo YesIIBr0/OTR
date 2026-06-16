@@ -85,7 +85,7 @@ function deltaColor(n) {
 }
 function statusBadge(status) {
   const s = String(status || "").toLowerCase();
-  if (s === "open" || s === "abierto") return `<span class="badge ok"><span class="dot"></span>Inscripciones abiertas</span>`;
+  if (s === "open" || s === "abierto" || s === "upcoming") return `<span class="badge ok"><span class="dot"></span>Inscripciones abiertas</span>`;
   if (s === "soon" || s === "próximo" || s === "proximo") return `<span class="badge sky"><span class="dot"></span>Próximamente</span>`;
   if (s === "closed" || s === "cerrado") return `<span class="badge warn"><span class="dot"></span>Cerrado</span>`;
   if (s === "live" || s === "en vivo") return `<span class="badge danger"><span class="dot"></span>En vivo</span>`;
@@ -358,7 +358,9 @@ function viewTournaments() {
         ${statusBadge(t.status)}
         ${t.registered
           ? `<span class="badge ok"><span class="dot"></span>Inscrito</span>`
-          : `<button class="btn btn-primary btn-sm" data-tournament="${esc(t.id || "")}">${IC.plus} Registrarme</button>`}
+          : String(t.status || "").toLowerCase() === "upcoming"
+          ? `<button class="btn btn-primary btn-sm" data-tournament="${esc(t.id || "")}">${IC.plus} Registrarme</button>`
+          : ``/* [DEBATE-5] LIVE/cerrado: la API rechaza el registro (409), no mostramos boton — el badge de estado ya lo comunica */}
       </div>
     </div>`).join("");
   return `

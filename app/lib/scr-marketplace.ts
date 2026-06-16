@@ -327,7 +327,8 @@ function bookedPanel(b) {
     <p class="muted" style="font-size:12.5px;line-height:1.55">${pending
       ? "Le avisamos a tu padre, madre o tutor para que apruebe la sesión desde su Portal de familia. Te notificaremos en cuanto quede confirmada."
       : "Tu pago quedó protegido en custodia (escrow). La sesión ocurre dentro de OTR y los fondos se liberan al coach cuando se completa."}</p>
-    <div class="row" style="gap:8px;margin-top:12px">
+    <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" data-go="my-bookings">${IC.calendar} Ver mis reservas</button>
       <button class="btn btn-soft btn-sm" data-go="messages">${IC.msg} Mensajes</button>
       <button class="btn btn-ghost btn-sm" data-mk-back>Ver más coaches</button>
     </div>

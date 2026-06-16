@@ -157,7 +157,9 @@ function activeItemsFlat() {
               <button class="btn btn-soft btn-sm" style="margin-top:12px" onclick="go('progress')">Ver progreso ${IC.arrowR}</button></div>`
             : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.award}</div><h4>Mide tus 6 habilidades</h4>${DB.me?.needsPlacement
                 ? `<p>Tu evaluación inicial fija tu punto de partida en 3 minutos.</p><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="go('placement')">Haz tu evaluación inicial ${IC.arrowR}</button>`
-                : `<p>Completa tu primera lección para empezar.</p>`}</div>`}
+                : (courses && courses.length)
+                ? `<p>Completa tu primera lección para empezar.</p>`
+                : `<p>Inscríbete a tu primer programa para empezar a entrenar.</p><button class="btn btn-soft btn-sm" style="margin-top:10px" onclick="go('catalog')">Explorar catálogo ${IC.arrowR}</button>`}</div>`}
         </div>`;
 
       /* ---- ③ RECOMMENDED FOR YOU (cursos no inscritos / práctica) ---- */

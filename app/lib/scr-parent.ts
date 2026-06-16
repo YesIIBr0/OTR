@@ -35,7 +35,10 @@ function normChild(k = {}) {
   const att = k.attendance || {};
   const pp = k.publicProfile || {};
   return {
-    id: k.id || k.childId || (k.student && k.student.id) || "",
+    // [PARENT-5] id = studentId REAL (no el id del Guardianship). El umbral de aprobacion,
+    // el reporte y el perfil publico se indexan por studentId; antes tomaba k.id (guardianship)
+    // y esas tres funciones apuntaban al objetivo equivocado.
+    id: (k.student && k.student.id) || k.childId || k.id || "",
     name: k.name || (k.student && k.student.name) || "Estudiante",
     initials: k.initials || (k.student && k.student.initials) || ini(k.name || (k.student && k.student.name)),
     level: k.level || (k.student && k.student.level) || "Novato",

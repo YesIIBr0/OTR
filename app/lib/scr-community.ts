@@ -122,7 +122,6 @@ export const S = {};
           <div class="mt-head">
             <div class="avatar" style="background:${head.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${esc(head.ini)}${head.online?'<span class="online-dot"></span>':''}</div>
             <div><b>${esc(head.name)}</b>${head.online?`<div class="faint" style="font-size:12px">En línea</div>`:''}</div>
-            <div style="margin-left:auto" class="row"><button class="icon-btn">${IC.video}</button><button class="icon-btn">${IC.settings}</button></div>
           </div>
           <div class="mt-body" id="mt-body">
             <div class="chat-day">Hoy</div>
