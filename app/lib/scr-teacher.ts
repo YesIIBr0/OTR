@@ -329,7 +329,10 @@ export const S = {};
       node.innerHTML = `
         <div class="row between vcenter" style="margin-bottom:8px;gap:8px">
           <input class="input qz-prompt" placeholder="Enunciado de la pregunta" value="${q ? esc(q.prompt) : ""}" style="flex:1"/>
-          <button type="button" class="btn btn-quiet btn-sm qz-del-q" title="Quitar pregunta" style="color:var(--danger);flex:none">${IC.close}</button>
+          <div class="row" style="gap:4px;flex:none">
+            <button type="button" class="btn btn-quiet btn-sm qz-dup-q" title="Duplicar pregunta" style="font-size:12px">Duplicar</button>
+            <button type="button" class="btn btn-quiet btn-sm qz-del-q" title="Quitar pregunta" style="color:var(--danger)">${IC.close}</button>
+          </div>
         </div>
         <div class="qz-opts"></div>
         <button type="button" class="btn btn-ghost btn-sm qz-add-opt" style="margin-top:6px">${IC.plus} Añadir opción</button>`;
@@ -340,6 +343,14 @@ export const S = {};
       node.querySelector(".qz-del-q").addEventListener("click", () => {
         if (qWrap.querySelectorAll(".qz-q").length <= 1) { window.toast && window.toast("El examen necesita al menos una pregunta", "warn"); return; }
         node.remove();
+      });
+      // [PRD-04] Duplicar pregunta: clona el estado vivo del DOM (enunciado + opciones + correcta).
+      node.querySelector(".qz-dup-q").addEventListener("click", () => {
+        const options = Array.from(node.querySelectorAll(".qz-opt")).map((o) => ({
+          text: o.querySelector(".qz-opt-text").value,
+          correct: o.querySelector(".qz-correct").checked,
+        }));
+        node.after(questionNode({ prompt: node.querySelector(".qz-prompt").value, options }));
       });
       return node;
     }

@@ -203,6 +203,17 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const okBtn = scrim.querySelector("[data-ok]") as HTMLElement; okBtn.textContent = "Guardando…";
         try { await onSubmit(values); close(); } catch (err: any) { const e = scrim.querySelector(".fm-err") as HTMLElement; e.textContent = err.message || "Error"; e.style.display = "block"; okBtn.textContent = "Guardar"; }
       });
+      // [PRD-01] Enter envía desde un input de texto simple (no en textarea, editor rico ni select,
+      // donde Enter tiene su propio significado). Acelera los formularios cortos sin soltar el teclado.
+      scrim.addEventListener("keydown", (e: any) => {
+        if (e.key !== "Enter") return;
+        const t = e.target as HTMLElement;
+        const tag = (t.tagName || "").toLowerCase();
+        if (tag !== "input") return;
+        if ((t as any).dataset?.rich || t.isContentEditable) return;
+        e.preventDefault();
+        (scrim.querySelector("[data-ok]") as HTMLElement)?.click();
+      });
     }
 
     // Modal de progreso para tareas largas (aplicar plantilla / duplicar).
@@ -248,16 +259,23 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
       const blank = `<button class="tile click" data-tpl="" style="text-align:left;padding:14px;cursor:pointer;border:1.5px dashed var(--border);background:var(--surface)">
         <b style="font-size:13.5px;display:block">${IC.plus} En blanco</b><span class="faint" style="font-size:12px;display:block;margin-top:3px">Empieza un curso vacío y constrúyelo tú.</span></button>`;
+      // [FLW-08] La tarjeta ya no es un botón opaco: muestra un preview expandible de las
+      // secciones/lecciones reales (<details>, sin JS) para no elegir a ciegas; "Usar esta
+      // plantilla" (data-tpl) confirma. El toggle del preview no dispara la selección.
       const cards = (COURSE_TEMPLATES || []).map((tp: any) => {
         const secs = (tp.sections || []).length;
         const acts = (tp.sections || []).reduce((n: number, s: any) => n + (s.lessons?.length || 0), 0);
-        return `<button class="tile click" data-tpl="${esc(tp.id)}" style="text-align:left;padding:14px;cursor:pointer;border:1px solid var(--border);background:var(--surface)">
+        const preview = (tp.sections || []).map((s: any) =>
+          `<div style="margin-bottom:4px"><div style="font-weight:600;font-size:11.5px">${esc(s.title)}</div>${(s.lessons || []).map((l: any) => `<div class="faint" style="font-size:11px;padding-left:9px">· ${esc(l.title)}</div>`).join("")}</div>`).join("");
+        return `<div class="tile" style="text-align:left;padding:14px;border:1px solid var(--border);background:var(--surface)">
           <div class="row vcenter" style="gap:7px"><b style="font-size:13.5px">${esc(tp.name)}</b><span class="badge sky" style="flex:none">${esc(tp.level)}</span></div>
           <span class="faint" style="font-size:12px;line-height:1.4;display:block;margin-top:4px">${esc(tp.desc)}</span>
           <span class="faint" style="font-size:11px;display:block;margin-top:6px">${secs} secciones · ${acts} actividades · ${esc(tp.format)}</span>
-        </button>`;
+          <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--otr-green-text);font-weight:600">Ver contenido</summary><div style="margin-top:8px">${preview}</div></details>
+          <button class="btn btn-soft btn-sm" data-tpl="${esc(tp.id)}" style="margin-top:10px;width:100%">Usar esta plantilla</button>
+        </div>`;
       }).join("");
-      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:680px"><div class="modal-head"><h3>¿Cómo quieres empezar tu curso?</h3></div><div class="modal-body"><div class="grid g-2" style="gap:10px">${blank}${cards}</div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button></div></div>`;
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:680px"><div class="modal-head"><h3>¿Cómo quieres empezar tu curso?</h3></div><div class="modal-body"><div class="grid g-2" style="gap:10px;align-items:start">${blank}${cards}</div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       const close = () => scrim.remove();
