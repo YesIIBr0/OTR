@@ -68,7 +68,7 @@ function upcomingRow(b) {
   // Sala on-platform: solo CONFIRMED con videoUrl ofrece el botón de unirse.
   const canJoin = b.status === "CONFIRMED" && b.videoUrl;
   const join = canJoin
-    ? `<button class="btn btn-primary btn-sm" data-mb-join="${esc(b.videoUrl)}" style="flex:none">
+    ? `<button class="btn btn-primary btn-sm" data-mb-join="${esc(b.id)}" style="flex:none">
          <span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>Unirse a la sesión</span>
        </button>`
     : b.status === "PENDING"
@@ -159,17 +159,15 @@ S.myBookings = {
 
   mount(root) {
     const w = window;
-    // Unirse a la sesión: el videoUrl es '/aula?room=<id>' (sala on-platform,
-    // same-origin) o, cuando se cable Cloudflare/Daily, una URL externa. En
-    // ambos casos abrimos en pestaña nueva (noopener por seguridad) — el router
-    // de la SPA no maneja query params, así que un data-go directo sería un
-    // no-op; window.open garantiza que el botón siempre haga algo real.
+    // [NAV-07/FLW-04] Unirse a la sesión → pantalla room SPA-nativa (antes window.open
+    // de '/aula?room=<id>' caía al dashboard porque el router no lee query params). El
+    // botón lleva el bookingId; fijamos window.__room y navegamos a 'room'.
     root.querySelectorAll("[data-mb-join]").forEach((btn) =>
       btn.addEventListener("click", (e) => {
         e.preventDefault();
-        const url = btn.getAttribute("data-mb-join") || "";
-        if (!url) return;
-        w.open?.(url, "_blank", "noopener,noreferrer");
+        const id = btn.getAttribute("data-mb-join") || "";
+        if (!id) return;
+        w.__room = id; w.go?.("room");
       }),
     );
 

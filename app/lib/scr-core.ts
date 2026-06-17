@@ -234,7 +234,7 @@ function activeItemsFlat() {
               : `<span class="badge warn"><span class="dot"></span>Esperando aprobación</span>`;
             const canJoin = b.status === 'CONFIRMED' && b.videoUrl;
             const action = canJoin
-              ? `<button class="btn btn-soft btn-sm" style="flex:none" onclick="window.open('${esc(b.videoUrl)}','_blank','noopener')">${IC.video} Unirse</button>`
+              ? `<button class="btn btn-soft btn-sm" style="flex:none" onclick="window.__room='${esc(b.id)}';go('room')">${IC.video} Unirse</button>`
               : `<button class="btn btn-soft btn-sm" style="flex:none" data-go="my-bookings">Ver ${IC.arrowR}</button>`;
             return `
               <div class="agenda-item" style="align-items:center">

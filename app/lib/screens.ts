@@ -20,8 +20,9 @@ import { S as mybookings } from "./scr-mybookings";
 import { S as placement } from "./scr-placement";
 import { S as settings } from "./scr-settings";
 import { S as events } from "./scr-events";
+import { S as room } from "./scr-room";
 
-export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...adminUsers, ...mybookings, ...placement, ...settings, ...events };
+export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...adminUsers, ...mybookings, ...placement, ...settings, ...events, ...room };
 
 export const ROUTES = {
   dashboard:      { screen:'dashboard',    nav:'dashboard',    crumbs:['Inicio'] },
@@ -63,6 +64,8 @@ export const ROUTES = {
   coachwork:      { screen:'coachwork',    nav:'coachwork',    crumbs:['Espacio de coach','Reservas e ingresos'] },
   // Mis reservas (PRD §7.3 paso 6 + §4.2 ④, demand-side) → scr-mybookings.ts.
   'my-bookings':  { screen:'myBookings',   nav:'my-bookings',  crumbs:['Marketplace','Mis reservas'] },
+  // Sala de sesión (PRD §7.3 paso 6) → scr-room.ts; destino real del botón "Unirse".
+  room:           { screen:'room',         nav:'',             crumbs:['Sala de sesión'] },
   // 'my-experience' APAGADA (PRD-estricto): preferencias de experiencia no están en el PDF.
   onboarding:     { screen:'onboarding',   nav:'dashboard',    crumbs:['Inicio','Configura tu experiencia'] },
   // Placement inicial (PRD §2.2 Journey A + §4.3): auto-evaluación de 3 min para
