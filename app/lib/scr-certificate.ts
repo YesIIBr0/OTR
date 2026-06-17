@@ -3,6 +3,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC, otrCrest } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 export const S = {};
 
 /* ---------------- CERTIFICADO / DIPLOMA OFICIAL OTR ---------------- */
@@ -28,14 +29,14 @@ S.certificate = {
     if (!certs.length) {
       return `
       <div class="page-head"><div>
-        <h1 class="page-title">Certificado</h1>
-        <div class="page-sub">Diploma oficial OTR Debate Academy</div>
+        <h1 class="page-title">${t("cert.title")}</h1>
+        <div class="page-sub">${t("cert.subtitle")}</div>
       </div></div>
       <div class="empty" style="padding:48px 24px;max-width:520px;margin:0 auto;text-align:center">
         <div class="ill">${IC.award}</div>
-        <h4>Aún no tienes certificados</h4>
-        <p>Completa un programa al 100% para ganar tu primer diploma oficial OTR.</p>
-        <button class="btn btn-primary btn-sm" onclick="go('badges')">Volver a logros</button>
+        <h4>${t("cert.emptyHeading")}</h4>
+        <p>${t("cert.emptyBody")}</p>
+        <button class="btn btn-primary btn-sm" onclick="go('badges')">${t("cert.backToAchievements")}</button>
       </div>`;
     }
 
@@ -50,12 +51,12 @@ S.certificate = {
 
     return `
     <div class="page-head"><div>
-      <h1 class="page-title">Certificado</h1>
-      <div class="page-sub">Diploma oficial OTR Debate Academy</div>
+      <h1 class="page-title">${t("cert.title")}</h1>
+      <div class="page-sub">${t("cert.subtitle")}</div>
     </div>
     <div class="row" style="gap:8px">
-      <button class="btn btn-soft btn-sm" onclick="window.print()">${IC.download} Imprimir</button>
-      <button class="btn btn-ghost btn-sm" onclick="go('badges')">${IC.chevL} Volver</button>
+      <button class="btn btn-soft btn-sm" onclick="window.print()">${IC.download} ${t("cert.print")}</button>
+      <button class="btn btn-ghost btn-sm" onclick="go('badges')">${IC.chevL} ${t("cert.back")}</button>
     </div></div>
 
     <div class="diploma-wrap fade-up" style="max-width:820px;margin:0 auto">
@@ -77,10 +78,10 @@ S.certificate = {
         <div style="position:relative">
           ${otrSeal()}
 
-          <div class="eyebrow" style="margin:18px 0 6px;letter-spacing:.22em">Certificado oficial OTR</div>
+          <div class="eyebrow" style="margin:18px 0 6px;letter-spacing:.22em">${t("cert.eyebrow")}</div>
 
           <div class="muted" style="font-size:13px;letter-spacing:.04em;margin-bottom:6px">
-            Se otorga el presente diploma a
+            ${t("cert.awardedTo")}
           </div>
 
           <div class="brand-font cert-name" style="
@@ -89,7 +90,7 @@ S.certificate = {
           <div style="width:120px;height:2px;background:linear-gradient(90deg,transparent,var(--otr-sky),transparent);margin:14px auto 18px"></div>
 
           <div class="muted" style="font-size:13px;letter-spacing:.04em">
-            por haber completado satisfactoriamente el programa
+            ${t("cert.forCompleting")}
           </div>
           <div style="font-size:20px;font-weight:750;color:var(--text);margin-top:8px">${title}</div>
           ${program ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:4px">${program}</div>` : ""}
@@ -99,11 +100,11 @@ S.certificate = {
           <div class="row between vcenter" style="max-width:520px;margin:0 auto;gap:16px">
             <div style="text-align:center;flex:1">
               <div class="brand-font" style="font-size:18px;color:var(--otr-navy);border-bottom:1.5px solid var(--otr-navy);padding-bottom:6px">OTR Debate Academy</div>
-              <div class="faint" style="font-size:11px;margin-top:7px;letter-spacing:.08em;text-transform:uppercase">Firma</div>
+              <div class="faint" style="font-size:11px;margin-top:7px;letter-spacing:.08em;text-transform:uppercase">${t("cert.signature")}</div>
             </div>
             <div style="text-align:center;flex:1">
               <div class="brand-font" style="font-size:18px;color:var(--otr-navy);border-bottom:1.5px solid var(--otr-navy);padding-bottom:6px">${issued || "—"}</div>
-              <div class="faint" style="font-size:11px;margin-top:7px;letter-spacing:.08em;text-transform:uppercase">Fecha de emisión</div>
+              <div class="faint" style="font-size:11px;margin-top:7px;letter-spacing:.08em;text-transform:uppercase">${t("cert.issueDate")}</div>
             </div>
           </div>
         </div>

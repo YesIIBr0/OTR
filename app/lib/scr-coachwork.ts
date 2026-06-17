@@ -29,14 +29,15 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
 /* ---------------- tabs internas (patrón window.__x de scr-debate) ---------------- */
 const TABS = [
-  { k: "agenda", l: "Agenda", ic: "calendar" },
-  { k: "earnings", l: "Ingresos", ic: "chart" },
-  { k: "availability", l: "Disponibilidad", ic: "clock" },
+  { k: "agenda", l: t("cw.tabAgenda"), ic: "calendar" },
+  { k: "earnings", l: t("cw.tabEarnings"), ic: "chart" },
+  { k: "availability", l: t("cw.tabAvailability"), ic: "clock" },
 ];
 function activeTab() {
   const t = (window as any).__cwTab;
@@ -158,16 +159,16 @@ function getEarnings() {
 
 /* ---------------- badges de estado ---------------- */
 function statusBadge(status) {
-  if (status === "CONFIRMED") return `<span class="badge sky"><span class="dot"></span>Confirmada</span>`;
-  if (status === "PENDING") return `<span class="badge warn"><span class="dot"></span>Esperando consentimiento del padre</span>`;
-  if (status === "COMPLETED") return `<span class="badge ok"><span class="dot"></span>Completada</span>`;
-  if (status === "CANCELLED") return `<span class="badge">Cancelada</span>`;
+  if (status === "CONFIRMED") return `<span class="badge sky"><span class="dot"></span>${t("cw.statusConfirmed")}</span>`;
+  if (status === "PENDING") return `<span class="badge warn"><span class="dot"></span>${t("cw.statusPending")}</span>`;
+  if (status === "COMPLETED") return `<span class="badge ok"><span class="dot"></span>${t("cw.statusCompleted")}</span>`;
+  if (status === "CANCELLED") return `<span class="badge">${t("cw.statusCancelled")}</span>`;
   return status ? `<span class="badge">${esc(status)}</span>` : "";
 }
 function escrowBadge(st) {
-  if (st === "HELD") return `<span class="badge warn">En escrow</span>`;
-  if (st === "RELEASED") return `<span class="badge ok">Liberado</span>`;
-  if (st === "REFUNDED") return `<span class="badge">Reembolsado</span>`;
+  if (st === "HELD") return `<span class="badge warn">${t("cw.escrowHeld")}</span>`;
+  if (st === "RELEASED") return `<span class="badge ok">${t("cw.escrowReleased")}</span>`;
+  if (st === "REFUNDED") return `<span class="badge">${t("cw.escrowRefunded")}</span>`;
   return st ? `<span class="badge">${esc(st)}</span>` : `<span class="faint" style="font-size:12px">—</span>`;
 }
 
@@ -175,22 +176,22 @@ function escrowBadge(st) {
 function bookingRow(b, opts = {}) {
   const actions = opts.actions && b.status === "CONFIRMED"
     ? `<div class="row" style="gap:8px;flex:none">
-         <button class="btn btn-soft btn-sm" data-cw-join="${esc(b.id)}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>Unirse a la sesión</span></button>
-         <button class="btn btn-primary btn-sm" data-cw-complete="${esc(b.id)}">Completar sesión</button>
-         <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">Cancelar</button>
+         <button class="btn btn-soft btn-sm" data-cw-join="${esc(b.id)}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>${t("cw.joinSession")}</span></button>
+         <button class="btn btn-primary btn-sm" data-cw-complete="${esc(b.id)}">${t("cw.completeSession")}</button>
+         <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.cancel")}</button>
        </div>`
     // [COACH-01] PENDING (esperando consentimiento del padre): el coach puede RECHAZARLA.
     // Antes no se renderizaba ninguna acción y la reserva quedaba atascada en su agenda.
     : opts.actions && b.status === "PENDING"
     ? `<div class="row" style="gap:8px;flex:none">
-         <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">Rechazar reserva</button>
+         <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.rejectBooking")}</button>
        </div>`
     // [COACH-REC] Grabación: en sesiones COMPLETED el coach adjunta el enlace de la grabación
     // (PATCH action:'recording'). Si ya hay una, además ofrece verla.
     : opts.recording && b.status === "COMPLETED"
     ? `<div class="row" style="gap:8px;flex:none">
-         ${b.recordingUrl ? `<a class="btn btn-quiet btn-sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.play}</span>Ver grabación</span></a>` : ""}
-         <button class="btn btn-soft btn-sm" data-cw-recording="${esc(b.id)}">${b.recordingUrl ? "Cambiar grabación" : "Adjuntar grabación"}</button>
+         ${b.recordingUrl ? `<a class="btn btn-quiet btn-sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.play}</span>${t("cw.viewRecording")}</span></a>` : ""}
+         <button class="btn btn-soft btn-sm" data-cw-recording="${esc(b.id)}">${b.recordingUrl ? t("cw.changeRecording") : t("cw.attachRecording")}</button>
        </div>`
     : "";
   return `
@@ -216,39 +217,39 @@ function viewAgenda() {
     return `
     <div class="card fade-up"><div class="empty">
       <div class="ill">${IC.calendar}</div>
-      <h4>Aún sin reservas</h4>
-      <p>Tu perfil del marketplace trabaja por ti: cuando un alumno reserve una sesión, aparecerá aquí.</p>
-      <button class="btn btn-ghost btn-sm" data-go="coach">Ver mi perfil en el marketplace</button>
+      <h4>${t("cw.agendaEmptyHeading")}</h4>
+      <p>${t("cw.agendaEmptyBody")}</p>
+      <button class="btn btn-ghost btn-sm" data-go="coach">${t("cw.agendaEmptyCta")}</button>
     </div></div>`;
   }
 
   return `
   <div class="grid g-4" style="margin-bottom:18px">
-    <div class="tile fade-up" style="--d:0">${C.kpi("Rating", m.rating ? m.rating.toFixed(1) : "—", { ic: "star", unit: m.reviews ? ` · ${m.reviews} reseña${m.reviews === 1 ? "" : "s"}` : "" })}</div>
-    <div class="tile fade-up" style="--d:1">${C.kpi("Reservas totales", String(m.total), { ic: "calendar" })}</div>
-    <div class="tile fade-up" style="--d:2">${C.kpi("Completadas", String(m.completed), { ic: "checkCircle" })}</div>
-    <div class="tile fade-up" style="--d:3">${C.kpi("Alumnos recurrentes", String(m.repeat), { ic: "users" })}</div>
+    <div class="tile fade-up" style="--d:0">${C.kpi(t("cw.kpiRating"), m.rating ? m.rating.toFixed(1) : "—", { ic: "star", unit: m.reviews ? ` · ${m.reviews} reseña${m.reviews === 1 ? "" : "s"}` : "" })}</div>
+    <div class="tile fade-up" style="--d:1">${C.kpi(t("cw.kpiTotalBookings"), String(m.total), { ic: "calendar" })}</div>
+    <div class="tile fade-up" style="--d:2">${C.kpi(t("cw.kpiCompleted"), String(m.completed), { ic: "checkCircle" })}</div>
+    <div class="tile fade-up" style="--d:3">${C.kpi(t("cw.kpiRepeatStudents"), String(m.repeat), { ic: "users" })}</div>
   </div>
 
   <div class="card card-pad fade-up" style="--d:1">
     <div class="row between vcenter">
-      <b style="font-size:14px">Próximas sesiones</b>
+      <b style="font-size:14px">${t("cw.upcomingTitle")}</b>
       <span class="badge sky">${upcoming.length}</span>
     </div>
-    <p class="faint" style="font-size:12px;margin-top:4px">Completa la sesión para liberar el pago del escrow.</p>
+    <p class="faint" style="font-size:12px;margin-top:4px">${t("cw.upcomingNote")}</p>
     ${upcoming.length
       ? `<div style="margin-top:6px">${upcoming.map((b) => bookingRow(b, { actions: true })).join("")}</div>`
-      : `<p class="muted" style="font-size:13px;margin-top:12px">No tienes sesiones próximas — tu perfil del marketplace sigue trabajando por ti.</p>`}
+      : `<p class="muted" style="font-size:13px;margin-top:12px">${t("cw.upcomingEmpty")}</p>`}
   </div>
 
   <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
     <div class="row between vcenter">
-      <b style="font-size:14px">Historial</b>
+      <b style="font-size:14px">${t("cw.historyTitle")}</b>
       <span class="badge">${past.length}</span>
     </div>
     ${past.length
       ? `<div style="margin-top:6px">${past.map((b) => bookingRow(b, { escrow: true, recording: true })).join("")}</div>`
-      : `<p class="muted" style="font-size:13px;margin-top:12px">Todavía no completaste ninguna sesión.</p>`}
+      : `<p class="muted" style="font-size:13px;margin-top:12px">${t("cw.historyEmpty")}</p>`}
   </div>`;
 }
 
@@ -263,19 +264,19 @@ function viewEarnings() {
     </div>`;
   return `
   <div class="grid g-4" style="margin-bottom:18px">
-    ${tile("En escrow", e.heldLabel, "se libera al completar", "lock", 0)}
-    ${tile("Liberado total", e.releasedLabel, "sesiones ya completadas", "checkCircle", 1)}
-    ${tile("Tu payout", e.payoutLabel, `después del take rate ${e.takeRate}%`, "award", 2)}
-    ${tile("Este mes", e.monthPayoutLabel, "payout del mes en curso", "calendar", 3)}
+    ${tile(t("cw.earnEscrow"), e.heldLabel, t("cw.earnEscrowSub"), "lock", 0)}
+    ${tile(t("cw.earnReleased"), e.releasedLabel, t("cw.earnReleasedSub"), "checkCircle", 1)}
+    ${tile(t("cw.earnPayout"), e.payoutLabel, `después del take rate ${e.takeRate}%`, "award", 2)}
+    ${tile(t("cw.earnThisMonth"), e.monthPayoutLabel, t("cw.earnThisMonthSub"), "calendar", 3)}
   </div>
 
   <div class="alert info fade-up" style="--d:1;margin-bottom:18px"><span class="ai">${IC.lock}</span>
-    <div><div class="at">Transparencia total</div>OTR retiene ${e.takeRate}% por sesión; el resto se libera vía escrow cuando marcas la sesión como completada.</div>
+    <div><div class="at">${t("cw.transparencyTitle")}</div>OTR retiene ${e.takeRate}% por sesión; el resto se libera vía escrow cuando marcas la sesión como completada.</div>
   </div>
 
   <div class="table-wrap fade-up" style="--d:2">
     <table class="tbl">
-      <thead><tr><th>Alumno</th><th>Sesión</th><th class="num">Monto</th><th>Estado</th><th>Escrow</th></tr></thead>
+      <thead><tr><th>${t("cw.tblStudent")}</th><th>${t("cw.tblSession")}</th><th class="num">${t("cw.tblAmount")}</th><th>${t("cw.tblStatus")}</th><th>${t("cw.tblEscrow")}</th></tr></thead>
       <tbody>
         ${past.length
           ? past.map((b) => `
@@ -286,7 +287,7 @@ function viewEarnings() {
               <td>${statusBadge(b.status)}</td>
               <td>${escrowBadge(b.escrowStatus)}</td>
             </tr>`).join("")
-          : `<tr><td colspan="5" class="faint" style="text-align:center;padding:26px;font-size:13px">Sin movimientos todavía — completa tu primera sesión para ver tu historial aquí.</td></tr>`}
+          : `<tr><td colspan="5" class="faint" style="text-align:center;padding:26px;font-size:13px">${t("cw.tblEmpty")}</td></tr>`}
       </tbody>
     </table>
   </div>`;
@@ -311,9 +312,9 @@ function viewAvailability() {
     return `
     <div class="card fade-up"><div class="empty">
       <div class="ill">${IC.user}</div>
-      <h4>Activa tu perfil de coach</h4>
-      <p>Publica tu tarifa, especialidades y video de presentación para aparecer en el marketplace y recibir reservas.</p>
-      <button class="btn btn-primary" data-go="profile">Activa tu perfil de coach</button>
+      <h4>${t("cw.activateHeading")}</h4>
+      <p>${t("cw.activateBody")}</p>
+      <button class="btn btn-primary" data-go="profile">${t("cw.activateCta")}</button>
     </div></div>`;
   }
   const specs = String(p.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean);
@@ -326,52 +327,52 @@ function viewAvailability() {
     <div class="stack" style="gap:16px">
       <div class="card card-pad fade-up">
         <div class="row between vcenter wrap" style="gap:10px">
-          <b style="font-size:14px">Tu oferta</b>
-          ${p.active ? `<span class="badge ok"><span class="dot"></span>Visible en el marketplace</span>` : `<span class="badge warn"><span class="dot"></span>Perfil inactivo</span>`}
+          <b style="font-size:14px">${t("cw.offerTitle")}</b>
+          ${p.active ? `<span class="badge ok"><span class="dot"></span>${t("cw.offerVisible")}</span>` : `<span class="badge warn"><span class="dot"></span>${t("cw.offerInactive")}</span>`}
         </div>
         <div class="row vcenter wrap" style="gap:10px;margin-top:12px">
-          <span style="font-size:13px;color:var(--text-2)">Tarifa por hora:</span>
+          <span style="font-size:13px;color:var(--text-2)">${t("cw.hourlyRate")}</span>
           <b class="brand-font" style="font-size:20px;font-weight:800">${p.hourlyCents ? money(p.hourlyCents) : "—"}</b>
-          ${p.hourlyCents ? `<span class="faint" style="font-size:11.5px">/hora</span>` : ""}
+          ${p.hourlyCents ? `<span class="faint" style="font-size:11.5px">${t("cw.perHour")}</span>` : ""}
         </div>
         ${specs.length ? `<div class="row wrap" style="gap:6px;margin-top:12px">${specs.map((s) => `<span class="chip soft">${esc(s)}</span>`).join("")}</div>` : ""}
-        <p class="faint" style="font-size:12px;margin-top:12px">Edita tarifa, bio y video desde tu perfil de coach.</p>
-        <button class="btn btn-soft btn-sm" data-go="profile" style="margin-top:10px">Editar tarifa y paquetes</button>
+        <p class="faint" style="font-size:12px;margin-top:12px">${t("cw.offerEditNote")}</p>
+        <button class="btn btn-soft btn-sm" data-go="profile" style="margin-top:10px">${t("cw.offerEditCta")}</button>
       </div>
 
       <div class="card card-pad fade-up" style="--d:1">
         <div class="row between vcenter">
-          <b style="font-size:14px">Franjas semanales</b>
+          <b style="font-size:14px">${t("cw.slotsTitle")}</b>
           <span class="badge sky">${sorted.length}</span>
         </div>
-        <p class="faint" style="font-size:12px;margin-top:4px">Los alumnos solo pueden reservar dentro de estas ventanas (sesiones de 60 min).</p>
+        <p class="faint" style="font-size:12px;margin-top:4px">${t("cw.slotsNote")}</p>
         ${sorted.length
           ? `<div style="margin-top:8px">${sorted.map((a) => `
             <div class="row vcenter" style="gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
               <span style="display:inline-flex;width:15px;height:15px;color:var(--otr-sky-lo);flex:none">${IC.clock}</span>
               <span style="flex:1;font-size:13px;font-weight:600">${availLabel(a)}</span>
-              <button class="btn btn-quiet btn-sm" data-cw-rmav="${esc(a.id || "")}" title="Eliminar franja" style="color:var(--danger);padding:4px 8px"><span style="display:inline-flex;width:14px;height:14px">${IC.close}</span></button>
+              <button class="btn btn-quiet btn-sm" data-cw-rmav="${esc(a.id || "")}" title="${t("cw.removeSlot")}" style="color:var(--danger);padding:4px 8px"><span style="display:inline-flex;width:14px;height:14px">${IC.close}</span></button>
             </div>`).join("")}</div>`
-          : `<p class="muted" style="font-size:13px;margin-top:12px">Sin franjas publicadas — los alumnos verán el horario estándar OTR. Añade las tuyas para controlar tu agenda.</p>`}
+          : `<p class="muted" style="font-size:13px;margin-top:12px">${t("cw.slotsEmpty")}</p>`}
 
         <div class="divider"></div>
-        <p class="label" style="margin-bottom:8px">Añadir franja</p>
+        <p class="label" style="margin-bottom:8px">${t("cw.addSlot")}</p>
         <div class="row wrap vcenter" style="gap:8px">
-          <select class="select" id="cw-av-day" aria-label="Día de la semana" style="width:auto;min-width:130px">
+          <select class="select" id="cw-av-day" aria-label="${t("cw.dayOfWeek")}" style="width:auto;min-width:130px">
             ${DIAS.map((d, i) => `<option value="${i}" ${i === 1 ? "selected" : ""}>${d}</option>`).join("")}
           </select>
-          <select class="select" id="cw-av-start" aria-label="Hora de inicio" style="width:auto;min-width:110px">${timeOptions(16 * 60)}</select>
-          <span class="faint" style="font-size:12.5px" aria-hidden="true">a</span>
-          <select class="select" id="cw-av-end" aria-label="Hora de fin" style="width:auto;min-width:110px">${timeOptions(18 * 60)}</select>
-          <button class="btn btn-primary btn-sm" id="cw-av-add">${IC.plus} Añadir</button>
+          <select class="select" id="cw-av-start" aria-label="${t("cw.startTime")}" style="width:auto;min-width:110px">${timeOptions(16 * 60)}</select>
+          <span class="faint" style="font-size:12.5px" aria-hidden="true">${t("cw.toSep")}</span>
+          <select class="select" id="cw-av-end" aria-label="${t("cw.endTime")}" style="width:auto;min-width:110px">${timeOptions(18 * 60)}</select>
+          <button class="btn btn-primary btn-sm" id="cw-av-add">${IC.plus} ${t("cw.add")}</button>
         </div>
       </div>
     </div>
 
     <div class="stack" style="gap:16px">
       <div class="card card-pad fade-up" style="--d:1">
-        <b style="font-size:14px">Tus paquetes</b>
-        <p class="faint" style="font-size:12px;margin-top:4px">Solo lectura — se gestionan desde tu perfil de coach.</p>
+        <b style="font-size:14px">${t("cw.packagesTitle")}</b>
+        <p class="faint" style="font-size:12px;margin-top:4px">${t("cw.packagesNote")}</p>
         ${pkgs.length
           ? `<div class="stack" style="gap:8px;margin-top:10px">${pkgs.map((k) => `
             <div class="tile" style="padding:11px 13px;display:flex;align-items:center;gap:10px">
@@ -382,11 +383,11 @@ function viewAvailability() {
               ${Number(k.discountPct) > 0 ? `<span class="badge ok" style="flex:none">-${Number(k.discountPct)}%</span>` : ""}
               <b class="cc-pct" style="font-size:14px;font-weight:800;flex:none">${money(k.priceCents)}</b>
             </div>`).join("")}</div>`
-          : `<p class="muted" style="font-size:13px;margin-top:10px">Sin paquetes publicados — los alumnos verán los paquetes indicativos derivados de tu tarifa.</p>`}
+          : `<p class="muted" style="font-size:13px;margin-top:10px">${t("cw.packagesEmpty")}</p>`}
       </div>
 
       <div class="alert info fade-up" style="--d:2"><span class="ai">${IC.lock}</span>
-        <div><div class="at">Marketplace seguro</div>Sesiones y pagos siempre dentro de OTR — los fondos quedan en escrow y se liberan al completar cada sesión.</div>
+        <div><div class="at">${t("cw.safeTitle")}</div>${t("cw.safeBody")}</div>
       </div>
     </div>
   </div>`;
@@ -405,9 +406,9 @@ S.coachwork = {
     const tab = activeTab();
     return `
     <div class="page-head fade-up"><div>
-      <p class="eyebrow">Espacio de coach</p>
-      <h1 class="page-title">Reservas e ingresos</h1>
-      <div class="page-sub">Reservas, pagos con escrow y disponibilidad — todo dentro de OTR</div>
+      <p class="eyebrow">${t("cw.eyebrow")}</p>
+      <h1 class="page-title">${t("cw.title")}</h1>
+      <div class="page-sub">${t("cw.subtitle")}</div>
     </div></div>
     ${subTabs(tab)}
     <div class="fade-up" style="--d:2" id="cw-body">${renderTab(tab)}</div>`;
@@ -461,7 +462,7 @@ S.coachwork = {
         const id = btn.getAttribute("data-cw-complete");
         if (!id) return;
         btn.disabled = true;
-        btn.textContent = "Completando…";
+        btn.textContent = t("cw.completing");
         try {
           const d = await w.api(`/api/bookings/${encodeURIComponent(id)}`, { action: "complete" }, "PATCH");
           const payout = (d && d.escrow && Number(d.escrow.payoutCents)) || 0;
@@ -469,9 +470,9 @@ S.coachwork = {
           w.toast?.(`Sesión completada — payout ${money(payout)}`, "ok");
           repaint();
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo completar la sesión", "danger");
+          w.toast?.((e && e.message) || t("cw.completeError"), "danger");
           btn.disabled = false;
-          btn.textContent = "Completar sesión";
+          btn.textContent = t("cw.completeSession");
         }
       })
     );
@@ -483,27 +484,27 @@ S.coachwork = {
         if (!id) return;
         if (btn.getAttribute("data-armed") !== "1") {
           btn.setAttribute("data-armed", "1");
-          btn.textContent = "¿Seguro? Tocar de nuevo";
+          btn.textContent = t("cw.cancelArm");
           setTimeout(() => {
             if (btn.isConnected && btn.getAttribute("data-armed") === "1") {
               btn.removeAttribute("data-armed");
-              btn.textContent = "Cancelar";
+              btn.textContent = t("cw.cancel");
             }
           }, 4000);
           return;
         }
         btn.disabled = true;
-        btn.textContent = "Cancelando…";
+        btn.textContent = t("cw.cancelling");
         try {
           await w.api(`/api/bookings/${encodeURIComponent(id)}`, { action: "cancel" }, "PATCH");
           moveToPast(id, "CANCELLED", "REFUNDED", 0);
-          w.toast?.("Reserva cancelada — fondos reembolsados al alumno", "ok");
+          w.toast?.(t("cw.cancelled"), "ok");
           repaint();
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo cancelar la reserva", "danger");
+          w.toast?.((e && e.message) || t("cw.cancelError"), "danger");
           btn.disabled = false;
           btn.removeAttribute("data-armed");
-          btn.textContent = "Cancelar";
+          btn.textContent = t("cw.cancel");
         }
       })
     );
@@ -543,11 +544,11 @@ S.coachwork = {
         const id = btn.getAttribute("data-cw-recording");
         if (!id) return;
         w.otrFormModal?.(
-          "Enlace de la grabación",
-          [{ name: "recordingUrl", label: "Enlace de la grabación", type: "text", ph: "https://..." }],
+          t("cw.recordingModalTitle"),
+          [{ name: "recordingUrl", label: t("cw.recordingFieldLabel"), type: "text", ph: "https://..." }],
           async (values) => {
             await w.api(`/api/bookings/${encodeURIComponent(id)}`, { action: "recording", recordingUrl: values.recordingUrl }, "PATCH");
-            w.toast?.("Grabación guardada", "ok");
+            w.toast?.(t("cw.recordingSaved"), "ok");
             await softRefresh();
           }
         );
@@ -571,10 +572,10 @@ S.coachwork = {
         try {
           const d = await w.api("/api/coach-profile", { removeAvailabilityId: id }, "PATCH");
           applyProfile(d);
-          w.toast?.("Franja eliminada", "ok");
+          w.toast?.(t("cw.slotRemoved"), "ok");
           repaint();
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo eliminar la franja", "danger");
+          w.toast?.((e && e.message) || t("cw.slotRemoveError"), "danger");
           btn.disabled = false;
         }
       })
@@ -590,20 +591,20 @@ S.coachwork = {
       const startMin = Number(start?.value);
       const endMin = Number(end?.value);
       if (!(endMin > startMin)) {
-        w.toast?.("La hora de fin debe ser posterior a la de inicio", "warn");
+        w.toast?.(t("cw.slotTimeError"), "warn");
         return;
       }
       addBtn.disabled = true;
-      addBtn.textContent = "Añadiendo…";
+      addBtn.textContent = t("cw.adding");
       try {
         const d = await w.api("/api/coach-profile", { addAvailability: { weekday, startMin, endMin } }, "PATCH");
         applyProfile(d);
-        w.toast?.("Franja añadida", "ok");
+        w.toast?.(t("cw.slotAdded"), "ok");
         repaint();
       } catch (e) {
-        w.toast?.((e && e.message) || "No se pudo añadir la franja", "danger");
+        w.toast?.((e && e.message) || t("cw.slotAddError"), "danger");
         addBtn.disabled = false;
-        addBtn.innerHTML = `${IC.plus} Añadir`;
+        addBtn.innerHTML = `${IC.plus} ${t("cw.add")}`;
       }
     });
   },

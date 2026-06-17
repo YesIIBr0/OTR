@@ -7,6 +7,7 @@
 // mostrará el rank de debut y el radar poblado).
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
@@ -28,13 +29,12 @@ S.placement = {
       <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
         <div class="h-row">
           <div style="max-width:600px">
-            <h1 class="sr-only">Tu punto de partida</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">Bienvenido a OTR${firstName ? ", " + firstName : ""}</p>
-            <h2 class="brand-font" style="margin-top:2px">Ubiquémonos en 3 minutos</h2>
+            <h1 class="sr-only">${t("placement.srHeading")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("placement.welcome")}${firstName ? ", " + firstName : ""}</p>
+            <h2 class="brand-font" style="margin-top:2px">${t("placement.title")}</h2>
             <p style="color:rgba(234,242,251,.82);font-size:14.5px;margin-top:12px;line-height:1.55">
-              No hay respuestas incorrectas — esto fija <b>TU</b> punto de partida. Mueve cada barra
-              hasta donde estás hoy en cada habilidad. Desde ahí, solo queda subir.
+              ${t("placement.intro")}
             </p>
-            <span class="badge" style="margin-top:14px;display:inline-flex;height:30px;padding:0 13px;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:600">${IC.target} Evaluación inicial · 6 habilidades</span>
+            <span class="badge" style="margin-top:14px;display:inline-flex;height:30px;padding:0 13px;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:600">${IC.target} ${t("placement.badge")}</span>
           </div>
         </div>
       </div>`;
@@ -67,15 +67,15 @@ S.placement = {
         <div class="fade-up" style="--d:7;margin:10px 0 2px">
           <div class="row between vcenter" style="font-size:12.5px;color:var(--text-2);margin-bottom:6px">
             <span>Has ubicado <b id="pl-count" style="color:var(--text)">0</b> de ${DIMS.length} habilidades</span>
-            <span class="faint">Mueve cada barra para continuar</span>
+            <span class="faint">${t("placement.moveBars")}</span>
           </div>
-          <div style="height:8px;background:var(--n-150);border-radius:100px;overflow:hidden" role="progressbar" aria-valuemin="0" aria-valuemax="${DIMS.length}" aria-label="Progreso del placement">
+          <div style="height:8px;background:var(--n-150);border-radius:100px;overflow:hidden" role="progressbar" aria-valuemin="0" aria-valuemax="${DIMS.length}" aria-label="${t("placement.progressAria")}">
             <div id="pl-progress-fill" style="height:100%;width:0;background:var(--otr-green);transition:width .25s var(--ease)"></div>
           </div>
         </div>
         <div class="row between vcenter fade-up" style="--d:8;margin-top:6px;gap:12px;flex-wrap:wrap">
-          <p class="faint" style="font-size:12.5px;margin:0">Podrás afinar todo esto más adelante con tu coach.</p>
-          <button class="btn btn-primary" id="pl-submit">Fijar mi punto de partida ${IC.arrowR}</button>
+          <p class="faint" style="font-size:12.5px;margin:0">${t("placement.coachNote")}</p>
+          <button class="btn btn-primary" id="pl-submit">${t("placement.submit")} ${IC.arrowR}</button>
         </div>
       </div>`;
   },
@@ -125,16 +125,16 @@ S.placement = {
       });
       btn.disabled = true;
       const prev = btn.innerHTML;
-      btn.textContent = "Guardando…";
+      btn.textContent = t("placement.saving");
       try {
         await window.api("/api/placement", { scores });
-        window.toast?.("Listo — este es tu punto de partida", "ok");
+        window.toast?.(t("placement.savedOk"), "ok");
         // Recarga real (no go): el placement acaba de escribir StudentSkill +
         // placedAt; el dashboard debe cargar FRESCO para mostrar el resultado
         // (un go() repintaría con el DB cacheado de antes del placement).
         setTimeout(() => { window.location.href = "/aula"; }, 400);
       } catch (e) {
-        window.toast?.(e?.message || "No se pudo guardar tu evaluación", "danger");
+        window.toast?.(e?.message || t("placement.saveError"), "danger");
         btn.disabled = false;
         btn.innerHTML = prev;
       }

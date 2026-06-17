@@ -19,18 +19,19 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
 /* ---------------- estado local de la pantalla ---------------- */
 // Sub-tab activo (Overview / Mis debates / …). Patrón window.__x como el resto del SPA.
 const TABS = [
-  { k: "overview", l: "Resumen", ic: "target" },
-  { k: "history", l: "Mis debates", ic: "flag" },
-  { k: "practice", l: "Práctica", ic: "mic" },
-  { k: "leaderboard", l: "Leaderboard", ic: "trophy" },
-  { k: "tournaments", l: "Torneos", ic: "calendar" },
-  { k: "analytics", l: "Analytics", ic: "chart" },
+  { k: "overview", l: t("debate.tabOverview"), ic: "target" },
+  { k: "history", l: t("debate.tabHistory"), ic: "flag" },
+  { k: "practice", l: t("debate.tabPractice"), ic: "mic" },
+  { k: "leaderboard", l: t("debate.tabLeaderboard"), ic: "trophy" },
+  { k: "tournaments", l: t("debate.tabTournaments"), ic: "calendar" },
+  { k: "analytics", l: t("debate.tabAnalytics"), ic: "chart" },
 ];
 function activeTab() {
   const t = (window as any).__debateTab;
@@ -88,10 +89,10 @@ function deltaColor(n) {
 }
 function statusBadge(status) {
   const s = String(status || "").toLowerCase();
-  if (s === "open" || s === "abierto" || s === "upcoming") return `<span class="badge ok"><span class="dot"></span>Inscripciones abiertas</span>`;
-  if (s === "soon" || s === "próximo" || s === "proximo") return `<span class="badge sky"><span class="dot"></span>Próximamente</span>`;
-  if (s === "closed" || s === "cerrado") return `<span class="badge warn"><span class="dot"></span>Cerrado</span>`;
-  if (s === "live" || s === "en vivo") return `<span class="badge danger"><span class="dot"></span>En vivo</span>`;
+  if (s === "open" || s === "abierto" || s === "upcoming") return `<span class="badge ok"><span class="dot"></span>${t("debate.statusOpen")}</span>`;
+  if (s === "soon" || s === "próximo" || s === "proximo") return `<span class="badge sky"><span class="dot"></span>${t("debate.statusSoon")}</span>`;
+  if (s === "closed" || s === "cerrado") return `<span class="badge warn"><span class="dot"></span>${t("debate.statusClosed")}</span>`;
+  if (s === "live" || s === "en vivo") return `<span class="badge danger"><span class="dot"></span>${t("debate.statusLive")}</span>`;
   return status ? `<span class="badge">${esc(status)}</span>` : "";
 }
 
@@ -105,7 +106,7 @@ function proUpsellStrip(line) {
   <div class="fade-up" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:var(--r-md,14px);background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent)">
     <span style="display:inline-flex;width:18px;height:18px;color:var(--otr-gold-text);flex:none">${IC.star}</span>
     <span style="flex:1;min-width:200px;font-size:13px;color:var(--otr-gold-text)">${line}</span>
-    <button class="btn btn-sm" style="flex:none;background:var(--otr-gold);color:#0C0C0C;font-weight:700" data-go="membership">Ver OTR Pro</button>
+    <button class="btn btn-sm" style="flex:none;background:var(--otr-gold);color:#0C0C0C;font-weight:700" data-go="membership">${t("debate.seeOtrPro")}</button>
   </div>`;
 }
 
@@ -117,33 +118,33 @@ function heroPanel(d) {
   <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
     <div class="h-row" style="align-items:center">
       <div style="min-width:240px">
-        <h1 class="sr-only">Debate Hub</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">Tu rating Glicko-2</p>
+        <h1 class="sr-only">Debate Hub</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("debate.heroEyebrow")}</p>
         <div class="row vcenter" style="gap:14px;margin-top:6px">
           <span class="brand-font" style="font-size:64px;font-weight:800;line-height:1;color:#fff">${d.rating}</span>
           <div class="stack" style="gap:7px">
             <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22)"><span class="dot" style="background:var(--otr-sky-hi)"></span>${esc(d.tier)}</span>
-            <span style="font-size:12.5px;color:rgba(234,242,251,.72)">±${d.rd} RD ${d.provisional ? "· provisional" : "· estable"}</span>
-            ${d.speakerAvg != null ? `<span style="font-size:12.5px;color:rgba(234,242,251,.72)" title="Promedio de oratoria juzgada (separado del rating de victoria/derrota)">Orador <b style="color:var(--otr-sky-hi)">${d.speakerAvg}</b>/100 · ${d.speakerRounds} ${d.speakerRounds === 1 ? "ronda" : "rondas"}</span>` : ""}
+            <span style="font-size:12.5px;color:rgba(234,242,251,.72)">±${d.rd} RD ${d.provisional ? "· " + t("debate.rdProvisional") : "· " + t("debate.rdStable")}</span>
+            ${d.speakerAvg != null ? `<span style="font-size:12.5px;color:rgba(234,242,251,.72)" title="${t("debate.speakerTitle")}">${t("debate.speakerLabel")} <b style="color:var(--otr-sky-hi)">${d.speakerAvg}</b>/100 · ${d.speakerRounds} ${d.speakerRounds === 1 ? t("debate.roundSingular") : t("debate.roundPlural")}</span>` : ""}
           </div>
         </div>
         ${d.provisional
-          ? `<div class="alert" style="margin-top:14px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">Tu rating es provisional</div><span style="color:rgba(234,242,251,.78)">Pocas rondas adjudicadas aún. Cada ballot oficial lo acerca a tu nivel real.</span></div></div>`
+          ? `<div class="alert" style="margin-top:14px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">${t("debate.provisionalTitle")}</div><span style="color:rgba(234,242,251,.78)">${t("debate.provisionalBody")}</span></div></div>`
           : nt
-            ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:12px">Próximo tier: <b style="color:var(--otr-sky-hi)">${esc(nt)}</b> — gana rondas adjudicadas y asciende.</p>`
-            : `<p style="color:var(--otr-sky-hi);font-size:13px;margin-top:12px;font-weight:650">La cima es tuya: ${esc(d.tier)}. Defiéndela.</p>`}
+            ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:12px">${t("debate.nextTierPrefix")} <b style="color:var(--otr-sky-hi)">${esc(nt)}</b> ${t("debate.nextTierSuffix")}</p>`
+            : `<p style="color:var(--otr-sky-hi);font-size:13px;margin-top:12px;font-weight:650">${t("debate.topPrefix")} ${esc(d.tier)}. ${t("debate.topSuffix")}</p>`}
       </div>
       <div class="stack" style="gap:12px;align-self:stretch;justify-content:center;min-width:220px">
         <div>
-          <p class="eyebrow" style="color:var(--otr-sky-hi);margin-bottom:8px">Forma reciente</p>
+          <p class="eyebrow" style="color:var(--otr-sky-hi);margin-bottom:8px">${t("debate.recentForm")}</p>
           ${forms.length
             ? `<div class="row" style="gap:6px;flex-wrap:wrap">${forms.map((f) => {
                 const rs = resultStyle(f.result);
                 return `<span title="${esc(f.opponent || "")} · ${deltaLabel(f.delta)}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;font-size:12px;font-weight:800;color:#fff;background:${rs.cssVar}">${rs.label[0]}</span>`;
               }).join("")}</div>
                <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${forms.map((f) => `<span class="tnum" style="width:30px;text-align:center;font-size:11px;color:${deltaColor(f.delta)};font-weight:700">${deltaLabel(f.delta)}</span>`).join("")}</div>`
-            : `<span style="font-size:12.5px;color:rgba(234,242,251,.6)">Aún sin rondas. Tu forma empieza con la primera.</span>`}
+            : `<span style="font-size:12.5px;color:rgba(234,242,251,.6)">${t("debate.noRoundsForm")}</span>`}
         </div>
-        <button class="btn btn-sm" style="background:#fff;color:var(--otr-navy);font-weight:700" data-action="debate-record">${IC.plus} Registrar un debate</button>
+        <button class="btn btn-sm" style="background:#fff;color:var(--otr-navy);font-weight:700" data-action="debate-record">${IC.plus} ${t("debate.recordDebate")}</button>
       </div>
     </div>
   </div>`;
@@ -169,16 +170,16 @@ function viewOverview(d) {
 
   const kpis = `
     <div class="grid g-4" style="margin-bottom:18px">
-      <div class="tile">${C.kpi("Rondas adjudicadas", String(total), { ic: "flag" })}</div>
-      <div class="tile">${C.kpi("Victorias", String(wins), { ic: "trophy" })}</div>
-      <div class="tile">${C.kpi("% de victoria", String(winRate), { unit: "%", ic: "chart" })}</div>
-      <div class="tile">${C.kpi("Empates · derrotas", `${draws} · ${losses}`, { ic: "levels" })}</div>
+      <div class="tile">${C.kpi(t("debate.kpiAdjudicated"), String(total), { ic: "flag" })}</div>
+      <div class="tile">${C.kpi(t("debate.kpiWins"), String(wins), { ic: "trophy" })}</div>
+      <div class="tile">${C.kpi(t("debate.kpiWinRate"), String(winRate), { unit: "%", ic: "chart" })}</div>
+      <div class="tile">${C.kpi(t("debate.kpiDrawsLosses"), `${draws} · ${losses}`, { ic: "levels" })}</div>
     </div>`;
 
   const recentList = d.history.slice(0, 4);
   const recentCard = `
     <div class="card">
-      <div class="card-head"><h3>Debates recientes</h3><a href="#" onclick="return false" data-dtab="history" style="font-size:12.5px">Ver todos</a></div>
+      <div class="card-head"><h3>${t("debate.recentDebates")}</h3><a href="#" onclick="return false" data-dtab="history" style="font-size:12.5px">${t("debate.seeAll")}</a></div>
       <div class="card-body" style="padding:6px 16px 12px">
         ${recentList.length ? recentList.map((h) => {
           const rs = resultStyle(h.result);
@@ -187,13 +188,13 @@ function viewOverview(d) {
             <div style="flex:1;min-width:0"><div class="ai-t">${esc(h.opponent || "Rival")} · ${esc(h.format || "")}</div><div class="ai-c">${esc(h.eventName || "Práctica")}${h.roundLabel ? " · " + esc(h.roundLabel) : ""}</div></div>
             <span class="ai-w tnum" style="color:${deltaColor(h.delta != null ? h.delta : 0)}">${h.ratingAfter != null ? h.ratingAfter : ""}</span>
           </div>`;
-        }).join("") : `<div style="padding:14px 0"><p class="faint" style="font-size:13px">Historial en cero. Juega una práctica o registra tu primera ronda.</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-dtab="practice">${IC.mic} Ir a práctica</button></div>`}
+        }).join("") : `<div style="padding:14px 0"><p class="faint" style="font-size:13px">${t("debate.historyEmpty")}</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-dtab="practice">${IC.mic} ${t("debate.goToPractice")}</button></div>`}
       </div>
     </div>`;
 
   const nextEventCard = `
     <div class="card card-pad">
-      <div class="eyebrow" style="margin-bottom:2px">Próximo evento</div>
+      <div class="eyebrow" style="margin-bottom:2px">${t("debate.nextEvent")}</div>
       ${nextEvent
         ? `<b style="font-size:15px;line-height:1.3;display:block">${esc(nextEvent.name)}</b>
            <div class="row vcenter wrap" style="gap:8px;margin-top:8px;font-size:12.5px;color:var(--text-2)">
@@ -202,8 +203,8 @@ function viewOverview(d) {
              ${nextEvent.modality ? `<span class="dot-sep"></span><span>${esc(nextEvent.modality)}</span>` : ""}
            </div>
            ${nextEvent.startsLabel ? `<div class="row vcenter" style="gap:6px;margin-top:10px;font-size:13px;color:var(--text)">${IC.calendar} ${esc(nextEvent.startsLabel)}</div>` : ""}
-           <button class="btn btn-soft btn-sm btn-block" style="margin-top:14px" data-dtab="tournaments">Ver torneos ${IC.arrowR}</button>`
-        : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>Sin eventos en el radar</h4><p>Cuando se abran torneos los verás aquí. Llega entrenado.</p></div>`}
+           <button class="btn btn-soft btn-sm btn-block" style="margin-top:14px" data-dtab="tournaments">${t("debate.seeTournaments")} ${IC.arrowR}</button>`
+        : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>${t("debate.noEventsTitle")}</h4><p>${t("debate.noEventsBody")}</p></div>`}
     </div>`;
 
   return `
@@ -217,13 +218,13 @@ function viewOverview(d) {
 /* ================= SECCIÓN · MIS DEBATES ================= */
 function viewHistory(d) {
   if (!d.history.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>Registra tu primer debate</h4><p>Un debate (OTR o externo) o una práctica — cada ronda cuenta para tu rating.</p><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} Registrar un debate</button></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>${t("debate.historyEmptyTitle")}</h4><p>${t("debate.historyEmptyBody")}</p><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} ${t("debate.recordDebate")}</button></div></div>`;
   }
   const cards = d.history.map((h, i) => {
     const rs = resultStyle(h.result);
-    const src = String(h.source || "").toUpperCase() === "EXTERNAL" ? "Externo" : "OTR";
+    const src = String(h.source || "").toUpperCase() === "EXTERNAL" ? t("debate.sourceExternal") : "OTR";
     return `
-    <div class="tile click fade-up" data-debate="${esc(h.id || "")}" role="button" tabindex="0" aria-label="Ver detalle del debate ${esc(h.title || "")}" style="--d:${i % 8};border-left:3px solid ${rs.cssVar}">
+    <div class="tile click fade-up" data-debate="${esc(h.id || "")}" role="button" tabindex="0" aria-label="${t("debate.viewDebateDetail")} ${esc(h.title || "")}" style="--d:${i % 8};border-left:3px solid ${rs.cssVar}">
       <div class="row between vcenter" style="gap:10px">
         <span class="badge ${rs.tone}" style="font-weight:800;min-width:54px;justify-content:center">${rs.label}</span>
         <span class="badge ${src === "OTR" ? "sky" : ""}">${src}</span>
@@ -245,8 +246,8 @@ function viewHistory(d) {
     </div>`;
   }).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Tu palmarés</p><h1 class="page-title" style="font-size:20px">Mis debates</h1><div class="page-sub">${d.history.length} ronda${d.history.length === 1 ? "" : "s"} · toca una tarjeta para ver el ballot</div></div>
-    <button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} Registrar un debate</button></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.historyEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.historyTitle")}</h1><div class="page-sub">${d.history.length} ${d.history.length === 1 ? t("debate.roundSingular") : t("debate.roundPlural")} · ${t("debate.historySubTap")}</div></div>
+    <button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} ${t("debate.recordDebate")}</button></div>
     <div class="grid g-3">${cards}</div>`;
 }
 
@@ -278,42 +279,42 @@ function viewPractice() {
   const timer = `
     <div class="card card-pad fade-up">
       <div class="row between vcenter">
-        <div><div class="eyebrow" style="margin-bottom:2px">Práctica cronometrada</div><b style="font-size:15px">Flujo Public Forum</b></div>
-        <span class="badge sky" id="pf-phase-badge">Listo</span>
+        <div><div class="eyebrow" style="margin-bottom:2px">${t("debate.timedPractice")}</div><b style="font-size:15px">${t("debate.pfFlow")}</b></div>
+        <span class="badge sky" id="pf-phase-badge">${t("debate.ready")}</span>
       </div>
       <div style="text-align:center;margin:18px 0 8px">
         <div class="brand-font tnum" id="pf-clock" style="font-size:54px;font-weight:800;color:var(--otr-navy);line-height:1">0:00</div>
-        <div class="muted" id="pf-phase" style="font-size:13.5px;margin-top:4px">Pulsa "Iniciar" para empezar el Constructive</div>
+        <div class="muted" id="pf-phase" style="font-size:13.5px;margin-top:4px">${t("debate.pfStartHint")}</div>
       </div>
       <div class="bar thin navy" style="margin:8px 0 16px"><i id="pf-bar" style="width:0%"></i></div>
       <div class="row" style="gap:var(--s-2);justify-content:center">
-        <button class="btn btn-primary btn-sm" id="pf-start">${IC.play} Iniciar</button>
-        <button class="btn btn-soft btn-sm" id="pf-next">Siguiente fase ${IC.arrowR}</button>
-        <button class="btn btn-ghost btn-sm" id="pf-reset">${IC.refresh} Reiniciar</button>
+        <button class="btn btn-primary btn-sm" id="pf-start">${IC.play} ${t("debate.start")}</button>
+        <button class="btn btn-soft btn-sm" id="pf-next">${t("debate.nextPhase")} ${IC.arrowR}</button>
+        <button class="btn btn-ghost btn-sm" id="pf-reset">${IC.refresh} ${t("debate.reset")}</button>
       </div>
       <div class="divider"></div>
       <div class="row wrap" style="gap:6px" id="pf-steps">
         ${PF_FLOW.map((p, i) => `<span class="chip" data-step="${i}">${i + 1}. ${p.name} · ${Math.round(p.secs / 60)}m</span>`).join("")}
       </div>
-      <button class="btn btn-soft btn-sm btn-block" style="margin-top:16px" data-action="debate-record" data-source="OTR">${IC.check} Registrar resultado de práctica</button>
+      <button class="btn btn-soft btn-sm btn-block" style="margin-top:16px" data-action="debate-record" data-source="OTR">${IC.check} ${t("debate.recordPracticeResult")}</button>
     </div>`;
 
   const finder = `
     <div class="card card-pad fade-up" style="--d:1">
-      <div class="eyebrow" style="margin-bottom:2px">Encuentra compañero o rival</div>
-      <b style="font-size:15px">Cerca de tu rating (${d.rating})</b>
+      <div class="eyebrow" style="margin-bottom:2px">${t("debate.findPartner")}</div>
+      <b style="font-size:15px">${t("debate.nearYourRating")} (${d.rating})</b>
       <div class="stack" style="gap:2px;margin-top:12px">
         ${near.length ? near.map((r) => `
           <div class="row between vcenter" style="padding:9px 0;border-bottom:1px solid var(--border)">
             <span class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: "var(--otr-navy)" })}<span><span style="display:block;font-weight:600;font-size:13px">${r.name || "Debatiente"}</span><span class="faint" style="font-size:11.5px">${esc(r.tier || "")}</span></span></span>
             <span class="row vcenter" style="gap:8px"><span class="tnum" style="font-weight:700;font-size:13px">${r.rating}</span><span class="badge ${r.diff <= 50 ? "ok" : "sky"}" style="font-size:10.5px">±${r.diff}</span></span>
-          </div>`).join("") : `<p class="faint" style="font-size:13px">Tu cohort aún no entra a la arena. En cuanto jueguen rondas, tendrás rivales a tu altura.</p>`}
+          </div>`).join("") : `<p class="faint" style="font-size:13px">${t("debate.cohortEmptyFinder")}</p>`}
       </div>
-      <button class="btn btn-ghost btn-sm btn-block" style="margin-top:12px" data-dtab="leaderboard">Ver leaderboard completo ${IC.arrowR}</button>
+      <button class="btn btn-ghost btn-sm btn-block" style="margin-top:12px" data-dtab="leaderboard">${t("debate.seeFullLeaderboard")} ${IC.arrowR}</button>
     </div>`;
 
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Entrena bajo presión</p><h1 class="page-title" style="font-size:20px">Práctica</h1><div class="page-sub">Cronometra un flujo PF completo y registra el resultado. La práctica queda en tu historial; tu rating solo se mueve en rondas adjudicadas por un coach.</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.practiceEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.practiceTitle")}</h1><div class="page-sub">${t("debate.practiceSub")}</div></div></div>
     <div class="split">${timer}<div class="stack" style="gap:16px">${finder}</div></div>`;
 }
 
@@ -321,26 +322,26 @@ function viewPractice() {
 function viewLeaderboard() {
   const lb = getLeaderboard();
   if (!lb.rows.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>Entra en la clasificación</h4><p>Juega rondas adjudicadas y reclama tu posición antes que el resto del cohort.</p></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>${t("debate.lbEmptyTitle")}</h4><p>${t("debate.lbEmptyBody")}</p></div></div>`;
   }
   const meRow = lb.me
-    ? `<div class="alert info fade-up" style="margin-bottom:16px"><span class="ai">${IC.target}</span><div><div class="at">Tu posición</div>#${lb.me.rank} · ${lb.me.rating} de rating · ${esc(lb.me.tier || "")}</div></div>`
+    ? `<div class="alert info fade-up" style="margin-bottom:16px"><span class="ai">${IC.target}</span><div><div class="at">${t("debate.yourPosition")}</div>#${lb.me.rank} · ${lb.me.rating} ${t("debate.ofRating")} · ${esc(lb.me.tier || "")}</div></div>`
     : "";
   const rows = lb.rows.map((r) => `
     <tr ${r.you ? 'style="background:var(--action-soft)"' : ""}>
       <td><span class="badge ${r.rank <= 3 ? "gold" : ""}" style="min-width:30px;justify-content:center">${r.rank}</span></td>
       ${/* [auditoría] name/initials ya vienen esc() de queries (leaderboardRowsOut) → render crudo, sin doble-escape */""}
-      <td><div class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: r.you ? "var(--otr-sky-lo)" : "var(--otr-navy)" })}<b style="font-weight:600">${r.name || ""}${r.you ? ' <span class="badge sky" style="font-size:10px;margin-left:4px">Tú</span>' : ""}</b></div></td>
+      <td><div class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: r.you ? "var(--otr-sky-lo)" : "var(--otr-navy)" })}<b style="font-weight:600">${r.name || ""}${r.you ? ` <span class="badge sky" style="font-size:10px;margin-left:4px">${t("debate.youBadge")}</span>` : ""}</b></div></td>
       <td>${esc(r.tier || "")}</td>
       <td class="num tnum"><b>${r.rating}</b></td>
     </tr>`).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">El cohort</p><h1 class="page-title" style="font-size:20px">Leaderboard</h1><div class="page-sub">Ranking por rating Glicko-2 — solo cuentan las rondas adjudicadas</div></div></div>
-    ${proUpsellStrip("¿Listo para subir de tier? Descubre todo lo que incluye OTR Pro.")}
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.lbEyebrow")}</p><h1 class="page-title" style="font-size:20px">Leaderboard</h1><div class="page-sub">${t("debate.lbSub")}</div></div></div>
+    ${proUpsellStrip(t("debate.lbUpsell"))}
     ${meRow}
     <div class="table-wrap scroll-m fade-up">
       <table class="tbl">
-        <thead><tr><th style="width:60px">#</th><th>Debatiente</th><th>Tier</th><th class="num">Rating</th></tr></thead>
+        <thead><tr><th style="width:60px">#</th><th>${t("debate.colDebater")}</th><th>${t("debate.colTier")}</th><th class="num">${t("debate.colRating")}</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
@@ -349,8 +350,11 @@ function viewLeaderboard() {
 /* ================= SECCIÓN · TORNEOS ================= */
 function viewTournaments() {
   const ts = getTournaments();
+  // `t` (i18n) queda sombreado por el parámetro del .map de abajo; resolvemos las
+  // etiquetas estáticas aquí (donde `t` sigue siendo el helper) y las usamos vía TXT.
+  const TXT = { registered: t("debate.registered"), register: t("debate.register") };
   if (!ts.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.calendar}</div><h4>Sin torneos por ahora</h4><p>Cuando OTR abra inscripciones lo verás aquí. Mientras tanto, suma rondas de práctica.</p></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.calendar}</div><h4>${t("debate.tnEmptyTitle")}</h4><p>${t("debate.tnEmptyBody")}</p></div></div>`;
   }
   const cards = ts.map((t, i) => `
     <div class="tile fade-up" data-tournament-card="${esc(t.id || "")}" style="display:flex;flex-direction:column;--d:${i}">
@@ -363,15 +367,15 @@ function viewTournaments() {
       <div class="row between vcenter" style="margin-top:auto;gap:10px">
         ${statusBadge(t.status)}
         ${t.registered
-          ? `<span class="badge ok"><span class="dot"></span>Inscrito</span>`
+          ? `<span class="badge ok"><span class="dot"></span>${TXT.registered}</span>`
           : String(t.status || "").toLowerCase() === "upcoming"
-          ? `<button class="btn btn-primary btn-sm" data-tournament="${esc(t.id || "")}">${IC.plus} Registrarme</button>`
+          ? `<button class="btn btn-primary btn-sm" data-tournament="${esc(t.id || "")}">${IC.plus} ${TXT.register}</button>`
           : ``/* [DEBATE-5] LIVE/cerrado: la API rechaza el registro (409), no mostramos boton — el badge de estado ya lo comunica */}
       </div>
     </div>`).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Compite de verdad</p><h1 class="page-title" style="font-size:20px">Torneos</h1><div class="page-sub">Inscríbete a torneos OTR y externos</div></div></div>
-    ${proUpsellStrip("Llega a los torneos con ventaja. Conoce OTR Pro.")}
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.tnEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.tnTitle")}</h1><div class="page-sub">${t("debate.tnSub")}</div></div></div>
+    ${proUpsellStrip(t("debate.tnUpsell"))}
     <div class="grid g-3">${cards}</div>`;
 }
 
@@ -398,12 +402,12 @@ function viewAnalytics(d) {
   // de los gráficos — el botón lleva a la pantalla de membresía.
   if (a.locked) {
     return `
-      <div class="page-head fade-up"><div><p class="eyebrow">Conoce tu juego</p><h1 class="page-title" style="font-size:20px">Analytics</h1><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
+      <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.anEyebrow")}</p><h1 class="page-title" style="font-size:20px">Analytics</h1><div class="page-sub">${t("debate.anSub")}</div></div></div>
       <div class="card fade-up"><div class="empty" style="padding:34px 24px">
         <div class="ill">${IC.chart}</div>
-        <h4>Analytics completo es parte de OTR Pro</h4>
-        <p>Desbloquea tu desglose por formato, por lado (Pro / Con) y el promedio por criterio de la rúbrica del juez. Tus datos ya se están registrando — activa Pro y úsalos a tu favor.</p>
-        <button class="btn btn-primary btn-sm" style="margin-top:14px" data-go="membership">${IC.star} Ver OTR Pro</button>
+        <h4>${t("debate.anLockedTitle")}</h4>
+        <p>${t("debate.anLockedBody")}</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:14px" data-go="membership">${IC.star} ${t("debate.seeOtrPro")}</button>
       </div></div>`;
   }
   const byFormat = Array.isArray(a.byFormat) ? a.byFormat : [];
@@ -411,24 +415,24 @@ function viewAnalytics(d) {
   const criteria = Array.isArray(a.criteria) ? a.criteria : [];
   const hasAny = byFormat.length || bySide.length || criteria.length;
   if (!hasAny) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.chart}</div><h4>Aún sin datos</h4><p>Juega rondas adjudicadas para ver tu desglose por formato y lado.</p></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.chart}</div><h4>${t("debate.anNoDataTitle")}</h4><p>${t("debate.anNoDataBody")}</p></div></div>`;
   }
   const formatCard = `
     <div class="card card-pad fade-up">
-      <div class="eyebrow" style="margin-bottom:2px">Rendimiento</div>
-      <b style="font-size:15px">Por formato</b>
-      <div style="margin-top:10px">${byFormat.length ? byFormat.map(recordRow).join("") : `<p class="faint" style="font-size:13px">Sin datos por formato.</p>`}</div>
+      <div class="eyebrow" style="margin-bottom:2px">${t("debate.performance")}</div>
+      <b style="font-size:15px">${t("debate.byFormat")}</b>
+      <div style="margin-top:10px">${byFormat.length ? byFormat.map(recordRow).join("") : `<p class="faint" style="font-size:13px">${t("debate.noFormatData")}</p>`}</div>
     </div>`;
   const sideCard = `
     <div class="card card-pad fade-up" style="--d:1">
-      <div class="eyebrow" style="margin-bottom:2px">Rendimiento</div>
-      <b style="font-size:15px">Por lado (Pro / Con)</b>
-      <div style="margin-top:10px">${bySide.length ? bySide.map(recordRow).join("") : `<p class="faint" style="font-size:13px">Sin datos por lado.</p>`}</div>
+      <div class="eyebrow" style="margin-bottom:2px">${t("debate.performance")}</div>
+      <b style="font-size:15px">${t("debate.bySide")}</b>
+      <div style="margin-top:10px">${bySide.length ? bySide.map(recordRow).join("") : `<p class="faint" style="font-size:13px">${t("debate.noSideData")}</p>`}</div>
     </div>`;
   const critCard = `
     <div class="card card-pad fade-up" style="--d:2">
       <div class="row between vcenter">
-        <div><div class="eyebrow" style="margin-bottom:2px">Rúbrica del juez</div><b style="font-size:15px">Promedio por criterio</b></div>
+        <div><div class="eyebrow" style="margin-bottom:2px">${t("debate.judgeRubric")}</div><b style="font-size:15px">${t("debate.avgByCriterion")}</b></div>
         <span class="badge sky">0–10</span>
       </div>
       <div style="margin-top:12px">
@@ -436,11 +440,11 @@ function viewAnalytics(d) {
           const avg = Math.max(0, Math.min(10, Number(c.avg) || 0));
           const pct = Math.round((avg / 10) * 100);
           return `<div class="comp-row"><span class="cr-name">${esc(c.criterion || c.name || "")}</span><span class="cr-bar">${C.bar(pct, { cls: "navy" })}</span><span class="cr-score">${avg.toFixed(1)}</span></div>`;
-        }).join("") : `<p class="faint" style="font-size:13px">Sin ballots todavía.</p>`}
+        }).join("") : `<p class="faint" style="font-size:13px">${t("debate.noBallotsYet")}</p>`}
       </div>
     </div>`;
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Conoce tu juego</p><h1 class="page-title" style="font-size:20px">Analytics</h1><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.anEyebrow")}</p><h1 class="page-title" style="font-size:20px">Analytics</h1><div class="page-sub">${t("debate.anSub")}</div></div></div>
     <div class="split">${critCard}<div class="stack" style="gap:16px">${formatCard}${sideCard}</div></div>`;
 }
 
@@ -498,17 +502,17 @@ S.debateHub = {
         e.preventDefault();
         const id = btn.getAttribute("data-tournament");
         btn.disabled = true;
-        btn.textContent = "Registrando…";
+        btn.textContent = t("debate.registering");
         try {
           await (window as any).api("/api/tournaments", { tournamentId: id });
-          (window as any).toast?.("Inscripción enviada — nos vemos en la arena.", "ok");
+          (window as any).toast?.(t("debate.registerSent"), "ok");
           // marca localmente como inscrito y repinta (sin recarga completa)
-          (DB.tournaments || []).forEach((t) => { if (t.id === id) t.registered = true; });
+          (DB.tournaments || []).forEach((tt) => { if (tt.id === id) tt.registered = true; });
           repaint();
         } catch (err) {
-          (window as any).toast?.((err && err.message) || "No se pudo registrar", "danger");
+          (window as any).toast?.((err && err.message) || t("debate.registerError"), "danger");
           btn.disabled = false;
-          btn.innerHTML = `${IC.plus} Registrarme`;
+          btn.innerHTML = `${IC.plus} ${t("debate.register")}`;
         }
       })
     );
@@ -533,7 +537,7 @@ async function openDebateDetail(id) {
   try {
     data = await (window as any).api(`/api/debates/${encodeURIComponent(id)}`, null, "GET");
   } catch (e) {
-    (window as any).toast?.("No se pudo cargar el detalle del debate", "danger");
+    (window as any).toast?.(t("debate.detailLoadError"), "danger");
   }
   const dbt = (data && (data.debate || data)) || null;
   const rs = resultStyle(dbt && dbt.result);
@@ -550,17 +554,17 @@ async function openDebateDetail(id) {
       </div>
       ${ballots.length ? ballots.map((b) => `
         <div class="card card-pad" style="margin-bottom:10px">
-          <div class="row between vcenter"><b style="font-size:13.5px">Juez: ${esc(b.judge || "—")}</b></div>
+          <div class="row between vcenter"><b style="font-size:13.5px">${t("debate.judge")}: ${esc(b.judge || "—")}</b></div>
           ${Array.isArray(b.scores) && b.scores.length ? `<div style="margin-top:10px">${b.scores.map((s) => {
             const v = Math.max(0, Math.min(10, Number(s.score) || 0));
             return `<div class="comp-row" style="padding:9px 0"><span class="cr-name" style="width:200px">${s.flagged ? `<span style="color:var(--warn)">${IC.flag}</span> ` : ""}${esc(s.criterion || "")}</span><span class="cr-bar">${C.bar((v / 10) * 100, { cls: "navy" })}</span><span class="cr-score">${v}</span></div>`;
           }).join("")}</div>` : ""}
           ${b.comments ? `<div class="callout" style="margin-top:10px">${esc(b.comments)}</div>` : ""}
-          ${b.recordingUrl ? `<a class="btn btn-soft btn-sm" style="margin-top:10px" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener">${IC.play} Ver grabación</a>` : ""}
-        </div>`).join("") : `<div class="empty" style="padding:24px"><div class="ill">${IC.doc}</div><h4>Sin ballot todavía</h4><p>Esta ronda aún no tiene un ballot del juez registrado.</p></div>`}`
-    : `<div class="empty" style="padding:24px"><div class="ill">${IC.doc}</div><h4>No se pudo cargar</h4><p>Intenta de nuevo más tarde.</p></div>`;
+          ${b.recordingUrl ? `<a class="btn btn-soft btn-sm" style="margin-top:10px" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener">${IC.play} ${t("debate.watchRecording")}</a>` : ""}
+        </div>`).join("") : `<div class="empty" style="padding:24px"><div class="ill">${IC.doc}</div><h4>${t("debate.noBallotTitle")}</h4><p>${t("debate.noBallotBody")}</p></div>`}`
+    : `<div class="empty" style="padding:24px"><div class="ill">${IC.doc}</div><h4>${t("debate.loadFailedTitle")}</h4><p>${t("debate.loadFailedBody")}</p></div>`;
 
-  openModal("Detalle del debate", body);
+  openModal(t("debate.detailModalTitle"), body);
 }
 
 /* ---------------- form: registrar un debate (OTR o externo) ---------------- */
@@ -568,35 +572,35 @@ function openRecordDebate(forcedSource, onDone) {
   const isPractice = String(forcedSource || "").toUpperCase() === "OTR";
   const body = `
     <div class="stack" style="gap:12px">
-      <div class="field"><label class="label">Resultado</label>
+      <div class="field"><label class="label">${t("debate.fieldResult")}</label>
         <div class="seg" id="dr-result">
-          <button type="button" data-v="WIN" class="on">Victoria</button>
-          <button type="button" data-v="LOSS">Derrota</button>
-          <button type="button" data-v="DRAW">Empate</button>
+          <button type="button" data-v="WIN" class="on">${t("debate.resultWin")}</button>
+          <button type="button" data-v="LOSS">${t("debate.resultLoss")}</button>
+          <button type="button" data-v="DRAW">${t("debate.resultDraw")}</button>
         </div>
       </div>
-      <div class="field"><label class="label">Formato</label>
+      <div class="field"><label class="label">${t("debate.fieldFormat")}</label>
         <select class="select" id="dr-format"><option>Public Forum</option><option>Lincoln-Douglas</option><option>Parliamentary</option><option>World Schools</option><option>Policy</option></select>
       </div>
-      <div class="field"><label class="label">Lado</label>
+      <div class="field"><label class="label">${t("debate.fieldSide")}</label>
         <select class="select" id="dr-side"><option value="PRO">Pro</option><option value="CON">Con</option></select>
       </div>
-      <div class="field"><label class="label">Rival</label><input class="input" id="dr-opponent" placeholder="Equipo o debatiente rival"/></div>
-      <div class="field"><label class="label">Compañero (opcional)</label><input class="input" id="dr-partner" placeholder="Tu compañero de equipo"/></div>
+      <div class="field"><label class="label">${t("debate.fieldOpponent")}</label><input class="input" id="dr-opponent" placeholder="${t("debate.phOpponent")}"/></div>
+      <div class="field"><label class="label">${t("debate.fieldPartner")}</label><input class="input" id="dr-partner" placeholder="${t("debate.phPartner")}"/></div>
       ${!isPractice ? `
-      <div class="field"><label class="label">Fuente</label>
+      <div class="field"><label class="label">${t("debate.fieldSource")}</label>
         <div class="seg" id="dr-source">
           <button type="button" data-v="OTR" class="on">OTR</button>
-          <button type="button" data-v="EXTERNAL">Externo / NSDA</button>
+          <button type="button" data-v="EXTERNAL">${t("debate.sourceExternalNsda")}</button>
         </div>
       </div>` : ""}
-      <div class="field"><label class="label">Evento (opcional)</label><input class="input" id="dr-event" placeholder="Torneo o sesión de práctica"/></div>
-      <div class="field"><label class="label">Ronda (opcional)</label><input class="input" id="dr-round" placeholder="Round 3, Cuartos…"/></div>
-      <div class="field"><label class="label">Comentarios del juez (opcional)</label><textarea class="input" id="dr-comments" rows="3" style="resize:vertical;font-family:inherit;line-height:1.5"></textarea></div>
+      <div class="field"><label class="label">${t("debate.fieldEvent")}</label><input class="input" id="dr-event" placeholder="${t("debate.phEvent")}"/></div>
+      <div class="field"><label class="label">${t("debate.fieldRound")}</label><input class="input" id="dr-round" placeholder="${t("debate.phRound")}"/></div>
+      <div class="field"><label class="label">${t("debate.fieldJudgeComments")}</label><textarea class="input" id="dr-comments" rows="3" style="resize:vertical;font-family:inherit;line-height:1.5"></textarea></div>
     </div>`;
 
-  openModal(isPractice ? "Registrar resultado de práctica" : "Registrar un debate", body, {
-    okLabel: "Guardar",
+  openModal(isPractice ? t("debate.recordPracticeResult") : t("debate.recordDebate"), body, {
+    okLabel: t("debate.save"),
     onOk: async (scrim) => {
       const seg = (id) => scrim.querySelector(`#${id} button.on`)?.getAttribute("data-v");
       const val = (id) => (scrim.querySelector(`#${id}`)?.value || "").trim();
@@ -612,7 +616,7 @@ function openRecordDebate(forcedSource, onDone) {
         comments: val("dr-comments"),
       };
       await (window as any).api("/api/debates", payload);
-      (window as any).toast?.("Debate registrado", "ok");
+      (window as any).toast?.(t("debate.debateRecorded"), "ok");
       onDone && onDone();
     },
   });
@@ -623,8 +627,8 @@ function openModal(title, bodyHtml, opts = {}) {
   const scrim = document.createElement("div");
   scrim.className = "modal-scrim";
   const foot = opts.onOk
-    ? `<div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button><button class="btn btn-primary" data-ok>${esc(opts.okLabel || "Guardar")}</button></div>`
-    : `<div class="modal-foot"><button class="btn btn-ghost" data-x>Cerrar</button></div>`;
+    ? `<div class="modal-foot"><button class="btn btn-ghost" data-x>${t("debate.cancel")}</button><button class="btn btn-primary" data-ok>${esc(opts.okLabel || t("debate.save"))}</button></div>`
+    : `<div class="modal-foot"><button class="btn btn-ghost" data-x>${t("debate.close")}</button></div>`;
   scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>${esc(title)}</h3></div><div class="modal-body">${bodyHtml}<p class="dm-err" style="color:var(--danger);font-size:13px;display:none;margin:8px 0 0"></p></div>${foot}</div>`;
   document.body.appendChild(scrim);
   const close = () => scrim.remove();
@@ -643,15 +647,15 @@ function openModal(title, bodyHtml, opts = {}) {
   const okBtn = scrim.querySelector("[data-ok]");
   if (okBtn && opts.onOk) {
     okBtn.addEventListener("click", async () => {
-      okBtn.textContent = "Guardando…";
+      okBtn.textContent = t("debate.saving");
       okBtn.disabled = true;
       try {
         await opts.onOk(scrim);
         close();
       } catch (err) {
         const e = scrim.querySelector(".dm-err");
-        if (e) { e.textContent = (err && err.message) || "Error"; e.style.display = "block"; }
-        okBtn.textContent = esc(opts.okLabel || "Guardar");
+        if (e) { e.textContent = (err && err.message) || t("debate.error"); e.style.display = "block"; }
+        okBtn.textContent = esc(opts.okLabel || t("debate.save"));
         okBtn.disabled = false;
       }
     });
@@ -684,16 +688,16 @@ function mountPfTimer(root) {
   function paint() {
     if (idx < 0) {
       clockEl.textContent = "0:00";
-      phaseEl.textContent = 'Pulsa "Iniciar" para empezar el Constructive';
-      if (badgeEl) badgeEl.textContent = "Listo";
+      phaseEl.textContent = t("debate.pfStartHint");
+      if (badgeEl) badgeEl.textContent = t("debate.ready");
       if (barEl) barEl.style.width = "0%";
       stepEls.forEach((s) => s.classList.remove("active"));
       return;
     }
     const phase = PF_FLOW[idx];
     clockEl.textContent = fmtClock(Math.max(0, remaining));
-    phaseEl.textContent = `Fase ${idx + 1} de ${PF_FLOW.length} · ${phase.name}`;
-    if (badgeEl) badgeEl.textContent = running ? phase.name : "Pausa";
+    phaseEl.textContent = `${t("debate.phase")} ${idx + 1} ${t("debate.ofWord")} ${PF_FLOW.length} · ${phase.name}`;
+    if (badgeEl) badgeEl.textContent = running ? phase.name : t("debate.paused");
     if (barEl) barEl.style.width = `${Math.round(((phase.secs - remaining) / phase.secs) * 100)}%`;
     stepEls.forEach((s, i) => s.classList.toggle("active", i === idx));
   }
@@ -703,7 +707,7 @@ function mountPfTimer(root) {
     if (remaining <= 0) {
       remaining = 0;
       paint();
-      (window as any).toast?.(`Fin de ${PF_FLOW[idx].name}`, "warn");
+      (window as any).toast?.(`${t("debate.endOf")} ${PF_FLOW[idx].name}`, "warn");
       goNext(true);
       return;
     }
@@ -713,16 +717,16 @@ function mountPfTimer(root) {
     idx = i;
     remaining = PF_FLOW[idx].secs;
     running = true;
-    if (startBtn) startBtn.innerHTML = `${IC.pause} Pausar`;
+    if (startBtn) startBtn.innerHTML = `${IC.pause} ${t("debate.pause")}`;
     paint();
   }
   function goNext(auto) {
     if (idx < 0) { startPhase(0); return; }
     if (idx >= PF_FLOW.length - 1) {
       running = false;
-      if (!auto) (window as any).toast?.("Flujo PF completado", "ok");
-      if (badgeEl) badgeEl.textContent = "Completado";
-      if (startBtn) startBtn.innerHTML = `${IC.refresh} Reiniciar flujo`;
+      if (!auto) (window as any).toast?.(t("debate.pfCompleted"), "ok");
+      if (badgeEl) badgeEl.textContent = t("debate.completed");
+      if (startBtn) startBtn.innerHTML = `${IC.refresh} ${t("debate.restartFlow")}`;
       return;
     }
     startPhase(idx + 1);
@@ -735,12 +739,12 @@ function mountPfTimer(root) {
     if (idx < 0) { startPhase(0); return; }
     if (idx >= PF_FLOW.length - 1 && !running && remaining <= 0) { startPhase(0); return; }
     running = !running;
-    startBtn.innerHTML = running ? `${IC.pause} Pausar` : `${IC.play} Reanudar`;
-    if (badgeEl && !running) badgeEl.textContent = "Pausa";
+    startBtn.innerHTML = running ? `${IC.pause} ${t("debate.pause")}` : `${IC.play} ${t("debate.resume")}`;
+    if (badgeEl && !running) badgeEl.textContent = t("debate.paused");
     paint();
   });
   nextBtn?.addEventListener("click", () => goNext(false));
-  resetBtn?.addEventListener("click", () => { running = false; idx = -1; remaining = 0; if (startBtn) startBtn.innerHTML = `${IC.play} Iniciar`; paint(); });
+  resetBtn?.addEventListener("click", () => { running = false; idx = -1; remaining = 0; if (startBtn) startBtn.innerHTML = `${IC.play} ${t("debate.start")}`; paint(); });
 
   paint();
 }

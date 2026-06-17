@@ -14,6 +14,31 @@
    Default y fallback: 'es'. Si una llave no existe en el idioma activo,
    cae a 'es'; si tampoco existe, devuelve la propia llave (nunca rompe). */
 
+// [i18n Fase 2] Diccionarios por pantalla (app/lib/i18n-keys/*.ts). Cada pantalla envuelve sus
+// strings estáticos en t("<prefijo>.<key>") y aporta su {es,en}; aquí se fusionan en el DICT
+// central para que t() los resuelva. Sin este merge, t() devolvería la clave cruda.
+import { dict as d_core } from "./i18n-keys/core";
+import { dict as d_learn } from "./i18n-keys/learn";
+import { dict as d_debate } from "./i18n-keys/debate";
+import { dict as d_lifetime } from "./i18n-keys/lifetime";
+import { dict as d_mkt } from "./i18n-keys/mkt";
+import { dict as d_mb } from "./i18n-keys/mb";
+import { dict as d_hub } from "./i18n-keys/hub";
+import { dict as d_settings } from "./i18n-keys/settings";
+import { dict as d_parent } from "./i18n-keys/parent";
+import { dict as d_profile } from "./i18n-keys/profile";
+import { dict as d_cw } from "./i18n-keys/cw";
+import { dict as d_teacher } from "./i18n-keys/teacher";
+import { dict as d_comm } from "./i18n-keys/comm";
+import { dict as d_admin } from "./i18n-keys/admin";
+import { dict as d_au } from "./i18n-keys/au";
+import { dict as d_extra } from "./i18n-keys/extra";
+import { dict as d_arsenal } from "./i18n-keys/arsenal";
+import { dict as d_events } from "./i18n-keys/events";
+import { dict as d_cert } from "./i18n-keys/cert";
+import { dict as d_placement } from "./i18n-keys/placement";
+import { dict as d_room } from "./i18n-keys/room";
+
 const DICT = {
   es: {
     // grupos del sidebar
@@ -132,6 +157,17 @@ const DICT = {
     "soon.body": "This section is arriving in this phase. We're polishing the final details.",
   },
 };
+
+// Fusiona los diccionarios por pantalla en el DICT central (chrome + pantallas).
+// Object.assign respeta las claves ya presentes del chrome y añade las de cada pantalla.
+for (const d of [
+  d_core, d_learn, d_debate, d_lifetime, d_mkt, d_mb, d_hub, d_settings, d_parent,
+  d_profile, d_cw, d_teacher, d_comm, d_admin, d_au, d_extra, d_arsenal, d_events,
+  d_cert, d_placement, d_room,
+]) {
+  if (d && d.es) Object.assign(DICT.es, d.es);
+  if (d && d.en) Object.assign(DICT.en, d.en);
+}
 
 export const LANGS = ["es", "en"];
 const DEFAULT_LANG = "es";

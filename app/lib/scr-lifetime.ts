@@ -21,6 +21,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
@@ -92,7 +93,7 @@ function identityHero(lt) {
   const id = lt.identity;
   const meta = [];
   // ageBand viene crudo ('minor'|'adult'): solo el caso menor aporta señal al usuario.
-  if (id.ageBand === "minor") meta.push("Menor — cuenta protegida");
+  if (id.ageBand === "minor") meta.push(t("lifetime.minorProtected"));
   if (id.location) meta.push(esc(id.location));
   // memberSinceLabel ya incluye el prefijo ("Miembro desde octubre 2025").
   if (id.memberSinceLabel) meta.push(esc(id.memberSinceLabel));
@@ -101,7 +102,7 @@ function identityHero(lt) {
     <div class="row vcenter wrap" style="gap:18px">
       ${C.avatar(esc(id.initials), { size: "lg", bg: "var(--otr-navy)" })}
       <div style="flex:1;min-width:220px">
-        <p class="eyebrow">Tu historia en OTR</p>
+        <p class="eyebrow">${t("lifetime.heroEyebrow")}</p>
         <div class="row vcenter wrap" style="gap:10px;margin-top:3px">
           <h1 class="brand-font" style="font-size:24px;font-weight:800;margin:0">${esc(id.name || "Estudiante OTR")}</h1>
           ${C.levelBadge(esc(id.level))}
@@ -146,7 +147,7 @@ function radarSvg(skills) {
     return `<text x="${x.toFixed(1)}" y="${(y + dy).toFixed(1)}" text-anchor="${anchor}" font-size="11" font-weight="650" fill="var(--text-2)">${esc(s.name || s.skill || "")}</text>`;
   }).join("");
   return `
-  <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto" role="img" aria-label="Radar de habilidades">
+  <svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;display:block;margin:0 auto" role="img" aria-label="${t("lifetime.radarAria")}">
     ${rings}${axes}
     <polygon points="${scorePoly}" style="fill:color-mix(in srgb,var(--otr-sky) 24%, transparent)" stroke="var(--otr-sky-lo)" stroke-width="2" stroke-linejoin="round"/>
     ${dots}${labels}
@@ -162,16 +163,16 @@ function skillRows(skills) {
     const events = Array.isArray(s.events) ? s.events : [];
     const expanded = !open ? "" : `
       <div style="margin:2px 0 12px;padding:12px 14px;background:var(--n-25);border:1px solid var(--border);border-radius:var(--r-md)">
-        <div class="eyebrow" style="margin-bottom:6px">Qué lo movió</div>
+        <div class="eyebrow" style="margin-bottom:6px">${t("lifetime.whatMovedIt")}</div>
         ${events.length
           ? events.map((e, k) => `<div class="row between vcenter" style="padding:7px 0;${k < events.length - 1 ? "border-bottom:1px solid var(--border)" : ""}">
               <span style="font-size:13px">${esc(e.title || "")}</span>
               <span class="faint" style="font-size:11.5px;flex:none;margin-left:12px">${esc(e.whenLabel || "")}</span>
             </div>`).join("")
-          : `<p class="faint" style="font-size:12.5px">Aún sin eventos atribuidos. Tus próximas lecciones, rondas y ballots moverán esta habilidad.</p>`}
+          : `<p class="faint" style="font-size:12.5px">${t("lifetime.noEventsYet")}</p>`}
       </div>`;
     return `
-    <div data-lpskill="${esc(key)}" role="button" tabindex="0" aria-expanded="${open ? 'true' : 'false'}" style="cursor:pointer" title="Ver qué movió esta habilidad">
+    <div data-lpskill="${esc(key)}" role="button" tabindex="0" aria-expanded="${open ? 'true' : 'false'}" style="cursor:pointer" title="${t("lifetime.seeWhatMoved")}">
       <div class="comp-row">
         <span class="cr-name row vcenter" style="gap:6px"><span style="display:inline-flex;width:13px;height:13px;color:var(--text-3);transition:transform .15s;transform:rotate(${open ? 90 : 0}deg)">${IC.chevR}</span>${esc(s.name || s.skill || "")}</span>
         <span class="cr-bar">${C.bar(score, { cls: "navy" })}</span>
@@ -187,17 +188,17 @@ function skillGraphCard(lt) {
     return `
     <div class="card fade-up" style="--d:1;margin-bottom:18px"><div class="empty">
       <div class="ill">${IC.target}</div>
-      <h4>Tu Skill Graph se está formando</h4>
-      <p>Completa lecciones y rondas adjudicadas: cada evento alimenta tus habilidades.</p>
-      <button class="btn btn-primary btn-sm" onclick="go('course')">${IC.book} Ir a mis cursos</button>
+      <h4>${t("lifetime.skillEmptyTitle")}</h4>
+      <p>${t("lifetime.skillEmptyBody")}</p>
+      <button class="btn btn-primary btn-sm" onclick="go('course')">${IC.book} ${t("lifetime.goToCourses")}</button>
     </div></div>`;
   }
   const avg = Math.round(skills.reduce((a, s) => a + clampScore(s.score), 0) / skills.length);
   return `
   <div class="card card-pad fade-up" style="--d:1;margin-bottom:18px">
     <div class="row between vcenter wrap" style="gap:10px">
-      <div><div class="eyebrow" style="margin-bottom:2px">Skill Graph</div><b style="font-size:15px">Tus habilidades, con historia</b></div>
-      <span class="badge sky">${avg} promedio</span>
+      <div><div class="eyebrow" style="margin-bottom:2px">${t("lifetime.skillEyebrow")}</div><b style="font-size:15px">${t("lifetime.skillTitle")}</b></div>
+      <span class="badge sky">${avg} ${t("lifetime.average")}</span>
     </div>
     <div class="row" style="gap:28px;flex-wrap:wrap;align-items:flex-start;margin-top:14px">
       <div style="flex:0 1 360px;min-width:260px">${radarSvg(skills)}</div>
@@ -215,15 +216,15 @@ function ledgerTiles(lt) {
   const L = lt.ledger;
   const fmt = (n) => Number(n || 0).toLocaleString("es");
   const top = [
-    ["Cursos completados", fmt(L.coursesCompleted), "book"],
-    ["Lecciones terminadas", fmt(L.lessonsDone), "check"],
-    ["Debates competidos", fmt(L.debates), "mic"],
-    ["Victorias", fmt(L.wins), "trophy"],
+    [t("lifetime.ledgerCourses"), fmt(L.coursesCompleted), "book"],
+    [t("lifetime.ledgerLessons"), fmt(L.lessonsDone), "check"],
+    [t("lifetime.ledgerDebates"), fmt(L.debates), "mic"],
+    [t("lifetime.ledgerWins"), fmt(L.wins), "trophy"],
   ];
   const bottom = [
-    ["Sesiones asistidas", fmt(L.sessionsAttended), "headset"],
-    ["Torneos", fmt(L.tournaments), "flag"],
-    ["Horas de coaching", fmt(L.hoursStudied), "clock"],
+    [t("lifetime.ledgerSessions"), fmt(L.sessionsAttended), "headset"],
+    [t("lifetime.ledgerTournaments"), fmt(L.tournaments), "flag"],
+    [t("lifetime.ledgerHours"), fmt(L.hoursStudied), "clock"],
   ];
   return `
   <div class="fade-up" style="--d:2;margin-bottom:18px">
@@ -261,13 +262,13 @@ function performanceCard(lt) {
   const first = hist[0], lastH = hist[hist.length - 1];
   return `
   <div class="card card-pad">
-    <div class="eyebrow" style="margin-bottom:2px">Performance</div>
-    <b style="font-size:15px">Tu rating competitivo</b>
+    <div class="eyebrow" style="margin-bottom:2px">${t("lifetime.perfEyebrow")}</div>
+    <b style="font-size:15px">${t("lifetime.perfTitle")}</b>
     <div class="row vcenter" style="gap:12px;margin-top:12px">
       <span class="brand-font tnum" style="font-size:42px;font-weight:800;line-height:1;color:var(--otr-navy)">${p.rating}</span>
       <div class="stack" style="gap:5px">
         <span class="badge sky"><span class="dot"></span>${esc(p.tier)}</span>
-        <span class="faint" style="font-size:11.5px">±${p.rd} RD ${p.provisional ? "· provisional" : "· estable"}</span>
+        <span class="faint" style="font-size:11.5px">±${p.rd} RD · ${p.provisional ? t("lifetime.provisional") : t("lifetime.stable")}</span>
       </div>
     </div>
     ${hist.length >= 2
@@ -276,8 +277,8 @@ function performanceCard(lt) {
            <span class="faint" style="font-size:11px">${esc((first && first.label) || "")}</span>
            <span class="faint" style="font-size:11px">${esc((lastH && lastH.label) || "")}${lastH && lastH.tierAfter ? ` · ${esc(lastH.tierAfter)}` : ""}</span>
          </div></div>`
-      : `<p class="faint" style="font-size:12.5px;margin-top:12px">Tu curva de rating aparecerá aquí cuando acumules rondas adjudicadas.</p>`}
-    <button class="btn btn-soft btn-sm btn-block" style="margin-top:14px" onclick="go('debate')">Ver Debate Hub ${IC.arrowR}</button>
+      : `<p class="faint" style="font-size:12.5px;margin-top:12px">${t("lifetime.perfEmpty")}</p>`}
+    <button class="btn btn-soft btn-sm btn-block" style="margin-top:14px" onclick="go('debate')">${t("lifetime.viewDebateHub")} ${IC.arrowR}</button>
   </div>`;
 }
 
@@ -288,8 +289,8 @@ function credentialsCard(lt) {
   const creds = lt.credentials;
   return `
   <div class="card card-pad">
-    <div class="eyebrow" style="margin-bottom:2px">Credenciales</div>
-    <b style="font-size:15px">Certificaciones verificables</b>
+    <div class="eyebrow" style="margin-bottom:2px">${t("lifetime.credEyebrow")}</div>
+    <b style="font-size:15px">${t("lifetime.credTitle")}</b>
     <div class="stack" style="gap:10px;margin-top:12px">
       ${creds.length
         ? creds.map((c) => `
@@ -297,10 +298,10 @@ function credentialsCard(lt) {
             <span style="flex:none;width:38px;height:38px;border-radius:50%;background:var(--otr-navy);color:#fff;display:inline-flex;align-items:center;justify-content:center"><span style="display:inline-flex;width:18px;height:18px">${IC.award}</span></span>
             <div style="flex:1;min-width:0">
               <b style="font-size:13px;line-height:1.3;display:block">${esc(c.title || "Certificado")}</b>
-              ${c.issuedLabel ? `<span class="faint" style="font-size:11.5px">Emitido ${esc(c.issuedLabel)}</span>` : ""}
+              ${c.issuedLabel ? `<span class="faint" style="font-size:11.5px">${t("lifetime.issued")} ${esc(c.issuedLabel)}</span>` : ""}
             </div>
           </div>`).join("")
-        : `<p class="faint" style="font-size:12.5px">Cuando completes un programa, tu certificación aparecerá aquí — prueba verificable de lo que sabes hacer.</p>`}
+        : `<p class="faint" style="font-size:12.5px">${t("lifetime.credEmpty")}</p>`}
     </div>
   </div>`;
 }
@@ -320,9 +321,9 @@ function journeyCard(lt) {
     return `
     <div class="card"><div class="empty">
       <div class="ill">${IC.flag}</div>
-      <h4>Tu historia empieza hoy</h4>
-      <p>Cada lección, debate y logro quedará registrado aquí — la línea de tiempo que algún día vas a querer compartir.</p>
-      <button class="btn btn-primary btn-sm" onclick="go('course')">${IC.play} Empezar a aprender</button>
+      <h4>${t("lifetime.journeyEmptyTitle")}</h4>
+      <p>${t("lifetime.journeyEmptyBody")}</p>
+      <button class="btn btn-primary btn-sm" onclick="go('course')">${IC.play} ${t("lifetime.startLearning")}</button>
     </div></div>`;
   }
   // Agrupa cronológicamente por monthLabel (conservando el orden recibido).
@@ -336,8 +337,8 @@ function journeyCard(lt) {
   return `
   <div class="card card-pad">
     <div class="row between vcenter wrap" style="gap:10px">
-      <div><div class="eyebrow" style="margin-bottom:2px">Journey</div><b style="font-size:15px">Tu línea de tiempo</b></div>
-      <span class="badge">${journey.length} hito${journey.length === 1 ? "" : "s"}</span>
+      <div><div class="eyebrow" style="margin-bottom:2px">${t("lifetime.journeyEyebrow")}</div><b style="font-size:15px">${t("lifetime.journeyTitle")}</b></div>
+      <span class="badge">${journey.length} ${journey.length === 1 ? t("lifetime.milestone") : t("lifetime.milestones")}</span>
     </div>
     <div class="stack" style="gap:4px;margin-top:16px">
       ${groups.map((g) => `
@@ -368,29 +369,29 @@ function publicProfileCard(lt) {
   const pp = lt.publicProfile;
   const absUrl = pp.url || (pp.slug ? `/p/${pp.slug}` : "");
   const toggle = `
-    <button id="pp-switch" role="switch" aria-checked="${pp.enabled ? "true" : "false"}" aria-label="Perfil público"
+    <button id="pp-switch" role="switch" aria-checked="${pp.enabled ? "true" : "false"}" aria-label="${t("lifetime.publicProfileAria")}"
       style="flex:none;width:46px;height:26px;padding:0;border-radius:999px;border:1px solid var(--border-strong);background:${pp.enabled ? "var(--otr-sky-lo)" : "var(--n-150)"};position:relative;cursor:pointer;transition:background .18s">
       <span style="position:absolute;top:2.5px;left:${pp.enabled ? "23px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(12,12,12,.28);transition:left .18s"></span>
     </button>`;
   return `
   <div class="card card-pad">
-    <div class="eyebrow" style="margin-bottom:2px">Comparte tu historia</div>
-    <b style="font-size:15px">Perfil público</b>
-    <p class="muted" style="font-size:12.5px;margin-top:6px">Tu Skill Graph, credenciales y journey en una sola página — la prueba pública de tu nivel.</p>
+    <div class="eyebrow" style="margin-bottom:2px">${t("lifetime.shareEyebrow")}</div>
+    <b style="font-size:15px">${t("lifetime.publicProfileTitle")}</b>
+    <p class="muted" style="font-size:12.5px;margin-top:6px">${t("lifetime.publicProfileBody")}</p>
     ${!pp.canToggle
-      ? `<div class="alert info" style="margin-top:12px"><span class="ai">${IC.lock}</span><div><div class="at">Requiere consentimiento</div>${esc(pp.minorNote || "Por tu seguridad, tu familia debe habilitar el perfil público desde su portal.")}</div></div>`
+      ? `<div class="alert info" style="margin-top:12px"><span class="ai">${IC.lock}</span><div><div class="at">${t("lifetime.requiresConsent")}</div>${esc(pp.minorNote || "Por tu seguridad, tu familia debe habilitar el perfil público desde su portal.")}</div></div>`
       : `
       <div class="row between vcenter" style="gap:12px;margin-top:14px">
-        <span style="font-size:13px;font-weight:600">${pp.enabled ? "Visible con el enlace" : "Desactivado (privado)"}</span>
+        <span style="font-size:13px;font-weight:600">${pp.enabled ? t("lifetime.visibleWithLink") : t("lifetime.disabledPrivate")}</span>
         ${toggle}
       </div>
       ${pp.enabled && absUrl ? `
         <div style="margin-top:12px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--n-25);font-family:var(--font-mono);font-size:11.5px;color:var(--text-2);word-break:break-all">${esc(absUrl)}</div>
         <div class="row wrap" style="gap:8px;margin-top:10px">
-          <button class="btn btn-soft btn-sm" id="pp-copy">${IC.doc} Copiar enlace</button>
-          <a class="btn btn-ghost btn-sm" href="${esc(absUrl)}" target="_blank" rel="noopener">${IC.eye} Ver perfil público</a>
+          <button class="btn btn-soft btn-sm" id="pp-copy">${IC.doc} ${t("lifetime.copyLink")}</button>
+          <a class="btn btn-ghost btn-sm" href="${esc(absUrl)}" target="_blank" rel="noopener">${IC.eye} ${t("lifetime.viewPublicProfile")}</a>
         </div>` : ""}
-      <p class="faint" style="font-size:11.5px;margin-top:12px">Privado por defecto. Tú decides cuándo y con quién compartirlo.</p>`}
+      <p class="faint" style="font-size:11.5px;margin-top:12px">${t("lifetime.privateByDefault")}</p>`}
   </div>`;
 }
 
@@ -445,10 +446,10 @@ S.lifetimeProfile = {
           DB.lifetime.publicProfile = { ...(DB.lifetime.publicProfile || {}), enabled: next };
           // Si el server devuelve slug/url frescos, consérvalos.
           if (resp && resp.publicProfile) DB.lifetime.publicProfile = { ...DB.lifetime.publicProfile, ...resp.publicProfile };
-          (window as any).toast?.(next ? "Tu perfil público está activo" : "Perfil público desactivado", "ok");
+          (window as any).toast?.(next ? t("lifetime.toastPublicOn") : t("lifetime.toastPublicOff"), "ok");
           repaint();
         } catch (err) {
-          (window as any).toast?.((err && err.message) || "No se pudo actualizar", "danger");
+          (window as any).toast?.((err && err.message) || t("lifetime.toastUpdateFailed"), "danger");
           sw.disabled = false;
         }
       });
@@ -463,9 +464,9 @@ S.lifetimeProfile = {
         const full = /^https?:\/\//.test(raw) ? raw : `${location.origin}${raw}`;
         try {
           await navigator.clipboard.writeText(full);
-          (window as any).toast?.("Enlace copiado", "ok");
+          (window as any).toast?.(t("lifetime.toastLinkCopied"), "ok");
         } catch (e) {
-          (window as any).toast?.("No se pudo copiar el enlace", "danger");
+          (window as any).toast?.(t("lifetime.toastCopyFailed"), "danger");
         }
       });
     }
@@ -491,12 +492,12 @@ function membershipHero(m) {
   <div class="hello-card fade-up" style="--d:0;margin-bottom:20px">
     <div class="h-row">
       <div style="max-width:560px">
-        <h1 class="sr-only">Membresía</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">Membresía</p>
-        <h2 class="brand-font" style="margin-top:2px">Tu plan: OTR ${esc(label)}</h2>
-        <p style="color:rgba(234,242,251,.78);font-size:13.5px;margin-top:10px">Tu plan decide cuánto entrenas y cuánto de tu progreso puedes mostrar.</p>
-        ${m.sinceLabel ? `<p style="color:rgba(234,242,251,.6);font-size:12px;margin-top:6px">En este plan ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}
+        <h1 class="sr-only">${t("lifetime.memSrTitle")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("lifetime.memEyebrow")}</p>
+        <h2 class="brand-font" style="margin-top:2px">${t("lifetime.memYourPlan")} OTR ${esc(label)}</h2>
+        <p style="color:rgba(234,242,251,.78);font-size:13.5px;margin-top:10px">${t("lifetime.memSubtitle")}</p>
+        ${m.sinceLabel ? `<p style="color:rgba(234,242,251,.6);font-size:12px;margin-top:6px">${t("lifetime.memOnThisPlan")} ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}
       </div>
-      <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22);align-self:flex-start"><span class="dot" style="background:var(--otr-sky-hi)"></span>Plan vigente</span>
+      <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22);align-self:flex-start"><span class="dot" style="background:var(--otr-sky-hi)"></span>${t("lifetime.memCurrentPlanBadge")}</span>
     </div>
   </div>`;
 }
@@ -504,55 +505,55 @@ function membershipHero(m) {
 function tierCards(m) {
   const cur = m.tier;
   const btn = (tier, label, cls) => cur === tier
-    ? `<button class="btn ${cls} btn-block" disabled style="margin-top:auto;opacity:.65;cursor:default">${IC.check} Tu plan actual</button>`
+    ? `<button class="btn ${cls} btn-block" disabled style="margin-top:auto;opacity:.65;cursor:default">${IC.check} ${t("lifetime.memCurrentPlanBtn")}</button>`
     : `<button class="btn ${cls} btn-block" data-mem="${tier}" style="margin-top:auto">${label}</button>`;
 
   const freeCard = `
   <div class="tile fade-up" style="--d:1;display:flex;flex-direction:column">
     <div class="eyebrow" style="margin-bottom:2px">Free</div>
-    <b style="font-size:15px">Empieza gratis</b>
-    <div class="row vcenter" style="gap:6px;margin-top:10px"><span class="brand-font tnum" style="font-size:30px;font-weight:800;color:var(--otr-navy)">US$0</span><span class="faint" style="font-size:12px">para siempre</span></div>
+    <b style="font-size:15px">${t("lifetime.memFreeTitle")}</b>
+    <div class="row vcenter" style="gap:6px;margin-top:10px"><span class="brand-font tnum" style="font-size:30px;font-weight:800;color:var(--otr-navy)">US$0</span><span class="faint" style="font-size:12px">${t("lifetime.memForever")}</span></div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
-      ${featureLi("Perfil + Skill Graph básico")}
-      ${featureLi("Práctica limitada")}
-      ${featureLi("Marketplace a tarifa estándar")}
+      ${featureLi(t("lifetime.memFreeFeat1"))}
+      ${featureLi(t("lifetime.memFreeFeat2"))}
+      ${featureLi(t("lifetime.memFreeFeat3"))}
     </ul>
-    ${btn("free", "Cambiar a Free", "btn-ghost")}
+    ${btn("free", t("lifetime.memSwitchToFree"), "btn-ghost")}
   </div>`;
 
   const proCard = `
   <div class="fade-up" style="--d:2;display:flex;flex-direction:column;background:linear-gradient(150deg,var(--otr-navy),var(--otr-ink));color:#fff;border-radius:var(--r-lg);padding:18px;box-shadow:var(--sh-3);position:relative">
-    <span class="badge" style="position:absolute;top:14px;right:14px;background:var(--otr-sky);color:var(--otr-navy);font-weight:800">Recomendado</span>
+    <span class="badge" style="position:absolute;top:14px;right:14px;background:var(--otr-sky);color:var(--otr-navy);font-weight:800">${t("lifetime.memRecommended")}</span>
     <div class="eyebrow" style="color:var(--otr-sky-hi);margin-bottom:2px">Pro</div>
-    <b style="font-size:15px;color:#fff">El plan de los que compiten</b>
+    <b style="font-size:15px;color:#fff">${t("lifetime.memProTitle")}</b>
     <div class="row vcenter wrap" style="gap:8px;margin-top:10px">
-      <span class="brand-font tnum" style="font-size:30px;font-weight:800;color:#fff">${esc(m.prices.proMonthly)}</span><span style="font-size:12px;color:rgba(234,242,251,.7)">/mes</span>
-      <span style="font-size:12px;color:rgba(234,242,251,.7)">· o ${esc(m.prices.proAnnual)}/año (2 meses gratis)</span>
+      <span class="brand-font tnum" style="font-size:30px;font-weight:800;color:#fff">${esc(m.prices.proMonthly)}</span><span style="font-size:12px;color:rgba(234,242,251,.7)">${t("lifetime.memPerMonth")}</span>
+      <span style="font-size:12px;color:rgba(234,242,251,.7)">· ${t("lifetime.memOr")} ${esc(m.prices.proAnnual)}${t("lifetime.memPerYear")}</span>
     </div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
-      ${featureLi("Analytics completo: ve exactamente dónde ganar puntos")}
-      ${featureLi("Práctica y drills ilimitados — entrena sin techo")}
-      ${featureLi("Protección de racha: un mal día no borra tu constancia")}
-      ${featureLi("Recomendaciones prioritarias de tu siguiente paso")}
-      ${featureLi("Descuentos en certificaciones y coaching")}
+      ${featureLi(t("lifetime.memProFeat1"))}
+      ${featureLi(t("lifetime.memProFeat2"))}
+      ${featureLi(t("lifetime.memProFeat3"))}
+      ${featureLi(t("lifetime.memProFeat4"))}
+      ${featureLi(t("lifetime.memProFeat5"))}
     </ul>
     ${m.tier === "pro"
-      ? `<button class="btn btn-block" disabled style="margin-top:auto;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25);cursor:default">${IC.check} Tu plan actual</button>`
-      : `<button class="btn btn-block" data-mem="pro" style="margin-top:auto;background:#fff;color:var(--otr-navy);font-weight:700">${IC.flame} Pasar a Pro</button>`}
+      ? `<button class="btn btn-block" disabled style="margin-top:auto;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25);cursor:default">${IC.check} ${t("lifetime.memCurrentPlanBtn")}</button>`
+      : `<button class="btn btn-block" data-mem="pro" style="margin-top:auto;background:#fff;color:var(--otr-navy);font-weight:700">${IC.flame} ${t("lifetime.memUpgradePro")}</button>`}
   </div>`;
 
   const eliteCard = `
   <div class="tile fade-up" style="--d:3;display:flex;flex-direction:column;opacity:.72">
-    <div class="row between vcenter"><div class="eyebrow" style="margin-bottom:2px">Elite</div><span class="badge sky"><span class="dot"></span>Próximamente</span></div>
-    <b style="font-size:15px">Para quienes van por todo</b>
-    <div class="row vcenter" style="gap:6px;margin-top:10px"><span class="brand-font" style="font-size:22px;font-weight:800;color:var(--otr-navy)">Muy pronto</span></div>
+    <div class="row between vcenter"><div class="eyebrow" style="margin-bottom:2px">Elite</div><span class="badge sky"><span class="dot"></span>${t("lifetime.memComingSoon")}</span></div>
+    <b style="font-size:15px">${t("lifetime.memEliteTitle")}</b>
+    <div class="row vcenter" style="gap:6px;margin-top:10px"><span class="brand-font" style="font-size:22px;font-weight:800;color:var(--otr-navy)">${t("lifetime.memVerySoon")}</span></div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
-      ${featureLi("Todo Pro", { muted: true })}
-      ${featureLi("Créditos de coaching incluidos", { muted: true })}
-      ${featureLi("Acceso temprano a torneos", { muted: true })}
-      ${featureLi("Contenido premium", { muted: true })}
+      ${featureLi(t("lifetime.memEliteFeat1"), { muted: true })}
+      ${featureLi(t("lifetime.memEliteFeat2"), { muted: true })}
+      ${featureLi(t("lifetime.memEliteFeat3"), { muted: true })}
+      ${featureLi(t("lifetime.memEliteFeat4"), { muted: true })}
     </ul>
-    <button class="btn btn-soft btn-block" disabled style="margin-top:auto;cursor:default">${IC.lock} Próximamente</button>
+    <button class="btn btn-soft btn-block" disabled style="margin-top:auto;cursor:default">${IC.lock} ${t("lifetime.memComingSoon")}</button>
   </div>`;
 
   return `<div class="grid g-3" style="align-items:stretch">${freeCard}${proCard}${eliteCard}</div>`;
@@ -566,7 +567,7 @@ function confirmModal(title, body, okLabel) {
     scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:440px">
       <div class="modal-head"><h3>${esc(title)}</h3></div>
       <div class="modal-body"><p style="font-size:13.5px;line-height:1.55">${esc(body)}</p></div>
-      <div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button><button class="btn btn-primary" data-ok>${esc(okLabel || "Confirmar")}</button></div>
+      <div class="modal-foot"><button class="btn btn-ghost" data-x>${t("lifetime.cancel")}</button><button class="btn btn-primary" data-ok>${esc(okLabel || "Confirmar")}</button></div>
     </div>`;
     document.body.appendChild(scrim);
     const done = (v) => { scrim.remove(); resolve(v); };
@@ -583,7 +584,7 @@ S.membership = {
       ${tierCards(m)}
       <div class="alert info fade-up" style="--d:4;margin-top:20px">
         <span class="ai">${IC.lock}</span>
-        <div><div class="at">Pago simulado en esta fase</div>La facturación real llega con el lanzamiento. Mientras tanto puedes cambiar de plan libremente para explorar lo que cada uno desbloquea.</div>
+        <div><div class="at">${t("lifetime.memSimulatedTitle")}</div>${t("lifetime.memSimulatedBody")}</div>
       </div>`;
   },
 
@@ -601,25 +602,25 @@ S.membership = {
         // Bajar a Free pide confirmación: se pierden los beneficios Pro.
         if (target === "free") {
           const okGo = await confirmModal(
-            "¿Cambiar a Free?",
-            "Perderás analytics completo, práctica ilimitada y la protección de tu racha. Tu progreso y tu historia se conservan intactos.",
-            "Sí, cambiar a Free"
+            t("lifetime.memConfirmFreeTitle"),
+            t("lifetime.memConfirmFreeBody"),
+            t("lifetime.memConfirmFreeOk")
           );
           if (!okGo) return;
         }
         btn.disabled = true;
-        btn.textContent = "Actualizando…";
+        btn.textContent = t("lifetime.memUpdating");
         try {
           const resp = await (window as any).api("/api/membership", { tier: target });
           DB.membership = DB.membership || {};
           DB.membership.tier = target;
           if (resp && resp.membership) DB.membership = { ...DB.membership, ...resp.membership };
-          (window as any).toast?.(target === "pro" ? "Bienvenido a OTR Pro" : "Tu plan cambió a Free", "ok");
+          (window as any).toast?.(target === "pro" ? t("lifetime.memToastWelcomePro") : t("lifetime.memToastSwitchedFree"), "ok");
           repaint();
         } catch (err) {
-          (window as any).toast?.((err && err.message) || "No se pudo cambiar el plan", "danger");
+          (window as any).toast?.((err && err.message) || t("lifetime.memToastChangeFailed"), "danger");
           btn.disabled = false;
-          btn.textContent = target === "pro" ? "Pasar a Pro" : "Cambiar a Free";
+          btn.textContent = target === "pro" ? t("lifetime.memUpgradePro") : t("lifetime.memSwitchToFree");
         }
       })
     );

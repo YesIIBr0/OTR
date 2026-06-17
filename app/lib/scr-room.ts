@@ -19,6 +19,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
@@ -47,12 +48,12 @@ function findBooking(id) {
     const box = (DB.coachwork && DB.coachwork.inbox) || {};
     const all = [...(box.upcoming || []), ...(box.past || [])];
     const b = all.find((x) => x && x.id === id);
-    if (b) return { b, side: "coach", who: b.studentName, ini: b.studentInitials, back: "coachwork", backLabel: "Volver a Reservas" };
+    if (b) return { b, side: "coach", who: b.studentName, ini: b.studentInitials, back: "coachwork", backLabel: t("room.backToBookingsCoach") };
     return null;
   }
   const mine = Array.isArray(DB.myBookings) ? DB.myBookings : [];
   const b = mine.find((x) => x && x.id === id);
-  if (b) return { b, side: "student", who: b.coachName, ini: b.coachInitials, back: "my-bookings", backLabel: "Volver a Mis reservas" };
+  if (b) return { b, side: "student", who: b.coachName, ini: b.coachInitials, back: "my-bookings", backLabel: t("room.backToBookingsStudent") };
   return null;
 }
 
@@ -66,15 +67,15 @@ S.room = {
       const role = String(DB.me?.role || "").toLowerCase();
       const isCoach = role === "teacher" || role === "coach";
       const back = isCoach ? "coachwork" : "my-bookings";
-      const backLabel = isCoach ? "Ir a Reservas" : "Ir a Mis reservas";
+      const backLabel = isCoach ? t("room.goToBookingsCoach") : t("room.goToBookingsStudent");
       return `
-      <div class="page-head fade-up"><div><p class="eyebrow">Sesión</p>
-        <h1 class="page-title">Sala de sesión</h1></div></div>
+      <div class="page-head fade-up"><div><p class="eyebrow">${t("room.eyebrowSession")}</p>
+        <h1 class="page-title">${t("room.title")}</h1></div></div>
       <div class="card card-pad fade-up" style="--d:0">
         <div class="empty" style="padding:36px 24px">
           <div class="ill">${IC.video}</div>
-          <h4>No encontramos esta sesión</h4>
-          <p>El enlace puede haber caducado o la reserva ya no está disponible.</p>
+          <h4>${t("room.notFoundHeading")}</h4>
+          <p>${t("room.notFoundBody")}</p>
           <button class="btn btn-primary btn-sm" style="margin-top:12px" data-go="${back}">${backLabel} ${IC.arrowR}</button>
         </div>
       </div>`;
@@ -91,50 +92,50 @@ S.room = {
     let panel;
     if (cancelled) {
       panel = `<div class="empty" style="padding:32px 24px"><div class="ill">${IC.x || IC.alert || IC.video}</div>
-        <h4>Esta sesión fue cancelada</h4><p>No hay sala activa. Los fondos retenidos se reembolsaron.</p></div>`;
+        <h4>${t("room.cancelledHeading")}</h4><p>${t("room.cancelledBody")}</p></div>`;
     } else if (pending) {
       panel = `<div class="empty" style="padding:32px 24px"><div class="ill">${IC.clock || IC.video}</div>
-        <h4>Pendiente de aprobación</h4><p>La sala se habilita cuando el tutor apruebe la sesión.</p></div>`;
+        <h4>${t("room.pendingHeading")}</h4><p>${t("room.pendingBody")}</p></div>`;
     } else if (completed) {
       panel = `<div class="empty" style="padding:32px 24px"><div class="ill">${IC.checkCircle || IC.video}</div>
-        <h4>Sesión completada</h4>
-        <p>${recordingUrl ? "La grabación está disponible abajo." : "Esta sesión ya finalizó."}</p>
-        ${recordingUrl ? `<a class="btn btn-soft btn-sm" style="margin-top:12px" href="${esc(recordingUrl)}" target="_blank" rel="noopener noreferrer">${IC.video} Ver grabación</a>` : ""}</div>`;
+        <h4>${t("room.completedHeading")}</h4>
+        <p>${recordingUrl ? t("room.completedRecordingAvailable") : t("room.completedNoRecording")}</p>
+        ${recordingUrl ? `<a class="btn btn-soft btn-sm" style="margin-top:12px" href="${esc(recordingUrl)}" target="_blank" rel="noopener noreferrer">${IC.video} ${t("room.viewRecording")}</a>` : ""}</div>`;
     } else {
       // CONFIRMED — sala lista. Video en vivo pendiente de credenciales (honesto).
       panel = `
       <div style="border:1px dashed var(--border);border-radius:16px;background:var(--bg-sunken);padding:40px 24px;text-align:center">
         <div style="display:inline-flex;width:48px;height:48px;align-items:center;justify-content:center;border-radius:14px;background:var(--action-soft);color:var(--otr-green-text)">${IC.video}</div>
-        <h3 style="margin:14px 0 4px;font-size:18px">Tu sala está lista</h3>
-        <p class="muted" style="max-width:440px;margin:0 auto;font-size:13.5px">La videollamada en vivo se abrirá aquí, dentro de OTR. La conexión de video se está habilitando; cuando esté activa, este es el lugar de tu sesión 1:1.</p>
+        <h3 style="margin:14px 0 4px;font-size:18px">${t("room.readyHeading")}</h3>
+        <p class="muted" style="max-width:440px;margin:0 auto;font-size:13.5px">${t("room.readyBody")}</p>
         ${cd ? `<div class="badge sky" style="margin-top:14px;height:26px"><span class="dot"></span>${esc(cd)}</div>` : ""}
       </div>`;
     }
 
     const aside = `
       <div class="card card-pad">
-        <div class="eyebrow" style="margin-bottom:8px">Detalle de la sesión</div>
+        <div class="eyebrow" style="margin-bottom:8px">${t("room.detailEyebrow")}</div>
         <div class="row vcenter" style="gap:12px;margin-bottom:12px">
           ${C.avatar(esc(ini || "?"), { size: "md", bg: "var(--otr-navy)" })}
           <div style="min-width:0">
-            <div style="font-weight:700;font-size:15px">${esc(who || (side === "coach" ? "Alumno" : "Coach"))}</div>
-            <div class="faint" style="font-size:12.5px">${side === "coach" ? "Tu alumno" : "Tu coach"}</div>
+            <div style="font-weight:700;font-size:15px">${esc(who || (side === "coach" ? t("room.roleStudent") : t("room.roleCoach")))}</div>
+            <div class="faint" style="font-size:12.5px">${side === "coach" ? t("room.yourStudent") : t("room.yourCoach")}</div>
           </div>
         </div>
         <div class="kv" style="font-size:13px;display:grid;gap:7px">
-          <div class="row between"><span class="faint">Cuándo</span><span style="font-weight:600">${esc(b.slotLabel || "")}</span></div>
-          ${b.durationMin ? `<div class="row between"><span class="faint">Duración</span><span style="font-weight:600">${b.durationMin} min</span></div>` : ""}
-          ${b.packageName ? `<div class="row between"><span class="faint">Paquete</span><span style="font-weight:600">${b.packageName}</span></div>` : ""}
-          ${(b.priceLabel || b.amountLabel) ? `<div class="row between"><span class="faint">Monto</span><span style="font-weight:600">${esc(b.priceLabel || b.amountLabel)}</span></div>` : ""}
-          <div class="row between"><span class="faint">Estado</span><span style="font-weight:600">${esc(b.status)}</span></div>
+          <div class="row between"><span class="faint">${t("room.kvWhen")}</span><span style="font-weight:600">${esc(b.slotLabel || "")}</span></div>
+          ${b.durationMin ? `<div class="row between"><span class="faint">${t("room.kvDuration")}</span><span style="font-weight:600">${b.durationMin} min</span></div>` : ""}
+          ${b.packageName ? `<div class="row between"><span class="faint">${t("room.kvPackage")}</span><span style="font-weight:600">${b.packageName}</span></div>` : ""}
+          ${(b.priceLabel || b.amountLabel) ? `<div class="row between"><span class="faint">${t("room.kvAmount")}</span><span style="font-weight:600">${esc(b.priceLabel || b.amountLabel)}</span></div>` : ""}
+          <div class="row between"><span class="faint">${t("room.kvStatus")}</span><span style="font-weight:600">${esc(b.status)}</span></div>
         </div>
         <button class="btn btn-soft btn-sm btn-block" style="margin-top:16px" data-go="${back}">${backLabel}</button>
       </div>`;
 
     return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Sesión de coaching</p>
-      <h1 class="page-title">Sala de sesión</h1>
-      <div class="page-sub">${side === "coach" ? "Sesión con tu alumno" : "Sesión con tu coach"} · ${esc(b.slotLabel || "")}</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("room.eyebrowCoaching")}</p>
+      <h1 class="page-title">${t("room.title")}</h1>
+      <div class="page-sub">${side === "coach" ? t("room.subWithStudent") : t("room.subWithCoach")} · ${esc(b.slotLabel || "")}</div></div></div>
 
     <div class="grid" style="grid-template-columns:1.6fr 1fr;gap:18px;align-items:start">
       <div class="card card-pad fade-up" style="--d:0">${panel}</div>

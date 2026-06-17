@@ -4,6 +4,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
+import { t } from "./i18n";
 export const S = {};
   const spark = (vals,color='var(--otr-sky)') => `<div class="spark">${vals.map(v=>`<i style="height:${v}%;background:${color}"></i>`).join('')}</div>`;
   const trendIc = t => t==='up'?`<span class="trend-up">${IC.chevD}</span>`.replace('chevD','') && `<span class="trend-up">▴</span>` : t==='down'?'<span class="trend-down">▾</span>':'<span class="trend-flat">→</span>';
@@ -54,39 +55,39 @@ export const S = {};
 
       return `
       <div class="page-head">
-        <div><p class="eyebrow">Panel del profesor</p>
-        <h1 class="page-title">Seguimiento del grupo</h1>
+        <div><p class="eyebrow">${t("teacher.eyebrow")}</p>
+        <h1 class="page-title">${t("teacher.title")}</h1>
         <div class="page-sub">Tracking total · ${DB.students.length} estudiante${DB.students.length===1?'':'s'} en ${courseCount} curso${courseCount===1?'':'s'}</div></div>
         <div class="row" style="gap:8px">
-          <button class="btn btn-ghost btn-sm" data-action="grade-subs">${IC.chart} Calificar</button>
+          <button class="btn btn-ghost btn-sm" data-action="grade-subs">${IC.chart} ${t("teacher.gradeBtn")}</button>
         </div>
       </div>
 
       <div class="tabs fade-up" id="tr-tabs" style="--d:0">
-        <button class="tab ${tab==='grupo'?'active':''}" data-teacher-tab="grupo"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.users}</span>Grupo</span></button>
-        <button class="tab ${tab==='contenido'?'active':''}" data-teacher-tab="contenido"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.book}</span>Contenido</span></button>
+        <button class="tab ${tab==='grupo'?'active':''}" data-teacher-tab="grupo"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.users}</span>${t("teacher.tabGroup")}</span></button>
+        <button class="tab ${tab==='contenido'?'active':''}" data-teacher-tab="contenido"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.book}</span>${t("teacher.tabContent")}</span></button>
       </div>
       ${tab==='grupo' ? `<div class="grid g-4" style="margin-bottom:18px">
-        <div class="tile fade-up" style="--d:0">${C.kpi('Promedio del grupo',String(k.avg),{unit:'%',ic:'chart'})}</div>
-        <div class="tile fade-up" style="--d:1">${C.kpi('Asistencia',String(k.attendance),{unit:'%',ic:'users'})}</div>
+        <div class="tile fade-up" style="--d:0">${C.kpi(t("teacher.kpiAvg"),String(k.avg),{unit:'%',ic:'chart'})}</div>
+        <div class="tile fade-up" style="--d:1">${C.kpi(t("teacher.kpiAttendance"),String(k.attendance),{unit:'%',ic:'users'})}</div>
         ${/* [auditoría] el valor deriva de Enrollment.engagement (Alto/Medio/Bajo→%), no de entregas vs dueAt: se etiqueta como engagement, no como puntualidad medida */""}
-        <div class="tile fade-up" style="--d:2">${C.kpi('Engagement promedio',String(k.onTime),{unit:'%',ic:'chart'})}</div>
-        <div class="tile fade-up" style="--d:3;border-color:#eeb9b4;background:var(--danger-soft)">${C.kpi('En riesgo',String(k.atRisk),{ic:'flag'})}</div>
+        <div class="tile fade-up" style="--d:2">${C.kpi(t("teacher.kpiEngagement"),String(k.onTime),{unit:'%',ic:'chart'})}</div>
+        <div class="tile fade-up" style="--d:3;border-color:#eeb9b4;background:var(--danger-soft)">${C.kpi(t("teacher.kpiAtRisk"),String(k.atRisk),{ic:'flag'})}</div>
       </div>
 
       <div class="split rail-320">
         <div class="fade-up">
           ${/* [ENT-06] Búsqueda + filtro de riesgo (cliente), consistente con Participantes */""}
           <div class="row vcenter" style="gap:8px;margin-bottom:10px">
-            <div class="searchbox" style="flex:1"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="tr-search" placeholder="Buscar alumno…" aria-label="Buscar alumno"/></div>
-            <span class="chip" id="tr-risk" data-on="0" role="button" tabindex="0">${IC.flag} En riesgo</span>
+            <div class="searchbox" style="flex:1"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="tr-search" placeholder="${t("teacher.searchStudentPh")}" aria-label="${t("teacher.searchStudentAria")}"/></div>
+            <span class="chip" id="tr-risk" data-on="0" role="button" tabindex="0">${IC.flag} ${t("teacher.riskChip")}</span>
           </div>
           <div class="table-wrap scroll-m">
             <table class="tbl">
-              <thead><tr><th>Estudiante</th><th>Nivel</th><th class="num">Nota</th><th class="num">Asist.</th><th>Engagement</th><th class="center">Tendencia</th><th class="num">Últ. acceso</th></tr></thead>
+              <thead><tr><th>${t("teacher.thStudent")}</th><th>${t("teacher.thLevel")}</th><th class="num">${t("teacher.thGrade")}</th><th class="num">${t("teacher.thAttendance")}</th><th>${t("teacher.thEngagement")}</th><th class="center">${t("teacher.thTrend")}</th><th class="num">${t("teacher.thLastAccess")}</th></tr></thead>
               <tbody id="tr-body">
                 ${DB.students.map(s=>`<tr data-name="${esc(String(s.n).toLowerCase())}" data-risk="${s.risk?'1':'0'}">
-                  <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.badge('Riesgo','danger'):''}</div></td>
+                  <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.badge(t("teacher.riskBadge"),'danger'):''}</div></td>
                   <td>${C.levelBadge(s.lvl)}</td>
                   <td class="num"><b style="color:${s.grade>=85?'var(--ok)':s.grade>=70?'var(--warn)':'var(--danger)'}">${s.grade}%</b></td>
                   <td class="num tnum">${s.att}%</td>
@@ -96,28 +97,28 @@ export const S = {};
                 </tr>`).join('')}
               </tbody>
             </table>
-            <div id="tr-empty" class="faint" style="display:none;padding:16px;text-align:center;font-size:13px">Sin alumnos para este filtro.</div>
+            <div id="tr-empty" class="faint" style="display:none;padding:16px;text-align:center;font-size:13px">${t("teacher.noStudentsFilter")}</div>
           </div>
         </div>
 
         <div class="stack" style="gap:16px">
           <div class="card fade-up" style="--d:1">
-            <div class="card-head"><h3 class="row vcenter" style="gap:8px;color:var(--danger)">${IC.flag} Requieren atención</h3>${atRisk.length?`<span class="badge danger">${atRisk.length}</span>`:''}</div>
+            <div class="card-head"><h3 class="row vcenter" style="gap:8px;color:var(--danger)">${IC.flag} ${t("teacher.needAttention")}</h3>${atRisk.length?`<span class="badge danger">${atRisk.length}</span>`:''}</div>
             <div class="card-body" style="padding:6px 16px 10px">
               ${atRisk.map(s=>`<div class="risk-row">${C.avatar(s.i,{size:'sm',bg:'var(--danger)'})}
                 <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px">${esc(s.n)}</div>
-                <div class="faint" style="font-size:12px">${s.att<70?'Asistencia baja':'Sin entregas'} · ${esc(s.last)}</div></div>
-                <button class="btn btn-soft btn-sm" data-go="messages" title="Enviar mensaje">${IC.msg}</button></div>`).join('')}
-              ${atRisk.length?'':'<div class="empty" style="padding:24px 16px"><div class="ill">'+IC.checkCircle+'</div><h4>Sin alertas</h4><p>Todo el grupo va al día.</p></div>'}
+                <div class="faint" style="font-size:12px">${s.att<70?t("teacher.lowAttendance"):t("teacher.noSubmissions")} · ${esc(s.last)}</div></div>
+                <button class="btn btn-soft btn-sm" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>`).join('')}
+              ${atRisk.length?'':'<div class="empty" style="padding:24px 16px"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.noAlertsTitle")+'</h4><p>'+t("teacher.noAlertsBody")+'</p></div>'}
             </div>
           </div>
           <div class="card card-pad fade-up" style="--d:2">
-            <div class="row between vcenter" style="margin-bottom:12px"><b style="font-size:13.5px">Pendientes de calificar</b><span class="badge sky">${DB.pendingSubs ?? 0}</span></div>
+            <div class="row between vcenter" style="margin-bottom:12px"><b style="font-size:13.5px">${t("teacher.pendingGradingTitle")}</b><span class="badge sky">${DB.pendingSubs ?? 0}</span></div>
             ${(DB.pendingSubs ?? 0) > 0
               ? `<div class="lrow" style="padding:10px 0"><span style="display:flex;width:18px;color:var(--text-2)">${IC.mic}</span>
-                <div style="flex:1"><div style="font-weight:600;font-size:13px">${DB.pendingSubs} entrega${DB.pendingSubs === 1 ? '' : 's'} por revisar</div><div class="faint" style="font-size:12px">Ábrelas para calificar con nota y feedback</div></div></div>
-                <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="grade-subs">Calificar entregas</button>`
-              : `<div class="empty" style="padding:20px 16px"><div class="ill">${IC.checkCircle}</div><h4>Todo al día</h4><p>No tienes entregas pendientes de calificar.</p></div>`}
+                <div style="flex:1"><div style="font-weight:600;font-size:13px">${DB.pendingSubs} entrega${DB.pendingSubs === 1 ? '' : 's'} por revisar</div><div class="faint" style="font-size:12px">${t("teacher.pendingGradingHint")}</div></div></div>
+                <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="grade-subs">${t("teacher.gradeSubmissions")}</button>`
+              : `<div class="empty" style="padding:20px 16px"><div class="ill">${IC.checkCircle}</div><h4>${t("teacher.allCaughtUpTitle")}</h4><p>${t("teacher.allCaughtUpBody")}</p></div>`}
           </div>
         </div>
       </div>` : this.managePanel({courseCount,moduleCount,lessonCount,quizCount})}`;
@@ -144,31 +145,31 @@ export const S = {};
               <div class="faint" style="font-size:12px;margin-top:2px">${pluralize(mods.length,'módulo','módulos')} · ${pluralize(lessons,'lección','lecciones')} · ${pluralize(quizzes,'examen','exámenes')}</div>
             </div>
           </div>
-          <button class="btn btn-soft btn-sm" onclick="go('manage')" style="flex:none">${IC.sliders} Editar contenido</button>
+          <button class="btn btn-soft btn-sm" onclick="go('manage')" style="flex:none">${IC.sliders} ${t("teacher.editContentBtn")}</button>
         </div>
       </div>`;
       };
 
       const empty = `<div class="card"><div class="empty"><div class="ill">${IC.book}</div>
-        <h4>Aún no tienes cursos</h4><p>Crea tu primer curso con el botón <b>+ Crear</b> de la barra superior, y luego añade módulos, lecciones y exámenes.</p></div></div>`;
+        <h4>${t("teacher.noCoursesTitle")}</h4><p>${t("teacher.noCoursesBody")}</p></div></div>`;
 
       return `
       <div class="kit-section" style="margin-top:28px">
         <div class="page-head" style="margin-bottom:14px">
-          <div><p class="eyebrow">Gestión de contenido</p>
-          <h2 class="page-title" style="font-size:22px">Estructura del curso</h2>
-          <div class="page-sub">Cursos → Módulos → Lecciones → Examen</div></div>
+          <div><p class="eyebrow">${t("teacher.manageEyebrow")}</p>
+          <h2 class="page-title" style="font-size:22px">${t("teacher.manageTitle")}</h2>
+          <div class="page-sub">${t("teacher.manageSub")}</div></div>
           <div class="row" style="gap:8px">
-            <button class="btn btn-ghost btn-sm" data-tm="resource">${IC.plus} Recurso (archivo)</button>
-            <button class="btn btn-primary btn-sm" onclick="go('manage')">${IC.sliders} Editor completo</button>
+            <button class="btn btn-ghost btn-sm" data-tm="resource">${IC.plus} ${t("teacher.resourceFileBtn")}</button>
+            <button class="btn btn-primary btn-sm" onclick="go('manage')">${IC.sliders} ${t("teacher.fullEditorBtn")}</button>
           </div>
         </div>
 
         <div class="grid g-4" style="margin-bottom:16px">
-          <div class="tile fade-up" style="--d:0">${C.kpi('Cursos',String(courseCount),{ic:'book'})}</div>
-          <div class="tile fade-up" style="--d:1">${C.kpi('Módulos',String(moduleCount),{ic:'grid'})}</div>
-          <div class="tile fade-up" style="--d:2">${C.kpi('Lecciones',String(lessonCount),{ic:'doc'})}</div>
-          <div class="tile fade-up" style="--d:3">${C.kpi('Exámenes',String(quizCount),{ic:'target'})}</div>
+          <div class="tile fade-up" style="--d:0">${C.kpi(t("teacher.kpiCourses"),String(courseCount),{ic:'book'})}</div>
+          <div class="tile fade-up" style="--d:1">${C.kpi(t("teacher.kpiModules"),String(moduleCount),{ic:'grid'})}</div>
+          <div class="tile fade-up" style="--d:2">${C.kpi(t("teacher.kpiLessons"),String(lessonCount),{ic:'doc'})}</div>
+          <div class="tile fade-up" style="--d:3">${C.kpi(t("teacher.kpiQuizzes"),String(quizCount),{ic:'target'})}</div>
         </div>
 
         ${courses.length ? courses.map(courseCard).join('') : empty}
@@ -243,13 +244,13 @@ export const S = {};
      MODAL genérico (mismo look que Aula.tsx, pero local y sin
      depender de funciones internas no expuestas).
      ============================================================ */
-  function buildModal({ title, bodyHtml, okLabel = "Guardar", wide = false }) {
+  function buildModal({ title, bodyHtml, okLabel = t("teacher.save"), wide = false }) {
     const scrim = document.createElement("div");
     scrim.className = "modal-scrim";
     scrim.innerHTML = `<div class="modal" role="dialog"${wide ? ' style="max-width:680px"' : ''}>
       <div class="modal-head"><h3>${esc(title)}</h3></div>
       <div class="modal-body">${bodyHtml}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:8px 0 0"></p></div>
-      <div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button><button class="btn btn-primary" data-ok>${esc(okLabel)}</button></div>
+      <div class="modal-foot"><button class="btn btn-ghost" data-x>${t("teacher.cancel")}</button><button class="btn btn-primary" data-ok>${esc(okLabel)}</button></div>
     </div>`;
     document.body.appendChild(scrim);
     const close = () => scrim.remove();
@@ -268,22 +269,22 @@ export const S = {};
 
     const head = `
       <div class="field" style="margin-bottom:12px">
-        <label class="label">Título del examen</label>
-        <input class="input" id="qz-title" placeholder="Examen de unidad" value="${existing ? esc(existing.title) : ''}"/>
+        <label class="label">${t("teacher.quizTitleLabel")}</label>
+        <input class="input" id="qz-title" placeholder="${t("teacher.quizTitlePh")}" value="${existing ? esc(existing.title) : ''}"/>
       </div>
       <div class="row" style="gap:12px;margin-bottom:12px">
         <div class="field" style="flex:1">
-          <label class="label">Puntaje para aprobar (%)</label>
+          <label class="label">${t("teacher.quizPassLabel")}</label>
           <input class="input" id="qz-pass" type="number" min="0" max="100" value="${existing ? existing.passScore : 60}"/>
         </div>
       </div>
       <div class="row between vcenter" style="margin:6px 0 8px">
-        <b style="font-size:13.5px">Preguntas</b>
-        <button type="button" class="btn btn-soft btn-sm" id="qz-add-q">${IC.plus} Añadir pregunta</button>
+        <b style="font-size:13.5px">${t("teacher.quizQuestions")}</b>
+        <button type="button" class="btn btn-soft btn-sm" id="qz-add-q">${IC.plus} ${t("teacher.quizAddQuestion")}</button>
       </div>
       <div id="qz-questions" class="stack" style="gap:14px"></div>`;
 
-    const m = buildModal({ title: `Examen · ${esc(lessonTitle || "Lección")}`, bodyHtml: head, okLabel: "Guardar examen", wide: true });
+    const m = buildModal({ title: `Examen · ${esc(lessonTitle || t("teacher.lessonFallback"))}`, bodyHtml: head, okLabel: t("teacher.quizSaveBtn"), wide: true });
     const qWrap = m.body.querySelector("#qz-questions");
     let qSeq = 0; // identificador local para agrupar radios por pregunta
 
@@ -293,12 +294,12 @@ export const S = {};
       wrap.className = "qz-opt row vcenter";
       wrap.style.cssText = "gap:8px;margin:6px 0";
       wrap.innerHTML = `
-        <input type="radio" name="correct-${qid}" class="qz-correct" ${opt && opt.correct ? "checked" : ""} title="Marcar como correcta" style="flex:none;width:16px;height:16px"/>
-        <input class="input qz-opt-text" placeholder="Texto de la opción" value="${opt ? esc(opt.text) : ""}" style="flex:1"/>
-        <button type="button" class="btn btn-quiet btn-sm qz-del-opt" title="Quitar opción" style="color:var(--danger);flex:none">${IC.close}</button>`;
+        <input type="radio" name="correct-${qid}" class="qz-correct" ${opt && opt.correct ? "checked" : ""} title="${t("teacher.markCorrect")}" style="flex:none;width:16px;height:16px"/>
+        <input class="input qz-opt-text" placeholder="${t("teacher.optionTextPh")}" value="${opt ? esc(opt.text) : ""}" style="flex:1"/>
+        <button type="button" class="btn btn-quiet btn-sm qz-del-opt" title="${t("teacher.removeOption")}" style="color:var(--danger);flex:none">${IC.close}</button>`;
       wrap.querySelector(".qz-del-opt").addEventListener("click", () => {
         const opts = wrap.parentElement;
-        if (opts.querySelectorAll(".qz-opt").length <= 2) { window.toast && window.toast("Una pregunta necesita al menos 2 opciones", "warn"); return; }
+        if (opts.querySelectorAll(".qz-opt").length <= 2) { window.toast && window.toast(t("teacher.minTwoOptions"), "warn"); return; }
         wrap.remove();
       });
       return wrap;
@@ -313,20 +314,20 @@ export const S = {};
       node.dataset.qid = qid;
       node.innerHTML = `
         <div class="row between vcenter" style="margin-bottom:8px;gap:8px">
-          <input class="input qz-prompt" placeholder="Enunciado de la pregunta" value="${q ? esc(q.prompt) : ""}" style="flex:1"/>
+          <input class="input qz-prompt" placeholder="${t("teacher.questionPromptPh")}" value="${q ? esc(q.prompt) : ""}" style="flex:1"/>
           <div class="row" style="gap:4px;flex:none">
-            <button type="button" class="btn btn-quiet btn-sm qz-dup-q" title="Duplicar pregunta" style="font-size:12px">Duplicar</button>
-            <button type="button" class="btn btn-quiet btn-sm qz-del-q" title="Quitar pregunta" style="color:var(--danger)">${IC.close}</button>
+            <button type="button" class="btn btn-quiet btn-sm qz-dup-q" title="${t("teacher.duplicateQuestion")}" style="font-size:12px">${t("teacher.duplicate")}</button>
+            <button type="button" class="btn btn-quiet btn-sm qz-del-q" title="${t("teacher.removeQuestion")}" style="color:var(--danger)">${IC.close}</button>
           </div>
         </div>
         <div class="qz-opts"></div>
-        <button type="button" class="btn btn-ghost btn-sm qz-add-opt" style="margin-top:6px">${IC.plus} Añadir opción</button>`;
+        <button type="button" class="btn btn-ghost btn-sm qz-add-opt" style="margin-top:6px">${IC.plus} ${t("teacher.addOption")}</button>`;
       const optsWrap = node.querySelector(".qz-opts");
       const initialOpts = (q && q.options && q.options.length) ? q.options : [null, null];
       initialOpts.forEach((o) => optsWrap.appendChild(optionNode(qid, o)));
       node.querySelector(".qz-add-opt").addEventListener("click", () => optsWrap.appendChild(optionNode(qid, null)));
       node.querySelector(".qz-del-q").addEventListener("click", () => {
-        if (qWrap.querySelectorAll(".qz-q").length <= 1) { window.toast && window.toast("El examen necesita al menos una pregunta", "warn"); return; }
+        if (qWrap.querySelectorAll(".qz-q").length <= 1) { window.toast && window.toast(t("teacher.minOneQuestion"), "warn"); return; }
         node.remove();
       });
       // [PRD-04] Duplicar pregunta: clona el estado vivo del DOM (enunciado + opciones + correcta).
@@ -363,24 +364,24 @@ export const S = {};
           const correct = ow.querySelector(".qz-correct").checked;
           if (text) opts.push({ text, correct });
         });
-        if (!prompt) { invalid = invalid || "Hay una pregunta sin enunciado."; return; }
+        if (!prompt) { invalid = invalid || t("teacher.errQuestionNoPrompt"); return; }
         if (opts.length < 2) { invalid = invalid || `La pregunta "${prompt.slice(0, 30)}…" necesita al menos 2 opciones con texto.`; return; }
         if (!opts.some((o) => o.correct)) { invalid = invalid || `Marca la opción correcta de "${prompt.slice(0, 30)}…".`; return; }
         questions.push({ prompt, options: opts });
       });
 
       if (invalid) { m.showErr(invalid); return; }
-      if (!questions.length) { m.showErr("Añade al menos una pregunta válida."); return; }
+      if (!questions.length) { m.showErr(t("teacher.errNoValidQuestion")); return; }
 
-      m.okBtn.textContent = "Guardando…"; m.okBtn.disabled = true;
+      m.okBtn.textContent = t("teacher.saving"); m.okBtn.disabled = true;
       try {
         await window.api("/api/quizzes", { lessonId, title: title || "Examen de unidad", passScore, questions });
-        window.toast && window.toast("Examen guardado", "ok");
+        window.toast && window.toast(t("teacher.quizSaved"), "ok");
         m.close();
         await softRefresh("teacher");
       } catch (err) {
-        m.okBtn.textContent = "Guardar examen"; m.okBtn.disabled = false;
-        m.showErr((err && err.message) || "No se pudo guardar el examen");
+        m.okBtn.textContent = t("teacher.quizSaveBtn"); m.okBtn.disabled = false;
+        m.showErr((err && err.message) || t("teacher.quizSaveError"));
       }
     });
   }
@@ -395,27 +396,27 @@ export const S = {};
     const curKind = l.videoKind || "none";
     const body = `
       <div class="field" style="margin-bottom:12px">
-        <label class="label">Origen del video</label>
+        <label class="label">${t("teacher.videoSourceLabel")}</label>
         <select class="select" id="lv-kind">
-          <option value="none" ${curKind==='none'?'selected':''}>Sin video</option>
-          <option value="upload" ${curKind==='upload'?'selected':''}>Subir archivo (MP4)</option>
-          <option value="youtube" ${curKind==='youtube'?'selected':''}>YouTube (pegar URL)</option>
-          <option value="cloudflare" ${curKind==='cloudflare'?'selected':''}>Video alojado en OTR (ID)</option>
+          <option value="none" ${curKind==='none'?'selected':''}>${t("teacher.videoOptNone")}</option>
+          <option value="upload" ${curKind==='upload'?'selected':''}>${t("teacher.videoOptUpload")}</option>
+          <option value="youtube" ${curKind==='youtube'?'selected':''}>${t("teacher.videoOptYoutube")}</option>
+          <option value="cloudflare" ${curKind==='cloudflare'?'selected':''}>${t("teacher.videoOptCloudflare")}</option>
         </select>
       </div>
 
       <div class="field lv-block" data-for="upload" style="margin-bottom:12px;display:none">
-        <label class="label">Archivo de video</label>
+        <label class="label">${t("teacher.videoFileLabel")}</label>
         <input type="file" id="lv-file" accept="video/*" class="input" style="padding:8px"/>
         <div id="lv-up-state" class="faint" style="font-size:12px;margin-top:6px"></div>
       </div>
 
       <div class="field lv-block" data-for="link" style="margin-bottom:6px;display:none">
-        <label class="label" id="lv-src-label">Enlace de YouTube o ID del video</label>
-        <input class="input" id="lv-src" placeholder="https://youtu.be/… o el ID del video" value="${(curKind==='youtube'||curKind==='cloudflare')?esc(l.videoSrc||''):''}"/>
+        <label class="label" id="lv-src-label">${t("teacher.videoLinkLabel")}</label>
+        <input class="input" id="lv-src" placeholder="${t("teacher.videoLinkPh")}" value="${(curKind==='youtube'||curKind==='cloudflare')?esc(l.videoSrc||''):''}"/>
       </div>`;
 
-    const m = buildModal({ title: `Video · ${esc(lessonTitle || "Lección")}`, bodyHtml: body, okLabel: "Guardar video" });
+    const m = buildModal({ title: `Video · ${esc(lessonTitle || t("teacher.lessonFallback"))}`, bodyHtml: body, okLabel: t("teacher.videoSaveBtn") });
     const kindSel = m.body.querySelector("#lv-kind");
     const fileInput = m.body.querySelector("#lv-file");
     const upState = m.body.querySelector("#lv-up-state");
@@ -429,8 +430,8 @@ export const S = {};
         const show = (fr === "upload" && k === "upload") || (fr === "link" && (k === "youtube" || k === "cloudflare"));
         el.style.display = show ? "" : "none";
       });
-      if (k === "youtube") srcLabel.textContent = "URL de YouTube";
-      else if (k === "cloudflare") srcLabel.textContent = "ID del video alojado en OTR";
+      if (k === "youtube") srcLabel.textContent = t("teacher.videoYoutubeUrlLabel");
+      else if (k === "cloudflare") srcLabel.textContent = t("teacher.videoCloudflareIdLabel");
     }
     kindSel.addEventListener("change", syncBlocks);
     syncBlocks();
@@ -439,14 +440,14 @@ export const S = {};
     fileInput && fileInput.addEventListener("change", async () => {
       const file = fileInput.files && fileInput.files[0];
       if (!file) return;
-      upState.textContent = "Subiendo…"; m.okBtn.disabled = true;
+      upState.textContent = t("teacher.uploading"); m.okBtn.disabled = true;
       try {
         const res = await window.otrUpload(file, "video"); // {url, ...}
         uploadedUrl = res.url;
-        upState.innerHTML = `<span class="row vcenter" style="gap:5px;color:var(--ok)"><span style="display:inline-flex;width:13px;height:13px">${IC.check}</span>Subido</span> · <span class="faint">${esc(res.original || "")}</span>`;
+        upState.innerHTML = `<span class="row vcenter" style="gap:5px;color:var(--ok)"><span style="display:inline-flex;width:13px;height:13px">${IC.check}</span>${t("teacher.uploaded")}</span> · <span class="faint">${esc(res.original || "")}</span>`;
       } catch (err) {
         uploadedUrl = "";
-        upState.textContent = "Error al subir el archivo.";
+        upState.textContent = t("teacher.uploadError");
       } finally {
         m.okBtn.disabled = false;
       }
@@ -456,24 +457,24 @@ export const S = {};
       const k = kindSel.value;
       let payload;
       if (k === "upload") {
-        if (!uploadedUrl) { m.showErr("Sube un archivo de video primero."); return; }
+        if (!uploadedUrl) { m.showErr(t("teacher.errUploadVideoFirst")); return; }
         payload = { videoKind: "upload", videoSrc: uploadedUrl };
       } else if (k === "youtube" || k === "cloudflare") {
         const src = (m.body.querySelector("#lv-src").value || "").trim();
-        if (!src) { m.showErr("Pega la URL/UID del video."); return; }
+        if (!src) { m.showErr(t("teacher.errPasteVideoUrl")); return; }
         payload = { videoKind: k, videoSrc: src };
       } else {
         payload = { videoKind: "none", videoSrc: "" };
       }
-      m.okBtn.textContent = "Guardando…"; m.okBtn.disabled = true;
+      m.okBtn.textContent = t("teacher.saving"); m.okBtn.disabled = true;
       try {
         await window.api(`/api/lessons/${lessonId}`, payload, "PATCH");
-        window.toast && window.toast("Video actualizado", "ok");
+        window.toast && window.toast(t("teacher.videoUpdated"), "ok");
         m.close();
         await softRefresh("teacher");
       } catch (err) {
-        m.okBtn.textContent = "Guardar video"; m.okBtn.disabled = false;
-        m.showErr((err && err.message) || "No se pudo guardar el video");
+        m.okBtn.textContent = t("teacher.videoSaveBtn"); m.okBtn.disabled = false;
+        m.showErr((err && err.message) || t("teacher.videoSaveError"));
       }
     });
   }
@@ -485,43 +486,43 @@ export const S = {};
   function openResourceUpload() {
     const body = `
       <div class="field" style="margin-bottom:12px">
-        <label class="label">Título</label>
-        <input class="input" id="rs-title" placeholder="Plantilla de caso · Public Forum"/>
+        <label class="label">${t("teacher.resTitleLabel")}</label>
+        <input class="input" id="rs-title" placeholder="${t("teacher.resTitlePh")}"/>
       </div>
       <div class="row" style="gap:12px;margin-bottom:12px">
         <div class="field" style="flex:1">
-          <label class="label">Tipo</label>
+          <label class="label">${t("teacher.resTypeLabel")}</label>
           <select class="select" id="rs-kind">
-            <option value="brief">Brief</option>
-            <option value="template">Plantilla</option>
-            <option value="drill">Drill</option>
-            <option value="recording">Grabación</option>
-            <option value="link">Enlace</option>
+            <option value="brief">${t("teacher.resTypeBrief")}</option>
+            <option value="template">${t("teacher.resTypeTemplate")}</option>
+            <option value="drill">${t("teacher.resTypeDrill")}</option>
+            <option value="recording">${t("teacher.resTypeRecording")}</option>
+            <option value="link">${t("teacher.resTypeLink")}</option>
           </select>
         </div>
         <div class="field" style="flex:1">
-          <label class="label">Acceso</label>
+          <label class="label">${t("teacher.resAccessLabel")}</label>
           <select class="select" id="rs-gated">
-            <option value="no">Público</option>
-            <option value="yes">Solo inscritos</option>
+            <option value="no">${t("teacher.resAccessPublic")}</option>
+            <option value="yes">${t("teacher.resAccessEnrolled")}</option>
           </select>
         </div>
       </div>
       <div class="row" style="gap:12px;margin-bottom:12px">
-        <div class="field" style="flex:1"><label class="label">Etiqueta</label><input class="input" id="rs-tag" placeholder="Refutación"/></div>
-        <div class="field" style="flex:1"><label class="label">Formato</label><input class="input" id="rs-format" placeholder="Public Forum"/></div>
+        <div class="field" style="flex:1"><label class="label">${t("teacher.resTagLabel")}</label><input class="input" id="rs-tag" placeholder="${t("teacher.resTagPh")}"/></div>
+        <div class="field" style="flex:1"><label class="label">${t("teacher.resFormatLabel")}</label><input class="input" id="rs-format" placeholder="Public Forum"/></div>
       </div>
       <div class="field" style="margin-bottom:12px">
-        <label class="label">Archivo del recurso (PDF, audio, doc…)</label>
+        <label class="label">${t("teacher.resFileLabel")}</label>
         <input type="file" id="rs-file" class="input" style="padding:8px"/>
         <div id="rs-up-state" class="faint" style="font-size:12px;margin-top:6px"></div>
       </div>
       <div class="field" style="margin-bottom:6px">
-        <label class="label">o URL externa (opcional)</label>
+        <label class="label">${t("teacher.resExternalUrlLabel")}</label>
         <input class="input" id="rs-url" placeholder="https://…"/>
       </div>`;
 
-    const m = buildModal({ title: "Nuevo recurso (archivo real)", bodyHtml: body, okLabel: "Crear recurso" });
+    const m = buildModal({ title: t("teacher.resModalTitle"), bodyHtml: body, okLabel: t("teacher.resCreateBtn") });
     const fileInput = m.body.querySelector("#rs-file");
     const upState = m.body.querySelector("#rs-up-state");
     let uploadedUrl = "";
@@ -529,14 +530,14 @@ export const S = {};
     fileInput && fileInput.addEventListener("change", async () => {
       const file = fileInput.files && fileInput.files[0];
       if (!file) return;
-      upState.textContent = "Subiendo…"; m.okBtn.disabled = true;
+      upState.textContent = t("teacher.uploading"); m.okBtn.disabled = true;
       try {
         const res = await window.otrUpload(file, "resource");
         uploadedUrl = res.url;
-        upState.innerHTML = `<span class="row vcenter" style="gap:5px;color:var(--ok)"><span style="display:inline-flex;width:13px;height:13px">${IC.check}</span>Subido</span> · <span class="faint">${esc(res.original || "")}</span>`;
+        upState.innerHTML = `<span class="row vcenter" style="gap:5px;color:var(--ok)"><span style="display:inline-flex;width:13px;height:13px">${IC.check}</span>${t("teacher.uploaded")}</span> · <span class="faint">${esc(res.original || "")}</span>`;
       } catch (err) {
         uploadedUrl = "";
-        upState.textContent = "Error al subir el archivo.";
+        upState.textContent = t("teacher.uploadError");
       } finally {
         m.okBtn.disabled = false;
       }
@@ -544,10 +545,10 @@ export const S = {};
 
     m.okBtn.addEventListener("click", async () => {
       const title = (m.body.querySelector("#rs-title").value || "").trim();
-      if (!title) { m.showErr("El título es obligatorio."); return; }
+      if (!title) { m.showErr(t("teacher.errTitleRequired")); return; }
       const externalUrl = (m.body.querySelector("#rs-url").value || "").trim();
       const url = uploadedUrl || externalUrl;
-      if (!url) { m.showErr("Sube un archivo o pega una URL externa."); return; }
+      if (!url) { m.showErr(t("teacher.errFileOrUrl")); return; }
 
       const payload = {
         title,
@@ -557,15 +558,15 @@ export const S = {};
         url,
         gated: m.body.querySelector("#rs-gated").value === "yes",
       };
-      m.okBtn.textContent = "Creando…"; m.okBtn.disabled = true;
+      m.okBtn.textContent = t("teacher.creating"); m.okBtn.disabled = true;
       try {
         await window.api("/api/resources", payload);
-        window.toast && window.toast("Recurso creado", "ok");
+        window.toast && window.toast(t("teacher.resourceCreated"), "ok");
         m.close();
         await softRefresh("teacher");
       } catch (err) {
-        m.okBtn.textContent = "Crear recurso"; m.okBtn.disabled = false;
-        m.showErr((err && err.message) || "No se pudo crear el recurso");
+        m.okBtn.textContent = t("teacher.resCreateBtn"); m.okBtn.disabled = false;
+        m.showErr((err && err.message) || t("teacher.resourceCreateError"));
       }
     });
   }
@@ -587,25 +588,25 @@ export const S = {};
 
       // Fila de un estudiante. data-name/data-role permiten el filtrado local en mount().
       const studentRow = (s) => `<tr data-role="student" data-risk="${s.risk?'1':'0'}" data-name="${esc(s.n.toLowerCase())}">
-        <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div><div class="nm">${esc(s.n)}</div>${s.risk?C.badge('Riesgo','danger'):''}</div></div></td>
-        <td>${C.badge('Estudiante')}</td>
+        <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div><div class="nm">${esc(s.n)}</div>${s.risk?C.badge(t("teacher.riskBadge"),'danger'):''}</div></div></td>
+        <td>${C.badge(t("teacher.ptRoleStudent"))}</td>
         <td>${C.levelBadge(s.lvl)}</td>
         ${/* [auditoría] XP real del alumno (antes la barra "Progreso" era xp/55, una constante inventada que no reflejaba avance de curso) */""}
         <td class="num tnum" style="font-size:12px">${(s.xp||0).toLocaleString('es')}</td>
         <td class="num faint" style="font-size:12px">${esc(s.last)}</td>
         <td class="center"><div class="row vcenter" style="gap:6px;justify-content:flex-end">
-          <button class="btn btn-soft btn-sm" data-adjudicate="${s.id}" data-name="${esc(s.n)}">Adjudicar</button>
-          <button class="btn btn-ghost btn-sm" data-action="eval-skills" data-user="${s.id}" data-name="${esc(s.n)}">Evaluar</button>
-          <button class="icon-btn" style="width:30px;height:30px" data-go="messages" title="Enviar mensaje">${IC.msg}</button>
+          <button class="btn btn-soft btn-sm" data-adjudicate="${s.id}" data-name="${esc(s.n)}">${t("teacher.adjudicate")}</button>
+          <button class="btn btn-ghost btn-sm" data-action="eval-skills" data-user="${s.id}" data-name="${esc(s.n)}">${t("teacher.evaluate")}</button>
+          <button class="icon-btn" style="width:30px;height:30px" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button>
         </div></td>
       </tr>`;
 
       return `
-      <div class="page-head"><div><p class="eyebrow">Profesor</p>
-      <h1 class="page-title">Participantes</h1><div class="page-sub">${studentCount} estudiante${studentCount===1?'':'s'} · ${coachCount} coach</div></div></div>
+      <div class="page-head"><div><p class="eyebrow">${t("teacher.ptEyebrow")}</p>
+      <h1 class="page-title">${t("teacher.ptTitle")}</h1><div class="page-sub">${studentCount} estudiante${studentCount===1?'':'s'} · ${coachCount} coach</div></div></div>
 
       <div class="row between vcenter" style="margin-bottom:16px;flex-wrap:wrap;gap:12px">
-        <div class="searchbox" style="width:280px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="pt-search" aria-label="Buscar participante" placeholder="Buscar participante…"/></div>
+        <div class="searchbox" style="width:280px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="pt-search" aria-label="${t("teacher.ptSearchAria")}" placeholder="${t("teacher.ptSearchPh")}"/></div>
         <div class="row wrap" style="gap:8px" id="pt-filters">
           <button type="button" class="chip active" data-filter="all">Todos · ${total}</button>
           <button type="button" class="chip" data-filter="student">Estudiantes · ${studentCount}</button>
@@ -616,15 +617,15 @@ export const S = {};
 
       <div class="table-wrap scroll-m fade-up">
         <table class="tbl">
-          <thead><tr><th>Nombre</th><th>Rol</th><th>Nivel</th><th class="num">XP</th><th class="num">Últ. acceso</th><th></th></tr></thead>
+          <thead><tr><th>${t("teacher.ptThName")}</th><th>${t("teacher.ptThRole")}</th><th>${t("teacher.ptThLevel")}</th><th class="num">${t("teacher.ptThXp")}</th><th class="num">${t("teacher.ptThLastAccess")}</th><th></th></tr></thead>
           <tbody id="pt-body">
             <tr data-role="coach" data-risk="0" data-name="${coachName.toLowerCase()}">
               <td><div class="cell-user">${C.avatar(coachInit,{size:'sm',bg:'var(--otr-navy)'})}<div><div class="nm">${coachName}</div>${coach.headline?`<div class="em">${coach.headline}</div>`:''}</div></div></td>
-              <td>${C.badge('Coach','navy')}</td><td class="faint">—</td><td class="faint">—</td><td class="num faint" style="font-size:12px">—</td><td></td></tr>
+              <td>${C.badge(t("teacher.ptRoleCoach"),'navy')}</td><td class="faint">—</td><td class="faint">—</td><td class="num faint" style="font-size:12px">—</td><td></td></tr>
             ${(DB.students||[]).map(studentRow).join('')}
           </tbody>
         </table>
-        <div id="pt-empty" class="faint" style="display:none;padding:18px;text-align:center;font-size:13px">Sin participantes para este filtro.</div>
+        <div id="pt-empty" class="faint" style="display:none;padding:18px;text-align:center;font-size:13px">${t("teacher.ptNoParticipants")}</div>
       </div>`;
     },
 
@@ -668,8 +669,8 @@ export const S = {};
       // [§6.5/§7.5] Adjudicar una ronda del alumno: el coach llena la rúbrica → el backend
       // mueve el rating Glicko del ALUMNO, escribe el ballot y nudgea sus skills (§8.2).
       const CRIT = [
-        ["Argumentation", "Argumentación"], ["Rebuttal", "Refutación"], ["Delivery", "Delivery"],
-        ["Evidence/Research", "Evidencia"], ["Crossfire", "Cross-ex"],
+        ["Argumentation", t("teacher.critArgumentation")], ["Rebuttal", t("teacher.critRebuttal")], ["Delivery", t("teacher.critDelivery")],
+        ["Evidence/Research", t("teacher.critEvidence")], ["Crossfire", t("teacher.critCrossfire")],
       ];
       const fld = (label, html) => `<div class="field" style="margin-bottom:12px"><label class="label">${label}</label>${html}</div>`;
       body.querySelectorAll("[data-adjudicate]").forEach((btn) =>
@@ -683,13 +684,13 @@ export const S = {};
           const partnerOpts = (DB.students || []).filter((s) => s.id !== uid)
             .map((s) => `<option value="${s.id}">${esc(s.n)}</option>`).join("");
           const bodyHtml =
-            fld("Resultado", `<select class="select" id="bl-result"><option value="WIN">Victoria</option><option value="LOSS">Derrota</option><option value="DRAW">Empate</option></select>`) +
-            fld("Formato", `<select class="select" id="bl-format"><option value="PF">Public Forum</option><option value="LD">Lincoln-Douglas</option><option value="Policy">Policy</option><option value="Parli">Parlamentario</option></select>`) +
-            fld("Oponente <span class='muted' style='font-weight:500'>(opcional)</span>", `<input class="input" id="bl-opp" placeholder="Equipo o escuela rival"/>`) +
-            (partnerOpts ? fld("Compañero de equipo <span class='muted' style='font-weight:500'>(2v2 · PF/Policy/Parli · opcional)</span>", `<select class="select" id="bl-partner"><option value="">— Sin compañero (1v1) —</option>${partnerOpts}</select>`) : "") +
-            fld("Rúbrica (0–10) — mueve el rating y el Skill Graph", rubric) +
-            fld("Comentarios del juez <span class='muted' style='font-weight:500'>(opcional)</span>", `<textarea class="input" id="bl-comments" rows="3" placeholder="Feedback para el alumno…" style="resize:vertical;min-height:72px"></textarea>`);
-          const m = buildModal({ title: `Adjudicar ronda · ${name}`, bodyHtml, okLabel: "Adjudicar y publicar" });
+            fld(t("teacher.adjResultLabel"), `<select class="select" id="bl-result"><option value="WIN">${t("teacher.adjResultWin")}</option><option value="LOSS">${t("teacher.adjResultLoss")}</option><option value="DRAW">${t("teacher.adjResultDraw")}</option></select>`) +
+            fld(t("teacher.adjFormatLabel"), `<select class="select" id="bl-format"><option value="PF">Public Forum</option><option value="LD">Lincoln-Douglas</option><option value="Policy">Policy</option><option value="Parli">${t("teacher.adjFormatParli")}</option></select>`) +
+            fld(t("teacher.adjOpponentLabel"), `<input class="input" id="bl-opp" placeholder="${t("teacher.adjOpponentPh")}"/>`) +
+            (partnerOpts ? fld(t("teacher.adjPartnerLabel"), `<select class="select" id="bl-partner"><option value="">${t("teacher.adjPartnerNone")}</option>${partnerOpts}</select>`) : "") +
+            fld(t("teacher.adjRubricLabel"), rubric) +
+            fld(t("teacher.adjCommentsLabel"), `<textarea class="input" id="bl-comments" rows="3" placeholder="${t("teacher.adjCommentsPh")}" style="resize:vertical;min-height:72px"></textarea>`);
+          const m = buildModal({ title: `Adjudicar ronda · ${name}`, bodyHtml, okLabel: t("teacher.adjPublishBtn") });
           m.okBtn.addEventListener("click", async () => {
             const result = m.body.querySelector("#bl-result").value;
             const format = m.body.querySelector("#bl-format").value;
@@ -698,7 +699,7 @@ export const S = {};
             const partnerUserId = partnerEl ? partnerEl.value : "";
             const comments = m.body.querySelector("#bl-comments").value.trim();
             const scores = Array.from(m.body.querySelectorAll(".bl-score")).map((i) => ({ criterion: i.getAttribute("data-c"), score: Number(i.value) }));
-            m.okBtn.disabled = true; m.okBtn.textContent = "Adjudicando…";
+            m.okBtn.disabled = true; m.okBtn.textContent = t("teacher.adjudicating");
             try {
               const d = await window.api("/api/debates", { targetUserId: uid, result, format, opponent, partnerUserId: partnerUserId || undefined, source: "OTR", ballot: { comments, scores } });
               m.close();
@@ -708,8 +709,8 @@ export const S = {};
               const partnerNote = partnerUserId ? " · compañero también actualizado" : "";
               window.toast?.(`Ronda adjudicada para ${name}${mv}${d?.promoted ? ` · ¡ascendió a ${d.tierAfter}!` : ""}${partnerNote}`, "ok");
             } catch (e) {
-              m.okBtn.disabled = false; m.okBtn.textContent = "Adjudicar y publicar";
-              m.showErr((e && e.message) || "No se pudo adjudicar la ronda");
+              m.okBtn.disabled = false; m.okBtn.textContent = t("teacher.adjPublishBtn");
+              m.showErr((e && e.message) || t("teacher.adjError"));
             }
           });
         }),

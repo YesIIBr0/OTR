@@ -11,6 +11,7 @@
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
@@ -22,13 +23,13 @@ function modState() {
 }
 
 /* ---------------- helpers ---------------- */
-const TARGET_LABEL = {
-  user: "Usuario",
-  message: "Mensaje",
-  conversation: "Conversación",
-  booking: "Reserva",
-  coach: "Coach",
-};
+const TARGET_LABEL = () => ({
+  user: t("admin.targetUser"),
+  message: t("admin.targetMessage"),
+  conversation: t("admin.targetConversation"),
+  booking: t("admin.targetBooking"),
+  coach: t("admin.targetCoach"),
+});
 const ini = (name) =>
   (String(name || "?").split(" ").map((w) => w[0]).join("") || "?").slice(0, 2).toUpperCase();
 
@@ -44,15 +45,15 @@ function fmtDate(v) {
 
 function statusBadge(status) {
   const s = String(status || "").toUpperCase();
-  if (s === "OPEN") return `<span class="badge warn"><span class="dot"></span>Abierto</span>`;
-  if (s === "REVIEWED") return `<span class="badge sky"><span class="dot"></span>Revisado</span>`;
-  if (s === "DISMISSED") return `<span class="badge"><span class="dot"></span>Descartado</span>`;
+  if (s === "OPEN") return `<span class="badge warn"><span class="dot"></span>${t("admin.statusOpen")}</span>`;
+  if (s === "REVIEWED") return `<span class="badge sky"><span class="dot"></span>${t("admin.statusReviewed")}</span>`;
+  if (s === "DISMISSED") return `<span class="badge"><span class="dot"></span>${t("admin.statusDismissed")}</span>`;
   return s ? `<span class="badge">${esc(s)}</span>` : "";
 }
 
 /* ---------------- card de reporte ---------------- */
 function reportCard(r, d) {
-  const type = TARGET_LABEL[r.targetType] || esc(String(r.targetType || "Objetivo"));
+  const type = TARGET_LABEL()[r.targetType] || esc(String(r.targetType || t("admin.targetFallback")));
   const reviewed = String(r.status || "").toUpperCase() === "REVIEWED";
   return `
   <div class="card card-pad fade-up" style="--d:${d}" data-rep-card="${esc(r.id)}">
@@ -71,17 +72,17 @@ function reportCard(r, d) {
       <div class="row vcenter" style="gap:8px;flex:1;min-width:160px">
         ${C.avatar(esc(ini(r.reporterName)), { size: "sm", bg: "var(--otr-navy)" })}
         <span class="faint" style="font-size:12px">
-          Reportado por <b style="color:var(--text-2)">${esc(r.reporterName)}</b>${r.createdAt ? ` · ${esc(fmtDate(r.createdAt))}` : ""}
+          ${t("admin.reportedBy")} <b style="color:var(--text-2)">${esc(r.reporterName)}</b>${r.createdAt ? ` · ${esc(fmtDate(r.createdAt))}` : ""}
         </span>
       </div>
       <div class="row" style="gap:8px;flex:none">
         ${!reviewed && (r.targetType === "user" || r.targetType === "coach")
-          ? `<button class="btn btn-sm" data-rep-suspend="${esc(r.id)}" style="background:var(--danger);color:#fff">Suspender al usuario</button>`
+          ? `<button class="btn btn-sm" data-rep-suspend="${esc(r.id)}" style="background:var(--danger);color:#fff">${t("admin.suspendUser")}</button>`
           : ""}
         ${reviewed
           ? ""
-          : `<button class="btn btn-soft btn-sm" data-rep-review="${esc(r.id)}">Marcar revisado</button>`}
-        <button class="btn btn-ghost btn-sm" data-rep-dismiss="${esc(r.id)}">Descartar</button>
+          : `<button class="btn btn-soft btn-sm" data-rep-review="${esc(r.id)}">${t("admin.markReviewed")}</button>`}
+        <button class="btn btn-ghost btn-sm" data-rep-dismiss="${esc(r.id)}">${t("admin.dismiss")}</button>
       </div>
     </div>
   </div>`;
@@ -95,8 +96,8 @@ function viewBody() {
     return `
     <div class="card fade-up"><div class="empty">
       <div class="ill">${IC.shield || IC.flag}</div>
-      <h4>Cargando reportes…</h4>
-      <p>Estamos recuperando la cola de moderación.</p>
+      <h4>${t("admin.loadingHeading")}</h4>
+      <p>${t("admin.loadingBody")}</p>
     </div></div>`;
   }
 
@@ -106,8 +107,8 @@ function viewBody() {
     return `
     <div class="card fade-up"><div class="empty">
       <div class="ill">${IC.checkCircle}</div>
-      <h4>Todo en orden — sin reportes pendientes</h4>
-      <p>Cuando alguien reporte un usuario, mensaje o reserva, aparecerá aquí.</p>
+      <h4>${t("admin.emptyHeading")}</h4>
+      <p>${t("admin.emptyBody")}</p>
     </div></div>`;
   }
 
@@ -123,17 +124,17 @@ S.adminConsole = {
 
     return `
     <div class="page-head fade-up"><div>
-      <p class="eyebrow">Administración</p>
-      <h1 class="page-title">Consola de moderación</h1>
-      <div class="page-sub">Revisa y resuelve los reportes de la comunidad — usuarios, mensajes y reservas</div>
+      <p class="eyebrow">${t("admin.eyebrow")}</p>
+      <h1 class="page-title">${t("admin.title")}</h1>
+      <div class="page-sub">${t("admin.subtitle")}</div>
     </div></div>
 
     <div class="grid g-2 fade-up" style="--d:1;margin-bottom:18px">
-      <div class="tile">${C.kpi("Reportes abiertos", String(open), { ic: "flag" })}</div>
-      <div class="tile">${C.kpi("En la cola", String(st.total || reports.length), { ic: "doc" })}</div>
+      <div class="tile">${C.kpi(t("admin.kpiOpen"), String(open), { ic: "flag" })}</div>
+      <div class="tile">${C.kpi(t("admin.kpiQueue"), String(st.total || reports.length), { ic: "doc" })}</div>
     </div>
 
-    <div class="fade-up" style="--d:2" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="mod-more">Cargar más · ${reports.length} de ${st.total}</button></div>` : ""}</div>`;
+    <div class="fade-up" style="--d:2" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="mod-more">${t("admin.loadMore")} · ${reports.length} ${t("admin.ofConnector")} ${st.total}</button></div>` : ""}</div>`;
   },
 
   mount(root, state) {
@@ -162,7 +163,7 @@ S.adminConsole = {
         .catch((e) => {
           if (!append) st.reports = [];
           st.loaded = true;
-          w.toast?.((e && e.message) || "No se pudo cargar la cola de moderación", "danger");
+          w.toast?.((e && e.message) || t("admin.toastLoadError"), "danger");
         })
         .finally(() => {
           st.loading = false;
@@ -176,7 +177,7 @@ S.adminConsole = {
     // Resuelve un reporte: PATCH status → mutación local + toast + re-render.
     const resolve = async (btn, id, status) => {
       if (!id) return;
-      const label = status === "REVIEWED" ? "Marcando…" : "Descartando…";
+      const label = status === "REVIEWED" ? t("admin.markingProgress") : t("admin.dismissingProgress");
       btn.disabled = true;
       const prev = btn.textContent;
       btn.textContent = label;
@@ -187,16 +188,16 @@ S.adminConsole = {
           st.reports = (Array.isArray(st.reports) ? st.reports : []).filter((r) => r.id !== id);
           // [fix verificación] Mantener st.total en sync: si no, 'Cargar más' queda visible con un total inflado.
           if (typeof st.total === "number") st.total = Math.max(0, st.total - 1);
-          w.toast?.("Reporte descartado", "ok");
+          w.toast?.(t("admin.toastDismissed"), "ok");
         } else {
           (Array.isArray(st.reports) ? st.reports : []).forEach((r) => {
             if (r.id === id) r.status = "REVIEWED";
           });
-          w.toast?.("Reporte marcado como revisado", "ok");
+          w.toast?.(t("admin.toastReviewed"), "ok");
         }
         repaint();
       } catch (e) {
-        w.toast?.((e && e.message) || "No se pudo actualizar el reporte", "danger");
+        w.toast?.((e && e.message) || t("admin.toastUpdateError"), "danger");
         btn.disabled = false;
         btn.textContent = prev;
       }
@@ -217,24 +218,24 @@ S.adminConsole = {
       if (btn.getAttribute("data-armed") !== "1") {
         btn.setAttribute("data-armed", "1");
         const t0 = btn.textContent;
-        btn.textContent = "¿Confirmar suspensión? Tocar de nuevo";
+        btn.textContent = t("admin.suspendConfirm");
         setTimeout(() => {
           if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
         }, 4000);
         return;
       }
       btn.disabled = true;
-      btn.textContent = "Suspendiendo…";
+      btn.textContent = t("admin.suspendingProgress");
       try {
         await w.api("/api/reports", { reportId: id, action: "suspend" }, "PATCH");
         (Array.isArray(st.reports) ? st.reports : []).forEach((r) => { if (r.id === id) r.status = "REVIEWED"; });
-        w.toast?.("Usuario suspendido · reporte marcado revisado", "ok");
+        w.toast?.(t("admin.toastSuspended"), "ok");
         repaint();
       } catch (e) {
-        w.toast?.((e && e.message) || "No se pudo suspender al usuario", "danger");
+        w.toast?.((e && e.message) || t("admin.toastSuspendError"), "danger");
         btn.disabled = false;
         btn.removeAttribute("data-armed");
-        btn.textContent = "Suspender al usuario";
+        btn.textContent = t("admin.suspendUser");
       }
     };
     root.querySelectorAll("[data-rep-suspend]").forEach((btn) =>
@@ -243,7 +244,7 @@ S.adminConsole = {
 
     // [ENT-01] Cargar más reportes (paginación).
     root.querySelector("#mod-more")?.addEventListener("click", (e) => {
-      const b = e.currentTarget; if (b) { b.disabled = true; b.textContent = "Cargando…"; }
+      const b = e.currentTarget; if (b) { b.disabled = true; b.textContent = t("admin.loadingProgress"); }
       load(true);
     });
   },

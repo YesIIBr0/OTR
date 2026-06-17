@@ -1,0 +1,362 @@
+/* OTR Aula · i18n keys — scr-teacher.ts (prefix "teacher")
+   Diccionario por-pantalla para el Panel del profesor (Seguimiento del grupo,
+   Gestión de contenido, constructores de examen/video/recurso) y la pantalla
+   Participantes (adjudicación de rondas) que conviven en el mismo módulo.
+   Default-safe: solo datos. es = texto original exacto reemplazado en la
+   pantalla; en = traducción profesional natural. Consumido por t() de ./i18n. */
+export const dict = {
+  es: {
+    // Panel del profesor · cabecera
+    "teacher.eyebrow": "Panel del profesor",
+    "teacher.title": "Seguimiento del grupo",
+    "teacher.gradeBtn": "Calificar",
+
+    // Pestañas Grupo / Contenido
+    "teacher.tabGroup": "Grupo",
+    "teacher.tabContent": "Contenido",
+
+    // KPIs del grupo
+    "teacher.kpiAvg": "Promedio del grupo",
+    "teacher.kpiAttendance": "Asistencia",
+    "teacher.kpiEngagement": "Engagement promedio",
+    "teacher.kpiAtRisk": "En riesgo",
+
+    // Búsqueda + filtro del roster
+    "teacher.searchStudentPh": "Buscar alumno…",
+    "teacher.searchStudentAria": "Buscar alumno",
+    "teacher.riskChip": "En riesgo",
+
+    // Tabla de seguimiento
+    "teacher.thStudent": "Estudiante",
+    "teacher.thLevel": "Nivel",
+    "teacher.thGrade": "Nota",
+    "teacher.thAttendance": "Asist.",
+    "teacher.thEngagement": "Engagement",
+    "teacher.thTrend": "Tendencia",
+    "teacher.thLastAccess": "Últ. acceso",
+    "teacher.riskBadge": "Riesgo",
+    "teacher.noStudentsFilter": "Sin alumnos para este filtro.",
+
+    // Requieren atención
+    "teacher.needAttention": "Requieren atención",
+    "teacher.lowAttendance": "Asistencia baja",
+    "teacher.noSubmissions": "Sin entregas",
+    "teacher.sendMessage": "Enviar mensaje",
+    "teacher.noAlertsTitle": "Sin alertas",
+    "teacher.noAlertsBody": "Todo el grupo va al día.",
+
+    // Pendientes de calificar
+    "teacher.pendingGradingTitle": "Pendientes de calificar",
+    "teacher.pendingGradingHint": "Ábrelas para calificar con nota y feedback",
+    "teacher.gradeSubmissions": "Calificar entregas",
+    "teacher.allCaughtUpTitle": "Todo al día",
+    "teacher.allCaughtUpBody": "No tienes entregas pendientes de calificar.",
+
+    // Panel de gestión de contenido
+    "teacher.manageEyebrow": "Gestión de contenido",
+    "teacher.manageTitle": "Estructura del curso",
+    "teacher.manageSub": "Cursos → Módulos → Lecciones → Examen",
+    "teacher.resourceFileBtn": "Recurso (archivo)",
+    "teacher.fullEditorBtn": "Editor completo",
+    "teacher.kpiCourses": "Cursos",
+    "teacher.kpiModules": "Módulos",
+    "teacher.kpiLessons": "Lecciones",
+    "teacher.kpiQuizzes": "Exámenes",
+    "teacher.editContentBtn": "Editar contenido",
+    "teacher.noCoursesTitle": "Aún no tienes cursos",
+    "teacher.noCoursesBody": "Crea tu primer curso con el botón <b>+ Crear</b> de la barra superior, y luego añade módulos, lecciones y exámenes.",
+
+    // Modal genérico
+    "teacher.save": "Guardar",
+    "teacher.cancel": "Cancelar",
+    "teacher.saving": "Guardando…",
+    "teacher.lessonFallback": "Lección",
+
+    // Constructor de examen (quiz)
+    "teacher.quizTitleLabel": "Título del examen",
+    "teacher.quizTitlePh": "Examen de unidad",
+    "teacher.quizPassLabel": "Puntaje para aprobar (%)",
+    "teacher.quizQuestions": "Preguntas",
+    "teacher.quizAddQuestion": "Añadir pregunta",
+    "teacher.quizSaveBtn": "Guardar examen",
+    "teacher.markCorrect": "Marcar como correcta",
+    "teacher.optionTextPh": "Texto de la opción",
+    "teacher.removeOption": "Quitar opción",
+    "teacher.minTwoOptions": "Una pregunta necesita al menos 2 opciones",
+    "teacher.questionPromptPh": "Enunciado de la pregunta",
+    "teacher.duplicateQuestion": "Duplicar pregunta",
+    "teacher.duplicate": "Duplicar",
+    "teacher.removeQuestion": "Quitar pregunta",
+    "teacher.addOption": "Añadir opción",
+    "teacher.minOneQuestion": "El examen necesita al menos una pregunta",
+    "teacher.errQuestionNoPrompt": "Hay una pregunta sin enunciado.",
+    "teacher.errNoValidQuestion": "Añade al menos una pregunta válida.",
+    "teacher.quizSaved": "Examen guardado",
+    "teacher.quizSaveError": "No se pudo guardar el examen",
+
+    // Constructor de video de lección
+    "teacher.videoSourceLabel": "Origen del video",
+    "teacher.videoOptNone": "Sin video",
+    "teacher.videoOptUpload": "Subir archivo (MP4)",
+    "teacher.videoOptYoutube": "YouTube (pegar URL)",
+    "teacher.videoOptCloudflare": "Video alojado en OTR (ID)",
+    "teacher.videoFileLabel": "Archivo de video",
+    "teacher.videoLinkLabel": "Enlace de YouTube o ID del video",
+    "teacher.videoLinkPh": "https://youtu.be/… o el ID del video",
+    "teacher.videoSaveBtn": "Guardar video",
+    "teacher.videoYoutubeUrlLabel": "URL de YouTube",
+    "teacher.videoCloudflareIdLabel": "ID del video alojado en OTR",
+    "teacher.errUploadVideoFirst": "Sube un archivo de video primero.",
+    "teacher.errPasteVideoUrl": "Pega la URL/UID del video.",
+    "teacher.videoUpdated": "Video actualizado",
+    "teacher.videoSaveError": "No se pudo guardar el video",
+
+    // Subida de archivos (compartido video/recurso)
+    "teacher.uploading": "Subiendo…",
+    "teacher.uploaded": "Subido",
+    "teacher.uploadError": "Error al subir el archivo.",
+
+    // Nuevo recurso
+    "teacher.resTitleLabel": "Título",
+    "teacher.resTitlePh": "Plantilla de caso · Public Forum",
+    "teacher.resTypeLabel": "Tipo",
+    "teacher.resTypeBrief": "Brief",
+    "teacher.resTypeTemplate": "Plantilla",
+    "teacher.resTypeDrill": "Drill",
+    "teacher.resTypeRecording": "Grabación",
+    "teacher.resTypeLink": "Enlace",
+    "teacher.resAccessLabel": "Acceso",
+    "teacher.resAccessPublic": "Público",
+    "teacher.resAccessEnrolled": "Solo inscritos",
+    "teacher.resTagLabel": "Etiqueta",
+    "teacher.resTagPh": "Refutación",
+    "teacher.resFormatLabel": "Formato",
+    "teacher.resFileLabel": "Archivo del recurso (PDF, audio, doc…)",
+    "teacher.resExternalUrlLabel": "o URL externa (opcional)",
+    "teacher.resModalTitle": "Nuevo recurso (archivo real)",
+    "teacher.resCreateBtn": "Crear recurso",
+    "teacher.errTitleRequired": "El título es obligatorio.",
+    "teacher.errFileOrUrl": "Sube un archivo o pega una URL externa.",
+    "teacher.creating": "Creando…",
+    "teacher.resourceCreated": "Recurso creado",
+    "teacher.resourceCreateError": "No se pudo crear el recurso",
+
+    // Participantes
+    "teacher.ptEyebrow": "Profesor",
+    "teacher.ptTitle": "Participantes",
+    "teacher.ptSearchAria": "Buscar participante",
+    "teacher.ptSearchPh": "Buscar participante…",
+    "teacher.ptThName": "Nombre",
+    "teacher.ptThRole": "Rol",
+    "teacher.ptThLevel": "Nivel",
+    "teacher.ptThXp": "XP",
+    "teacher.ptThLastAccess": "Últ. acceso",
+    "teacher.ptRoleStudent": "Estudiante",
+    "teacher.ptRoleCoach": "Coach",
+    "teacher.ptNoParticipants": "Sin participantes para este filtro.",
+    "teacher.adjudicate": "Adjudicar",
+    "teacher.evaluate": "Evaluar",
+
+    // Rúbrica de adjudicación (criterios)
+    "teacher.critArgumentation": "Argumentación",
+    "teacher.critRebuttal": "Refutación",
+    "teacher.critDelivery": "Delivery",
+    "teacher.critEvidence": "Evidencia",
+    "teacher.critCrossfire": "Cross-ex",
+
+    // Modal de adjudicación de ronda
+    "teacher.adjResultLabel": "Resultado",
+    "teacher.adjResultWin": "Victoria",
+    "teacher.adjResultLoss": "Derrota",
+    "teacher.adjResultDraw": "Empate",
+    "teacher.adjFormatLabel": "Formato",
+    "teacher.adjFormatParli": "Parlamentario",
+    "teacher.adjOpponentLabel": "Oponente <span class='muted' style='font-weight:500'>(opcional)</span>",
+    "teacher.adjOpponentPh": "Equipo o escuela rival",
+    "teacher.adjPartnerLabel": "Compañero de equipo <span class='muted' style='font-weight:500'>(2v2 · PF/Policy/Parli · opcional)</span>",
+    "teacher.adjPartnerNone": "— Sin compañero (1v1) —",
+    "teacher.adjRubricLabel": "Rúbrica (0–10) — mueve el rating y el Skill Graph",
+    "teacher.adjCommentsLabel": "Comentarios del juez <span class='muted' style='font-weight:500'>(opcional)</span>",
+    "teacher.adjCommentsPh": "Feedback para el alumno…",
+    "teacher.adjPublishBtn": "Adjudicar y publicar",
+    "teacher.adjudicating": "Adjudicando…",
+    "teacher.adjError": "No se pudo adjudicar la ronda",
+  },
+  en: {
+    // Teacher dashboard · header
+    "teacher.eyebrow": "Teacher dashboard",
+    "teacher.title": "Group tracking",
+    "teacher.gradeBtn": "Grade",
+
+    // Group / Content tabs
+    "teacher.tabGroup": "Group",
+    "teacher.tabContent": "Content",
+
+    // Group KPIs
+    "teacher.kpiAvg": "Group average",
+    "teacher.kpiAttendance": "Attendance",
+    "teacher.kpiEngagement": "Average engagement",
+    "teacher.kpiAtRisk": "At risk",
+
+    // Roster search + filter
+    "teacher.searchStudentPh": "Search students…",
+    "teacher.searchStudentAria": "Search students",
+    "teacher.riskChip": "At risk",
+
+    // Tracking table
+    "teacher.thStudent": "Student",
+    "teacher.thLevel": "Level",
+    "teacher.thGrade": "Grade",
+    "teacher.thAttendance": "Attend.",
+    "teacher.thEngagement": "Engagement",
+    "teacher.thTrend": "Trend",
+    "teacher.thLastAccess": "Last access",
+    "teacher.riskBadge": "At risk",
+    "teacher.noStudentsFilter": "No students match this filter.",
+
+    // Need attention
+    "teacher.needAttention": "Need attention",
+    "teacher.lowAttendance": "Low attendance",
+    "teacher.noSubmissions": "No submissions",
+    "teacher.sendMessage": "Send message",
+    "teacher.noAlertsTitle": "No alerts",
+    "teacher.noAlertsBody": "The whole group is on track.",
+
+    // Pending grading
+    "teacher.pendingGradingTitle": "Pending grading",
+    "teacher.pendingGradingHint": "Open them to grade with a score and feedback",
+    "teacher.gradeSubmissions": "Grade submissions",
+    "teacher.allCaughtUpTitle": "All caught up",
+    "teacher.allCaughtUpBody": "You have no submissions pending grading.",
+
+    // Content management panel
+    "teacher.manageEyebrow": "Content management",
+    "teacher.manageTitle": "Course structure",
+    "teacher.manageSub": "Courses → Modules → Lessons → Quiz",
+    "teacher.resourceFileBtn": "Resource (file)",
+    "teacher.fullEditorBtn": "Full editor",
+    "teacher.kpiCourses": "Courses",
+    "teacher.kpiModules": "Modules",
+    "teacher.kpiLessons": "Lessons",
+    "teacher.kpiQuizzes": "Quizzes",
+    "teacher.editContentBtn": "Edit content",
+    "teacher.noCoursesTitle": "You don't have any courses yet",
+    "teacher.noCoursesBody": "Create your first course with the <b>+ Create</b> button in the top bar, then add modules, lessons, and quizzes.",
+
+    // Generic modal
+    "teacher.save": "Save",
+    "teacher.cancel": "Cancel",
+    "teacher.saving": "Saving…",
+    "teacher.lessonFallback": "Lesson",
+
+    // Quiz builder
+    "teacher.quizTitleLabel": "Quiz title",
+    "teacher.quizTitlePh": "Unit quiz",
+    "teacher.quizPassLabel": "Passing score (%)",
+    "teacher.quizQuestions": "Questions",
+    "teacher.quizAddQuestion": "Add question",
+    "teacher.quizSaveBtn": "Save quiz",
+    "teacher.markCorrect": "Mark as correct",
+    "teacher.optionTextPh": "Option text",
+    "teacher.removeOption": "Remove option",
+    "teacher.minTwoOptions": "A question needs at least 2 options",
+    "teacher.questionPromptPh": "Question prompt",
+    "teacher.duplicateQuestion": "Duplicate question",
+    "teacher.duplicate": "Duplicate",
+    "teacher.removeQuestion": "Remove question",
+    "teacher.addOption": "Add option",
+    "teacher.minOneQuestion": "The quiz needs at least one question",
+    "teacher.errQuestionNoPrompt": "There's a question without a prompt.",
+    "teacher.errNoValidQuestion": "Add at least one valid question.",
+    "teacher.quizSaved": "Quiz saved",
+    "teacher.quizSaveError": "Could not save the quiz",
+
+    // Lesson video builder
+    "teacher.videoSourceLabel": "Video source",
+    "teacher.videoOptNone": "No video",
+    "teacher.videoOptUpload": "Upload file (MP4)",
+    "teacher.videoOptYoutube": "YouTube (paste URL)",
+    "teacher.videoOptCloudflare": "Video hosted on OTR (ID)",
+    "teacher.videoFileLabel": "Video file",
+    "teacher.videoLinkLabel": "YouTube link or video ID",
+    "teacher.videoLinkPh": "https://youtu.be/… or the video ID",
+    "teacher.videoSaveBtn": "Save video",
+    "teacher.videoYoutubeUrlLabel": "YouTube URL",
+    "teacher.videoCloudflareIdLabel": "ID of the video hosted on OTR",
+    "teacher.errUploadVideoFirst": "Upload a video file first.",
+    "teacher.errPasteVideoUrl": "Paste the video URL/UID.",
+    "teacher.videoUpdated": "Video updated",
+    "teacher.videoSaveError": "Could not save the video",
+
+    // File upload (shared video/resource)
+    "teacher.uploading": "Uploading…",
+    "teacher.uploaded": "Uploaded",
+    "teacher.uploadError": "Error uploading the file.",
+
+    // New resource
+    "teacher.resTitleLabel": "Title",
+    "teacher.resTitlePh": "Case template · Public Forum",
+    "teacher.resTypeLabel": "Type",
+    "teacher.resTypeBrief": "Brief",
+    "teacher.resTypeTemplate": "Template",
+    "teacher.resTypeDrill": "Drill",
+    "teacher.resTypeRecording": "Recording",
+    "teacher.resTypeLink": "Link",
+    "teacher.resAccessLabel": "Access",
+    "teacher.resAccessPublic": "Public",
+    "teacher.resAccessEnrolled": "Enrolled only",
+    "teacher.resTagLabel": "Tag",
+    "teacher.resTagPh": "Rebuttal",
+    "teacher.resFormatLabel": "Format",
+    "teacher.resFileLabel": "Resource file (PDF, audio, doc…)",
+    "teacher.resExternalUrlLabel": "or external URL (optional)",
+    "teacher.resModalTitle": "New resource (real file)",
+    "teacher.resCreateBtn": "Create resource",
+    "teacher.errTitleRequired": "Title is required.",
+    "teacher.errFileOrUrl": "Upload a file or paste an external URL.",
+    "teacher.creating": "Creating…",
+    "teacher.resourceCreated": "Resource created",
+    "teacher.resourceCreateError": "Could not create the resource",
+
+    // Participants
+    "teacher.ptEyebrow": "Teacher",
+    "teacher.ptTitle": "Participants",
+    "teacher.ptSearchAria": "Search participants",
+    "teacher.ptSearchPh": "Search participants…",
+    "teacher.ptThName": "Name",
+    "teacher.ptThRole": "Role",
+    "teacher.ptThLevel": "Level",
+    "teacher.ptThXp": "XP",
+    "teacher.ptThLastAccess": "Last access",
+    "teacher.ptRoleStudent": "Student",
+    "teacher.ptRoleCoach": "Coach",
+    "teacher.ptNoParticipants": "No participants match this filter.",
+    "teacher.adjudicate": "Adjudicate",
+    "teacher.evaluate": "Evaluate",
+
+    // Adjudication rubric (criteria)
+    "teacher.critArgumentation": "Argumentation",
+    "teacher.critRebuttal": "Rebuttal",
+    "teacher.critDelivery": "Delivery",
+    "teacher.critEvidence": "Evidence",
+    "teacher.critCrossfire": "Crossfire",
+
+    // Round adjudication modal
+    "teacher.adjResultLabel": "Result",
+    "teacher.adjResultWin": "Win",
+    "teacher.adjResultLoss": "Loss",
+    "teacher.adjResultDraw": "Draw",
+    "teacher.adjFormatLabel": "Format",
+    "teacher.adjFormatParli": "Parliamentary",
+    "teacher.adjOpponentLabel": "Opponent <span class='muted' style='font-weight:500'>(optional)</span>",
+    "teacher.adjOpponentPh": "Rival team or school",
+    "teacher.adjPartnerLabel": "Teammate <span class='muted' style='font-weight:500'>(2v2 · PF/Policy/Parli · optional)</span>",
+    "teacher.adjPartnerNone": "— No partner (1v1) —",
+    "teacher.adjRubricLabel": "Rubric (0–10) — moves the rating and the Skill Graph",
+    "teacher.adjCommentsLabel": "Judge comments <span class='muted' style='font-weight:500'>(optional)</span>",
+    "teacher.adjCommentsPh": "Feedback for the student…",
+    "teacher.adjPublishBtn": "Adjudicate and publish",
+    "teacher.adjudicating": "Adjudicating…",
+    "teacher.adjError": "Could not adjudicate the round",
+  },
+};

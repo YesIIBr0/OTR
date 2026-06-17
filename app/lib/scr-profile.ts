@@ -3,6 +3,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 export const S = {};
 
   /* ---------------- helpers de reseñas ---------------- */
@@ -42,7 +43,7 @@ export const S = {};
       </div>
       ${p.price != null ? `<div class="divider" style="margin:12px 0 0"></div><div class="row between vcenter" style="margin-top:12px">
         <span class="brand-font" style="font-size:19px;font-weight:800;color:var(--text)">${typeof p.price === 'number' ? '$' + (p.price / 100).toLocaleString('es') : esc(p.price)}</span>
-        <button class="btn btn-ghost btn-sm" onclick="go('catalog')">Ver programa ${IC.chevR}</button>
+        <button class="btn btn-ghost btn-sm" onclick="go('catalog')">${t("profile.viewProgram")} ${IC.chevR}</button>
       </div>` : ''}
     </div>`;
   // Chips a partir de una lista de formatos (array de strings).
@@ -74,8 +75,8 @@ export const S = {};
       const hasSkills = (DB.skills || []).length > 0;
       const comps = SKILL_DIMS.map((name) => [name, skillMap[name] != null ? skillMap[name] : 0]);
       return `
-      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">Progreso y niveles</h1>
-      <div class="page-sub">Tu camino de Novato a Elite en el sistema OTR</div></div>
+      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">${t("profile.progressTitle")}</h1>
+      <div class="page-sub">${t("profile.progressSub")}</div></div>
       ${C.levelBadge(curName)}</div>
 
       <div class="card card-pad fade-up" style="--d:1;margin-bottom:18px">
@@ -93,38 +94,38 @@ export const S = {};
 
       <div class="split fade-up rail-320" style="--d:2">
         <div class="card card-pad">
-          <div class="row between vcenter"><div><div class="eyebrow" style="margin-bottom:2px">Tu progreso</div><b style="font-size:15px">${nextLevel ? 'Camino a ' + esc(nextLevel.name) : 'Nivel máximo'}</b></div><span class="muted tnum" style="font-size:13px">${xp.toLocaleString('es')} / ${xpNext.toLocaleString('es')} XP</span></div>
+          <div class="row between vcenter"><div><div class="eyebrow" style="margin-bottom:2px">${t("profile.yourProgress")}</div><b style="font-size:15px">${nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel")}</b></div><span class="muted tnum" style="font-size:13px">${xp.toLocaleString('es')} / ${xpNext.toLocaleString('es')} XP</span></div>
           <div style="margin:14px 0 7px">${C.bar(pct,{cls:'thick navy'})}</div>
-          <div class="row between" style="font-size:12px;color:var(--text-2)"><span class="badge sky">${esc(curName)}</span><span class="tnum">${nextLevel ? toNext.toLocaleString('es') + ' XP para ' + esc(nextLevel.name) : '¡Nivel máximo alcanzado!'}</span></div>
+          <div class="row between" style="font-size:12px;color:var(--text-2)"><span class="badge sky">${esc(curName)}</span><span class="tnum">${nextLevel ? toNext.toLocaleString('es') + ' ' + t("profile.xpToReach") + ' ' + esc(nextLevel.name) : t("profile.maxLevelReached")}</span></div>
 
           <div class="divider"></div>
           <div class="row between vcenter" style="margin-bottom:4px">
-            <div><div class="eyebrow" style="margin-bottom:2px">Radar OTR</div><b style="font-size:14px">Competencias</b></div>
-            ${hasSkills ? `<span class="badge sky">${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} prom.</span>` : ''}
+            <div><div class="eyebrow" style="margin-bottom:2px">${t("profile.radarOtr")}</div><b style="font-size:14px">${t("profile.competencies")}</b></div>
+            ${hasSkills ? `<span class="badge sky">${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} ${t("profile.avg")}</span>` : ''}
           </div>
           ${hasSkills
             ? `<div style="margin-top:6px">
             ${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${c[0]}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
           </div>`
-            : `<div class="empty" style="padding:26px;margin-top:8px"><div class="ill">${IC.award}</div><h4>Aún sin evaluación</h4><p>Tu coach evaluará tus 6 habilidades: Confianza, Estructura, Evidencia, Refutación, Cross-ex y Delivery.</p></div>`}
+            : `<div class="empty" style="padding:26px;margin-top:8px"><div class="ill">${IC.award}</div><h4>${t("profile.noEvalHeading")}</h4><p>${t("profile.noEvalBody")}</p></div>`}
         </div>
 
         <div class="stack" style="gap:16px">
           <div class="card card-pad" style="text-align:center">
-            <div class="eyebrow" style="margin-bottom:10px">Racha</div>
+            <div class="eyebrow" style="margin-bottom:10px">${t("profile.streak")}</div>
             <span class="streak" style="font-size:14px">${IC.flame} ${streak} días</span>
-            <div style="margin-top:10px;font-size:12.5px" class="muted">¡No la rompas!</div>
+            <div style="margin-top:10px;font-size:12.5px" class="muted">${t("profile.dontBreakIt")}</div>
             <div class="row wrap" style="gap:5px;margin-top:14px;justify-content:center">
               ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:4px;background:${i<Math.min(streak,14)?'var(--otr-sky)':'var(--n-150)'}"></span>`).join('')}
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><h3>Subidas recientes</h3></div>
+            <div class="card-head"><h3>${t("profile.recentGains")}</h3></div>
             <div class="card-body" style="padding:8px 16px 12px">
               ${recent.length ? recent.map(ev=>`
                 <div class="agenda-item"><span class="when-dot" style="background:var(--otr-gold)"></span>
                 <div><div class="ai-t">${ev.title || ''}</div>${ev.xp ? `<div class="ai-c sky">+${ev.xp} XP</div>` : (ev.detail ? `<div class="ai-c sky">${ev.detail}</div>` : '')}</div><span class="ai-w">${ev.when || ''}</span></div>`).join('')
-                : `<div class="empty" style="padding:22px"><p class="muted" style="font-size:13px;text-align:center">Aún sin actividad — completa lecciones, exámenes y debates para ver tus subidas aquí.</p></div>`}
+                : `<div class="empty" style="padding:22px"><p class="muted" style="font-size:13px;text-align:center">${t("profile.noActivityBody")}</p></div>`}
             </div>
           </div>
         </div>
@@ -138,30 +139,30 @@ export const S = {};
       const got = DB.badges.filter(b=>b.got).length;
       const certs = DB.certificates || [];
       return `
-      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">Insignias y certificados</h1>
+      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">${t("profile.badgesTitle")}</h1>
       <div class="page-sub">${got} de ${DB.badges.length} insignias · sigue ganando logros de campeón</div></div></div>
 
-      <div class="fade-up" style="--d:1;margin-bottom:12px"><div class="eyebrow" style="margin-bottom:2px">Logros</div><b style="font-size:15px;display:block">Tus certificados</b></div>
+      <div class="fade-up" style="--d:1;margin-bottom:12px"><div class="eyebrow" style="margin-bottom:2px">${t("profile.achievements")}</div><b style="font-size:15px;display:block">${t("profile.yourCertificates")}</b></div>
       ${certs.length
         ? `<div class="grid g-2" style="gap:14px;margin-bottom:24px">
           ${certs.map(ct=>`
           <div class="cert">
             <div class="seal">${IC.award}</div>
             <div style="flex:1;min-width:0">
-              <div class="badge gold" style="margin-bottom:7px">Certificado oficial OTR</div>
+              <div class="badge gold" style="margin-bottom:7px">${t("profile.officialCert")}</div>
               <h3 style="font-size:17px;font-weight:750;line-height:1.2">${esc(ct.title)}</h3>
               <p class="muted" style="font-size:13px;margin-top:4px">${ct.programName}${ct.issuedAt ? ` · ${esc(ct.issuedAt)}` : ''}</p>
             </div>
-            <button class="btn btn-navy btn-sm" onclick="window.__cert='${esc(ct.id)}';go('certificate')">Ver certificado</button>
+            <button class="btn btn-navy btn-sm" onclick="window.__cert='${esc(ct.id)}';go('certificate')">${t("profile.viewCertificate")}</button>
           </div>`).join('')}
         </div>`
-        : `<div class="empty" style="padding:32px 24px;margin-bottom:24px"><div class="ill">${IC.award}</div><h4>Aún no tienes certificados</h4><p>Completa un programa al 100% para ganar tu primer certificado.</p></div>`}
+        : `<div class="empty" style="padding:32px 24px;margin-bottom:24px"><div class="ill">${IC.award}</div><h4>${t("profile.noCertsHeading")}</h4><p>${t("profile.noCertsBody")}</p></div>`}
 
-      <div class="row between vcenter fade-up" style="--d:2;margin-bottom:12px"><div><div class="eyebrow" style="margin-bottom:2px">Colección</div><b style="font-size:15px;display:block">Tus insignias</b></div><span class="badge navy">${got} / ${DB.badges.length}</span></div>
+      <div class="row between vcenter fade-up" style="--d:2;margin-bottom:12px"><div><div class="eyebrow" style="margin-bottom:2px">${t("profile.collection")}</div><b style="font-size:15px;display:block">${t("profile.yourBadges")}</b></div><span class="badge navy">${got} / ${DB.badges.length}</span></div>
       <div class="badge-grid fade-up" style="--d:3">
         ${DB.badges.map(b=>`
           <div class="badge-card ${b.got?'':'locked'}">
-            ${b.got?'<span class="badge ok" style="position:absolute;top:12px;right:12px">Ganada</span>':`<span style="position:absolute;top:12px;right:12px;color:var(--n-300)">${IC.lock}</span>`}
+            ${b.got?`<span class="badge ok" style="position:absolute;top:12px;right:12px">${t("profile.earned")}</span>`:`<span style="position:absolute;top:12px;right:12px;color:var(--n-300)">${IC.lock}</span>`}
             <div class="badge-medal ${b.got?'gold':'lock'}">${IC[b.ic]}</div>
             <div class="bn">${esc(b.n)}</div>
             <div class="bd">${esc(b.d)}</div>
@@ -208,19 +209,19 @@ export const S = {};
           ${headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${esc(headline)}</div>` : ''}
           <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
             <span class="row vcenter" style="gap:6px">${starsRO(rating)}<b class="tnum" style="font-size:13.5px">${Number(rating).toFixed(1)}</b></span>
-            <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? 'reseña' : 'reseñas'}</span>
+            <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</span>
             ${location ? `<span class="faint" style="font-size:12.5px">· ${esc(location)}</span>` : ''}
           </div>
           ${bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(bio)}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
-            <button class="btn btn-primary btn-sm" data-action="edit-coach">${IC.pencil} Editar perfil</button>
-            <button class="btn btn-soft btn-sm" data-action="edit-coach-market">${IC.sliders} Perfil de marketplace</button>
+            <button class="btn btn-primary btn-sm" data-action="edit-coach">${IC.pencil} ${t("profile.editProfile")}</button>
+            <button class="btn btn-soft btn-sm" data-action="edit-coach-market">${IC.sliders} ${t("profile.marketplaceProfile")}</button>
           </div>
         </div>
         <div class="row" style="gap:0">
-          <div class="kpi" style="text-align:center;padding:0 20px"><span class="k-val brand-font" style="font-size:24px">${programs.length}</span><span class="k-label" style="justify-content:center">Programas</span></div>
-          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${Number(rating).toFixed(1)}</span><span class="k-label" style="justify-content:center">Rating</span></div>
-          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${reviewCount}</span><span class="k-label" style="justify-content:center">Reseñas</span></div>
+          <div class="kpi" style="text-align:center;padding:0 20px"><span class="k-val brand-font" style="font-size:24px">${programs.length}</span><span class="k-label" style="justify-content:center">${t("profile.kpiPrograms")}</span></div>
+          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${Number(rating).toFixed(1)}</span><span class="k-label" style="justify-content:center">${t("profile.kpiRating")}</span></div>
+          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${reviewCount}</span><span class="k-label" style="justify-content:center">${t("profile.kpiReviews")}</span></div>
         </div>
       </div>
     </div>
@@ -228,38 +229,38 @@ export const S = {};
     <div class="split fade-up rail-320" style="--d:1">
       <div class="stack" style="gap:18px">
         <div class="card card-pad">
-          <div class="eyebrow" style="margin-bottom:2px">Metodología</div>
-          <b style="font-size:14px">Cómo trabajo</b>
-          <p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap">${teachingStyle ? esc(teachingStyle) : 'Aún no has descrito tu metodología. Edita tu perfil para contar a tus estudiantes cómo trabajas.'}</p>
+          <div class="eyebrow" style="margin-bottom:2px">${t("profile.methodology")}</div>
+          <b style="font-size:14px">${t("profile.howIWork")}</b>
+          <p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap">${teachingStyle ? esc(teachingStyle) : t("profile.noMethodologySelf")}</p>
         </div>
 
         <div class="card card-pad">
-          <div class="row between vcenter"><b style="font-size:14px">Mis programas</b><span class="badge sky">${programs.length}</span></div>
+          <div class="row between vcenter"><b style="font-size:14px">${t("profile.myProgramsCoach")}</b><span class="badge sky">${programs.length}</span></div>
           ${programs.length
             ? `<div class="grid g-2" style="margin-top:14px;gap:14px">${programs.map(programCard).join('')}</div>`
-            : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>Aún no tienes programas</h4><p>Crea un programa para empezar a recibir estudiantes.</p></div>`}
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>${t("profile.noProgramsCoachHeading")}</h4><p>${t("profile.noProgramsCoachBody")}</p></div>`}
         </div>
 
         <div class="card card-pad">
-          <div class="row between vcenter"><b style="font-size:14px">Reseñas de estudiantes</b><span class="badge navy">${reviews.length}</span></div>
+          <div class="row between vcenter"><b style="font-size:14px">${t("profile.studentReviews")}</b><span class="badge navy">${reviews.length}</span></div>
           ${reviews.length
             ? `<div class="stack" style="gap:12px;margin-top:14px">${reviews.map((rv) => reviewCard(rv, { showProgram: true })).join('')}</div>`
-            : `<div class="empty" style="padding:24px"><div class="ill">${IC.star}</div><h4>Sin reseñas todavía</h4><p>Cuando tus estudiantes te reseñen, aparecerán aquí.</p></div>`}
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.star}</div><h4>${t("profile.noReviewsCoachHeading")}</h4><p>${t("profile.noReviewsCoachBody")}</p></div>`}
         </div>
       </div>
 
       <div class="stack" style="gap:16px">
         <div class="card card-pad" style="text-align:center;background:linear-gradient(160deg,var(--otr-pale),#fff)">
-          <div class="eyebrow" style="margin-bottom:8px">Valoración general</div>
+          <div class="eyebrow" style="margin-bottom:8px">${t("profile.overallRating")}</div>
           <div class="brand-font" style="font-size:38px;font-weight:800;line-height:1;color:var(--otr-navy)">${Number(rating).toFixed(1)}</div>
           <div style="margin-top:8px">${starsRO(rating)}</div>
-          <div class="faint" style="font-size:12px;margin-top:7px">${reviewCount} ${reviewCount === 1 ? 'reseña' : 'reseñas'}</div>
+          <div class="faint" style="font-size:12px;margin-top:7px">${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</div>
         </div>
         <div class="card card-pad">
-          <div class="eyebrow" style="margin-bottom:2px">Especialidad</div>
-          <b style="font-size:13.5px">Qué enseño</b>
+          <div class="eyebrow" style="margin-bottom:2px">${t("profile.specialty")}</div>
+          <b style="font-size:13.5px">${t("profile.whatITeach")}</b>
           <div class="row wrap" style="gap:8px;margin-top:12px">
-            ${formats.length ? formatChips(formats) : '<span class="faint" style="font-size:12.5px">Define tus formatos en el perfil.</span>'}
+            ${formats.length ? formatChips(formats) : `<span class="faint" style="font-size:12.5px">${t("profile.defineFormatsSelf")}</span>`}
           </div>
         </div>
       </div>
@@ -281,13 +282,13 @@ export const S = {};
           <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${esc(me.location)}` : ''}</div>
           ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(me.bio)}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px">
-            <button class="btn btn-primary btn-sm" data-action="edit-profile">${IC.pencil} Editar perfil</button>
+            <button class="btn btn-primary btn-sm" data-action="edit-profile">${IC.pencil} ${t("profile.editProfile")}</button>
           </div>
         </div>
         <div class="row" style="gap:0">
-          <div class="kpi" style="text-align:center;padding:0 20px"><span class="k-val brand-font" style="font-size:24px">${courses.length}</span><span class="k-label" style="justify-content:center">Programas</span></div>
-          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${gotBadges.length}</span><span class="k-label" style="justify-content:center">Insignias</span></div>
-          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${(me.streak || 0)}</span><span class="k-label" style="justify-content:center">Racha</span></div>
+          <div class="kpi" style="text-align:center;padding:0 20px"><span class="k-val brand-font" style="font-size:24px">${courses.length}</span><span class="k-label" style="justify-content:center">${t("profile.kpiPrograms")}</span></div>
+          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${gotBadges.length}</span><span class="k-label" style="justify-content:center">${t("profile.kpiBadges")}</span></div>
+          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${(me.streak || 0)}</span><span class="k-label" style="justify-content:center">${t("profile.kpiStreak")}</span></div>
         </div>
       </div>
     </div>
@@ -295,7 +296,7 @@ export const S = {};
     <div class="split fade-up rail-320" style="--d:1">
       <div class="stack" style="gap:18px">
         <div class="card card-pad">
-          <div class="row between vcenter"><b style="font-size:14px">Mis programas</b><button class="btn btn-ghost btn-sm" onclick="go('catalog')">Explorar ${IC.chevR}</button></div>
+          <div class="row between vcenter"><b style="font-size:14px">${t("profile.myProgramsStudent")}</b><button class="btn btn-ghost btn-sm" onclick="go('catalog')">${t("profile.explore")} ${IC.chevR}</button></div>
           ${courses.length
             ? `<div class="stack" style="gap:12px;margin-top:14px">${courses.map((c) => `
               <div class="card card-pad lift" role="button" tabindex="0" aria-label="Abrir ${c.name}" style="padding:12px 14px;cursor:pointer" onclick="go('course')">
@@ -308,28 +309,28 @@ export const S = {};
                 </div>
                 ${c.progress != null ? `<div style="margin-top:10px">${C.bar(c.progress, { cls: 'navy' })}</div>` : ''}
               </div>`).join('')}</div>`
-            : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>Aún no estás inscrito</h4><p>Cuando te inscribas en un programa, aparecerá aquí.</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">Explorar programas</button></div>`}
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>${t("profile.notEnrolledHeading")}</h4><p>${t("profile.notEnrolledBody")}</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">${t("profile.exploreProgramsBtn")}</button></div>`}
         </div>
       </div>
 
       <div class="stack" style="gap:16px">
         <div class="card card-pad">
-          <div class="eyebrow" style="margin-bottom:2px">Tu rango</div>
-          <b style="font-size:13.5px">Nivel actual</b>
+          <div class="eyebrow" style="margin-bottom:2px">${t("profile.yourRank")}</div>
+          <b style="font-size:13.5px">${t("profile.currentLevel")}</b>
           <div class="row vcenter" style="gap:12px;margin:12px 0 14px">
             <div class="ln-badge brand-font" style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--otr-sky),var(--otr-sky-lo));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:var(--sh-2)">${esc((me.level || 'N')[0])}</div>
-            <div><b style="font-size:15px">${esc(me.level || 'Novato')}</b><div class="faint" style="font-size:12px;margin-top:1px">${(DB.xpNext - DB.xp)} XP para el siguiente nivel</div></div>
+            <div><b style="font-size:15px">${esc(me.level || 'Novato')}</b><div class="faint" style="font-size:12px;margin-top:1px">${(DB.xpNext - DB.xp)} ${t("profile.xpToNextLevel")}</div></div>
           </div>
           ${C.bar(DB.xpNext > DB.xpLevelStart ? Math.round(((DB.xp - DB.xpLevelStart) / (DB.xpNext - DB.xpLevelStart)) * 100) : 0, { cls: 'navy' })}
           <div class="row between vcenter" style="font-size:12px;color:var(--text-2);margin-top:10px"><span class="tnum">${(DB.xp || 0).toLocaleString('es')} XP</span><span class="streak">${IC.flame} ${(me.streak || 0)} días</span></div>
         </div>
         <div class="card card-pad">
-          <div class="eyebrow" style="margin-bottom:2px">Logros</div>
-          <b style="font-size:13.5px">Insignias destacadas</b>
+          <div class="eyebrow" style="margin-bottom:2px">${t("profile.achievements")}</div>
+          <b style="font-size:13.5px">${t("profile.featuredBadges")}</b>
           ${gotBadges.length
             ? `<div class="row wrap" style="gap:12px;margin-top:14px">${gotBadges.slice(0, 4).map((b) => `<div class="badge-medal gold" style="width:46px;height:46px" title="${esc(b.n)}">${IC[b.ic]}</div>`).join('')}</div>
-               <button class="btn btn-ghost btn-sm btn-block" style="margin-top:16px" onclick="go('badges')">Ver todas ${IC.chevR}</button>`
-            : `<p class="faint" style="font-size:12.5px;margin-top:10px">Aún no has ganado insignias. ¡Entrena para conseguirlas!</p>`}
+               <button class="btn btn-ghost btn-sm btn-block" style="margin-top:16px" onclick="go('badges')">${t("profile.viewAll")} ${IC.chevR}</button>`
+            : `<p class="faint" style="font-size:12.5px;margin-top:10px">${t("profile.noBadgesStudent")}</p>`}
         </div>
       </div>
     </div>`;
@@ -361,7 +362,7 @@ export const S = {};
             ${cp.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${cp.headline}</div>` : ''}
             <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
               <span class="row vcenter" style="gap:6px">${starsRO(rating)}<b class="tnum" style="font-size:13.5px">${Number(rating).toFixed(1)}</b></span>
-              <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? 'reseña' : 'reseñas'}</span>
+              <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</span>
               ${cp.location ? `<span class="faint" style="font-size:12.5px">· ${esc(cp.location)}</span>` : ''}
             </div>
             ${cp.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(cp.bio)}</p>` : ''}
@@ -372,39 +373,39 @@ export const S = {};
       <div class="split fade-up rail-320" style="--d:1">
         <div class="stack" style="gap:18px">
           <div class="card card-pad">
-            <div class="eyebrow" style="margin-bottom:2px">Metodología</div>
-            <b style="font-size:14px">Cómo trabaja</b>
-            <p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap">${cp.teachingStyle ? esc(cp.teachingStyle) : 'Este coach aún no ha descrito su metodología.'}</p>
+            <div class="eyebrow" style="margin-bottom:2px">${t("profile.methodology")}</div>
+            <b style="font-size:14px">${t("profile.howTheyWork")}</b>
+            <p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap">${cp.teachingStyle ? esc(cp.teachingStyle) : t("profile.noMethodologyCoach")}</p>
           </div>
 
           <div class="card card-pad">
-            <div class="row between vcenter"><b style="font-size:14px">Programas</b><span class="badge sky">${programs.length}</span></div>
+            <div class="row between vcenter"><b style="font-size:14px">${t("profile.programs")}</b><span class="badge sky">${programs.length}</span></div>
             ${programs.length
               ? `<div class="grid g-2" style="margin-top:14px;gap:14px">${programs.map(programCard).join('')}</div>`
-              : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>Sin programas publicados</h4></div>`}
+              : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>${t("profile.noProgramsPublished")}</h4></div>`}
           </div>
 
           <div class="card card-pad" id="reviews-block">
-            <div class="row between vcenter"><b style="font-size:14px">Reseñas</b><span class="badge navy">${reviews.length}</span></div>
+            <div class="row between vcenter"><b style="font-size:14px">${t("profile.reviews")}</b><span class="badge navy">${reviews.length}</span></div>
             ${reviews.length
               ? `<div class="stack" style="gap:12px;margin-top:14px">${reviews.map((rv) => reviewCard(rv)).join('')}</div>`
-              : `<div class="empty" style="padding:24px"><div class="ill">${IC.star}</div><h4>Sin reseñas todavía</h4><p>Sé el primero en dejar una reseña.</p></div>`}
+              : `<div class="empty" style="padding:24px"><div class="ill">${IC.star}</div><h4>${t("profile.noReviewsCoachHeading")}</h4><p>${t("profile.beFirstReview")}</p></div>`}
           </div>
         </div>
 
         <div class="stack" style="gap:16px">
           <div class="card card-pad" style="text-align:center;background:linear-gradient(160deg,var(--otr-pale),#fff)">
-            <div class="eyebrow" style="margin-bottom:8px">Valoración</div>
+            <div class="eyebrow" style="margin-bottom:8px">${t("profile.rating")}</div>
             <div class="brand-font" style="font-size:38px;font-weight:800;line-height:1;color:var(--otr-navy)">${Number(rating).toFixed(1)}</div>
             <div style="margin-top:8px">${starsRO(rating)}</div>
-            <div class="faint" style="font-size:12px;margin-top:7px">${reviewCount} ${reviewCount === 1 ? 'reseña' : 'reseñas'}</div>
+            <div class="faint" style="font-size:12px;margin-top:7px">${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</div>
           </div>
 
           <div class="card card-pad">
-            <div class="eyebrow" style="margin-bottom:2px">Especialidad</div>
-            <b style="font-size:13.5px">Formatos</b>
+            <div class="eyebrow" style="margin-bottom:2px">${t("profile.specialty")}</div>
+            <b style="font-size:13.5px">${t("profile.formats")}</b>
             <div class="row wrap" style="gap:8px;margin-top:12px">
-              ${formats.length ? formatChips(formats) : '<span class="faint" style="font-size:12.5px">No especificado.</span>'}
+              ${formats.length ? formatChips(formats) : `<span class="faint" style="font-size:12.5px">${t("profile.notSpecified")}</span>`}
             </div>
           </div>
 
@@ -439,8 +440,8 @@ export const S = {};
     if (myReview) {
       return `
       <div class="card card-pad" style="border-color:var(--otr-sky)">
-        <div class="eyebrow" style="margin-bottom:2px">Publicada</div>
-        <b style="font-size:13.5px">Tu reseña</b>
+        <div class="eyebrow" style="margin-bottom:2px">${t("profile.published")}</div>
+        <b style="font-size:13.5px">${t("profile.yourReview")}</b>
         <div style="margin-top:10px">${starsRO(myReview.rating)}</div>
         ${myReview.body ? `<p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap">${esc(myReview.body)}</p>` : ''}
       </div>`;
@@ -450,19 +451,19 @@ export const S = {};
     if (!mainCourse || !isEnrolled) {
       return `
       <div class="card card-pad">
-        <b style="font-size:13.5px">Dejar una reseña</b>
-        <p class="faint" style="font-size:12.5px;line-height:1.5;margin-top:8px">Completa una sesión 1:1 con este coach para poder reseñarlo — solo reservas verificadas.</p>
+        <b style="font-size:13.5px">${t("profile.leaveReview")}</b>
+        <p class="faint" style="font-size:12.5px;line-height:1.5;margin-top:8px">${t("profile.verifiedBookingOnly")}</p>
       </div>`;
     }
     // Formulario de reseña.
     return `
     <div class="card card-pad">
-      <div class="eyebrow" style="margin-bottom:2px">Tu experiencia</div>
-      <b style="font-size:13.5px">Deja tu reseña</b>
+      <div class="eyebrow" style="margin-bottom:2px">${t("profile.yourExperience")}</div>
+      <b style="font-size:13.5px">${t("profile.leaveYourReview")}</b>
       <div class="row" style="gap:4px;margin-top:12px" id="review-stars">
         ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="star" data-rating="${n}" aria-label="${n} estrellas" style="background:none;border:0;padding:3px;cursor:pointer;color:var(--otr-sky);opacity:.3;display:inline-flex">${IC.star}</button>`).join('')}
       </div>
-      <textarea class="input" id="review-body" rows="3" placeholder="Cuéntale a otros estudiantes cómo fue tu experiencia…" style="margin-top:12px;resize:vertical"></textarea>
-      <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="leave-review" data-course="${esc(mainCourse.id)}">Publicar reseña</button>
+      <textarea class="input" id="review-body" rows="3" placeholder="${t("profile.reviewPlaceholder")}" style="margin-top:12px;resize:vertical"></textarea>
+      <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="leave-review" data-course="${esc(mainCourse.id)}">${t("profile.publishReview")}</button>
     </div>`;
   }

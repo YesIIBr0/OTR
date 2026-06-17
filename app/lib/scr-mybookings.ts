@@ -23,6 +23,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
@@ -46,18 +47,18 @@ function countdown(iso) {
 }
 
 function statusBadge(status) {
-  if (status === "CONFIRMED") return `<span class="badge ok"><span class="dot"></span>Confirmada</span>`;
-  if (status === "PENDING") return `<span class="badge warn"><span class="dot"></span>Esperando consentimiento</span>`;
-  if (status === "COMPLETED") return `<span class="badge sky"><span class="dot"></span>Completada</span>`;
-  if (status === "CANCELLED") return `<span class="badge">Cancelada</span>`;
-  if (status === "DISPUTED") return `<span class="badge warn"><span class="dot"></span>En disputa</span>`;
+  if (status === "CONFIRMED") return `<span class="badge ok"><span class="dot"></span>${t("mb.statusConfirmed")}</span>`;
+  if (status === "PENDING") return `<span class="badge warn"><span class="dot"></span>${t("mb.statusPending")}</span>`;
+  if (status === "COMPLETED") return `<span class="badge sky"><span class="dot"></span>${t("mb.statusCompleted")}</span>`;
+  if (status === "CANCELLED") return `<span class="badge">${t("mb.statusCancelled")}</span>`;
+  if (status === "DISPUTED") return `<span class="badge warn"><span class="dot"></span>${t("mb.statusDisputed")}</span>`;
   return status ? `<span class="badge">${esc(status)}</span>` : "";
 }
 
 function escrowBadge(st) {
-  if (st === "HELD") return `<span class="badge warn">Pago en escrow</span>`;
-  if (st === "RELEASED") return `<span class="badge ok">Pago liberado</span>`;
-  if (st === "REFUNDED") return `<span class="badge">Reembolsado</span>`;
+  if (st === "HELD") return `<span class="badge warn">${t("mb.escrowHeld")}</span>`;
+  if (st === "RELEASED") return `<span class="badge ok">${t("mb.escrowReleased")}</span>`;
+  if (st === "REFUNDED") return `<span class="badge">${t("mb.escrowRefunded")}</span>`;
   return "";
 }
 
@@ -69,10 +70,10 @@ function upcomingRow(b) {
   const canJoin = b.status === "CONFIRMED" && b.videoUrl;
   const join = canJoin
     ? `<button class="btn btn-primary btn-sm" data-mb-join="${esc(b.id)}" style="flex:none">
-         <span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>Unirse a la sesión</span>
+         <span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>${t("mb.joinSession")}</span>
        </button>`
     : b.status === "PENDING"
-    ? `<span class="faint" style="font-size:11.5px;flex:none">Un tutor debe aprobar</span>`
+    ? `<span class="faint" style="font-size:11.5px;flex:none">${t("mb.tutorMustApprove")}</span>`
     : "";
 
   return `
@@ -80,14 +81,14 @@ function upcomingRow(b) {
     ${C.avatar(esc(b.coachInitials || "C"), { size: "sm", bg: "var(--otr-navy)" })}
     <div style="flex:1;min-width:200px">
       <b style="font-size:13.5px">${esc(b.coachName || "Coach OTR")}</b>
-      <div class="faint" style="font-size:12px;margin-top:2px">${meta || "Sesión de coaching"}</div>
+      <div class="faint" style="font-size:12px;margin-top:2px">${meta || t("mb.coachingSession")}</div>
     </div>
     <div class="row vcenter" style="gap:8px;flex:none">
       ${statusBadge(b.status)}
       ${cd ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.clock}</span>&nbsp;${esc(cd)}</span>` : ""}
     </div>
     ${join}
-    <button class="btn btn-ghost btn-sm" data-mb-cancel="${esc(b.id)}" style="flex:none;color:var(--danger)">Cancelar</button>
+    <button class="btn btn-ghost btn-sm" data-mb-cancel="${esc(b.id)}" style="flex:none;color:var(--danger)">${t("mb.cancel")}</button>
   </div>`;
 }
 
@@ -98,12 +99,12 @@ function historyRow(b) {
     ${C.avatar(esc(b.coachInitials || "C"), { size: "sm" })}
     <div style="flex:1;min-width:200px">
       <b style="font-size:13.5px">${esc(b.coachName || "Coach OTR")}</b>
-      <div class="faint" style="font-size:12px;margin-top:2px">${meta || "Sesión de coaching"}</div>
+      <div class="faint" style="font-size:12px;margin-top:2px">${meta || t("mb.coachingSession")}</div>
     </div>
     ${statusBadge(b.status)}
     ${escrowBadge(b.escrowStatus)}
-    ${b.recordingUrl ? `<a class="btn btn-quiet btn-sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer" style="flex:none"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.video}</span>Grabación</span></a>` : ""}
-    ${b.canReview ? `<button class="btn btn-soft btn-sm" data-mb-review="${esc(b.id)}" data-coach="${esc(b.coachId)}" data-coach-name="${esc(b.coachName || "")}" style="flex:none">Dejar reseña</button>` : ""}
+    ${b.recordingUrl ? `<a class="btn btn-quiet btn-sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer" style="flex:none"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.video}</span>${t("mb.recording")}</span></a>` : ""}
+    ${b.canReview ? `<button class="btn btn-soft btn-sm" data-mb-review="${esc(b.id)}" data-coach="${esc(b.coachId)}" data-coach-name="${esc(b.coachName || "")}" style="flex:none">${t("mb.leaveReview")}</button>` : ""}
   </div>`;
 }
 
@@ -121,41 +122,41 @@ S.myBookings = {
 
     const head = `
     <div class="page-head fade-up"><div>
-      <p class="eyebrow">Marketplace</p>
-      <h1 class="page-title">Mis reservas</h1>
-      <div class="page-sub">Tus sesiones de coaching reservadas</div>
+      <p class="eyebrow">${t("mb.eyebrow")}</p>
+      <h1 class="page-title">${t("mb.title")}</h1>
+      <div class="page-sub">${t("mb.subtitle")}</div>
     </div></div>`;
 
     if (!all.length) {
       return `${head}
       <div class="card fade-up" style="--d:1"><div class="empty">
         <div class="ill">${IC.calendar}</div>
-        <h4>Tu primera sesión 1:1 te espera</h4>
-        <p>Elige a tu coach en el marketplace y reserva. Tu pago queda protegido en escrow y se libera solo al completar la sesión.</p>
-        <button class="btn btn-primary" data-go="explore">Encontrar mi coach</button>
+        <h4>${t("mb.emptyHeading")}</h4>
+        <p>${t("mb.emptyBody")}</p>
+        <button class="btn btn-primary" data-go="explore">${t("mb.emptyCta")}</button>
       </div></div>`;
     }
 
     return `${head}
     <div class="card card-pad fade-up" style="--d:1">
       <div class="row between vcenter">
-        <b style="font-size:14px">Próximas</b>
+        <b style="font-size:14px">${t("mb.upcomingTitle")}</b>
         <span class="badge sky">${upcoming.length}</span>
       </div>
-      <p class="faint" style="font-size:12px;margin-top:4px">La sala de video se abre dentro de OTR.</p>
+      <p class="faint" style="font-size:12px;margin-top:4px">${t("mb.videoRoomNote")}</p>
       ${upcoming.length
         ? `<div style="margin-top:6px">${upcoming.map(upcomingRow).join("")}</div>`
-        : `<p class="muted" style="font-size:13px;margin-top:12px">No tienes sesiones próximas — <a href="#" data-go="explore" style="color:var(--otr-sky-lo);font-weight:600">explora coaches</a> para reservar una.</p>`}
+        : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.upcomingEmptyPre")} <a href="#" data-go="explore" style="color:var(--otr-sky-lo);font-weight:600">${t("mb.upcomingEmptyLink")}</a> ${t("mb.upcomingEmptyPost")}</p>`}
     </div>
 
     <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
       <div class="row between vcenter">
-        <b style="font-size:14px">Historial</b>
+        <b style="font-size:14px">${t("mb.historyTitle")}</b>
         <span class="badge">${history.length}</span>
       </div>
       ${history.length
         ? `<div style="margin-top:6px">${history.map(historyRow).join("")}</div>`
-        : `<p class="muted" style="font-size:13px;margin-top:12px">Tu historial se escribe sesión a sesión — cada una quedará registrada aquí.</p>`}
+        : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.historyEmpty")}</p>`}
     </div>`;
   },
 
@@ -190,23 +191,23 @@ S.myBookings = {
         if (btn.getAttribute("data-armed") !== "1") {
           btn.setAttribute("data-armed", "1");
           const t0 = btn.textContent;
-          btn.textContent = "¿Cancelar? Tocar de nuevo";
+          btn.textContent = t("mb.cancelArm");
           setTimeout(() => {
             if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
           }, 4000);
           return;
         }
         btn.disabled = true;
-        btn.textContent = "Cancelando…";
+        btn.textContent = t("mb.cancelling");
         try {
           await w.api(`/api/bookings/${encodeURIComponent(id)}`, { action: "cancel" }, "PATCH");
-          w.toast?.("Reserva cancelada — tu pago se reembolsa", "ok");
+          w.toast?.(t("mb.cancelled"), "ok");
           await softRefresh();
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo cancelar la reserva", "danger");
+          w.toast?.((e && e.message) || t("mb.cancelError"), "danger");
           btn.disabled = false;
           btn.removeAttribute("data-armed");
-          btn.textContent = "Cancelar";
+          btn.textContent = t("mb.cancel");
         }
       }),
     );
@@ -219,17 +220,17 @@ S.myBookings = {
         const coachName = btn.getAttribute("data-coach-name") || "tu coach";
         if (!coachId || !w.otrFormModal) return;
         w.otrFormModal(`Reseñar a ${coachName}`, [
-          { name: "rating", label: "Tu valoración", type: "select", value: "5", options: [
-            { value: "5", label: "★★★★★ Excelente" },
-            { value: "4", label: "★★★★ Muy bueno" },
-            { value: "3", label: "★★★ Bueno" },
-            { value: "2", label: "★★ Regular" },
-            { value: "1", label: "★ Malo" },
+          { name: "rating", label: t("mb.reviewRatingLabel"), type: "select", value: "5", options: [
+            { value: "5", label: t("mb.reviewRating5") },
+            { value: "4", label: t("mb.reviewRating4") },
+            { value: "3", label: t("mb.reviewRating3") },
+            { value: "2", label: t("mb.reviewRating2") },
+            { value: "1", label: t("mb.reviewRating1") },
           ] },
-          { name: "body", label: "Tu comentario (opcional)", type: "textarea", ph: "¿Qué tal fue tu sesión de coaching?" },
+          { name: "body", label: t("mb.reviewBodyLabel"), type: "textarea", ph: t("mb.reviewBodyPh") },
         ], async (v) => {
           await w.api("/api/reviews", { coachId, rating: Number(v.rating) || 5, body: v.body || "" }, "POST");
-          w.toast?.("¡Gracias por tu reseña!", "ok");
+          w.toast?.(t("mb.reviewThanks"), "ok");
           await softRefresh();
         });
       }),

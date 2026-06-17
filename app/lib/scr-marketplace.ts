@@ -22,6 +22,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
+import { t } from "./i18n";
 
 export const S = {};
 
@@ -213,13 +214,13 @@ function coachCard(c, i) {
     ? `<span class="avatar lg" style="background:var(--otr-navy) url('${esc(c.photoUrl)}') center/cover no-repeat;color:transparent">${esc(c.initials)}</span>`
     : C.avatar(esc(c.initials), { size: "lg", bg: "var(--otr-navy)" });
   return `
-  <div class="tile click fade-up" data-coach="${esc(c.id)}" role="button" tabindex="0" aria-label="Ver perfil de ${c.name}" style="display:flex;flex-direction:column;--d:${i}">
+  <div class="tile click fade-up" data-coach="${esc(c.id)}" role="button" tabindex="0" aria-label="${t("mkt.viewProfileOf")} ${c.name}" style="display:flex;flex-direction:column;--d:${i}">
     <div class="row" style="gap:12px">
       ${avatar}
       <div style="min-width:0;flex:1">
         <div class="row vcenter wrap" style="gap:7px">
           <b style="font-size:14.5px;line-height:1.3">${c.name}</b>
-          ${c.verified ? `<span class="badge sky" style="flex:none"><span style="display:inline-flex;width:12px;height:12px">${IC.checkCircle}</span>Verificado</span>` : ""}
+          ${c.verified ? `<span class="badge sky" style="flex:none"><span style="display:inline-flex;width:12px;height:12px">${IC.checkCircle}</span>${t("mkt.verified")}</span>` : ""}
         </div>
         <div class="muted" style="font-size:12px;margin-top:3px">${c.headline}</div>
         <div class="row vcenter" style="gap:6px;margin-top:6px">
@@ -235,9 +236,9 @@ function coachCard(c, i) {
     <div class="divider" style="margin:14px 0"></div>
     <div class="row between vcenter" style="margin-top:auto;gap:10px">
       ${c.fromCents > 0
-        ? `<span style="font-size:13px;color:var(--text-2)">desde <b class="cc-pct" style="font-size:15px;font-weight:800">${money(c.fromCents)}</b><span class="faint" style="font-size:11.5px"> /sesión</span></span>`
-        : `<span class="faint" style="font-size:12px">Precio a consultar</span>`}
-      <span class="sky row vcenter" style="font-size:12.5px;font-weight:600;gap:4px;flex:none">Ver perfil <span style="display:inline-flex;width:14px;height:14px">${IC.arrowR}</span></span>
+        ? `<span style="font-size:13px;color:var(--text-2)">${t("mkt.from")} <b class="cc-pct" style="font-size:15px;font-weight:800">${money(c.fromCents)}</b><span class="faint" style="font-size:11.5px"> ${t("mkt.perSessionShort")}</span></span>`
+        : `<span class="faint" style="font-size:12px">${t("mkt.priceOnRequest")}</span>`}
+      <span class="sky row vcenter" style="font-size:12.5px;font-weight:600;gap:4px;flex:none">${t("mkt.viewProfile")} <span style="display:inline-flex;width:14px;height:14px">${IC.arrowR}</span></span>
     </div>
   </div>`;
 }
@@ -269,48 +270,48 @@ function renderGrid() {
   const list = applyFilters(all);
   return `
   <div class="page-head"><div>
-    <p class="eyebrow">Marketplace</p>
-    <h1 class="page-title">Coaches</h1>
-    <div class="page-sub">Entrena 1:1 con los coaches de debate y oratoria de OTR</div>
+    <p class="eyebrow">${t("mkt.eyebrow")}</p>
+    <h1 class="page-title">${t("mkt.title")}</h1>
+    <div class="page-sub">${t("mkt.subtitle")}</div>
   </div>
   <span class="badge sky">${list.length} coach${list.length === 1 ? "" : "es"}</span></div>
 
   <div class="searchbox" style="width:100%;max-width:440px;margin-bottom:12px">
     <span style="display:flex;width:16px;height:16px">${IC.search}</span>
-    <input data-mk-q placeholder="Buscar coach por nombre o especialidad…" value="${esc(f.q || "")}" aria-label="Buscar coaches" style="flex:1"/>
+    <input data-mk-q placeholder="${t("mkt.searchPlaceholder")}" value="${esc(f.q || "")}" aria-label="${t("mkt.searchAria")}" style="flex:1"/>
   </div>
   <div class="row wrap vcenter" style="gap:8px;margin-bottom:12px" id="mk-specs">
     ${specs.map((s) => `<button class="chip ${f.spec === s ? "active" : ""}" data-mk-spec="${esc(s)}">${s}</button>`).join("")}
   </div>
   <div class="row wrap vcenter" style="gap:10px;margin-bottom:22px">
     <select class="select" data-mk-lang style="width:auto;min-width:130px">
-      <option value="all" ${f.lang === "all" ? "selected" : ""}>Idioma: todos</option>
-      <option value="ES" ${f.lang === "ES" ? "selected" : ""}>Español (ES)</option>
-      <option value="EN" ${f.lang === "EN" ? "selected" : ""}>Inglés (EN)</option>
+      <option value="all" ${f.lang === "all" ? "selected" : ""}>${t("mkt.langAll")}</option>
+      <option value="ES" ${f.lang === "ES" ? "selected" : ""}>${t("mkt.langEs")}</option>
+      <option value="EN" ${f.lang === "EN" ? "selected" : ""}>${t("mkt.langEn")}</option>
     </select>
     <select class="select" data-mk-price style="width:auto;min-width:150px">
-      <option value="all" ${f.price === "all" ? "selected" : ""}>Precio: todos</option>
-      <option value="low" ${f.price === "low" ? "selected" : ""}>Menos de $50</option>
+      <option value="all" ${f.price === "all" ? "selected" : ""}>${t("mkt.priceAll")}</option>
+      <option value="low" ${f.price === "low" ? "selected" : ""}>${t("mkt.priceLow")}</option>
       <option value="mid" ${f.price === "mid" ? "selected" : ""}>$50 – $100</option>
-      <option value="high" ${f.price === "high" ? "selected" : ""}>Más de $100</option>
+      <option value="high" ${f.price === "high" ? "selected" : ""}>${t("mkt.priceHigh")}</option>
     </select>
     <select class="select" data-mk-sort style="width:auto;min-width:170px">
-      <option value="top" ${f.sort === "top" ? "selected" : ""}>Mejor valorados</option>
-      <option value="reviews" ${f.sort === "reviews" ? "selected" : ""}>Más reseñas</option>
-      <option value="priceAsc" ${f.sort === "priceAsc" ? "selected" : ""}>Precio: menor a mayor</option>
-      <option value="priceDesc" ${f.sort === "priceDesc" ? "selected" : ""}>Precio: mayor a menor</option>
+      <option value="top" ${f.sort === "top" ? "selected" : ""}>${t("mkt.sortTop")}</option>
+      <option value="reviews" ${f.sort === "reviews" ? "selected" : ""}>${t("mkt.sortReviews")}</option>
+      <option value="priceAsc" ${f.sort === "priceAsc" ? "selected" : ""}>${t("mkt.sortPriceAsc")}</option>
+      <option value="priceDesc" ${f.sort === "priceDesc" ? "selected" : ""}>${t("mkt.sortPriceDesc")}</option>
     </select>
     ${/* [COG-07] Limpiar filtros visible solo cuando hay alguno activo (distinto del default). */""}
     ${(f.lang !== "all" || f.spec !== "Todos" || f.price !== "all" || f.sort !== "top" || f.q)
-      ? `<button class="btn btn-ghost btn-sm" data-mk-clear style="white-space:nowrap">${IC.close || ""} Limpiar filtros</button>` : ""}
+      ? `<button class="btn btn-ghost btn-sm" data-mk-clear style="white-space:nowrap">${IC.close || ""} ${t("mkt.clearFilters")}</button>` : ""}
   </div>
 
   ${list.length
     ? `<div class="grid g-3">${list.map(coachCard).join("")}</div>`
-    : `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>No hay coaches con esos filtros</h4><p>Prueba con otro idioma, especialidad o rango de precio.</p></div></div>`}
+    : `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("mkt.emptyHeading")}</h4><p>${t("mkt.emptyBody")}</p></div></div>`}
 
   <div class="alert info fade-up" style="--d:2;margin-top:22px"><span class="ai">${IC.lock}</span>
-    <div><div class="at">Marketplace seguro</div>Toda la comunicación y los pagos ocurren dentro de OTR. Los fondos quedan en custodia (escrow) y se liberan al coach solo cuando la sesión se completa.</div>
+    <div><div class="at">${t("mkt.safeMarketTitle")}</div>${t("mkt.safeMarketBody")}</div>
   </div>`;
 }
 
@@ -319,7 +320,7 @@ function heroBlock(c) {
   if (c.introVideoUrl) {
     const yt = c.introVideoUrl.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
     const inner = yt
-      ? `<iframe src="https://www.youtube-nocookie.com/embed/${esc(yt[1])}" title="Video de presentación" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:0;display:block"></iframe>`
+      ? `<iframe src="https://www.youtube-nocookie.com/embed/${esc(yt[1])}" title="${t("mkt.introVideoTitle")}" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen style="width:100%;height:100%;border:0;display:block"></iframe>`
       : `<video controls preload="metadata" src="${esc(c.introVideoUrl)}" style="width:100%;height:100%;display:block;object-fit:cover;background:#000"></video>`;
     return `<div style="aspect-ratio:16/9;background:var(--otr-ink)">${inner}</div>`;
   }
@@ -327,9 +328,9 @@ function heroBlock(c) {
   <div style="background:linear-gradient(140deg,var(--otr-navy),var(--otr-ink));padding:34px 26px;display:flex;align-items:center;gap:16px">
     ${C.avatar(esc(c.initials), { size: "lg", bg: "rgba(255,255,255,.14)" })}
     <div>
-      <p class="eyebrow" style="color:var(--otr-sky-hi)">Coach verificado de OTR</p>
+      <p class="eyebrow" style="color:var(--otr-sky-hi)">${t("mkt.verifiedCoachEyebrow")}</p>
       <div class="brand-font" style="font-size:24px;font-weight:800;color:#fff;margin-top:2px">${c.name}</div>
-      <p style="color:rgba(234,242,251,.72);font-size:12.5px;margin-top:4px">Su video de presentación llega pronto — su historial habla por él.</p>
+      <p style="color:rgba(234,242,251,.72);font-size:12.5px;margin-top:4px">${t("mkt.videoComingSoon")}</p>
     </div>
   </div>`;
 }
@@ -339,12 +340,12 @@ function consentGate() {
   if (band === "minor") {
     return `
     <div class="alert warn" style="margin-top:14px"><span class="ai">${IC.lock}</span>
-      <div><div class="at">Candado de consentimiento parental</div>
-      Eres menor: tu reserva necesita la aprobación de tu tutor antes de confirmarse.</div>
+      <div><div class="at">${t("mkt.consentLockTitle")}</div>
+      ${t("mkt.consentLockBody")}</div>
     </div>`;
   }
   if (!band) {
-    return `<p class="faint" style="font-size:12px;margin-top:12px;display:flex;gap:6px;align-items:flex-start"><span style="display:inline-flex;width:14px;height:14px;flex:none;margin-top:1px">${IC.lock}</span>Si eres menor de edad, tu reserva requerirá la aprobación de tu padre, madre o tutor.</p>`;
+    return `<p class="faint" style="font-size:12px;margin-top:12px;display:flex;gap:6px;align-items:flex-start"><span style="display:inline-flex;width:14px;height:14px;flex:none;margin-top:1px">${IC.lock}</span>${t("mkt.consentHint")}</p>`;
   }
   return "";
 }
@@ -356,18 +357,18 @@ function bookedPanel(b) {
     <div class="row vcenter" style="gap:10px">
       <div class="notif-ic ${pending ? "warn" : "ok"}" style="width:40px;height:40px;border-radius:11px">${pending ? IC.clock : IC.checkCircle}</div>
       <div>
-        <b style="font-size:14px">${pending ? "Reserva enviada — esperando aprobación" : "¡Sesión confirmada!"}</b>
+        <b style="font-size:14px">${pending ? t("mkt.bookedPendingTitle") : t("mkt.bookedConfirmedTitle")}</b>
         <div class="muted" style="font-size:12.5px;margin-top:2px">${esc(b.pkgName || "Sesión")} · ${esc(b.dayLabel || "")} ${esc(b.slotLabel || "")}</div>
       </div>
     </div>
     <div class="divider"></div>
     <p class="muted" style="font-size:12.5px;line-height:1.55">${pending
-      ? "Le avisamos a tu padre, madre o tutor para que apruebe la sesión desde su Portal de familia. Te notificaremos en cuanto quede confirmada."
-      : "Tu pago quedó protegido en custodia (escrow). La sesión ocurre dentro de OTR y los fondos se liberan al coach cuando se completa."}</p>
+      ? t("mkt.bookedPendingBody")
+      : t("mkt.bookedConfirmedBody")}</p>
     <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" data-go="my-bookings">${IC.calendar} Ver mis reservas</button>
-      <button class="btn btn-soft btn-sm" data-mk-message="${esc(c.id)}">${IC.msg} Enviar mensaje</button>
-      <button class="btn btn-ghost btn-sm" data-mk-back>Ver más coaches</button>
+      <button class="btn btn-primary btn-sm" data-go="my-bookings">${IC.calendar} ${t("mkt.viewMyBookings")}</button>
+      <button class="btn btn-soft btn-sm" data-mk-message="${esc(c.id)}">${IC.msg} ${t("mkt.sendMessage")}</button>
+      <button class="btn btn-ghost btn-sm" data-mk-back>${t("mkt.viewMoreCoaches")}</button>
     </div>
   </div>`;
 }
@@ -380,13 +381,13 @@ function bookingCard(c, canBook, role) {
     // [PARENT-2] Solo el alumno puede reservar (POST /api/bookings exige STUDENT). El padre
     // veía el panel de reserva completo y al confirmar recibía un 403. Copy-guía por rol.
     const msg = role === "parent"
-      ? "Pídele a tu hijo/a que reserve desde su cuenta. Aquí tú apruebas la sesión y autorizas el pago — cada reserva pasa por ti."
+      ? t("mkt.roleMsgParent")
       : role === "admin"
-      ? "Vista de administración: las reservas las inician los estudiantes desde su propia cuenta."
-      : "Los estudiantes pueden reservar sesiones desde este perfil. Como coach, gestiona tu perfil y tu disponibilidad desde tu espacio de coach.";
+      ? t("mkt.roleMsgAdmin")
+      : t("mkt.roleMsgCoach");
     return `
     <div class="card card-pad">
-      <b style="font-size:13.5px">Reservas</b>
+      <b style="font-size:13.5px">${t("mkt.bookingsLabel")}</b>
       <p class="muted" style="font-size:12.5px;margin-top:6px">${msg}</p>
     </div>`;
   }
@@ -401,9 +402,9 @@ function bookingCard(c, canBook, role) {
 
   return `
   <div class="card card-pad">
-    <b style="font-size:14px">Reserva tu sesión</b>
+    <b style="font-size:14px">${t("mkt.bookSessionTitle")}</b>
 
-    <p class="label" style="margin:14px 0 8px">1 · Elige tu paquete</p>
+    <p class="label" style="margin:14px 0 8px">${t("mkt.step1ChoosePackage")}</p>
     ${pkgs.length ? `<div class="stack" style="gap:8px">
       ${pkgs.map((p) => {
         const on = pkg && p.key === pkg.key;
@@ -418,33 +419,33 @@ function bookingCard(c, canBook, role) {
           <span style="flex:none;text-align:right"><b class="cc-pct" style="font-size:14px;font-weight:800">${money(p.priceCents)}</b>${per ? `<span style="display:block">${per}</span>` : ""}</span>
         </button>`;
       }).join("")}
-    </div>` : `<p class="faint" style="font-size:12.5px">Este coach aún no publicó paquetes — puedes reservar una sesión individual y acordar el precio dentro de OTR.</p>`}
+    </div>` : `<p class="faint" style="font-size:12.5px">${t("mkt.noPackagesNote")}</p>`}
 
-    <p class="label" style="margin:16px 0 8px">2 · Elige el día ${generic ? `<span class="faint" style="font-weight:400">(horario sugerido 9:00–18:00 — el coach lo confirma al aprobar)</span>` : ""}</p>
+    <p class="label" style="margin:16px 0 8px">${t("mkt.step2ChooseDay")} ${generic ? `<span class="faint" style="font-weight:400">${t("mkt.suggestedScheduleHint")}</span>` : ""}</p>
     ${days.length
       ? `<div class="row wrap" style="gap:6px">${days.slice(0, 10).map((d) => `<button class="chip ${day && d.key === day.key ? "active" : ""}" data-mk-day="${d.key}">${d.label}</button>`).join("")}</div>`
-      : `<p class="faint" style="font-size:12.5px">Este coach no tiene días disponibles en las próximas dos semanas.</p>`}
+      : `<p class="faint" style="font-size:12.5px">${t("mkt.noDaysAvailable")}</p>`}
 
-    <p class="label" style="margin:16px 0 8px">3 · Elige la hora</p>
+    <p class="label" style="margin:16px 0 8px">${t("mkt.step3ChooseTime")}</p>
     ${slots.length
       ? `<div class="row wrap" style="gap:6px">${slots.map((s) => `<button class="chip ${sel.slotIso === s.iso ? "active" : ""}" data-mk-slot="${s.iso}" data-mk-slot-label="${s.label}">${s.label}</button>`).join("")}</div>`
-      : `<p class="faint" style="font-size:12.5px">Sin horarios libres este día — prueba con otro.</p>`}
+      : `<p class="faint" style="font-size:12.5px">${t("mkt.noSlotsThisDay")}</p>`}
 
     ${pkg && sel.slotIso ? `
     <div class="divider"></div>
     <div class="stack" style="gap:6px;font-size:13px">
-      <div class="row between"><span class="muted">Paquete</span><b>${esc(pkg.name)}</b></div>
-      <div class="row between"><span class="muted">Primera sesión</span><b>${esc(sel.dayLabel || (day ? day.label : ""))} · ${esc(sel.slotLabel)}</b></div>
-      <div class="row between"><span class="muted">Total (tarifa de servicio incluida)</span><b class="cc-pct" style="font-size:15px;font-weight:800">${money(pkg.priceCents)}</b></div>
+      <div class="row between"><span class="muted">${t("mkt.summaryPackage")}</span><b>${esc(pkg.name)}</b></div>
+      <div class="row between"><span class="muted">${t("mkt.summaryFirstSession")}</span><b>${esc(sel.dayLabel || (day ? day.label : ""))} · ${esc(sel.slotLabel)}</b></div>
+      <div class="row between"><span class="muted">${t("mkt.summaryTotal")}</span><b class="cc-pct" style="font-size:15px;font-weight:800">${money(pkg.priceCents)}</b></div>
     </div>
-    <p class="faint" style="font-size:11.5px;margin-top:8px">Tu pago queda en custodia (escrow) y se libera al coach al completar la sesión.</p>` : ""}
+    <p class="faint" style="font-size:11.5px;margin-top:8px">${t("mkt.escrowNote")}</p>` : ""}
 
     ${consentGate()}
 
     <button class="btn btn-primary btn-block" id="mk-confirm" style="margin-top:14px" ${ready ? "" : "disabled"}>
-      ${isMinor() ? "Solicitar aprobación y reservar" : "Confirmar reserva"}
+      ${isMinor() ? t("mkt.confirmRequestApproval") : t("mkt.confirmBooking")}
     </button>
-    <button class="btn btn-soft btn-block btn-sm" data-mk-message="${esc(c.id)}" style="margin-top:8px">${IC.msg} Enviar mensaje</button>
+    <button class="btn btn-soft btn-block btn-sm" data-mk-message="${esc(c.id)}" style="margin-top:8px">${IC.msg} ${t("mkt.sendMessage")}</button>
   </div>`;
 }
 
@@ -463,7 +464,7 @@ function renderProfile(state) {
   const reviews = c.reviewsList;
 
   return `
-  <button class="btn btn-quiet btn-sm" data-mk-back style="margin-bottom:14px">${IC.chevL} Volver a coaches</button>
+  <button class="btn btn-quiet btn-sm" data-mk-back style="margin-bottom:14px">${IC.chevL} ${t("mkt.backToCoaches")}</button>
 
   <div class="card fade-up" style="overflow:hidden;margin-bottom:18px">
     ${heroBlock(c)}
@@ -472,7 +473,7 @@ function renderProfile(state) {
         <div style="min-width:0">
           <div class="row vcenter wrap" style="gap:8px">
             <b class="brand-font" style="font-size:19px">${c.name}</b>
-            ${c.verified ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.checkCircle}</span>Verificado</span>` : ""}
+            ${c.verified ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.checkCircle}</span>${t("mkt.verified")}</span>` : ""}
             ${langBadges(c.languages)}
           </div>
           <div class="muted" style="font-size:13px;margin-top:4px">${c.headline}</div>
@@ -480,52 +481,52 @@ function renderProfile(state) {
             ${stars(c.rating, 13)}<b>${c.rating ? c.rating.toFixed(1) : "—"}</b>
             <span class="faint">${c.reviews} reseña${c.reviews === 1 ? "" : "s"}</span>
             ${c.bookingCount ? `<span class="dot-sep"></span><span class="faint">${c.bookingCount} sesiones reservadas</span>` : ""}
-            ${c.responseTime ? `<span class="dot-sep"></span><span class="faint">Responde en ${esc(c.responseTime)}</span>` : ""}
+            ${c.responseTime ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${esc(c.responseTime)}</span>` : ""}
           </div>
         </div>
-        ${c.fromCents > 0 ? `<div style="text-align:right;flex:none"><span class="faint" style="font-size:11.5px;display:block">desde</span><b class="cc-pct brand-font" style="font-size:22px;font-weight:800">${money(c.fromCents)}</b><span class="faint" style="font-size:11.5px;display:block">por sesión</span></div>` : ""}
+        ${c.fromCents > 0 ? `<div style="text-align:right;flex:none"><span class="faint" style="font-size:11.5px;display:block">${t("mkt.from")}</span><b class="cc-pct brand-font" style="font-size:22px;font-weight:800">${money(c.fromCents)}</b><span class="faint" style="font-size:11.5px;display:block">${t("mkt.perSession")}</span></div>` : ""}
       </div>
     </div>
   </div>
 
   <div class="split rail-360">
     <div class="stack" style="gap:16px">
-      ${loading ? `<div class="card card-pad fade-up"><p class="muted" style="font-size:13px">Cargando el perfil completo…</p></div>` : ""}
+      ${loading ? `<div class="card card-pad fade-up"><p class="muted" style="font-size:13px">${t("mkt.loadingProfile")}</p></div>` : ""}
       <div class="card card-pad fade-up" style="--d:1">
-        <b style="font-size:13.5px">Sobre ${esc(c.name.split(" ")[0] || "el coach")}</b>
-        <p class="muted" style="font-size:13.5px;line-height:1.6;margin-top:8px">${c.bio ? esc(c.bio) : "Este coach todavía no escribió su biografía."}</p>
-        ${c.credentials ? `<div class="divider"></div><b style="font-size:13px">Credenciales</b><div class="stack" style="gap:6px;margin-top:8px">${String(c.credentials).split(/\n|;/).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-sky-lo);margin-top:1px">${IC.award}</span>${esc(x)}</div>`).join("")}</div>` : ""}
-        ${specs.length ? `<div class="divider"></div><b style="font-size:13px">Especialidades</b><div class="row wrap" style="gap:6px;margin-top:8px">${specs.map((s) => `<span class="badge">${s}</span>`).join("")}</div>` : ""}
+        <b style="font-size:13.5px">${t("mkt.aboutPrefix")} ${esc(c.name.split(" ")[0] || t("mkt.theCoach"))}</b>
+        <p class="muted" style="font-size:13.5px;line-height:1.6;margin-top:8px">${c.bio ? esc(c.bio) : t("mkt.noBio")}</p>
+        ${c.credentials ? `<div class="divider"></div><b style="font-size:13px">${t("mkt.credentials")}</b><div class="stack" style="gap:6px;margin-top:8px">${String(c.credentials).split(/\n|;/).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-sky-lo);margin-top:1px">${IC.award}</span>${esc(x)}</div>`).join("")}</div>` : ""}
+        ${specs.length ? `<div class="divider"></div><b style="font-size:13px">${t("mkt.specialties")}</b><div class="row wrap" style="gap:6px;margin-top:8px">${specs.map((s) => `<span class="badge">${s}</span>`).join("")}</div>` : ""}
       </div>
 
       <div class="card card-pad fade-up" style="--d:2">
-        <div class="row between vcenter"><b style="font-size:13.5px">Reseñas</b><span class="badge sky">${c.reviews}</span></div>
-        <p class="faint" style="font-size:11.5px;margin-top:4px">Solo quienes completaron una sesión con este coach pueden dejar reseña.</p>
+        <div class="row between vcenter"><b style="font-size:13.5px">${t("mkt.reviewsTitle")}</b><span class="badge sky">${c.reviews}</span></div>
+        <p class="faint" style="font-size:11.5px;margin-top:4px">${t("mkt.reviewsEligibility")}</p>
         ${reviews.length ? `<div class="stack" style="gap:0;margin-top:6px">${reviews.slice(0, 6).map((r) => `
           <div style="padding:12px 0;border-bottom:1px solid var(--border)">
             <div class="row vcenter" style="gap:9px">
               ${C.avatar(esc(r.initials || ini(r.author || r.name)), { size: "sm", bg: "var(--otr-sky-lo)" })}
-              <b style="font-size:12.5px">${esc(r.author || r.name || "Alumno OTR")}</b>
+              <b style="font-size:12.5px">${esc(r.author || r.name || t("mkt.studentFallback"))}</b>
               ${stars(Number(r.rating) || 0, 11)}
-              ${r.verified ? `<span class="badge sky" style="height:18px;font-size:10px;padding:0 6px">Verificada</span>` : ""}
+              ${r.verified ? `<span class="badge sky" style="height:18px;font-size:10px;padding:0 6px">${t("mkt.reviewVerified")}</span>` : ""}
               <span class="faint" style="font-size:11.5px;margin-left:auto">${esc(r.when || "")}</span>
             </div>
             ${r.body ? `<p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:7px">${esc(r.body)}</p>` : ""}
           </div>`).join("")}</div>`
-        : `<p class="muted" style="font-size:12.5px;margin-top:10px">Aún no hay reseñas. Sé el primero en entrenar con ${esc(c.name.split(" ")[0] || "este coach")}.</p>`}
+        : `<p class="muted" style="font-size:12.5px;margin-top:10px">${t("mkt.noReviewsPrefix")} ${esc(c.name.split(" ")[0] || t("mkt.thisCoach"))}.</p>`}
       </div>
 
       <div class="alert info fade-up" style="--d:3"><span class="ai">${IC.lock}</span>
-        <div><div class="at">Tu seguridad primero</div>Las sesiones se hacen dentro de OTR, los pagos quedan en custodia (escrow) y nunca se comparte contacto fuera de la plataforma.</div>
+        <div><div class="at">${t("mkt.safetyFirstTitle")}</div>${t("mkt.safetyFirstBody")}</div>
       </div>
       <div class="row fade-up" style="--d:3;justify-content:center">
-        <button class="btn btn-quiet btn-sm" data-mk-report="${esc(c.profileId || c.id)}" data-coach-name="${esc(c.name)}" style="font-size:11.5px;color:var(--text-3)">${IC.flag || ""} Reportar a este coach</button>
+        <button class="btn btn-quiet btn-sm" data-mk-report="${esc(c.profileId || c.id)}" data-coach-name="${esc(c.name)}" style="font-size:11.5px;color:var(--text-3)">${IC.flag || ""} ${t("mkt.reportCoach")}</button>
       </div>
     </div>
 
     <div class="stack" style="gap:16px">
       <div class="fade-up" style="--d:1" id="mk-booking">${bookingCard(c, canBook, role)}</div>
-      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2"><b style="font-size:13px">Política de cancelación</b><p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:6px">${esc(c.cancelPolicy)}</p></div>` : ""}
+      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2"><b style="font-size:13px">${t("mkt.cancelPolicyTitle")}</b><p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:6px">${esc(c.cancelPolicy)}</p></div>` : ""}
     </div>
   </div>`;
 }
@@ -593,7 +594,7 @@ S.marketplace = {
           w.__convo = idx >= 0 ? idx : 0;
           w.go?.("messages");
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo iniciar la conversación", "danger");
+          w.toast?.((e && e.message) || t("mkt.convoFailToast"), "danger");
           el.removeAttribute("disabled");
         }
       })
@@ -604,13 +605,13 @@ S.marketplace = {
     root.querySelectorAll("[data-mk-report]").forEach((el) =>
       el.addEventListener("click", () => {
         const targetId = el.getAttribute("data-mk-report") || "";
-        const coachName = el.getAttribute("data-coach-name") || "este coach";
+        const coachName = el.getAttribute("data-coach-name") || t("mkt.thisCoach");
         if (!targetId || !w.otrFormModal) return;
-        w.otrFormModal(`Reportar a ${coachName}`, [
-          { name: "reason", label: "Motivo del reporte", type: "textarea", req: true, ph: "Cuéntanos qué ocurrió. Nuestro equipo de confianza y seguridad lo revisará." },
+        w.otrFormModal(`${t("mkt.reportModalTitle")} ${coachName}`, [
+          { name: "reason", label: t("mkt.reportReasonLabel"), type: "textarea", req: true, ph: t("mkt.reportReasonPlaceholder") },
         ], async (v) => {
           await w.api("/api/reports", { targetType: "coach", targetId, reason: v.reason || "" }, "POST");
-          w.toast?.("Reporte enviado — gracias por cuidar la comunidad", "ok");
+          w.toast?.(t("mkt.reportSentToast"), "ok");
         });
       })
     );
@@ -678,7 +679,7 @@ S.marketplace = {
       const pkgs = coachPackages(c);
       const pkg = pkgs.find((p) => p.key === sel.pkg) || pkgs[0] || null;
       confirm.disabled = true;
-      confirm.textContent = "Reservando…";
+      confirm.textContent = t("mkt.bookingInProgress");
       try {
         const body = { coachId: id, slotAt: sel.slotIso, durationMin: 60 };
         if (pkg && pkg.id) body.packageId = pkg.id;
@@ -686,13 +687,13 @@ S.marketplace = {
         const bk = (d && (d.booking || d)) || {};
         const status = String(bk.status || (isMinor() ? "PENDING" : "CONFIRMED")).toUpperCase();
         w.__mkBooked = w.__mkBooked || {};
-        w.__mkBooked[id] = { status, pkgName: pkg ? pkg.name : "Sesión individual", dayLabel: sel.dayLabel, slotLabel: sel.slotLabel };
-        w.toast?.(status === "PENDING" ? "Reserva enviada — esperando aprobación parental" : "¡Sesión confirmada!", "ok");
+        w.__mkBooked[id] = { status, pkgName: pkg ? pkg.name : t("mkt.singleSessionName"), dayLabel: sel.dayLabel, slotLabel: sel.slotLabel };
+        w.toast?.(status === "PENDING" ? t("mkt.bookingPendingToast") : t("mkt.bookingConfirmedToast"), "ok");
         repaint();
       } catch (e) {
-        w.toast?.((e && e.message) || "No se pudo crear la reserva", "danger");
+        w.toast?.((e && e.message) || t("mkt.bookingFailToast"), "danger");
         confirm.disabled = false;
-        confirm.textContent = isMinor() ? "Solicitar aprobación y reservar" : "Confirmar reserva";
+        confirm.textContent = isMinor() ? t("mkt.confirmRequestApproval") : t("mkt.confirmBooking");
       }
     });
   },

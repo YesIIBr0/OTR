@@ -19,6 +19,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
@@ -78,11 +79,13 @@ function membershipTier() {
   return { key: t, label: TIER_LABELS[t] || "Free", sinceLabel: m.sinceLabel || "" };
 }
 const THRESHOLD_OPTIONS = [
-  { v: "each", label: "Aprobar cada reserva", cents: null, full: false },
-  { v: "25", label: "Auto hasta $25", cents: 2500, full: false },
-  { v: "50", label: "Auto hasta $50", cents: 5000, full: false },
-  { v: "full", label: "Confianza total", cents: 999999, full: true },
+  { v: "each", cents: null, full: false },
+  { v: "25", cents: 2500, full: false },
+  { v: "50", cents: 5000, full: false },
+  { v: "full", cents: 999999, full: true },
 ];
+// Etiqueta del umbral, resuelta al idioma activo en el momento de pintar/toast.
+const thresholdLabel = (o) => t(`parent.threshold_${o.v}`);
 // Valor actual de un hijo → la opción del selector que le corresponde.
 function thresholdValueFor(child) {
   if (String(child.consentLevel || "").toLowerCase() === "full") return "full";
@@ -115,8 +118,8 @@ function consentRow(child, pc, i) {
       <div class="faint" style="font-size:12px;margin-top:2px">${esc(pc.slotLabel || "")}${pc.priceLabel ? ` · ${esc(pc.priceLabel)}` : ""}</div>
     </div>
     <div class="row" style="gap:6px;flex:none">
-      <button class="btn btn-primary btn-sm" data-consent="${esc(pc.bookingId)}" data-act="ok">${IC.check} Aprobar</button>
-      <button class="btn btn-ghost btn-sm" data-consent="${esc(pc.bookingId)}" data-act="no">Rechazar</button>
+      <button class="btn btn-primary btn-sm" data-consent="${esc(pc.bookingId)}" data-act="ok">${IC.check} ${t("parent.approve")}</button>
+      <button class="btn btn-ghost btn-sm" data-consent="${esc(pc.bookingId)}" data-act="no">${t("parent.reject")}</button>
     </div>
   </div>`;
 }
@@ -129,22 +132,22 @@ function pendingLinksBlock(pending) {
   return `
   <div class="card card-pad fade-up" style="border-color:var(--otr-sky);margin-bottom:18px">
     <div class="row between vcenter">
-      <b style="font-size:14px">Solicitudes de vínculo pendientes</b>
+      <b style="font-size:14px">${t("parent.pendingLinksTitle")}</b>
       <span class="badge sky"><span class="dot"></span>${pending.length}</span>
     </div>
-    <p class="muted" style="font-size:12.5px;margin-top:4px">Estos estudiantes te declararon como su tutor al registrarse. Confirma el vínculo para ver su progreso y aprobar sus reservas.</p>
+    <p class="muted" style="font-size:12.5px;margin-top:4px">${t("parent.pendingLinksBody")}</p>
     <div class="stack" style="gap:0;margin-top:6px">
       ${pending.map((pl, i) => `
       <div class="lrow fade-up" style="padding:12px 0;gap:12px;border-bottom:1px solid var(--border);--d:${i}">
         ${C.avatar(esc(pl.initials || "?"), { size: "sm", bg: "var(--otr-sky-lo)" })}
         <div style="flex:1;min-width:0">
           <b style="font-size:13.5px">${esc(pl.name || "Estudiante")}</b>
-          <div class="faint" style="font-size:12px;margin-top:2px">${esc(pl.email || "")}${pl.ageBand === "minor" ? " · menor protegido" : ""}</div>
+          <div class="faint" style="font-size:12px;margin-top:2px">${esc(pl.email || "")}${pl.ageBand === "minor" ? ` · ${t("parent.protectedMinor")}` : ""}</div>
         </div>
         <div class="row" style="gap:6px;flex:none">
           ${pl.ageBand === "adult"
             ? `<span class="faint" style="font-size:11.5px">Esperando que ${esc((pl.name || "el alumno").split(" ")[0])} acepte</span>`
-            : `<button class="btn btn-primary btn-sm" data-glink-confirm="${esc(pl.email)}">${IC.check} Confirmar vínculo</button>`}
+            : `<button class="btn btn-primary btn-sm" data-glink-confirm="${esc(pl.email)}">${IC.check} ${t("parent.confirmLink")}</button>`}
         </div>
       </div>`).join("")}
     </div>
@@ -163,20 +166,20 @@ function childCard(k, i) {
         <div class="row vcenter wrap" style="gap:8px">
           <b style="font-size:15px">${esc(k.name)}</b>
           ${C.levelBadge(k.level)}
-          ${k.ageBand === "minor" ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.lock}</span>Menor — protegido</span>` : ""}
-          ${pendingLink ? `<span class="badge warn"><span class="dot"></span>Esperando su consentimiento</span>` : ""}
+          ${k.ageBand === "minor" ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.lock}</span>${t("parent.minorProtected")}</span>` : ""}
+          ${pendingLink ? `<span class="badge warn"><span class="dot"></span>${t("parent.awaitingConsent")}</span>` : ""}
         </div>
 
       </div>
       <div style="text-align:right;flex:none">
-        <span class="faint" style="font-size:11px;display:block">Gasto del mes</span>
+        <span class="faint" style="font-size:11px;display:block">${t("parent.monthlySpend")}</span>
         <b class="brand-font" style="font-size:18px;font-weight:800">${money(k.spendCents)}</b>
       </div>
     </div>
 
     <div class="divider"></div>
 
-    <b style="font-size:13px">Habilidades</b>
+    <b style="font-size:13px">${t("parent.skills")}</b>
     ${k.skillDeltas.length
       ? `<div class="row wrap" style="gap:6px;margin-top:8px">${k.skillDeltas.map((s) => {
           // [auditoría] SCORE real por skill (StudentSkill.score, vivo). Antes se pintaba un
@@ -184,23 +187,23 @@ function childCard(k, i) {
           const score = Math.max(0, Math.min(100, Number(s.score) || 0));
           return `<span class="badge ${score >= 75 ? "ok" : score >= 50 ? "sky" : ""}">${esc(s.name)} ${score}</span>`;
         }).join("")}</div>`
-      : `<p class="faint" style="font-size:12px;margin-top:6px">Las evaluaciones del coach aparecerán aquí tras las primeras sesiones.</p>`}
+      : `<p class="faint" style="font-size:12px;margin-top:6px">${t("parent.skillsEmpty")}</p>`}
 
     <div class="divider"></div>
 
-    <div class="row between vcenter"><b style="font-size:13px">Asistencia</b>
+    <div class="row between vcenter"><b style="font-size:13px">${t("parent.attendance")}</b>
       <span class="faint" style="font-size:12px">${att.attended} de ${att.scheduled} sesiones asistidas</span></div>
     <div style="margin-top:8px">${C.bar(pct)}</div>
 
     ${k.achievements.length ? `
     <div class="divider"></div>
-    <b style="font-size:13px">Logros y certificaciones</b>
+    <b style="font-size:13px">${t("parent.achievements")}</b>
     <div class="row wrap" style="gap:6px;margin-top:8px">
       ${k.achievements.slice(0, 6).map((a) => `<span class="badge"><span style="display:inline-flex;width:12px;height:12px">${IC.medal}</span>${esc(achLabel(a))}</span>`).join("")}
     </div>` : ""}
 
     <div class="divider"></div>
-    <b style="font-size:13px">Próximas sesiones</b>
+    <b style="font-size:13px">${t("parent.upcomingSessions")}</b>
     ${k.upcoming.length
       ? `<div class="stack" style="gap:4px;margin-top:6px">${k.upcoming.slice(0, 4).map((u) => {
           const x = upcomingLabel(u);
@@ -208,21 +211,21 @@ function childCard(k, i) {
             <span style="display:inline-flex;width:16px;height:16px;color:var(--otr-sky-lo);flex:none">${IC.calendar}</span>
             <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600">${esc(x.t)}</span>
             ${x.d ? `<span class="faint" style="font-size:12px;flex:none">${esc(x.d)}</span>` : ""}
-            ${u.id ? `<button class="btn btn-ghost btn-sm" data-pcancel="${esc(u.id)}" style="flex:none;color:var(--danger);padding:2px 9px;font-size:12px">Cancelar</button>` : ""}
+            ${u.id ? `<button class="btn btn-ghost btn-sm" data-pcancel="${esc(u.id)}" style="flex:none;color:var(--danger);padding:2px 9px;font-size:12px">${t("parent.cancel")}</button>` : ""}
           </div>`;
         }).join("")}</div>`
-      : `<p class="faint" style="font-size:12px;margin-top:6px">Sin sesiones agendadas — explora coaches con tu hijo/a desde el marketplace.</p>`}
+      : `<p class="faint" style="font-size:12px;margin-top:6px">${t("parent.upcomingEmpty")}</p>`}
   </div>`;
 }
 
 function linkForm(compact = false) {
   return `
   <div class="field" style="margin-bottom:10px">
-    <label class="label">Correo del estudiante</label>
-    <input class="input" id="gp-email" type="email" placeholder="estudiante@correo.com" maxlength="160"/>
+    <label class="label">${t("parent.studentEmailLabel")}</label>
+    <input class="input" id="gp-email" type="email" placeholder="${t("parent.studentEmailPh")}" maxlength="160"/>
   </div>
-  <button class="btn btn-primary ${compact ? "btn-sm " : ""}btn-block" id="gp-link">${IC.plus} Vincular estudiante</button>
-  <p class="faint" style="font-size:11.5px;margin-top:8px;line-height:1.5">Si tu hijo/a es menor, el vínculo se activa de inmediato. Si es adulto, deberá aceptar tu solicitud.</p>`;
+  <button class="btn btn-primary ${compact ? "btn-sm " : ""}btn-block" id="gp-link">${IC.plus} ${t("parent.linkStudent")}</button>
+  <p class="faint" style="font-size:11.5px;margin-top:8px;line-height:1.5">${t("parent.linkFormNote")}</p>`;
 }
 
 /* ---------------- Reporte mensual (PRD §11.1/§11.2) ---------------- */
@@ -241,19 +244,19 @@ function reportCard(kids) {
   if (!withId.length) {
     return `
     <div class="card card-pad fade-up" style="--d:3;background:linear-gradient(140deg,var(--otr-pale),#fff)">
-      <b style="font-size:13.5px">Reporte mensual</b>
-      <p class="muted" style="font-size:12.5px;margin-top:6px">Cuando tu hijo/a tenga sesiones registradas, aquí podrás abrir su resumen del mes — asistencia, habilidades, logros y gasto — listo para imprimir.</p>
+      <b style="font-size:13.5px">${t("parent.monthlyReport")}</b>
+      <p class="muted" style="font-size:12.5px;margin-top:6px">${t("parent.monthlyReportEmpty")}</p>
     </div>`;
   }
   const st = rstate();
   if (!st.sel || !withId.some((k) => k.id === st.sel)) st.sel = withId[0].id;
   return `
   <div class="card card-pad fade-up" style="--d:3;background:linear-gradient(140deg,var(--otr-pale),#fff)" id="pr-card">
-    <b style="font-size:13.5px">Reporte mensual</b>
-    <p class="muted" style="font-size:12.5px;margin-top:6px">Resumen del mes con asistencia, habilidades, logros y gasto — disponible aquí cuando quieras, listo para imprimir.</p>
+    <b style="font-size:13.5px">${t("parent.monthlyReport")}</b>
+    <p class="muted" style="font-size:12.5px;margin-top:6px">${t("parent.monthlyReportBody")}</p>
     ${withId.length > 1 ? `
     <div class="field" style="margin-top:10px;margin-bottom:0">
-      <label class="label">Hijo/a</label>
+      <label class="label">${t("parent.childLabel")}</label>
       <select class="input" id="pr-child">
         ${withId.map((k) => `<option value="${esc(k.id)}"${k.id === st.sel ? " selected" : ""}>${esc(k.name)}</option>`).join("")}
       </select>
@@ -351,16 +354,16 @@ function membershipCard(kids) {
   const planRow = `
     <div class="row between vcenter" style="gap:10px">
       <div style="min-width:0">
-        <span class="faint" style="font-size:11px;display:block">Plan actual</span>
+        <span class="faint" style="font-size:11px;display:block">${t("parent.currentPlan")}</span>
         <b class="brand-font" style="font-size:17px;font-weight:800">${esc(m.label)}</b>
         ${m.sinceLabel ? `<span class="faint" style="font-size:11.5px;display:block;margin-top:1px">${esc(m.sinceLabel)}</span>` : ""}
       </div>
-      <button class="btn btn-soft btn-sm" data-go="membership" style="flex:none">Gestionar plan</button>
+      <button class="btn btn-soft btn-sm" data-go="membership" style="flex:none">${t("parent.managePlan")}</button>
     </div>`;
   const thresholds = (kids || []).filter((k) => k.id).map((k) => {
     const cur = thresholdValueFor(k);
     const opts = THRESHOLD_OPTIONS.map((o) =>
-      `<option value="${o.v}"${o.v === cur ? " selected" : ""}>${esc(o.label)}</option>`,
+      `<option value="${o.v}"${o.v === cur ? " selected" : ""}>${esc(thresholdLabel(o))}</option>`,
     ).join("");
     return `
     <div class="row between vcenter" style="gap:10px">
@@ -372,13 +375,13 @@ function membershipCard(kids) {
   <div class="card card-pad fade-up" style="--d:2">
     <div class="row vcenter" style="gap:8px">
       <span style="display:inline-flex;width:15px;height:15px;color:var(--otr-sky-lo)">${IC.star}</span>
-      <b style="font-size:13.5px">Membresía y facturación</b>
+      <b style="font-size:13.5px">${t("parent.membershipBilling")}</b>
     </div>
     <div style="margin-top:10px">${planRow}</div>
     ${kids && kids.some((k) => k.id) ? `
     <div class="divider" style="margin:12px 0"></div>
-    <b style="font-size:12.5px">Umbral de aprobación por hijo/a</b>
-    <p class="muted" style="font-size:12px;margin-top:4px;line-height:1.5">Decide cuánto se puede reservar sin pedirte aprobación cada vez. El resto siempre pasa por ti.</p>
+    <b style="font-size:12.5px">${t("parent.approvalThresholdTitle")}</b>
+    <p class="muted" style="font-size:12px;margin-top:4px;line-height:1.5">${t("parent.approvalThresholdBody")}</p>
     <div class="stack" style="gap:8px;margin-top:8px">${thresholds}</div>` : ""}
   </div>`;
 }
@@ -388,19 +391,19 @@ function emptyState() {
   <div class="split rail-340">
     <div class="card fade-up"><div class="empty">
       <div class="ill">${IC.users}</div>
-      <h4>Vincula a tu hijo/a para empezar</h4>
-      <p>Conecta su cuenta de estudiante con su correo y tendrás su progreso real, sus sesiones y cada aprobación en un solo lugar.</p>
+      <h4>${t("parent.emptyHeading")}</h4>
+      <p>${t("parent.emptyBody")}</p>
       <div style="max-width:340px;margin:14px auto 0;text-align:left">${linkForm()}</div>
     </div></div>
     <div class="stack" style="gap:16px">
       <div class="card card-pad fade-up" style="--d:1">
-        <b style="font-size:13.5px">Qué verás aquí</b>
+        <b style="font-size:13.5px">${t("parent.whatYoullSee")}</b>
         <div class="stack" style="gap:10px;margin-top:12px">
           ${[
-            { ic: "levels", t: "Progreso real", d: "Nivel, habilidades y logros, al día." },
-            { ic: "calendar", t: "Asistencia y sesiones", d: "Sesiones asistidas vs agendadas y lo que viene." },
-            { ic: "lock", t: "Seguridad y consentimiento", d: "Cada reserva con un coach pasa por tu aprobación." },
-            { ic: "chart", t: "Gasto claro", d: "Cuánto inviertes, con pagos protegidos en escrow." },
+            { ic: "levels", t: t("parent.see1Title"), d: t("parent.see1Body") },
+            { ic: "calendar", t: t("parent.see2Title"), d: t("parent.see2Body") },
+            { ic: "lock", t: t("parent.see3Title"), d: t("parent.see3Body") },
+            { ic: "chart", t: t("parent.see4Title"), d: t("parent.see4Body") },
           ].map((x) => `<div class="row" style="gap:10px;align-items:flex-start">
             <span style="display:inline-flex;width:16px;height:16px;color:var(--otr-sky-lo);flex:none;margin-top:2px">${IC[x.ic]}</span>
             <span style="font-size:12.5px;line-height:1.5"><b>${x.t}</b> — <span class="muted">${x.d}</span></span>
@@ -418,14 +421,14 @@ S.parentPortal = {
     const pending = (DB.parent && Array.isArray(DB.parent.pendingLinks)) ? DB.parent.pendingLinks : [];
     const head = `
     <div class="page-head"><div>
-      <p class="eyebrow">Portal de familia</p>
-      <h1 class="page-title">Pruebas y tranquilidad</h1>
-      <div class="page-sub">El progreso real de tu hijo/a, cada sesión segura y cada peso bajo tu control</div>
+      <p class="eyebrow">${t("parent.eyebrow")}</p>
+      <h1 class="page-title">${t("parent.title")}</h1>
+      <div class="page-sub">${t("parent.subtitle")}</div>
     </div></div>`;
 
     if (kids === null) {
       return `${head}
-      <div class="card fade-up"><div class="empty"><div class="ill">${IC.users}</div><h4>Cargando tu portal…</h4><p>Buscando a tus estudiantes vinculados.</p></div></div>`;
+      <div class="card fade-up"><div class="empty"><div class="ill">${IC.users}</div><h4>${t("parent.loadingTitle")}</h4><p>${t("parent.loadingBody")}</p></div></div>`;
     }
     if (!kids.length) return `${head}${pendingLinksBlock(pending)}${emptyState()}`;
 
@@ -436,19 +439,19 @@ S.parentPortal = {
     return `${head}
     ${pendingLinksBlock(pending)}
     <div class="grid g-4 fade-up" style="margin-bottom:18px">
-      ${C.kpi("Hijos vinculados", String(kids.length), { ic: "users" })}
-      ${C.kpi("Próximas sesiones", String(upcomingTotal), { ic: "calendar" })}
-      ${C.kpi("Aprobaciones pendientes", String(consents.length), { ic: "lock" })}
-      ${C.kpi("Gasto del mes", money(spendTotal), { ic: "chart" })}
+      ${C.kpi(t("parent.kpiChildren"), String(kids.length), { ic: "users" })}
+      ${C.kpi(t("parent.kpiUpcoming"), String(upcomingTotal), { ic: "calendar" })}
+      ${C.kpi(t("parent.kpiPendingApprovals"), String(consents.length), { ic: "lock" })}
+      ${C.kpi(t("parent.kpiMonthlySpend"), money(spendTotal), { ic: "chart" })}
     </div>
 
     ${consents.length ? `
     <div class="card card-pad fade-up" style="border-color:var(--warn);margin-bottom:18px">
       <div class="row between vcenter">
-        <b style="font-size:14px">Aprobaciones pendientes</b>
-        <span class="badge warn"><span class="dot"></span>${consents.length} por revisar</span>
+        <b style="font-size:14px">${t("parent.pendingApprovalsTitle")}</b>
+        <span class="badge warn"><span class="dot"></span>${consents.length} ${t("parent.toReview")}</span>
       </div>
-      <p class="muted" style="font-size:12.5px;margin-top:4px">Ninguna sesión con coach se confirma sin tu aprobación.</p>
+      <p class="muted" style="font-size:12.5px;margin-top:4px">${t("parent.pendingApprovalsBody")}</p>
       <div class="stack" style="gap:0;margin-top:6px">${consents.map((x, i) => consentRow(x.child, x.pc, i)).join("")}</div>
     </div>` : ""}
 
@@ -458,37 +461,37 @@ S.parentPortal = {
       </div>
       <div class="stack" style="gap:16px">
         <div class="card card-pad fade-up" style="--d:1;border-color:var(--otr-sky)">
-          <b style="font-size:13.5px">Seguridad y consentimiento</b>
+          <b style="font-size:13.5px">${t("parent.securityConsentTitle")}</b>
           <div class="stack" style="gap:9px;margin-top:10px">
             ${[
-              "Toda sesión 1:1 ocurre dentro de OTR — nunca por fuera.",
-              "Las reservas de menores requieren tu aprobación.",
-              "Los pagos quedan en escrow y se liberan al completar la sesión.",
-            ].map((t) => `<div class="row" style="gap:8px;align-items:flex-start"><span style="display:inline-flex;width:14px;height:14px;color:var(--otr-sky-lo);flex:none;margin-top:2px">${IC.checkCircle}</span><span class="muted" style="font-size:12.5px;line-height:1.5">${t}</span></div>`).join("")}
+              t("parent.securityPoint1"),
+              t("parent.securityPoint2"),
+              t("parent.securityPoint3"),
+            ].map((line) => `<div class="row" style="gap:8px;align-items:flex-start"><span style="display:inline-flex;width:14px;height:14px;color:var(--otr-sky-lo);flex:none;margin-top:2px">${IC.checkCircle}</span><span class="muted" style="font-size:12.5px;line-height:1.5">${line}</span></div>`).join("")}
           </div>
           ${kids.some((k) => k.id) ? `
           <div class="divider" style="margin:12px 0"></div>
-          <b style="font-size:12.5px">Perfil público — requiere tu consentimiento</b>
-          <p class="muted" style="font-size:12px;margin-top:4px">El perfil compartible de tu hijo/a está apagado por defecto. Tú decides si se publica.</p>
+          <b style="font-size:12.5px">${t("parent.publicProfileTitle")}</b>
+          <p class="muted" style="font-size:12px;margin-top:4px">${t("parent.publicProfileBody")}</p>
           <div class="stack" style="gap:8px;margin-top:8px">
             ${kids.filter((k) => k.id).map((k) => `
             <div class="row between vcenter" style="gap:10px">
               <span style="font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.name)}${k.publicProfile.enabled && k.publicProfile.slug ? ` · <a href="/p/${esc(k.publicProfile.slug)}" target="_blank" rel="noopener" style="color:var(--otr-sky-lo)">ver</a>` : ""}</span>
               <button class="btn btn-sm ${k.publicProfile.enabled ? "btn-soft" : "btn-primary"}" data-pp-child="${esc(k.id)}" data-pp-next="${k.publicProfile.enabled ? "off" : "on"}" style="flex:none">
-                ${k.publicProfile.enabled ? "Despublicar" : "Habilitar"}
+                ${k.publicProfile.enabled ? t("parent.unpublish") : t("parent.enable")}
               </button>
             </div>`).join("")}
           </div>` : ""}
         </div>
         <div class="card card-pad fade-up" style="--d:2">
-          <b style="font-size:13.5px">Mensajes de coaches</b>
-          <p class="muted" style="font-size:12.5px;margin-top:6px">Lo que los coaches ven en tu hijo/a, contado de primera mano — siempre dentro de OTR.</p>
-          <button class="btn btn-soft btn-sm btn-block" style="margin-top:10px" data-go="messages">${IC.msg} Abrir mensajes</button>
+          <b style="font-size:13.5px">${t("parent.coachMessagesTitle")}</b>
+          <p class="muted" style="font-size:12.5px;margin-top:6px">${t("parent.coachMessagesBody")}</p>
+          <button class="btn btn-soft btn-sm btn-block" style="margin-top:10px" data-go="messages">${IC.msg} ${t("parent.openMessages")}</button>
         </div>
         ${membershipCard(kids)}
         ${reportCard(kids)}
         <div class="card card-pad fade-up" style="--d:4">
-          <b style="font-size:13.5px">Vincular otro estudiante</b>
+          <b style="font-size:13.5px">${t("parent.linkAnother")}</b>
           <div style="margin-top:10px">${linkForm(true)}</div>
         </div>
       </div>
@@ -522,7 +525,7 @@ S.parentPortal = {
         const approve = btn.getAttribute("data-act") === "ok";
         if (!id) return;
         btn.disabled = true;
-        btn.textContent = approve ? "Aprobando…" : "Rechazando…";
+        btn.textContent = approve ? t("parent.approving") : t("parent.rejecting");
         try {
           await w.api(`/api/bookings/${encodeURIComponent(id)}`, { status: approve ? "CONFIRMED" : "CANCELLED" }, "PATCH");
           // Actualización local sin re-fetch: quita el consentimiento de la lista.
@@ -532,12 +535,12 @@ S.parentPortal = {
           lists.forEach((k) => {
             if (Array.isArray(k.pendingConsents)) k.pendingConsents = k.pendingConsents.filter((pc) => pc.bookingId !== id);
           });
-          w.toast?.(approve ? "Sesión aprobada — quedó confirmada" : "Reserva rechazada", approve ? "ok" : "warn");
+          w.toast?.(approve ? t("parent.toastApproved") : t("parent.toastRejected"), approve ? "ok" : "warn");
           repaint();
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo actualizar la reserva", "danger");
+          w.toast?.((e && e.message) || t("parent.errUpdateBooking"), "danger");
           btn.disabled = false;
-          btn.textContent = approve ? "Aprobar" : "Rechazar";
+          btn.textContent = approve ? t("parent.approve") : t("parent.reject");
         }
       })
     );
@@ -552,27 +555,27 @@ S.parentPortal = {
         if (btn.getAttribute("data-armed") !== "1") {
           btn.setAttribute("data-armed", "1");
           const t0 = btn.textContent;
-          btn.textContent = "¿Cancelar? Tocar de nuevo";
+          btn.textContent = t("parent.cancelArm");
           setTimeout(() => {
             if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
           }, 4000);
           return;
         }
         btn.disabled = true;
-        btn.textContent = "Cancelando…";
+        btn.textContent = t("parent.cancelling");
         try {
           await w.api(`/api/bookings/${encodeURIComponent(id)}`, { status: "CANCELLED" }, "PATCH");
           const lists = [];
           if (DB.parent && Array.isArray(DB.parent.children)) lists.push(...DB.parent.children);
           if (Array.isArray(w.__parentFallback)) lists.push(...w.__parentFallback);
           lists.forEach((k) => { if (Array.isArray(k.upcoming)) k.upcoming = k.upcoming.filter((u) => u.id !== id); });
-          w.toast?.("Sesión cancelada", "warn");
+          w.toast?.(t("parent.toastSessionCancelled"), "warn");
           repaint();
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo cancelar la sesión", "danger");
+          w.toast?.((e && e.message) || t("parent.errCancelSession"), "danger");
           btn.disabled = false;
           btn.removeAttribute("data-armed");
-          btn.textContent = "Cancelar";
+          btn.textContent = t("parent.cancel");
         }
       })
     );
@@ -584,7 +587,7 @@ S.parentPortal = {
         const enabled = btn.getAttribute("data-pp-next") === "on";
         if (!studentId) return;
         btn.disabled = true;
-        btn.textContent = enabled ? "Publicando…" : "Quitando…";
+        btn.textContent = enabled ? t("parent.publishing") : t("parent.unpublishing");
         try {
           const resp = await w.api("/api/public-profile", { enabled, studentId });
           const kidsArr = (DB.parent && DB.parent.children) || [];
@@ -593,12 +596,12 @@ S.parentPortal = {
               k.publicProfile = { enabled, slug: (resp && resp.slug) || (k.publicProfile && k.publicProfile.slug) || null };
             }
           });
-          w.toast?.(enabled ? "Perfil público habilitado — tú tienes el control" : "Perfil público despublicado", "ok");
+          w.toast?.(enabled ? t("parent.toastProfileEnabled") : t("parent.toastProfileDisabled"), "ok");
           repaint();
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo actualizar el perfil público", "danger");
+          w.toast?.((e && e.message) || t("parent.errUpdateProfile"), "danger");
           btn.disabled = false;
-          btn.textContent = enabled ? "Habilitar" : "Despublicar";
+          btn.textContent = enabled ? t("parent.enable") : t("parent.unpublish");
         }
       })
     );
@@ -630,9 +633,9 @@ S.parentPortal = {
               k.consentLevel = nextConsent;
             }
           });
-          w.toast?.(`Umbral actualizado — ${opt.label}`, "ok");
+          w.toast?.(`${t("parent.thresholdUpdated")} — ${thresholdLabel(opt)}`, "ok");
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo actualizar el umbral", "danger");
+          w.toast?.((e && e.message) || t("parent.errUpdateThreshold"), "danger");
         } finally {
           sel.disabled = false;
         }
@@ -646,12 +649,12 @@ S.parentPortal = {
         const email = btn.getAttribute("data-glink-confirm") || "";
         if (!email) return;
         btn.disabled = true;
-        btn.textContent = "Confirmando…";
+        btn.textContent = t("parent.confirming");
         try {
           const d = await w.api("/api/guardianship", { email }, "POST");
           const g = d && d.guardianship;
           const active = g && String(g.status).toUpperCase() === "ACTIVE";
-          w.toast?.(active ? "Vínculo confirmado — ya ves su progreso" : "El estudiante debe aceptar la solicitud", active ? "ok" : "warn");
+          w.toast?.(active ? t("parent.toastLinkConfirmed") : t("parent.toastStudentMustAccept"), active ? "ok" : "warn");
           // Refresca app-data para que DB.parent traiga al hijo activo y quite el pendiente.
           try {
             const res = await fetch("/api/app-data");
@@ -660,9 +663,9 @@ S.parentPortal = {
           w.__parentFallback = null; // re-derivar desde DB.parent fresco
           repaint();
         } catch (e) {
-          w.toast?.((e && e.message) || "No se pudo confirmar el vínculo", "danger");
+          w.toast?.((e && e.message) || t("parent.errConfirmLink"), "danger");
           btn.disabled = false;
-          btn.textContent = "Confirmar vínculo";
+          btn.textContent = t("parent.confirmLink");
         }
       })
     );
@@ -672,17 +675,17 @@ S.parentPortal = {
     link?.addEventListener("click", async () => {
       const input = root.querySelector("#gp-email");
       const email = (input && input.value ? input.value : "").trim().toLowerCase();
-      if (!EMAIL_RE.test(email)) { w.toast?.("Escribe un correo válido", "warn"); return; }
+      if (!EMAIL_RE.test(email)) { w.toast?.(t("parent.invalidEmail"), "warn"); return; }
       link.disabled = true;
-      link.textContent = "Vinculando…";
+      link.textContent = t("parent.linking");
       try {
         const d = await w.api("/api/guardianship", { email, studentEmail: email });
         const g = d && d.guardianship;
         const pending = g && String(g.status).toUpperCase() === "PENDING";
         w.toast?.(
-          d && d.already ? "Ese estudiante ya estaba vinculado"
-            : pending ? "Solicitud enviada — falta el consentimiento del estudiante"
-            : "Estudiante vinculado",
+          d && d.already ? t("parent.toastAlreadyLinked")
+            : pending ? t("parent.toastRequestSent")
+            : t("parent.toastStudentLinked"),
           "ok"
         );
         // Refresca la lista real de vínculos y repinta.
@@ -692,9 +695,9 @@ S.parentPortal = {
         } catch (e2) { /* silencioso */ }
         repaint();
       } catch (e) {
-        w.toast?.((e && e.message) || "No se pudo vincular al estudiante", "danger");
+        w.toast?.((e && e.message) || t("parent.errLinkStudent"), "danger");
         link.disabled = false;
-        link.innerHTML = `${IC.plus} Vincular estudiante`;
+        link.innerHTML = `${IC.plus} ${t("parent.linkStudent")}`;
       }
     });
 
@@ -710,7 +713,7 @@ S.parentPortal = {
       const paint = () => {
         scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px;width:100%">
           <div class="modal-body" style="max-height:78vh;overflow:auto">${reportBody(report, st.lang)}</div>
-          <div class="modal-foot" data-noprint><button class="btn btn-ghost" data-x>Cerrar</button></div>
+          <div class="modal-foot" data-noprint><button class="btn btn-ghost" data-x>${t("parent.close")}</button></div>
         </div>`;
         wire();
       };
@@ -734,18 +737,18 @@ S.parentPortal = {
     prOpen?.addEventListener("click", async () => {
       const st = rstate();
       const sel = (prChild && prChild.value) || st.sel;
-      if (!sel) { w.toast?.("Selecciona un hijo/a", "warn"); return; }
+      if (!sel) { w.toast?.(t("parent.selectChild"), "warn"); return; }
       st.sel = sel;
       prOpen.disabled = true;
       const prevHtml = prOpen.innerHTML;
-      prOpen.innerHTML = "Cargando reporte…";
+      prOpen.innerHTML = t("parent.loadingReport");
       try {
         const d = await w.api(`/api/parent-report?studentId=${encodeURIComponent(sel)}`, null, "GET");
         const report = d && d.report;
-        if (!report) throw new Error("No se pudo generar el reporte");
+        if (!report) throw new Error(t("parent.errGenerateReport"));
         openReportModal(report);
       } catch (e) {
-        w.toast?.((e && e.message) || "No se pudo cargar el reporte", "danger");
+        w.toast?.((e && e.message) || t("parent.errLoadReport"), "danger");
       } finally {
         prOpen.disabled = false;
         prOpen.innerHTML = prevHtml;

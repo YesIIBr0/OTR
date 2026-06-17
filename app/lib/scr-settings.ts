@@ -10,14 +10,14 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { getLang } from "./i18n";
+import { getLang, t } from "./i18n";
 export const S = {};
 
 const NOTIF = [
-  { k: "session_reminders", label: "Recordatorios de sesiones", desc: "Avisos antes de cada sesión reservada.", def: true },
-  { k: "weekly_digest", label: "Resumen semanal", desc: "Tu progreso, racha y próximos pasos cada semana.", def: true },
-  { k: "debate_results", label: "Resultados de debate", desc: "Cuando tu rating se mueve o asciendes de tier.", def: true },
-  { k: "marketplace", label: "Novedades del marketplace", desc: "Nuevos coaches y recomendaciones para ti.", def: false },
+  { k: "session_reminders", labelKey: "settings.notifSessionLabel", descKey: "settings.notifSessionDesc", def: true },
+  { k: "weekly_digest", labelKey: "settings.notifWeeklyLabel", descKey: "settings.notifWeeklyDesc", def: true },
+  { k: "debate_results", labelKey: "settings.notifDebateLabel", descKey: "settings.notifDebateDesc", def: true },
+  { k: "marketplace", labelKey: "settings.notifMarketplaceLabel", descKey: "settings.notifMarketplaceDesc", def: false },
 ];
 
 // Preferencias persistidas en backend (DB.me.notificationPrefs es un JSON string, puede ser null).
@@ -41,14 +41,14 @@ function currentPrefs() {
 
 // Switch on/off premium (verde de marca al activar). role=switch + aria-checked accesible.
 function toggle(key, on) {
-  return `<button type="button" role="switch" aria-checked="${on}" data-notif="${key}" aria-label="Activar/desactivar"
+  return `<button type="button" role="switch" aria-checked="${on}" data-notif="${key}" aria-label="${t("settings.toggleAria")}"
     style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-green)" : "var(--n-200)"}">
     <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(12,12,12,.25)"></span></button>`;
 }
 
 // [GAMIFICATION-1 §9] Switch para el opt-in de la clasificación pública (persiste en backend).
 function lbToggle(on) {
-  return `<button type="button" role="switch" aria-checked="${on}" data-leaderboard="1" aria-label="Aparecer en la clasificación pública"
+  return `<button type="button" role="switch" aria-checked="${on}" data-leaderboard="1" aria-label="${t("settings.leaderboardAria")}"
     style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-green)" : "var(--n-200)"}">
     <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(12,12,12,.25)"></span></button>`;
 }
@@ -76,7 +76,7 @@ S.settings = {
     // "ADMIN"/"TEACHER"/etc. siempre fallaba → roleLabel caía a "Estudiante" y el toggle de
     // clasificación nunca se mostraba (regresión de GAMIFICATION-1).
     const role = String(me.role || "").toUpperCase();
-    const roleLabel = role === "ADMIN" ? "Administrador" : role === "TEACHER" ? "Coach" : role === "PARENT" ? "Familia" : "Estudiante";
+    const roleLabel = role === "ADMIN" ? t("settings.roleAdmin") : role === "TEACHER" ? t("settings.roleCoach") : role === "PARENT" ? t("settings.roleFamily") : t("settings.roleStudent");
 
     const account = `<div class="row vcenter" style="gap:14px;padding:8px 0 14px">
       ${C.avatar(esc(me.initials || "?"), { size: "lg", bg: "var(--otr-navy)" })}
@@ -85,7 +85,7 @@ S.settings = {
         <div class="faint" style="font-size:13px">${esc(me.email || "")}</div>
         <div style="margin-top:7px">${C.badge(roleLabel, role === "TEACHER" || role === "ADMIN" ? "navy" : "sky")}</div>
       </div>
-      <button class="btn btn-soft btn-sm" data-go="profile" style="flex:none">${IC.user} Editar perfil</button>
+      <button class="btn btn-soft btn-sm" data-go="profile" style="flex:none">${IC.user} ${t("settings.editProfile")}</button>
     </div>`;
 
     const langCtrl = `<div class="row" style="gap:3px;border:1px solid var(--border);border-radius:100px;padding:3px;display:inline-flex">
@@ -93,41 +93,41 @@ S.settings = {
         style="border:0;border-radius:100px;padding:5px 15px;font-weight:600;font-size:12.5px;cursor:pointer;transition:.2s var(--ease);background:${lg === lang ? "var(--otr-navy)" : "transparent"};color:${lg === lang ? "#fff" : "var(--text-2)"}">${lg.toUpperCase()}</button>`).join("")}
     </div>`;
 
-    const notif = NOTIF.map((n) => row(IC.bell, n.label, n.desc, toggle(n.k, notifOn(n.k, n.def)))).join("");
+    const notif = NOTIF.map((n) => row(IC.bell, t(n.labelKey), t(n.descKey), toggle(n.k, notifOn(n.k, n.def)))).join("");
 
     const isMinor = me.ageBand === "minor";
     // [GAMIFICATION-1 §9] Clasificación pública: opt-out por usuario. Los menores NUNCA
     // aparecen en el ranking global (§9.4), así que no se les ofrece el toggle.
     const leaderboardRow = (role === "STUDENT" || role === "TEACHER")
-      ? row(IC.trophy, "Aparecer en la clasificación",
+      ? row(IC.trophy, t("settings.leaderboardTitle"),
           isMinor
-            ? "Los menores nunca aparecen en el ranking público (protección de privacidad)."
-            : "Muestra tu nombre y rating en el ranking público de debate.",
-          isMinor ? `<span class="faint" style="font-size:12px">No disponible</span>` : lbToggle(me.leaderboardOptIn !== false))
+            ? t("settings.leaderboardMinorDesc")
+            : t("settings.leaderboardDesc"),
+          isMinor ? `<span class="faint" style="font-size:12px">${t("settings.notAvailable")}</span>` : lbToggle(me.leaderboardOptIn !== false))
       : "";
     const privacy = [
       role === "PARENT"
-        ? row(IC.lock, "Consentimiento y privacidad del hijo/a", "Aprobaciones de reserva, visibilidad de sesiones y perfil público del menor.", `<button class="btn btn-soft btn-sm" data-go="parent">Gestionar</button>`)
-        : row(IC.lock, "Perfil público", "Controla si tu trayectoria es compartible (apagado por defecto para menores).", `<button class="btn btn-soft btn-sm" data-go="lifetime">Mi trayectoria ${IC.arrowR}</button>`),
+        ? row(IC.lock, t("settings.childPrivacyTitle"), t("settings.childPrivacyDesc"), `<button class="btn btn-soft btn-sm" data-go="parent">${t("settings.manage")}</button>`)
+        : row(IC.lock, t("settings.publicProfileTitle"), t("settings.publicProfileDesc"), `<button class="btn btn-soft btn-sm" data-go="lifetime">${t("settings.myJourney")} ${IC.arrowR}</button>`),
       leaderboardRow,
-      row(IC.doc, "Contraseña", "Cámbiala con tu contraseña actual — sin salir de tu cuenta.", `<button class="btn btn-soft btn-sm" data-action="change-pw">Cambiar contraseña</button>`),
+      row(IC.doc, t("settings.passwordTitle"), t("settings.passwordDesc"), `<button class="btn btn-soft btn-sm" data-action="change-pw">${t("settings.changePassword")}</button>`),
     ].join("");
 
     return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Cuenta</p>
-      <h1 class="page-title">Ajustes</h1>
-      <div class="page-sub">Tu cuenta, idioma, notificaciones, membresía y privacidad</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("settings.eyebrow")}</p>
+      <h1 class="page-title">${t("settings.title")}</h1>
+      <div class="page-sub">${t("settings.subtitle")}</div></div></div>
 
-    ${card("Cuenta", account, 0)}
-    ${card("Idioma", row("", "Idioma de la plataforma", "Cambia toda la interfaz al instante.", langCtrl), 1)}
-    ${card("Notificaciones", notif, 2)}
-    ${card("Membresía y facturación", row(IC.star, "Tu plan", "Revisa tu plan, beneficios y recibos.", `<button class="btn btn-soft btn-sm" data-go="membership">Gestionar membresía ${IC.arrowR}</button>`), 3)}
-    ${card("Privacidad y seguridad", privacy, 4)}
+    ${card(t("settings.cardAccount"), account, 0)}
+    ${card(t("settings.cardLanguage"), row("", t("settings.languageTitle"), t("settings.languageDesc"), langCtrl), 1)}
+    ${card(t("settings.cardNotifications"), notif, 2)}
+    ${card(t("settings.cardMembership"), row(IC.star, t("settings.planTitle"), t("settings.planDesc"), `<button class="btn btn-soft btn-sm" data-go="membership">${t("settings.manageMembership")} ${IC.arrowR}</button>`), 3)}
+    ${card(t("settings.cardPrivacy"), privacy, 4)}
 
     <div class="card card-pad fade-up" style="--d:5;border-color:color-mix(in srgb,var(--danger) 30%,transparent)">
       <div class="row vcenter between" style="gap:14px;flex-wrap:wrap">
-        <div><b style="font-size:14px">Cerrar sesión</b><div class="faint" style="font-size:12px;margin-top:2px">Saldrás de tu cuenta en este dispositivo.</div></div>
-        <button class="btn btn-ghost btn-sm" data-action="logout" style="color:var(--danger);flex:none">${IC.logout} Cerrar sesión</button>
+        <div><b style="font-size:14px">${t("settings.logoutTitle")}</b><div class="faint" style="font-size:12px;margin-top:2px">${t("settings.logoutDesc")}</div></div>
+        <button class="btn btn-ghost btn-sm" data-action="logout" style="color:var(--danger);flex:none">${IC.logout} ${t("settings.logout")}</button>
       </div>
     </div>`;
   },
@@ -149,7 +149,7 @@ S.settings = {
         sw.setAttribute("aria-checked", String(next));
         sw.style.background = next ? "var(--otr-green)" : "var(--n-200)";
         if (knob) knob.style.left = next ? "22px" : "3px";
-        w.toast?.(next ? "Notificación activada" : "Notificación desactivada", "ok");
+        w.toast?.(next ? t("settings.notifEnabled") : t("settings.notifDisabled"), "ok");
         // Construye el objeto completo de prefs (con el nuevo valor) y persiste server-side.
         const prefs = currentPrefs();
         prefs[k] = next;
@@ -162,7 +162,7 @@ S.settings = {
           sw.setAttribute("aria-checked", String(!next));
           sw.style.background = !next ? "var(--otr-green)" : "var(--n-200)";
           if (knob) knob.style.left = !next ? "22px" : "3px";
-          w.toast?.("No se pudo guardar el cambio", "error");
+          w.toast?.(t("settings.saveFailed"), "error");
         }
       }));
     // [GAMIFICATION-1 §9] Clasificación pública: persiste en backend (PATCH /api/profile).
@@ -175,7 +175,7 @@ S.settings = {
       try {
         await w.api("/api/profile", { leaderboardOptIn: next }, "PATCH");
         if (w.DB?.me) w.DB.me.leaderboardOptIn = next;
-        w.toast?.(next ? "Apareces en la clasificación pública" : "Oculto en la clasificación pública", "ok");
+        w.toast?.(next ? t("settings.leaderboardVisible") : t("settings.leaderboardHidden"), "ok");
       } catch {
         // revertir el switch si falló
         lb.setAttribute("aria-checked", String(!next));
@@ -187,19 +187,19 @@ S.settings = {
     // [UIC-03] Cambiar contraseña: modal dedicado (actual + nueva + confirmar) → PATCH /api/profile.
     const pwBtn = root.querySelector('[data-action="change-pw"]');
     if (pwBtn) pwBtn.addEventListener("click", () => {
-      if (!w.otrFormModal) { w.toast?.("No disponible aquí", "warn"); return; }
-      w.otrFormModal("Cambiar contraseña", [
-        { name: "currentPassword", label: "Contraseña actual", type: "password", req: true },
-        { name: "newPassword", label: "Nueva contraseña (mín. 6)", type: "password", req: true },
-        { name: "confirm", label: "Confirmar nueva contraseña", type: "password", req: true },
+      if (!w.otrFormModal) { w.toast?.(t("settings.notAvailableHere"), "warn"); return; }
+      w.otrFormModal(t("settings.changePassword"), [
+        { name: "currentPassword", label: t("settings.currentPassword"), type: "password", req: true },
+        { name: "newPassword", label: t("settings.newPassword"), type: "password", req: true },
+        { name: "confirm", label: t("settings.confirmPassword"), type: "password", req: true },
       ], async (v) => {
         const cur = String(v.currentPassword || "").trim();
         const nw = String(v.newPassword || "").trim();
         const cf = String(v.confirm || "").trim();
-        if (nw.length < 6) throw new Error("La nueva contraseña debe tener al menos 6 caracteres");
-        if (nw !== cf) throw new Error("Las contraseñas no coinciden");
+        if (nw.length < 6) throw new Error(t("settings.passwordTooShort"));
+        if (nw !== cf) throw new Error(t("settings.passwordMismatch"));
         await w.api("/api/profile", { currentPassword: cur, newPassword: nw }, "PATCH");
-        w.toast?.("Contraseña actualizada", "ok");
+        w.toast?.(t("settings.passwordUpdated"), "ok");
       });
     });
   },

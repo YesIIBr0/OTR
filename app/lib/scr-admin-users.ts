@@ -12,6 +12,7 @@
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 
 export const S = {};
 
@@ -24,10 +25,10 @@ function usersState() {
 
 /* ---------------- helpers ---------------- */
 const ROLE_OPTS = [
-  { v: "STUDENT", l: "Estudiante" },
-  { v: "PARENT", l: "Familia" },
-  { v: "TEACHER", l: "Profesor / Coach" },
-  { v: "ADMIN", l: "Administrador" },
+  { v: "STUDENT", l: t("au.roleStudent") },
+  { v: "PARENT", l: t("au.roleParent") },
+  { v: "TEACHER", l: t("au.roleTeacher") },
+  { v: "ADMIN", l: t("au.roleAdmin") },
 ];
 // COACH es un rol legacy (unificado en TEACHER): ya no se ofrece en el selector,
 // pero se conserva su etiqueta para que las filas COACH existentes rendericen bien.
@@ -55,11 +56,11 @@ function userCard(u, d) {
     </select>`;
   const verifyBtn = isCoachRole(role)
     ? `<button class="btn btn-sm ${verified ? "btn-ghost" : "btn-soft"}" data-user-verify="${esc(u.id)}" data-val="${verified ? "false" : "true"}">
-         ${verified ? "Quitar verificación" : "Verificar coach"}
+         ${verified ? t("au.unverify") : t("au.verifyCoach")}
        </button>`
     : "";
   const suspendBtn = `<button class="btn btn-sm ${suspended ? "btn-soft" : "btn-ghost"}" data-user-suspend="${esc(u.id)}" data-val="${suspended ? "false" : "true"}" style="${suspended ? "" : "color:var(--danger)"}">
-        ${suspended ? "Reactivar" : "Suspender"}
+        ${suspended ? t("au.reactivate") : t("au.suspend")}
       </button>`;
 
   return `
@@ -71,15 +72,15 @@ function userCard(u, d) {
           <div class="row vcenter" style="gap:8px;flex-wrap:wrap">
             <b style="font-size:13.5px">${esc(u.name)}</b>
             ${roleBadge(role)}
-            ${isCoachRole(role) && verified ? `<span class="badge sky" style="font-size:10.5px">${IC.check} Verificado</span>` : ""}
-            ${suspended ? `<span class="badge warn" style="font-size:10.5px">Suspendido</span>` : ""}
+            ${isCoachRole(role) && verified ? `<span class="badge sky" style="font-size:10.5px">${IC.check} ${t("au.verifiedBadge")}</span>` : ""}
+            ${suspended ? `<span class="badge warn" style="font-size:10.5px">${t("au.suspendedBadge")}</span>` : ""}
           </div>
           <div class="faint" style="font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}${u.ageBand === "minor" ? " · menor" : ""}</div>
         </div>
       </div>
     </div>
     <div class="row vcenter wrap" style="gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-      <span class="faint" style="font-size:11.5px;align-self:center">Rol</span>
+      <span class="faint" style="font-size:11.5px;align-self:center">${t("au.roleLabel")}</span>
       ${roleSelect}
       <span style="flex:1"></span>
       ${verifyBtn}
@@ -96,8 +97,8 @@ function viewBody() {
     return `
     <div class="card fade-up"><div class="empty">
       <div class="ill">${IC.users}</div>
-      <h4>Cargando usuarios…</h4>
-      <p>Estamos recuperando la lista de cuentas.</p>
+      <h4>${t("au.loadingTitle")}</h4>
+      <p>${t("au.loadingBody")}</p>
     </div></div>`;
   }
 
@@ -106,8 +107,8 @@ function viewBody() {
     return `
     <div class="card fade-up"><div class="empty">
       <div class="ill">${IC.users}</div>
-      <h4>${st.q ? "Sin resultados" : "Sin usuarios"}</h4>
-      <p>${st.q ? "Ningún usuario coincide con tu búsqueda." : "Cuando se registren usuarios, aparecerán aquí."}</p>
+      <h4>${st.q ? t("au.emptySearchTitle") : t("au.emptyTitle")}</h4>
+      <p>${st.q ? t("au.emptySearchBody") : t("au.emptyBody")}</p>
     </div></div>`;
   }
 
@@ -128,8 +129,8 @@ S.adminUsers = {
 
     // [ENT-04] Filtro por rol (la API ya soporta ?role=); reusa la capacidad del backend.
     const FILTERS = [
-      { v: "", l: "Todos" }, { v: "STUDENT", l: "Estudiantes" }, { v: "TEACHER", l: "Coaches" },
-      { v: "PARENT", l: "Familias" }, { v: "ADMIN", l: "Admins" },
+      { v: "", l: t("au.filterAll") }, { v: "STUDENT", l: t("au.filterStudents") }, { v: "TEACHER", l: t("au.filterCoaches") },
+      { v: "PARENT", l: t("au.filterFamilies") }, { v: "ADMIN", l: t("au.filterAdmins") },
     ];
     const chips = FILTERS.map((f) =>
       `<button type="button" class="chip ${(st.role || "") === f.v ? "active" : ""}" data-au-role="${f.v}">${f.l}</button>`).join("");
@@ -141,22 +142,22 @@ S.adminUsers = {
 
     return `
     <div class="page-head fade-up"><div>
-      <p class="eyebrow">Administración</p>
-      <h1 class="page-title">Gestión de usuarios</h1>
-      <div class="page-sub">Cambia roles, verifica coaches y suspende cuentas — sin tocar la base de datos</div>
+      <p class="eyebrow">${t("au.eyebrow")}</p>
+      <h1 class="page-title">${t("au.title")}</h1>
+      <div class="page-sub">${t("au.subtitle")}</div>
     </div></div>
 
     <div class="grid g-4 fade-up" style="--d:1;margin-bottom:18px">
-      <div class="tile">${C.kpi("Usuarios", String(kUsers), { ic: "users" })}</div>
-      <div class="tile">${C.kpi("Coaches", String(kCoaches), { ic: "user" })}</div>
-      <div class="tile">${C.kpi("Admins", String(kAdmins), { ic: "check" })}</div>
-      <div class="tile">${C.kpi("Suspendidos", String(kSusp), { ic: "flag" })}</div>
+      <div class="tile">${C.kpi(t("au.kpiUsers"), String(kUsers), { ic: "users" })}</div>
+      <div class="tile">${C.kpi(t("au.kpiCoaches"), String(kCoaches), { ic: "user" })}</div>
+      <div class="tile">${C.kpi(t("au.kpiAdmins"), String(kAdmins), { ic: "check" })}</div>
+      <div class="tile">${C.kpi(t("au.kpiSuspended"), String(kSusp), { ic: "flag" })}</div>
     </div>
 
     <div class="card card-pad fade-up" style="--d:2;margin-bottom:16px">
       <div class="row vcenter" style="gap:8px">
-        <input class="input" id="au-search" placeholder="Buscar por nombre o correo…" value="${esc(st.q || "")}" style="flex:1"/>
-        <button class="btn btn-primary btn-sm" id="au-search-btn">${IC.search} Buscar</button>
+        <input class="input" id="au-search" placeholder="${t("au.searchPlaceholder")}" value="${esc(st.q || "")}" style="flex:1"/>
+        <button class="btn btn-primary btn-sm" id="au-search-btn">${IC.search} ${t("au.searchBtn")}</button>
       </div>
       <div class="row wrap" style="gap:8px;margin-top:12px" id="au-roles">${chips}</div>
     </div>
@@ -200,7 +201,7 @@ S.adminUsers = {
         .catch((e) => {
           if (!append) st.users = [];
           st.loaded = true;
-          w.toast?.((e && e.message) || "No se pudo cargar la lista de usuarios", "danger");
+          w.toast?.((e && e.message) || t("au.errLoad"), "danger");
         })
         .finally(() => {
           st.loading = false;
@@ -228,7 +229,7 @@ S.adminUsers = {
 
     // --- [ENT-02] Cargar más (paginación) ---
     root.querySelector("#au-more")?.addEventListener("click", (e) => {
-      const btn = e.currentTarget; if (btn) { btn.disabled = true; btn.textContent = "Cargando…"; }
+      const btn = e.currentTarget; if (btn) { btn.disabled = true; btn.textContent = t("au.loadingBtn"); }
       load({ append: true });
     });
 
@@ -253,7 +254,7 @@ S.adminUsers = {
         w.toast?.(okMsg, "ok");
         repaint();
       } catch (e) {
-        w.toast?.((e && e.message) || "No se pudo actualizar el usuario", "danger");
+        w.toast?.((e && e.message) || t("au.errUpdate"), "danger");
         repaint();
       }
     };
@@ -262,7 +263,7 @@ S.adminUsers = {
       sel.addEventListener("change", () => {
         const id = sel.getAttribute("data-user-role");
         const role = sel.value;
-        patch(id, { role }, (u) => (u.role = role), "Rol actualizado");
+        patch(id, { role }, (u) => (u.role = role), t("au.toastRoleUpdated"));
       })
     );
 
@@ -271,7 +272,7 @@ S.adminUsers = {
         const id = btn.getAttribute("data-user-verify");
         const val = btn.getAttribute("data-val") === "true";
         btn.disabled = true;
-        patch(id, { coachVerified: val }, (u) => (u.coachVerified = val), val ? "Coach verificado" : "Verificación retirada");
+        patch(id, { coachVerified: val }, (u) => (u.coachVerified = val), val ? t("au.toastVerified") : t("au.toastUnverified"));
       })
     );
 
@@ -280,7 +281,7 @@ S.adminUsers = {
         const id = btn.getAttribute("data-user-suspend");
         const val = btn.getAttribute("data-val") === "true";
         btn.disabled = true;
-        patch(id, { suspended: val }, (u) => (u.suspended = val), val ? "Usuario suspendido" : "Usuario reactivado");
+        patch(id, { suspended: val }, (u) => (u.suspended = val), val ? t("au.toastSuspended") : t("au.toastReactivated"));
       })
     );
   },

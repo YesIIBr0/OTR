@@ -5,6 +5,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
+import { t } from "./i18n";
 
 /* ---- Helpers de autoría reutilizados por "Mis cursos" y el constructor de curso ---- */
 // Fecha de entrega legible (de un ISO) → "15 nov".
@@ -18,7 +19,7 @@ function saveChip(root, state) {
   if (!state) { el.style.display = "none"; return; }
   el.style.display = "inline-flex";
   el.className = "save-chip " + (state === "saving" ? "saving" : "saved");
-  el.textContent = state === "saving" ? "Guardando…" : "Guardado";
+  el.textContent = state === "saving" ? t("extra.saving") : t("extra.saved");
   if (state === "saved") { clearTimeout(el.__t); el.__t = setTimeout(() => { el.style.display = "none"; }, 1600); }
 }
 // Fila de ACTIVIDAD (lección). edit=true: arrastrable (grip), renombrable (doble-clic), con controles.
@@ -28,7 +29,7 @@ function lessonRow(l, mid, edit) {
   const quizBadge = isQuiz
     ? (quizInDb
         ? `<span class="badge ok" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.check} ${quizInDb.questions?.length || 0} preg.</span>`
-        : `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Sin preguntas</span>`)
+        : `<span class="badge warn" style="height:18px;font-size:10px;flex:none">${t("extra.noQuestions")}</span>`)
     : "";
   const videoBadge = l.videoKind && l.videoKind !== "none"
     ? `<span class="badge sky" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.video} ${l.videoKind === "youtube" ? "YouTube" : "Stream"}</span>`
@@ -36,11 +37,11 @@ function lessonRow(l, mid, edit) {
   const isAssign = l.type === "assign" || l.type === "mic";
   const dueBadge = isAssign && l.dueAt ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${IC.calendar || ""} Entrega ${fmtDue(l.dueAt)}</span>` : "";
   const ptsBadge = isAssign && l.maxPoints != null ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${l.maxPoints} pts</span>` : "";
-  const hiddenBadge = l.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Oculta</span>` : "";
-  const grip = edit ? `<span class="drag-grip" title="Arrastra para reordenar">${IC.grip}</span>` : "";
-  const titleSpan = `<span class="lrow-title" ${edit ? `data-inline-rename="lesson:${l.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}" ${edit ? `title="Doble-clic para renombrar"` : ""}>${esc(l.title)}</span>`;
+  const hiddenBadge = l.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">${t("extra.hidden")}</span>` : "";
+  const grip = edit ? `<span class="drag-grip" title="${t("extra.dragToReorder")}">${IC.grip}</span>` : "";
+  const titleSpan = `<span class="lrow-title" ${edit ? `data-inline-rename="lesson:${l.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}" ${edit ? `title="${t("extra.dblClickRename")}"` : ""}>${esc(l.title)}</span>`;
   const controls = edit
-    ? `<span class="row" style="gap:3px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="lesson:${l.id}" title="${l.hidden ? "Mostrar al alumno" : "Ocultar al alumno"}">${IC.eye}</button>${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ""}<button class="btn btn-quiet btn-sm" data-duplicate="lesson:${l.id}" title="Duplicar">${IC.copy}</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:up" title="Subir">↑</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:down" title="Bajar">↓</button><button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="Editar actividad">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" style="color:var(--danger)" title="Eliminar">${IC.close}</button></span>`
+    ? `<span class="row" style="gap:3px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="lesson:${l.id}" title="${l.hidden ? t("extra.showToStudent") : t("extra.hideFromStudent")}">${IC.eye}</button>${isQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${l.id}" data-title="${esc(l.title)}" title="${t("extra.quizBuilder")}">${IC.doc} ${t("extra.exam")}</button>` : ""}<button class="btn btn-quiet btn-sm" data-duplicate="lesson:${l.id}" title="${t("extra.duplicate")}">${IC.copy}</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:up" title="${t("extra.moveUp")}">↑</button><button class="btn btn-quiet btn-sm" data-reorder-lesson="${mid}:${l.id}:down" title="${t("extra.moveDown")}">↓</button><button class="btn btn-quiet btn-sm" data-edit-lesson="${l.id}" title="${t("extra.editActivity")}">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="lesson:${l.id}" style="color:var(--danger)" title="${t("extra.delete")}">${IC.close}</button></span>`
     : "";
   return `<div class="row between vcenter lrow" ${edit ? `draggable="true" data-drag="lesson:${l.id}:${mid}"` : ""} style="padding:7px 0 7px ${edit ? "4px" : "18px"};font-size:13px;color:var(--text-2)${l.hidden ? ";opacity:.5" : ""}">
     <span class="row vcenter" style="gap:6px;min-width:0">${grip}<span style="display:flex;width:15px;color:var(--text-3);flex:none">${C.typeIcon(l.type)}</span>${titleSpan}${videoBadge}${quizBadge}${dueBadge}${ptsBadge}${hiddenBadge}</span>
@@ -49,18 +50,18 @@ function lessonRow(l, mid, edit) {
 // Bloque de SECCIÓN (módulo). edit: arrastrable, renombrable (doble-clic), colapsable.
 function sectionBlock(m, cid, edit) {
   const ctrls = edit
-    ? `<span class="row" style="gap:3px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="module:${m.id}" title="${m.hidden ? "Mostrar al alumno" : "Ocultar al alumno"}">${IC.eye}</button><button class="btn btn-quiet btn-sm" data-duplicate="module:${m.id}" title="Duplicar sección">${IC.copy}</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="Subir sección">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="Bajar sección">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="Renombrar sección">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">Eliminar</button></span>`
+    ? `<span class="row" style="gap:3px;flex:none"><button class="btn btn-quiet btn-sm" data-toggle-hidden="module:${m.id}" title="${m.hidden ? t("extra.showToStudent") : t("extra.hideFromStudent")}">${IC.eye}</button><button class="btn btn-quiet btn-sm" data-duplicate="module:${m.id}" title="${t("extra.duplicateSection")}">${IC.copy}</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:up" title="${t("extra.moveSectionUp")}">↑</button><button class="btn btn-quiet btn-sm" data-reorder-module="${cid}:${m.id}:down" title="${t("extra.moveSectionDown")}">↓</button><button class="btn btn-quiet btn-sm" data-edit-module="${m.id}" data-title="${esc(m.title)}" title="${t("extra.renameSection")}">${IC.pencil}</button><button class="btn btn-quiet btn-sm" data-del="module:${m.id}" style="color:var(--danger)">${t("extra.delete")}</button></span>`
     : "";
   const rows = (m.lessons || []).map((l) => lessonRow(l, m.id, edit)).join("")
-    || `<div class="faint" style="font-size:12px;padding:6px 0 0 18px">Sin actividades todavía.</div>`;
+    || `<div class="faint" style="font-size:12px;padding:6px 0 0 18px">${t("extra.noActivitiesYet")}</div>`;
   const add = edit
-    ? `<div style="padding:10px 0 2px 18px"><button class="btn btn-soft btn-sm" data-open-chooser="${m.id}">${IC.plus} Añadir actividad o recurso</button></div>`
+    ? `<div style="padding:10px 0 2px 18px"><button class="btn btn-soft btn-sm" data-open-chooser="${m.id}">${IC.plus} ${t("extra.addActivityOrResource")}</button></div>`
     : "";
-  const grip = edit ? `<span class="drag-grip" title="Arrastra para reordenar la sección">${IC.grip}</span>` : "";
+  const grip = edit ? `<span class="drag-grip" title="${t("extra.dragToReorderSection")}">${IC.grip}</span>` : "";
   return `<div class="secblk" data-sec="${m.id}" ${edit ? `draggable="true" data-drag="module:${m.id}:${cid}"` : ""} style="border-top:1px solid var(--border);padding:12px 0 6px${m.hidden ? ";opacity:.55" : ""}">
     <div class="row between vcenter" style="margin-bottom:4px;gap:6px">
       ${grip}
-      <b class="row vcenter" data-acc-sec="${m.id}" style="gap:7px;font-size:13.5px;cursor:pointer;min-width:0;flex:1"><span class="sec-chev" style="display:flex;width:12px;color:var(--text-3);transition:transform .2s;flex:none">${IC.chevD}</span><span style="display:flex;width:14px;color:var(--text-3);flex:none">${IC.grid}</span><span class="sec-title" ${edit ? `data-inline-rename="module:${m.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}">${esc(m.title)}</span>${m.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Oculta</span>` : ""}</b>${ctrls}
+      <b class="row vcenter" data-acc-sec="${m.id}" style="gap:7px;font-size:13.5px;cursor:pointer;min-width:0;flex:1"><span class="sec-chev" style="display:flex;width:12px;color:var(--text-3);transition:transform .2s;flex:none">${IC.chevD}</span><span style="display:flex;width:14px;color:var(--text-3);flex:none">${IC.grid}</span><span class="sec-title" ${edit ? `data-inline-rename="module:${m.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}">${esc(m.title)}</span>${m.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">${t("extra.hidden")}</span>` : ""}</b>${ctrls}
     </div>
     <div class="sec-body" data-sec-body="${m.id}">${rows}${add}</div>
   </div>`;
@@ -90,7 +91,7 @@ function mountBuilder(root) {
       const anyOpen = bodies.some((b) => b.style.display !== "none");
       bodies.forEach((b) => { b.style.display = anyOpen ? "none" : ""; });
       root.querySelectorAll(".sec-chev").forEach((c) => { c.style.transform = anyOpen ? "rotate(-90deg)" : ""; });
-      ca.textContent = anyOpen ? "Expandir todo" : "Colapsar todo";
+      ca.textContent = anyOpen ? t("extra.expandAll") : t("extra.collapseAll");
     });
   }
   if (root.__builderBound) return;
@@ -128,7 +129,7 @@ function mountBuilder(root) {
       if (save && val && val !== orig) {
         const url = kind === "module" ? `/api/modules/${id}` : `/api/lessons/${id}`;
         saveChip(root, "saving");
-        window.api(url, { title: val }, "PATCH").then(() => saveChip(root, "saved")).catch(() => { saveChip(root, ""); span.textContent = orig; window.toast?.("No se pudo renombrar", "danger"); });
+        window.api(url, { title: val }, "PATCH").then(() => saveChip(root, "saved")).catch(() => { saveChip(root, ""); span.textContent = orig; window.toast?.(t("extra.renameFailed"), "danger"); });
       }
     };
     input.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); finish(true); } else if (ev.key === "Escape") { ev.preventDefault(); finish(false); } });
@@ -170,7 +171,7 @@ function mountBuilder(root) {
       saveChip(root, "saving");
       const url = drag.kind === "module" ? "/api/modules/reorder" : "/api/lessons/reorder";
       const body = drag.kind === "module" ? { courseId: drag.parent, orderedIds: now } : { moduleId: drag.parent, orderedIds: now };
-      window.api(url, body, "POST").then(() => saveChip(root, "saved")).catch(() => { saveChip(root, ""); window.toast?.("No se pudo guardar el orden", "danger"); });
+      window.api(url, body, "POST").then(() => saveChip(root, "saved")).catch(() => { saveChip(root, ""); window.toast?.(t("extra.reorderFailed"), "danger"); });
     }
     drag = null;
   });
@@ -189,22 +190,22 @@ export const S = {
             <div class="cc-name">${c.name}</div>
             <div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div>
             <div class="cc-foot" style="margin-top:16px">
-              ${c.price > 0 ? `<span class="cc-pct">$${(c.price / 100).toFixed(0)}</span>` : `<span class="badge ok">Gratis</span>`}
+              ${c.price > 0 ? `<span class="cc-pct">$${(c.price / 100).toFixed(0)}</span>` : `<span class="badge ok">${t("extra.free")}</span>`}
               ${c.enrolled
-                ? `<span class="badge ok"><span class="dot"></span>Inscrito</span>`
-                : `<button class="btn btn-primary btn-sm" data-enroll="${c.id}">${IC.plus} Inscribirme</button>`}
+                ? `<span class="badge ok"><span class="dot"></span>${t("extra.enrolled")}</span>`
+                : `<button class="btn btn-primary btn-sm" data-enroll="${c.id}">${IC.plus} ${t("extra.enroll")}</button>`}
             </div>
           </div>
         </div>`;
       return `
       <div class="page-head"><div>
-        <p class="eyebrow">Academia OTR</p>
-        <h1 class="page-title">Catálogo de cursos</h1>
-        <div class="page-sub">Explora e inscríbete en los cursos de OTR</div>
+        <p class="eyebrow">${t("extra.eyebrowAcademy")}</p>
+        <h1 class="page-title">${t("extra.catalogTitle")}</h1>
+        <div class="page-sub">${t("extra.catalogSub")}</div>
       </div></div>
       ${courses.length
         ? `<div class="grid g-3">${courses.map(card).join("")}</div>`
-        : `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Sin cursos disponibles</h4><p>Pronto se publicarán nuevos cursos en el catálogo.</p></div></div>`}`;
+        : `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.catalogEmptyHeading")}</h4><p>${t("extra.catalogEmptyBody")}</p></div></div>`}`;
     },
   },
 
@@ -213,26 +214,26 @@ export const S = {
   manage: {
     render() {
       const courses = DB.teacherCourses || [];
-      const head = `<div class="page-head"><div><p class="eyebrow">Profesor</p><h1 class="page-title">Mis cursos</h1>
-        <div class="page-sub">Crea un curso y entra a construirlo: secciones, lecciones, exámenes y tareas</div></div></div>
-        <div class="row" style="margin-bottom:14px"><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} Nuevo curso</button></div>`;
+      const head = `<div class="page-head"><div><p class="eyebrow">${t("extra.eyebrowTeacher")}</p><h1 class="page-title">${t("extra.myCoursesTitle")}</h1>
+        <div class="page-sub">${t("extra.myCoursesSub")}</div></div></div>
+        <div class="row" style="margin-bottom:14px"><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} ${t("extra.newCourse")}</button></div>`;
       if (!courses.length) {
-        return head + `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Sin cursos todavía</h4><p>Crea tu primer curso para empezar a construir su contenido.</p><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} Nuevo curso</button></div></div>`;
+        return head + `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.myCoursesEmptyHeading")}</h4><p>${t("extra.myCoursesEmptyBody")}</p><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} ${t("extra.newCourse")}</button></div></div>`;
       }
       const card = (c, i) => {
         const mods = c.modules || [];
         const lessons = mods.reduce((n, m) => n + ((m.lessons || []).length), 0);
-        const pub = c.published === false ? `<span class="badge warn" style="flex:none">Borrador</span>` : `<span class="badge ok" style="flex:none">Publicado</span>`;
+        const pub = c.published === false ? `<span class="badge warn" style="flex:none">${t("extra.draft")}</span>` : `<span class="badge ok" style="flex:none">${t("extra.published")}</span>`;
         return `<div class="card card-pad fade-up" style="margin-bottom:12px;--d:${Math.min(i, 6)}">
           <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
             <div class="row vcenter" style="gap:11px;min-width:0">${C.courseDot(c.color)}
               <div style="min-width:0"><div class="row vcenter" style="gap:8px;flex-wrap:wrap"><b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${c.name}</b>${pub}</div>
-              <div class="faint" style="font-size:12px;margin-top:2px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"} · ${lessons} ${lessons === 1 ? "actividad" : "actividades"}${c.format ? ` · ${c.format}` : ""}</div></div>
+              <div class="faint" style="font-size:12px;margin-top:2px">${mods.length} ${mods.length === 1 ? t("extra.section") : t("extra.sections")} · ${lessons} ${lessons === 1 ? t("extra.activity") : t("extra.activities")}${c.format ? ` · ${c.format}` : ""}</div></div>
             </div>
             <div class="row" style="gap:6px;flex:none">
-              <button class="btn btn-primary btn-sm" data-go-builder="${c.id}">${IC.sliders} Construir curso</button>
-              <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${c.name}">${IC.pencil} Configuración</button>
-              <button class="btn btn-quiet btn-sm" data-del="course:${c.id}" style="color:var(--danger)">${IC.flag} Eliminar</button>
+              <button class="btn btn-primary btn-sm" data-go-builder="${c.id}">${IC.sliders} ${t("extra.buildCourse")}</button>
+              <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${c.name}">${IC.pencil} ${t("extra.settings")}</button>
+              <button class="btn btn-quiet btn-sm" data-del="course:${c.id}" style="color:var(--danger)">${IC.flag} ${t("extra.delete")}</button>
             </div>
           </div>
         </div>`;
@@ -253,38 +254,38 @@ export const S = {
       if (!id && typeof window !== "undefined") { try { id = sessionStorage.getItem("otr_builder_course") || ""; window.__builderCourseId = id; } catch {} }
       const c = courses.find((x) => x.id === id);
       if (!c) {
-        return `<div class="page-head"><div><p class="eyebrow">Profesor</p><h1 class="page-title">Constructor de curso</h1>
-          <div class="page-sub">Elige un curso para construirlo.</div></div></div>
-          <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Selecciona un curso</h4><p>Vuelve a "Mis cursos" y pulsa "Construir curso".</p><button class="btn btn-primary btn-sm" data-go="manage">Ver mis cursos</button></div></div>`;
+        return `<div class="page-head"><div><p class="eyebrow">${t("extra.eyebrowTeacher")}</p><h1 class="page-title">${t("extra.builderTitle")}</h1>
+          <div class="page-sub">${t("extra.builderPickSub")}</div></div></div>
+          <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.builderSelectHeading")}</h4><p>${t("extra.builderSelectBody")}</p><button class="btn btn-primary btn-sm" data-go="manage">${t("extra.viewMyCourses")}</button></div></div>`;
       }
       const edit = typeof window !== "undefined" ? window.__editMode !== false : true;
       const mods = c.modules || [];
       const lessons = mods.reduce((n, m) => n + ((m.lessons || []).length), 0);
       const pub = c.published === false ? `<span class="badge warn" style="flex:none">Borrador</span>` : `<span class="badge ok" style="flex:none">Publicado</span>`;
-      const head = `<div class="page-head"><div><p class="eyebrow">Profesor · Constructor de curso</p><h1 class="page-title">${esc(c.code)} · ${c.name}</h1>
-        <div class="page-sub">${edit ? "Modo edición activo — añade secciones y actividades" : "Vista de solo lectura — activa el modo edición para construir"}</div></div></div>`;
+      const head = `<div class="page-head"><div><p class="eyebrow">${t("extra.eyebrowTeacherBuilder")}</p><h1 class="page-title">${esc(c.code)} · ${c.name}</h1>
+        <div class="page-sub">${edit ? t("extra.editModeActiveSub") : t("extra.readOnlySub")}</div></div></div>`;
       const hero = `
       <div class="card card-pad fade-up" style="margin-bottom:16px;--d:0">
-        <div style="margin-bottom:10px"><button class="btn btn-quiet btn-sm" data-go="manage">${IC.chevL} Mis cursos</button></div>
+        <div style="margin-bottom:10px"><button class="btn btn-quiet btn-sm" data-go="manage">${IC.chevL} ${t("extra.myCoursesTitle")}</button></div>
         <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
           <div class="row vcenter" style="gap:12px;min-width:0">${C.courseDot(c.color)}
             <div style="min-width:0"><div class="row vcenter" style="gap:9px;flex-wrap:wrap"><h2 style="font-size:19px;font-weight:750">${esc(c.code)} · ${c.name}</h2>${pub}</div>
-            <div class="faint" style="font-size:12.5px;margin-top:3px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"} · ${lessons} ${lessons === 1 ? "actividad" : "actividades"}${c.format ? ` · ${c.format}` : ""}${c.modality ? ` · ${c.modality}` : ""}</div></div>
+            <div class="faint" style="font-size:12.5px;margin-top:3px">${mods.length} ${mods.length === 1 ? t("extra.section") : t("extra.sections")} · ${lessons} ${lessons === 1 ? t("extra.activity") : t("extra.activities")}${c.format ? ` · ${c.format}` : ""}${c.modality ? ` · ${c.modality}` : ""}</div></div>
           </div>
           <div class="row vcenter" style="gap:6px;flex:none">
             <span class="save-chip" data-save-chip style="display:none"></span>
-            <button class="btn ${edit ? "btn-primary" : "btn-soft"} btn-sm" data-toggle-edit title="Mostrar/ocultar controles de edición">${IC.sliders} Modo edición: ${edit ? "ON" : "OFF"}</button>
-            <button class="btn ${c.published === false ? "btn-primary" : "btn-ghost"} btn-sm" data-publish-course="${c.id}" data-pub="${c.published === false ? "0" : "1"}" title="Publicar o pasar a borrador sin abrir Configuración">${c.published === false ? `${IC.check} Publicar curso` : `${IC.eye} Pasar a borrador`}</button>
-            <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${c.name}">${IC.pencil} Configuración</button>
-            <button class="btn btn-ghost btn-sm" onclick="window.__course='${esc(c.code)}';go('course')">${IC.play} Vista previa (como alumno)</button>
+            <button class="btn ${edit ? "btn-primary" : "btn-soft"} btn-sm" data-toggle-edit title="${t("extra.toggleEditTooltip")}">${IC.sliders} ${t("extra.editMode")}: ${edit ? "ON" : "OFF"}</button>
+            <button class="btn ${c.published === false ? "btn-primary" : "btn-ghost"} btn-sm" data-publish-course="${c.id}" data-pub="${c.published === false ? "0" : "1"}" title="${t("extra.publishTooltip")}">${c.published === false ? `${IC.check} ${t("extra.publishCourse")}` : `${IC.eye} ${t("extra.moveToDraft")}`}</button>
+            <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${c.name}">${IC.pencil} ${t("extra.settings")}</button>
+            <button class="btn btn-ghost btn-sm" onclick="window.__course='${esc(c.code)}';go('course')">${IC.play} ${t("extra.previewAsStudent")}</button>
           </div>
         </div>
       </div>`;
       const sections = mods.length
         ? mods.map((m) => sectionBlock(m, c.id, edit)).join("")
-        : `<div class="empty" style="padding:24px"><div class="ill">${IC.grid}</div><h4>Sin secciones todavía</h4><p>Añade tu primera sección para organizar el contenido del curso.</p>${edit ? `<button class="btn btn-primary btn-sm" data-add-module="${c.id}">${IC.plus} Añadir sección</button>` : ""}</div>`;
-      const addSection = edit && mods.length ? `<div style="border-top:1px solid var(--border);padding:14px 0 2px"><button class="btn btn-soft btn-sm" data-add-module="${c.id}">${IC.plus} Añadir sección</button></div>` : "";
-      const tools = mods.length ? `<div class="row between vcenter" style="margin-bottom:2px"><span class="faint" style="font-size:12px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"}</span><button class="btn btn-quiet btn-sm" data-collapse-all>Colapsar todo</button></div>` : "";
+        : `<div class="empty" style="padding:24px"><div class="ill">${IC.grid}</div><h4>${t("extra.noSectionsYet")}</h4><p>${t("extra.noSectionsBody")}</p>${edit ? `<button class="btn btn-primary btn-sm" data-add-module="${c.id}">${IC.plus} ${t("extra.addSection")}</button>` : ""}</div>`;
+      const addSection = edit && mods.length ? `<div style="border-top:1px solid var(--border);padding:14px 0 2px"><button class="btn btn-soft btn-sm" data-add-module="${c.id}">${IC.plus} ${t("extra.addSection")}</button></div>` : "";
+      const tools = mods.length ? `<div class="row between vcenter" style="margin-bottom:2px"><span class="faint" style="font-size:12px">${mods.length} ${mods.length === 1 ? t("extra.section") : t("extra.sections")}</span><button class="btn btn-quiet btn-sm" data-collapse-all>${t("extra.collapseAll")}</button></div>` : "";
       const body = `<div class="card card-pad fade-up" style="--d:1">${tools}${sections}${addSection}</div>`;
       return head + hero + body;
     },
@@ -304,11 +305,11 @@ export const S = {
       let _sec = 0;
       const section = (title, count, body) => body ? `<div class="kit-section fade-up" style="--d:${_sec++}"><h3 class="row between vcenter"><span>${title}</span><span class="badge-count">${count}</span></h3>${body}</div>` : "";
       return `
-      <div class="page-head"><div><p class="eyebrow">Búsqueda</p><h1 class="page-title">Resultados para "${esc(window.__q || "")}"</h1>
-      <div class="page-sub">${total} resultado${total === 1 ? "" : "s"}</div></div></div>
-      ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>Sin resultados</h4><p>No encontramos nada para "${esc(window.__q || "")}". Prueba con otra búsqueda.</p></div></div>` : ""}
-      ${section("Cursos", courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C0C0C)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div></div></div>`).join("")}</div>` : "")}
-      ${section("Personas", people.length, people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="gap:11px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1;min-width:0"><b style="font-weight:600">${esc(s.n)}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}`;
+      <div class="page-head"><div><p class="eyebrow">${t("extra.searchEyebrow")}</p><h1 class="page-title">${t("extra.searchResultsFor")} "${esc(window.__q || "")}"</h1>
+      <div class="page-sub">${total} ${t("extra.result")}${total === 1 ? "" : "s"}</div></div></div>
+      ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("extra.noResults")}</h4><p>${t("extra.searchEmptyPrefix")}"${esc(window.__q || "")}${t("extra.searchEmptySuffix")}</p></div></div>` : ""}
+      ${section(t("extra.coursesSection"), courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C0C0C)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div></div></div>`).join("")}</div>` : "")}
+      ${section(t("extra.peopleSection"), people.length, people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="gap:11px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1;min-width:0"><b style="font-weight:600">${esc(s.n)}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}`;
     },
   },
 };

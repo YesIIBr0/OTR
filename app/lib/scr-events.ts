@@ -7,6 +7,7 @@
 import { DB } from "./data";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { t } from "./i18n";
 export const S = {};
 
 // Acento por "tone" del evento (mapea a tokens de marca; oro = logro, verde = activo).
@@ -49,22 +50,22 @@ S.events = {
     const tournaments = Array.isArray(DB.tournaments) ? DB.tournaments : [];
 
     const head = `<div class="page-head fade-up"><div><p class="eyebrow">OTR</p>
-      <h1 class="page-title">Eventos</h1>
-      <div class="page-sub">Seminarios, sesiones en vivo y torneos — todo en un lugar</div></div></div>`;
+      <h1 class="page-title">${t("events.title")}</h1>
+      <div class="page-sub">${t("events.subtitle")}</div></div></div>`;
 
     const eventsSection = `<div class="card card-pad fade-up" style="--d:0;margin-bottom:16px">
-      <div class="row between vcenter"><b style="font-size:14px">Próximos eventos</b><span class="badge sky">${events.length}</span></div>
+      <div class="row between vcenter"><b style="font-size:14px">${t("events.upcomingTitle")}</b><span class="badge sky">${events.length}</span></div>
       ${events.length
         ? `<div class="stack" style="gap:0;margin-top:8px">${events.map(eventCard).join("")}</div>`
-        : `<div class="empty" style="padding:28px"><div class="ill">${IC.calendar}</div><h4>Aún no hay eventos en agenda</h4><p>Cuando OTR programe un seminario, sesión en vivo o workshop, aparecerá aquí.</p></div>`}
+        : `<div class="empty" style="padding:28px"><div class="ill">${IC.calendar}</div><h4>${t("events.emptyEventsTitle")}</h4><p>${t("events.emptyEventsBody")}</p></div>`}
     </div>`;
 
     const tournamentsSection = `<div class="card card-pad fade-up" style="--d:1">
-      <div class="row between vcenter"><b style="font-size:14px">Torneos</b><span class="badge">${tournaments.length}</span></div>
+      <div class="row between vcenter"><b style="font-size:14px">${t("events.tournamentsTitle")}</b><span class="badge">${tournaments.length}</span></div>
       ${tournaments.length
         ? `<div style="margin-top:6px">${tournaments.slice(0, 6).map(tournamentRow).join("")}</div>
-           <button class="btn btn-ghost btn-sm" style="margin-top:12px" data-go-tournaments>Ver todos en el Debate Hub ${IC.arrowR}</button>`
-        : `<div class="empty" style="padding:28px"><div class="ill">${IC.trophy}</div><h4>Sin torneos por ahora</h4><p>Cuando OTR abra inscripciones lo verás aquí. Mientras, suma rondas de práctica.</p></div>`}
+           <button class="btn btn-ghost btn-sm" style="margin-top:12px" data-go-tournaments>${t("events.viewAllDebateHub")} ${IC.arrowR}</button>`
+        : `<div class="empty" style="padding:28px"><div class="ill">${IC.trophy}</div><h4>${t("events.emptyTournamentsTitle")}</h4><p>${t("events.emptyTournamentsBody")}</p></div>`}
     </div>`;
 
     return `${head}${eventsSection}${tournamentsSection}`;
