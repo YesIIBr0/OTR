@@ -445,9 +445,19 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   // Entregas calificadas (GRADED) derivadas en JS de la consulta única de entregas.
   const mySubsGraded = (mySubs as any[]).filter((s) => s.status === "GRADED");
 
-  // [GAMIFICATION-2 §9] Racha real (con grace) + [DASHBOARD-ACCESS-2 §4] ciclo de vida,
-  // ambos derivados del ledger ya cargado (activityEvents) — sin consultas extra.
-  const streakDays = computeStreak(activityEvents as any[]);
+  // [GAMIFICATION-2 §9] Racha real (con grace de 1 día). La racha necesita cobertura por
+  // DÍAS, no por eventos: activityEvents está topado a take:60 (feed/journey) y un usuario
+  // muy activo (varios eventos/día) llenaría esos 60 cupos con pocos días → racha truncada.
+  // Consulta dedicada: solo las FECHAS de los últimos 70 días (índice [userId,createdAt]).
+  const streakRows = me
+    ? await db.activityEvent.findMany({
+        where: { userId: me.id, createdAt: { gte: new Date(Date.now() - 70 * 86400000) } },
+        select: { createdAt: true },
+      })
+    : [];
+  const streakDays = computeStreak(streakRows as any[]);
+  // [DASHBOARD-ACCESS-2 §4] Ciclo de vida: solo necesita el evento MÁS reciente, que el
+  // take:60 desc siempre incluye (incluso si fue hace meses → 'lapsed' correcto).
   const lifecycle = lifecycleState(activityEvents as any[], !!(me && me.role === "STUDENT" && !me.placedAt));
 
   // [l7] Origen de courseModules (dashboard): profesor → PF-101 (pfModules);
@@ -920,8 +930,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     slotAtIso: new Date(b.slotAt).toISOString(),
     durationMin: b.durationMin,
     upcoming: new Date(b.slotAt).getTime() > nowMs,
-    priceCents: b.escrow?.amountCents ?? 0,
-    priceLabel: b.escrow ? usdLabel(b.escrow.amountCents) : "",
+    // [BOOKING-ESCROW-1] El escrow es null en un PENDING (fondos aún no retenidos);
+    // el precio acordado vive en Booking.priceCents (snapshot). Fallback a él para que
+    // la reserva que espera aprobación no muestre $0/vacío.
+    priceCents: b.escrow?.amountCents ?? b.priceCents ?? 0,
+    priceLabel: (b.escrow?.amountCents ?? b.priceCents ?? 0) > 0 ? usdLabel(b.escrow?.amountCents ?? b.priceCents) : "",
     escrowStatus: b.escrow?.status ?? null, // HELD | RELEASED | REFUNDED
     videoUrl: safeUrl(b.videoUrl), // sala on-platform
   }));
@@ -963,7 +976,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       slotLabel: slotLabel(b.slotAt), // "vie 12 jun · 4:00 PM" (hora RD)
       durationMin: b.durationMin,
       packageName: b.packageId ? esc(packageById.get(b.packageId)?.name || "") : "",
-      amountLabel: b.escrow ? usdLabel(b.escrow.amountCents) : "",
+      // [BOOKING-ESCROW-1] PENDING no tiene escrow → cae al snapshot Booking.priceCents.
+      amountCents: b.escrow?.amountCents ?? b.priceCents ?? 0,
+      amountLabel: (b.escrow?.amountCents ?? b.priceCents ?? 0) > 0 ? usdLabel(b.escrow?.amountCents ?? b.priceCents) : "",
       // PENDING = espera el consentimiento parental del menor (Safety Gate §7).
       awaitingConsent: b.status === "PENDING",
     });
@@ -1102,9 +1117,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
               bookingId: b.id, // alias: scr-parent referencia pc.bookingId
               coachName: coachNameOf(b.coachId),
               slotLabel: slotLabel(b.slotAt),
-              priceLabel: b.escrow
-                ? usdLabel(b.escrow.amountCents)
-                : usdLabel((b.packageId && packageById.get(b.packageId)?.priceCents) || 0),
+              // [BOOKING-ESCROW-1] PENDING no tiene escrow: el monto que aprueba el tutor
+              // sale del snapshot autoritativo Booking.priceCents (no del paquete, que puede
+              // faltar si fue sesión sin paquete o el coach quedó inactivo) → evita $0.00.
+              priceLabel: usdLabel(b.escrow?.amountCents ?? b.priceCents ?? (b.packageId && packageById.get(b.packageId)?.priceCents) ?? 0),
             }));
           return {
             id: u.id,
@@ -1311,7 +1327,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       ageBand: me?.ageBand || null,
       // [GAMIFICATION-1 §9] estado del opt-in (toggle en Ajustes). [RATING-2 §6.2] speaker rating.
       leaderboardOptIn: me?.leaderboardOptIn !== false,
-      speakerAvg: Math.round(me?.speakerAvg ?? 0), speakerRounds: me?.speakerRounds ?? 0 },
+      speakerAvg: (me?.speakerRounds ?? 0) > 0 ? Math.round(me?.speakerAvg ?? 0) : null, speakerRounds: me?.speakerRounds ?? 0 },
     teacher: { name: esc(headCoach?.name), email: headCoach?.email, initials: esc(headCoach?.initials), role: "teacher",
       headline: esc(headCoach?.headline), bio: esc(headCoach?.bio), teachingStyle: esc(headCoach?.teachingStyle), formats: esc(headCoach?.formats), location: esc(headCoach?.location) },
     levels: levels.map((l) => ({ id: l.name.toLowerCase(), name: l.name, range: l.range, color: l.color })),

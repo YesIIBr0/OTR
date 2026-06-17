@@ -200,32 +200,44 @@ export async function POST(req: Request) {
   // propios (su historial), con partnerUserId apuntando de vuelta al subject. NO hereda
   // la rúbrica ni los nudges de skill del subject (eso es individual de cada orador).
   if (partnerUser && adjudicated) {
+    // El oponente del COMPAÑERO se ancla a SU PROPIO rating cuando no se conoce el rating
+    // real del rival (ningún cliente lo envía hoy): así obtiene el mismo baseline neutral
+    // (E≈0.5) que el subject. Anclarlo al rating del subject distorsionaría su movimiento
+    // según la brecha entre ambos (un WIN apenas movería a un compañero mucho mejor, etc.).
+    let partnerOpp = Number(body.opponentRating);
+    if (!Number.isFinite(partnerOpp)) partnerOpp = partnerUser.debateRating;
+    partnerOpp = Math.max(100, Math.min(4000, partnerOpp));
     const pNext = updateRating(
       { rating: partnerUser.debateRating, rd: partnerUser.debateRd, vol: partnerUser.debateVol },
-      [{ rating: opponentRating, rd: DEFAULT_OPP_RD, score: scoreFor(result) }],
+      [{ rating: partnerOpp, rd: DEFAULT_OPP_RD, score: scoreFor(result) }],
     );
     const pTierAfter = tierFor(pNext.rating);
-    const pRecord = await db.debateRecord.create({
-      data: {
-        userId: partnerUser.id, format, side, opponent,
-        partner: subject.name, partnerUserId: subject.id,
-        result, source, eventName, roundLabel,
-        adjudicated: true, adjudicatedBy: user.id,
-      },
-    });
-    await db.user.update({
-      where: { id: partnerUser.id },
-      data: { debateRating: pNext.rating, debateRd: pNext.rd, debateVol: pNext.vol, debateTier: pTierAfter },
-    });
-    await db.ratingUpdate.create({
-      data: {
-        debateId: pRecord.id,
-        ratingBefore: partnerUser.debateRating,
-        ratingAfter: pNext.rating,
-        rdAfter: pNext.rd,
-        volAfter: pNext.vol,
-        tierAfter: pTierAfter,
-      },
+    // Atómico: record + update de rating + RatingUpdate del compañero, todos o ninguno
+    // (sin dejar un DebateRecord sin su RatingUpdate ante un fallo a mitad de la secuencia).
+    const pRecord = await db.$transaction(async (tx) => {
+      const rec = await tx.debateRecord.create({
+        data: {
+          userId: partnerUser.id, format, side, opponent,
+          partner: subject.name, partnerUserId: subject.id,
+          result, source, eventName, roundLabel,
+          adjudicated: true, adjudicatedBy: user.id,
+        },
+      });
+      await tx.user.update({
+        where: { id: partnerUser.id },
+        data: { debateRating: pNext.rating, debateRd: pNext.rd, debateVol: pNext.vol, debateTier: pTierAfter },
+      });
+      await tx.ratingUpdate.create({
+        data: {
+          debateId: rec.id,
+          ratingBefore: partnerUser.debateRating,
+          ratingAfter: pNext.rating,
+          rdAfter: pNext.rd,
+          volAfter: pNext.vol,
+          tierAfter: pTierAfter,
+        },
+      });
+      return rec;
     });
     await logActivitySafe({
       userId: partnerUser.id,
@@ -283,16 +295,20 @@ export async function POST(req: Request) {
       // speaker rating mide qué tan bien hablaste, como los "speaker points" reales.)
       if (adjudicated) {
         const roundSpeaker = (rows.reduce((s, r) => s + r.score, 0) / rows.length) * 10; // 0-100
-        // Lee el estado actual del DB (no del objeto de sesión, que puede no traerlo).
-        const cur = await db.user.findUnique({
-          where: { id: subject.id },
-          select: { speakerAvg: true, speakerRounds: true },
-        });
-        const prevAvg = cur?.speakerAvg ?? 0;
-        const prevN = cur?.speakerRounds ?? 0;
-        await db.user.update({
-          where: { id: subject.id },
-          data: { speakerAvg: (prevAvg * prevN + roundSpeaker) / (prevN + 1), speakerRounds: prevN + 1 },
+        // Read-modify-write del promedio móvil en una transacción: lee el estado actual del
+        // DB (no del objeto de sesión, que puede no traerlo) y escribe atómicamente, para que
+        // dos ballots concurrentes del mismo alumno no pisen el promedio ni pierdan una ronda.
+        await db.$transaction(async (tx) => {
+          const cur = await tx.user.findUnique({
+            where: { id: subject.id },
+            select: { speakerAvg: true, speakerRounds: true },
+          });
+          const prevAvg = cur?.speakerAvg ?? 0;
+          const prevN = cur?.speakerRounds ?? 0;
+          await tx.user.update({
+            where: { id: subject.id },
+            data: { speakerAvg: (prevAvg * prevN + roundSpeaker) / (prevN + 1), speakerRounds: prevN + 1 },
+          });
         });
       }
 
