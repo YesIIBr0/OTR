@@ -44,18 +44,27 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     }
 
     const ROLE_HOME: any = { admin: "admin", teacher: "teacher", parent: "parent", student: "dashboard" };
-    function renderApp(r: string) {
+    function renderApp(r: string, opts?: { keepScroll?: boolean }) {
       let def = (ROUTES as any)[r];
       if (!def) return;
       // Guard de rol en el cliente: si la ruta exige un rol distinto al actual, redirige al
       // home del rol (el backend ya rechaza los datos, pero esto evita pintar UI ajena).
       if (def.role && def.role !== state.role) { r = ROLE_HOME[state.role] || "dashboard"; def = (ROUTES as any)[r]; if (!def) return; }
+      // [FE-01] Refresh suave (marcar lección, calificar, reordenar, toggle de edición):
+      // preserva el scroll y el foco del usuario en vez de saltar al tope. Antes cada mutación
+      // repintaba toda la pantalla y mandaba el scroll arriba — se sentía roto y lento. La
+      // navegación real (go) sigue arrancando arriba (keepScroll=false).
+      const keep = !!(opts && opts.keepScroll);
+      const prevContent = keep ? root.querySelector<HTMLElement>("#content") : null;
+      const prevScroll = prevContent ? prevContent.scrollTop : 0;
+      const activeId = keep && document.activeElement instanceof HTMLElement ? document.activeElement.id : "";
       teardownRecorder();
       currentRoute = r;
       root.innerHTML = renderShell(def.nav, def.crumbs, (SCREENS as any)[def.screen].render(state), state.role);
       const content = root.querySelector<HTMLElement>("#content");
       (SCREENS as any)[def.screen].mount?.(content, state);
-      if (content) content.scrollTop = 0;
+      if (content) content.scrollTop = keep ? prevScroll : 0;
+      if (keep && activeId) { const el = document.getElementById(activeId); if (el && typeof (el as any).focus === "function") (el as any).focus(); }
     }
     (window as any).go = (r: string) => renderApp(r);
 
@@ -129,7 +138,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const fresh = await res.json();
         Object.assign(DB, fresh);
         DB.me = { ...fresh.me, role: viewRole };
-        renderApp(currentRoute);
+        renderApp(currentRoute, { keepScroll: true });
       } catch { /* silencioso */ }
     }
 
@@ -761,7 +770,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             (DB.notifications || []).forEach((n: any) => { n.unread = false; });
             toast("Notificaciones marcadas como leídas", "ok");
             toggleNotif(false);
-            renderApp(currentRoute);
+            renderApp(currentRoute, { keepScroll: true });
           })
           .catch((err: any) => toast(err.message || "Error", "danger"));
       });
@@ -810,7 +819,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
               else if (DB.courses && DB.courses[0]) DB.courses[0].progress = d.progress;
             }
             toast(done ? "Lección marcada como completada" : "Lección desmarcada", "ok");
-            renderApp(currentRoute);
+            renderApp(currentRoute, { keepScroll: true });
           })
           .catch((err: any) => toast(err.message || "Error", "danger"));
         return;
@@ -894,7 +903,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (goBuilderEl) { e.preventDefault(); const cid = goBuilderEl.getAttribute("data-go-builder")!; (window as any).__builderCourseId = cid; try { sessionStorage.setItem("otr_builder_course", cid); } catch {} renderApp("course-builder"); return; }
       const chooserEl = t.closest("[data-open-chooser]") as HTMLElement | null;
       if (chooserEl) { e.preventDefault(); openActivityChooser(chooserEl.getAttribute("data-open-chooser")!); return; }
-      if (t.closest("[data-toggle-edit]")) { e.preventDefault(); const cur = (window as any).__editMode !== false; (window as any).__editMode = !cur; try { sessionStorage.setItem("otr_edit_mode", !cur ? "1" : "0"); } catch {} renderApp(currentRoute); return; }
+      if (t.closest("[data-toggle-edit]")) { e.preventDefault(); const cur = (window as any).__editMode !== false; (window as any).__editMode = !cur; try { sessionStorage.setItem("otr_edit_mode", !cur ? "1" : "0"); } catch {} renderApp(currentRoute, { keepScroll: true }); return; }
       // Mostrar/ocultar una sección o actividad al alumno (ojo).
       const hideEl = t.closest("[data-toggle-hidden]") as HTMLElement | null;
       if (hideEl) {

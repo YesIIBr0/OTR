@@ -146,11 +146,13 @@ function childCard(k, i) {
 
     <div class="divider"></div>
 
-    <b style="font-size:13px">Crecimiento de habilidades</b>
+    <b style="font-size:13px">Habilidades</b>
     ${k.skillDeltas.length
       ? `<div class="row wrap" style="gap:6px;margin-top:8px">${k.skillDeltas.map((s) => {
-          const d = Number(s.delta) || 0;
-          return `<span class="badge ${d >= 0 ? "ok" : "warn"}">${esc(s.name)} ${d >= 0 ? "+" : ""}${d}</span>`;
+          // [auditoría] SCORE real por skill (StudentSkill.score, vivo). Antes se pintaba un
+          // delta '+0' fijo (placeholder) en verde para todos — un crecimiento inventado e igual.
+          const score = Math.max(0, Math.min(100, Number(s.score) || 0));
+          return `<span class="badge ${score >= 75 ? "ok" : score >= 50 ? "sky" : ""}">${esc(s.name)} ${score}</span>`;
         }).join("")}</div>`
       : `<p class="faint" style="font-size:12px;margin-top:6px">Las evaluaciones del coach aparecerán aquí tras las primeras sesiones.</p>`}
 

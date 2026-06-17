@@ -14,7 +14,7 @@ export default async function AulaPage() {
   // (la pone el toggle ES/EN del topbar). En server lo leemos con next/headers
   // y se lo pasamos a getAppData, que sirve la variante EN del contenido cuando existe.
   const lang = (await cookies()).get("otr_lang")?.value === "en" ? "en" : "es";
-  const data = await getAppData(user.email, lang);
+  const data = await getAppData(user.email, lang, user); // [BE-03] reusa el User de la sesión (sin 2º lookup)
   const safeUser = {
     id: user.id, name: user.name, email: user.email,
     role: user.role, initials: user.initials, level: user.level, streak: user.streak,

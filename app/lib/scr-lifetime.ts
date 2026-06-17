@@ -223,7 +223,7 @@ function ledgerTiles(lt) {
   const bottom = [
     ["Sesiones asistidas", fmt(L.sessionsAttended), "headset"],
     ["Torneos", fmt(L.tournaments), "flag"],
-    ["Horas estudiadas", fmt(L.hoursStudied), "clock"],
+    ["Horas estudiadas (aprox.)", fmt(L.hoursStudied), "clock"],
   ];
   return `
   <div class="fade-up" style="--d:2;margin-bottom:18px">

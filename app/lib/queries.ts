@@ -155,7 +155,7 @@ function buildQuiz(quiz: any, isTeacher: boolean) {
   };
 }
 
-export async function getAppData(email: string = ME_EMAIL, lang: string = "es") {
+export async function getAppData(email: string = ME_EMAIL, lang: string = "es", preloaded?: any) {
   // PRD §17.3: "i18n is structural, not a wrapper". El contenido de cursos y
   // lecciones se sirve en el idioma activo, cayendo al ES si no hay traducción.
   // `lang` lo decide el SERVER (cookie otr_lang vía next/headers) y lo pasa quien
@@ -164,8 +164,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   const wantEn = lang === "en";
   const pickLang = (es?: string | null, en?: string | null): string =>
     wantEn && en != null && en !== "" ? (en as string) : (es ?? "");
-  // select defensivo: NUNCA traer passwordHash (sensible) ni emailVerified (no se usa).
-  const me = await db.user.findUnique({
+  // [BE-03] Reusa el User ya resuelto por getSessionUser en el MISMO request si el llamador
+  // lo pasa (preloaded), evitando un segundo findUnique del mismo usuario por email (ahorra un
+  // round-trip por refresh). base.me se construye campo a campo (no hace spread de `me`), así que
+  // passwordHash no se filtra al cliente aunque venga en el objeto preloaded.
+  // select defensivo (cuando NO hay preloaded): NUNCA traer passwordHash ni emailVerified.
+  const me = preloaded || await db.user.findUnique({
     where: { email },
     select: {
       id: true, name: true, email: true, role: true, initials: true, level: true,

@@ -10,7 +10,7 @@ export async function GET() {
   // PRD §17.3: el idioma activo (cookie otr_lang) decide la variante de contenido
   // que sirve getAppData. Se lee server-side; en cliente no hay acceso a la DB.
   const lang = (await cookies()).get("otr_lang")?.value === "en" ? "en" : "es";
-  const data = await getAppData(user.email, lang);
+  const data = await getAppData(user.email, lang, user); // [BE-03] reusa el User ya resuelto (sin 2º lookup)
   // Payload PRIVADO por usuario: nunca debe cachearse en proxies/CDN compartidos.
   // Vary: Cookie evita servir los datos de un alumno a otro si un caché intermedio
   // ignorara no-store. (La compresión la añade Nginx con gzip_vary on.)

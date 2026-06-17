@@ -121,7 +121,9 @@ function getMetrics() {
   return {
     rating: Number(m.rating != null ? m.rating : m.ratingAvg != null ? m.ratingAvg : p ? p.ratingAvg : 0) || 0,
     reviews: Number(m.reviewCount != null ? m.reviewCount : p ? p.reviewCount : 0) || 0,
-    total: Number(m.totalBookings != null ? m.totalBookings : m.bookings) || upcoming.length + past.length,
+    // [auditoría] Reservas totales = bookingCount canónico por-coach (CoachProfile.bookingCount,
+    // lo mismo que ve el marketplace), NO el subconjunto visible del inbox (capado a take:200).
+    total: Number(m.bookingCount != null ? m.bookingCount : p ? p.bookingCount : 0) || upcoming.length + past.length,
     completed: Number(m.completed) || past.filter((b) => b.status === "COMPLETED").length,
     repeat: Number(m.repeatStudents != null ? m.repeatStudents : m.recurring) || repeat,
   };
