@@ -103,7 +103,7 @@ function identityHero(lt) {
       <div style="flex:1;min-width:220px">
         <p class="eyebrow">Tu historia en OTR</p>
         <div class="row vcenter wrap" style="gap:10px;margin-top:3px">
-          <h2 class="brand-font" style="font-size:24px;font-weight:800">${esc(id.name || "Estudiante OTR")}</h2>
+          <h1 class="brand-font" style="font-size:24px;font-weight:800;margin:0">${esc(id.name || "Estudiante OTR")}</h1>
           ${C.levelBadge(esc(id.level))}
         </div>
         ${meta.length ? `<p class="muted" style="font-size:13px;margin-top:6px">${meta.join(' <span class="dot-sep"></span> ')}</p>` : ""}
@@ -171,7 +171,7 @@ function skillRows(skills) {
           : `<p class="faint" style="font-size:12.5px">Aún sin eventos atribuidos. Tus próximas lecciones, rondas y ballots moverán esta habilidad.</p>`}
       </div>`;
     return `
-    <div data-lpskill="${esc(key)}" style="cursor:pointer" title="Ver qué movió esta habilidad">
+    <div data-lpskill="${esc(key)}" role="button" tabindex="0" aria-expanded="${open ? 'true' : 'false'}" style="cursor:pointer" title="Ver qué movió esta habilidad">
       <div class="comp-row">
         <span class="cr-name row vcenter" style="gap:6px"><span style="display:inline-flex;width:13px;height:13px;color:var(--text-3);transition:transform .15s;transform:rotate(${open ? 90 : 0}deg)">${IC.chevR}</span>${esc(s.name || s.skill || "")}</span>
         <span class="cr-bar">${C.bar(score, { cls: "navy" })}</span>
@@ -491,7 +491,7 @@ function membershipHero(m) {
   <div class="hello-card fade-up" style="--d:0;margin-bottom:20px">
     <div class="h-row">
       <div style="max-width:560px">
-        <p class="eyebrow" style="color:var(--otr-sky-hi)">Membresía</p>
+        <h1 class="sr-only">Membresía</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">Membresía</p>
         <h2 class="brand-font" style="margin-top:2px">Tu plan: OTR ${esc(label)}</h2>
         <p style="color:rgba(234,242,251,.78);font-size:13.5px;margin-top:10px">Tu plan decide cuánto entrenas y cuánto de tu progreso puedes mostrar.</p>
         ${m.sinceLabel ? `<p style="color:rgba(234,242,251,.6);font-size:12px;margin-top:6px">En este plan ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}

@@ -206,7 +206,7 @@ function viewAgenda() {
       <div class="ill">${IC.calendar}</div>
       <h4>Aún sin reservas</h4>
       <p>Tu perfil del marketplace trabaja por ti: cuando un alumno reserve una sesión, aparecerá aquí.</p>
-      <button class="btn btn-ghost btn-sm" data-go="explore">Ver mi perfil en el marketplace</button>
+      <button class="btn btn-ghost btn-sm" data-go="coach">Ver mi perfil en el marketplace</button>
     </div></div>`;
   }
 
@@ -301,7 +301,7 @@ function viewAvailability() {
       <div class="ill">${IC.user}</div>
       <h4>Activa tu perfil de coach</h4>
       <p>Publica tu tarifa, especialidades y video de presentación para aparecer en el marketplace y recibir reservas.</p>
-      <button class="btn btn-primary" data-go="coach">Activa tu perfil de coach</button>
+      <button class="btn btn-primary" data-go="profile">Activa tu perfil de coach</button>
     </div></div>`;
   }
   const specs = String(p.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean);
@@ -344,12 +344,12 @@ function viewAvailability() {
         <div class="divider"></div>
         <p class="label" style="margin-bottom:8px">Añadir franja</p>
         <div class="row wrap vcenter" style="gap:8px">
-          <select class="select" id="cw-av-day" style="width:auto;min-width:130px">
+          <select class="select" id="cw-av-day" aria-label="Día de la semana" style="width:auto;min-width:130px">
             ${DIAS.map((d, i) => `<option value="${i}" ${i === 1 ? "selected" : ""}>${d}</option>`).join("")}
           </select>
-          <select class="select" id="cw-av-start" style="width:auto;min-width:110px">${timeOptions(16 * 60)}</select>
-          <span class="faint" style="font-size:12.5px">a</span>
-          <select class="select" id="cw-av-end" style="width:auto;min-width:110px">${timeOptions(18 * 60)}</select>
+          <select class="select" id="cw-av-start" aria-label="Hora de inicio" style="width:auto;min-width:110px">${timeOptions(16 * 60)}</select>
+          <span class="faint" style="font-size:12.5px" aria-hidden="true">a</span>
+          <select class="select" id="cw-av-end" aria-label="Hora de fin" style="width:auto;min-width:110px">${timeOptions(18 * 60)}</select>
           <button class="btn btn-primary btn-sm" id="cw-av-add">${IC.plus} Añadir</button>
         </div>
       </div>
@@ -393,7 +393,7 @@ S.coachwork = {
     return `
     <div class="page-head fade-up"><div>
       <p class="eyebrow">Espacio de coach</p>
-      <div class="page-title">Reservas e ingresos</div>
+      <h1 class="page-title">Reservas e ingresos</h1>
       <div class="page-sub">Reservas, pagos con escrow y disponibilidad — todo dentro de OTR</div>
     </div></div>
     ${subTabs(tab)}

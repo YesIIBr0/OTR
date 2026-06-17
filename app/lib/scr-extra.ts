@@ -185,8 +185,8 @@ export const S = {
             <span class="cc-code">${esc(c.code)}</span>
           </div>
           <div class="cc-body">
-            <div class="cc-name">${esc(c.name)}</div>
-            <div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${esc(c.coach)}</div>
+            <div class="cc-name">${c.name}</div>
+            <div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div>
             <div class="cc-foot" style="margin-top:16px">
               ${c.price > 0 ? `<span class="cc-pct">$${(c.price / 100).toFixed(0)}</span>` : `<span class="badge ok">Gratis</span>`}
               ${c.enrolled
@@ -198,7 +198,7 @@ export const S = {
       return `
       <div class="page-head"><div>
         <p class="eyebrow">Academia OTR</p>
-        <div class="page-title">Catálogo de cursos</div>
+        <h1 class="page-title">Catálogo de cursos</h1>
         <div class="page-sub">Explora e inscríbete en los cursos de OTR</div>
       </div></div>
       ${courses.length
@@ -212,7 +212,7 @@ export const S = {
   manage: {
     render() {
       const courses = DB.teacherCourses || [];
-      const head = `<div class="page-head"><div><p class="eyebrow">Profesor</p><div class="page-title">Mis cursos</div>
+      const head = `<div class="page-head"><div><p class="eyebrow">Profesor</p><h1 class="page-title">Mis cursos</h1>
         <div class="page-sub">Crea un curso y entra a construirlo: secciones, lecciones, exámenes y tareas</div></div></div>
         <div class="row" style="margin-bottom:14px"><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} Nuevo curso</button></div>`;
       if (!courses.length) {
@@ -225,8 +225,8 @@ export const S = {
         return `<div class="card card-pad fade-up" style="margin-bottom:12px;--d:${Math.min(i, 6)}">
           <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
             <div class="row vcenter" style="gap:11px;min-width:0">${C.courseDot(c.color)}
-              <div style="min-width:0"><div class="row vcenter" style="gap:8px;flex-wrap:wrap"><b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${esc(c.name)}</b>${pub}</div>
-              <div class="faint" style="font-size:12px;margin-top:2px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"} · ${lessons} ${lessons === 1 ? "actividad" : "actividades"}${c.format ? ` · ${esc(c.format)}` : ""}</div></div>
+              <div style="min-width:0"><div class="row vcenter" style="gap:8px;flex-wrap:wrap"><b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${c.name}</b>${pub}</div>
+              <div class="faint" style="font-size:12px;margin-top:2px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"} · ${lessons} ${lessons === 1 ? "actividad" : "actividades"}${c.format ? ` · ${c.format}` : ""}</div></div>
             </div>
             <div class="row" style="gap:6px;flex:none">
               <button class="btn btn-primary btn-sm" data-go-builder="${c.id}">${IC.sliders} Construir curso</button>
@@ -252,7 +252,7 @@ export const S = {
       if (!id && typeof window !== "undefined") { try { id = sessionStorage.getItem("otr_builder_course") || ""; window.__builderCourseId = id; } catch {} }
       const c = courses.find((x) => x.id === id);
       if (!c) {
-        return `<div class="page-head"><div><p class="eyebrow">Profesor</p><div class="page-title">Constructor de curso</div>
+        return `<div class="page-head"><div><p class="eyebrow">Profesor</p><h1 class="page-title">Constructor de curso</h1>
           <div class="page-sub">Elige un curso para construirlo.</div></div></div>
           <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Selecciona un curso</h4><p>Vuelve a "Mis cursos" y pulsa "Construir curso".</p><button class="btn btn-primary btn-sm" data-go="manage">Ver mis cursos</button></div></div>`;
       }
@@ -260,15 +260,15 @@ export const S = {
       const mods = c.modules || [];
       const lessons = mods.reduce((n, m) => n + ((m.lessons || []).length), 0);
       const pub = c.published === false ? `<span class="badge warn" style="flex:none">Borrador</span>` : `<span class="badge ok" style="flex:none">Publicado</span>`;
-      const head = `<div class="page-head"><div><p class="eyebrow">Profesor · Constructor de curso</p><div class="page-title">${esc(c.code)} · ${esc(c.name)}</div>
+      const head = `<div class="page-head"><div><p class="eyebrow">Profesor · Constructor de curso</p><h1 class="page-title">${esc(c.code)} · ${c.name}</h1>
         <div class="page-sub">${edit ? "Modo edición activo — añade secciones y actividades" : "Vista de solo lectura — activa el modo edición para construir"}</div></div></div>`;
       const hero = `
       <div class="card card-pad fade-up" style="margin-bottom:16px;--d:0">
         <div style="margin-bottom:10px"><button class="btn btn-quiet btn-sm" data-go="manage">${IC.chevL} Mis cursos</button></div>
         <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
           <div class="row vcenter" style="gap:12px;min-width:0">${C.courseDot(c.color)}
-            <div style="min-width:0"><div class="row vcenter" style="gap:9px;flex-wrap:wrap"><h2 style="font-size:19px;font-weight:750">${esc(c.code)} · ${esc(c.name)}</h2>${pub}</div>
-            <div class="faint" style="font-size:12.5px;margin-top:3px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"} · ${lessons} ${lessons === 1 ? "actividad" : "actividades"}${c.format ? ` · ${esc(c.format)}` : ""}${c.modality ? ` · ${esc(c.modality)}` : ""}</div></div>
+            <div style="min-width:0"><div class="row vcenter" style="gap:9px;flex-wrap:wrap"><h2 style="font-size:19px;font-weight:750">${esc(c.code)} · ${c.name}</h2>${pub}</div>
+            <div class="faint" style="font-size:12.5px;margin-top:3px">${mods.length} ${mods.length === 1 ? "sección" : "secciones"} · ${lessons} ${lessons === 1 ? "actividad" : "actividades"}${c.format ? ` · ${c.format}` : ""}${c.modality ? ` · ${c.modality}` : ""}</div></div>
           </div>
           <div class="row vcenter" style="gap:6px;flex:none">
             <span class="save-chip" data-save-chip style="display:none"></span>
@@ -300,10 +300,10 @@ export const S = {
       let _sec = 0;
       const section = (title, count, body) => body ? `<div class="kit-section fade-up" style="--d:${_sec++}"><h3 class="row between vcenter"><span>${title}</span><span class="badge-count">${count}</span></h3>${body}</div>` : "";
       return `
-      <div class="page-head"><div><p class="eyebrow">Búsqueda</p><div class="page-title">Resultados para "${esc(window.__q || "")}"</div>
+      <div class="page-head"><div><p class="eyebrow">Búsqueda</p><h1 class="page-title">Resultados para "${esc(window.__q || "")}"</h1>
       <div class="page-sub">${total} resultado${total === 1 ? "" : "s"}</div></div></div>
       ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>Sin resultados</h4><p>No encontramos nada para "${esc(window.__q || "")}". Prueba con otra búsqueda.</p></div></div>` : ""}
-      ${section("Cursos", courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C0C0C)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${esc(c.name)}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${esc(c.coach)}</div></div></div>`).join("")}</div>` : "")}
+      ${section("Cursos", courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C0C0C)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div></div></div>`).join("")}</div>` : "")}
       ${section("Personas", people.length, people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="gap:11px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1;min-width:0"><b style="font-weight:600">${esc(s.n)}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}`;
     },
   },

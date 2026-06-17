@@ -124,7 +124,7 @@ S.adminConsole = {
     return `
     <div class="page-head fade-up"><div>
       <p class="eyebrow">Administración</p>
-      <div class="page-title">Consola de moderación</div>
+      <h1 class="page-title">Consola de moderación</h1>
       <div class="page-sub">Revisa y resuelve los reportes de la comunidad — usuarios, mensajes y reservas</div>
     </div></div>
 

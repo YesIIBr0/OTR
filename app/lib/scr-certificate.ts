@@ -28,7 +28,7 @@ S.certificate = {
     if (!certs.length) {
       return `
       <div class="page-head"><div>
-        <div class="page-title">Certificado</div>
+        <h1 class="page-title">Certificado</h1>
         <div class="page-sub">Diploma oficial OTR Debate Academy</div>
       </div></div>
       <div class="empty" style="padding:48px 24px;max-width:520px;margin:0 auto;text-align:center">
@@ -43,14 +43,14 @@ S.certificate = {
     const wanted = typeof window !== "undefined" ? window.__cert : null;
     const cert = (wanted && certs.find((c) => String(c.id) === String(wanted))) || certs[0];
 
-    const name = esc((DB.me && DB.me.name) || "");
-    const title = esc(cert.title || "");
-    const program = esc(cert.programName || "");
+    const name = (DB.me && DB.me.name) || "";
+    const title = cert.title || "";
+    const program = cert.programName || "";
     const issued = esc(cert.issuedAt || "");
 
     return `
     <div class="page-head"><div>
-      <div class="page-title">Certificado</div>
+      <h1 class="page-title">Certificado</h1>
       <div class="page-sub">Diploma oficial OTR Debate Academy</div>
     </div>
     <div class="row" style="gap:8px">

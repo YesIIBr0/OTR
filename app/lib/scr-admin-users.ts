@@ -27,10 +27,11 @@ const ROLE_OPTS = [
   { v: "STUDENT", l: "Estudiante" },
   { v: "PARENT", l: "Familia" },
   { v: "TEACHER", l: "Profesor / Coach" },
-  { v: "COACH", l: "Coach" },
   { v: "ADMIN", l: "Administrador" },
 ];
-const ROLE_LABEL = Object.fromEntries(ROLE_OPTS.map((o) => [o.v, o.l]));
+// COACH es un rol legacy (unificado en TEACHER): ya no se ofrece en el selector,
+// pero se conserva su etiqueta para que las filas COACH existentes rendericen bien.
+const ROLE_LABEL = { ...Object.fromEntries(ROLE_OPTS.map((o) => [o.v, o.l])), COACH: "Coach" };
 const isCoachRole = (r) => r === "TEACHER" || r === "COACH";
 
 const ini = (name) =>
@@ -131,7 +132,7 @@ S.adminUsers = {
       { v: "PARENT", l: "Familias" }, { v: "ADMIN", l: "Admins" },
     ];
     const chips = FILTERS.map((f) =>
-      `<span class="chip ${(st.role || "") === f.v ? "active" : ""}" data-au-role="${f.v}">${f.l}</span>`).join("");
+      `<button type="button" class="chip ${(st.role || "") === f.v ? "active" : ""}" data-au-role="${f.v}">${f.l}</button>`).join("");
 
     // [ENT-02] Cargar más mientras la lista cargada sea menor que el total filtrado.
     const more = (st.total || 0) > users.length
@@ -141,7 +142,7 @@ S.adminUsers = {
     return `
     <div class="page-head fade-up"><div>
       <p class="eyebrow">Administración</p>
-      <div class="page-title">Gestión de usuarios</div>
+      <h1 class="page-title">Gestión de usuarios</h1>
       <div class="page-sub">Cambia roles, verifica coaches y suspende cuentas — sin tocar la base de datos</div>
     </div></div>
 

@@ -120,7 +120,7 @@ S.myBookings = {
     const head = `
     <div class="page-head fade-up"><div>
       <p class="eyebrow">Marketplace</p>
-      <div class="page-title">Mis reservas</div>
+      <h1 class="page-title">Mis reservas</h1>
       <div class="page-sub">Tus sesiones de coaching reservadas</div>
     </div></div>`;
 

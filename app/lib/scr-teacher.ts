@@ -66,7 +66,7 @@ export const S = {};
       return `
       <div class="page-head">
         <div><p class="eyebrow">Panel del profesor</p>
-        <div class="page-title">Seguimiento del grupo</div>
+        <h1 class="page-title">Seguimiento del grupo</h1>
         <div class="page-sub">Tracking total · ${DB.students.length} estudiante${DB.students.length===1?'':'s'} en ${courseCount} curso${courseCount===1?'':'s'}</div></div>
         <div class="row" style="gap:8px">
           <button class="btn btn-ghost btn-sm" data-action="grade-subs">${IC.chart} Calificar</button>
@@ -167,7 +167,7 @@ export const S = {};
 
       const courseCard = (c, i = 0) => `<div class="card card-pad tm-course fade-up" style="margin-bottom:14px;--d:${i}">
         <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
-          <div class="row vcenter" style="gap:10px;min-width:0">${C.courseDot(c.color)}<b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${esc(c.name)}</b></div>
+          <div class="row vcenter" style="gap:10px;min-width:0">${C.courseDot(c.color)}<b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${c.name}</b></div>
           <span class="faint" style="font-size:12px">${(c.modules?.length||0)} módulos</span>
         </div>
         ${(c.modules || []).map(moduleRow).join('') || '<div class="faint" style="font-size:12px;margin-top:10px">Sin módulos todavía — añade con "+ Crear → Nuevo módulo"</div>'}
@@ -180,7 +180,7 @@ export const S = {};
       <div class="kit-section" style="margin-top:28px">
         <div class="page-head" style="margin-bottom:14px">
           <div><p class="eyebrow">Gestión de contenido</p>
-          <div class="page-title" style="font-size:22px">Estructura del curso</div>
+          <h2 class="page-title" style="font-size:22px">Estructura del curso</h2>
           <div class="page-sub">Cursos → Módulos → Lecciones → Examen</div></div>
           <div class="row" style="gap:8px">
             <button class="btn btn-ghost btn-sm" data-tm="resource">${IC.plus} Recurso (archivo)</button>
@@ -618,15 +618,15 @@ export const S = {};
 
       return `
       <div class="page-head"><div><p class="eyebrow">Profesor</p>
-      <div class="page-title">Participantes</div><div class="page-sub">${studentCount} estudiante${studentCount===1?'':'s'} · ${coachCount} coach</div></div></div>
+      <h1 class="page-title">Participantes</h1><div class="page-sub">${studentCount} estudiante${studentCount===1?'':'s'} · ${coachCount} coach</div></div></div>
 
       <div class="row between vcenter" style="margin-bottom:16px;flex-wrap:wrap;gap:12px">
-        <div class="searchbox" style="width:280px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="pt-search" placeholder="Buscar participante…"/></div>
+        <div class="searchbox" style="width:280px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="pt-search" aria-label="Buscar participante" placeholder="Buscar participante…"/></div>
         <div class="row wrap" style="gap:8px" id="pt-filters">
-          <span class="chip active" data-filter="all">Todos · ${total}</span>
-          <span class="chip" data-filter="student">Estudiantes · ${studentCount}</span>
-          <span class="chip" data-filter="coach">Coaches · ${coachCount}</span>
-          <span class="chip" data-filter="risk">En riesgo · ${(DB.students||[]).filter(s=>s.risk).length}</span>
+          <button type="button" class="chip active" data-filter="all">Todos · ${total}</button>
+          <button type="button" class="chip" data-filter="student">Estudiantes · ${studentCount}</button>
+          <button type="button" class="chip" data-filter="coach">Coaches · ${coachCount}</button>
+          <button type="button" class="chip" data-filter="risk">En riesgo · ${(DB.students||[]).filter(s=>s.risk).length}</button>
         </div>
       </div>
 

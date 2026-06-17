@@ -96,7 +96,7 @@ function activeItemsFlat() {
         na = {
           eyebrow: 'Tu siguiente paso',
           title: `Retoma "${esc(nextL.t)}"`,
-          sub: firstCourse ? `${esc(firstCourse.name)} · ${firstCourse.progress}% completado` : '',
+          sub: firstCourse ? `${firstCourse.name} · ${firstCourse.progress}% completado` : '',
           cta: 'Continuar lección', ic: IC.play,
           onclick: `${setLesson}go('${destFor(nextL)}')`,
         };
@@ -118,7 +118,7 @@ function activeItemsFlat() {
       <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
         <div class="h-row">
           <div style="max-width:560px">
-            <p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
+            <h1 class="sr-only">Inicio</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
             <h2 class="brand-font" style="margin-top:2px">${DB.me?.lifecycle==='lapsed'?`Qué bueno verte de nuevo, ${firstName}`:DB.me?.lifecycle==='new'?`Bienvenido, ${firstName}`:`Buenas, ${firstName}`}</h2>
             <p style="color:#fff;font-size:15px;font-weight:650;margin-top:10px">${na.title}</p>
             ${na.sub ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
@@ -170,7 +170,7 @@ function activeItemsFlat() {
       // se enmarca como el siguiente paso para su nivel (señal real, no genérica).
       const myFmts = String(DB.me?.formats||'').toLowerCase();
       const recoWhy = (c)=> (c.format && myFmts.includes(String(c.format).toLowerCase()))
-        ? `Para tu formato ${esc(c.format)}`
+        ? `Para tu formato ${c.format}`
         : `Siguiente paso para ${esc(DB.me?.level || 'tu nivel')}`;
       const recoCards = recos.map(c=>`
         <div class="tile course-card click" role="button" tabindex="0" onclick="go('catalog')">
@@ -178,9 +178,9 @@ function activeItemsFlat() {
             <span class="cc-code">${esc(c.code)}</span>
           </div>
           <div class="cc-body">
-            <div class="cc-name">${esc(c.name)}</div>
-            <div class="cc-coach">${esc(c.coach)}</div>
-            <div class="cc-meta">${c.format?`<span class="row vcenter" style="gap:5px">${IC.flag} ${esc(c.format)}</span>`:''}${c.modality?`<span class="dot-sep"></span><span>${esc(c.modality)}</span>`:''}</div>
+            <div class="cc-name">${c.name}</div>
+            <div class="cc-coach">${c.coach}</div>
+            <div class="cc-meta">${c.format?`<span class="row vcenter" style="gap:5px">${IC.flag} ${c.format}</span>`:''}${c.modality?`<span class="dot-sep"></span><span>${c.modality}</span>`:''}</div>
             <div class="eyebrow" style="margin-top:9px;color:var(--otr-green-text);font-size:10.5px">${recoWhy(c)}</div>
             <button class="btn btn-soft btn-sm" style="margin-top:8px;width:100%">Ver programa ${IC.arrowR}</button>
           </div>
@@ -358,7 +358,7 @@ function activeItemsFlat() {
       // Curso ACTIVO (multi-curso). El hero, módulos, progreso y % derivan de aquí.
       const c = activeCourse();
       if (!c) {
-        return `<div class="page-head"><div><div class="page-title">Tu entrenamiento empieza aquí</div><div class="page-sub">Elige tu primer programa y entra a entrenar.</div></div></div>
+        return `<div class="page-head"><div><h1 class="page-title">Tu entrenamiento empieza aquí</h1><div class="page-sub">Elige tu primer programa y entra a entrenar.</div></div></div>
         <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Inscríbete en tu primer programa</h4><p>Entrena con los coaches más dominantes — explora el catálogo.</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">Explorar catálogo</button></div></div>`;
       }
       // Metadatos extra (estudiantes/lecciones) solo viven en DB.courses; los unimos por code.
@@ -377,7 +377,7 @@ function activeItemsFlat() {
               const on = x.code === c.code;
               return `<button class="chip-course${on ? ' active' : ''}" onclick="window.__course='${esc(x.code)}';go('course')" style="display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:12px;border:1.5px solid ${on ? 'var(--otr-sky)' : 'var(--line)'};background:${on ? 'color-mix(in srgb,var(--otr-sky) 12%,#fff)' : '#fff'};cursor:pointer;text-align:left">
                 <span class="cc-code" style="background:${x.color};color:#fff;border-radius:7px;padding:3px 7px;font-size:11px;font-weight:700">${esc(x.code)}</span>
-                <span style="display:flex;flex-direction:column;line-height:1.25"><b style="font-size:12.5px;color:var(--text)">${esc(x.name)}</b><span class="muted tnum" style="font-size:11.5px">${x.progress || 0}% completado</span></span>
+                <span style="display:flex;flex-direction:column;line-height:1.25"><b style="font-size:12.5px;color:var(--text)">${x.name}</b><span class="muted tnum" style="font-size:11.5px">${x.progress || 0}% completado</span></span>
               </button>`;
             }).join('')}
           </div>`
@@ -412,7 +412,7 @@ function activeItemsFlat() {
       } else {
         modules = cMods.map((m,mi)=>`
         <div class="module ${mi===1?'open':''}">
-          <div class="module-head" data-acc>
+          <div class="module-head" data-acc role="button" tabindex="0" aria-expanded="${mi===1?'true':'false'}">
             <div class="mh-ic ${m.done?'done':m.locked?'lock':''}">${m.done?IC.check:m.locked?IC.lock:`<b>${mi+1}</b>`}</div>
             <div class="mh-text"><div class="mh-title">${esc(m.t)}</div><div class="mh-sub">${m.items.length} actividades${m.done?' · completada':m.locked?' · bloqueada':''}</div></div>
             <span class="chev">${IC.chevD}</span>
@@ -451,9 +451,9 @@ function activeItemsFlat() {
         </div>
         <div class="ch-body">
           <div style="flex:1;min-width:220px">
-            <h2 style="font-size:var(--fs-20);font-weight:800;letter-spacing:var(--track-tight)">${esc(c.name)}</h2>
+            <h1 style="font-size:var(--fs-20);font-weight:800;letter-spacing:var(--track-tight);margin:0">${c.name}</h1>
             <div class="row vcenter wrap" style="gap:10px 12px;margin-top:8px;font-size:13px;color:var(--text-2)">
-              <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${esc(c.coach)}</span>
+              <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${c.coach}</span>
               ${meta.students!=null?`<span class="dot-sep"></span><span>${meta.students} estudiantes</span>`:''}
               ${meta.lessons!=null?`<span class="dot-sep"></span><span>${meta.lessons} lecciones</span>`:''}
             </div>
@@ -510,8 +510,8 @@ function activeItemsFlat() {
       const timeLabel = totalMin >= 60 ? `~${Math.round(totalMin/60)}h` : totalMin > 0 ? `${totalMin} min` : null;
       return `
       <div class="page-head fade-up" style="--d:0"><div>
-        <div class="page-title">Índice del curso</div>
-        <div class="page-sub">${esc(c?.name || 'Curso')} · todo tu plan, actividad por actividad</div>
+        <h1 class="page-title">Índice del curso</h1>
+        <div class="page-sub">${c?.name || 'Curso'} · todo tu plan, actividad por actividad</div>
       </div><button class="btn btn-ghost" onclick="go('course')">${IC.chevL} Volver al curso</button></div>
 
       <div class="grid g-3 fade-up" style="--d:1;margin-bottom:20px">

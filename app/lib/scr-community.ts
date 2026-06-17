@@ -110,7 +110,7 @@ export const S = {};
           <div class="bubble">${esc(c.body)}<span class="b-time">${esc(c.when)}</span></div>
         </div>`).join('');
       return `
-      <div class="page-head" style="margin-bottom:14px"><div><div class="eyebrow">Comunidad</div><div class="page-title" style="margin-top:2px">Mensajes</div>
+      <div class="page-head" style="margin-bottom:14px"><div><div class="eyebrow">Comunidad</div><h1 class="page-title" style="margin-top:2px">Mensajes</h1>
       <div class="page-sub">Habla con tus coaches y compañeros</div></div></div>
       <div class="msg-wrap fade-up">
         <aside class="msg-list">

@@ -49,7 +49,7 @@ S.events = {
     const tournaments = Array.isArray(DB.tournaments) ? DB.tournaments : [];
 
     const head = `<div class="page-head fade-up"><div><p class="eyebrow">OTR</p>
-      <div class="page-title">Eventos</div>
+      <h1 class="page-title">Eventos</h1>
       <div class="page-sub">Seminarios, sesiones en vivo y torneos — todo en un lugar</div></div></div>`;
 
     const eventsSection = `<div class="card card-pad fade-up" style="--d:0;margin-bottom:16px">

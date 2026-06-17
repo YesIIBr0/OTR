@@ -100,7 +100,7 @@ S.settings = {
 
     return `
     <div class="page-head fade-up"><div><p class="eyebrow">Cuenta</p>
-      <div class="page-title">Ajustes</div>
+      <h1 class="page-title">Ajustes</h1>
       <div class="page-sub">Tu cuenta, idioma, notificaciones, membresía y privacidad</div></div></div>
 
     ${card("Cuenta", account, 0)}

@@ -117,7 +117,7 @@ function heroPanel(d) {
   <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
     <div class="h-row" style="align-items:center">
       <div style="min-width:240px">
-        <p class="eyebrow" style="color:var(--otr-sky-hi)">Tu rating Glicko-2</p>
+        <h1 class="sr-only">Debate Hub</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">Tu rating Glicko-2</p>
         <div class="row vcenter" style="gap:14px;margin-top:6px">
           <span class="brand-font" style="font-size:64px;font-weight:800;line-height:1;color:#fff">${d.rating}</span>
           <div class="stack" style="gap:7px">
@@ -222,7 +222,7 @@ function viewHistory(d) {
     const rs = resultStyle(h.result);
     const src = String(h.source || "").toUpperCase() === "EXTERNAL" ? "Externo" : "OTR";
     return `
-    <div class="tile click fade-up" data-debate="${esc(h.id || "")}" style="--d:${i % 8};border-left:3px solid ${rs.cssVar}">
+    <div class="tile click fade-up" data-debate="${esc(h.id || "")}" role="button" tabindex="0" aria-label="Ver detalle del debate ${esc(h.title || "")}" style="--d:${i % 8};border-left:3px solid ${rs.cssVar}">
       <div class="row between vcenter" style="gap:10px">
         <span class="badge ${rs.tone}" style="font-weight:800;min-width:54px;justify-content:center">${rs.label}</span>
         <span class="badge ${src === "OTR" ? "sky" : ""}">${src}</span>
@@ -244,7 +244,7 @@ function viewHistory(d) {
     </div>`;
   }).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Tu palmarés</p><div class="page-title" style="font-size:20px">Mis debates</div><div class="page-sub">${d.history.length} ronda${d.history.length === 1 ? "" : "s"} · toca una tarjeta para ver el ballot</div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Tu palmarés</p><h1 class="page-title" style="font-size:20px">Mis debates</h1><div class="page-sub">${d.history.length} ronda${d.history.length === 1 ? "" : "s"} · toca una tarjeta para ver el ballot</div></div>
     <button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} Registrar un debate</button></div>
     <div class="grid g-3">${cards}</div>`;
 }
@@ -312,7 +312,7 @@ function viewPractice() {
     </div>`;
 
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Entrena bajo presión</p><div class="page-title" style="font-size:20px">Práctica</div><div class="page-sub">Cronometra un flujo PF completo y registra el resultado. La práctica queda en tu historial; tu rating solo se mueve en rondas adjudicadas por un coach.</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Entrena bajo presión</p><h1 class="page-title" style="font-size:20px">Práctica</h1><div class="page-sub">Cronometra un flujo PF completo y registra el resultado. La práctica queda en tu historial; tu rating solo se mueve en rondas adjudicadas por un coach.</div></div></div>
     <div class="split">${timer}<div class="stack" style="gap:16px">${finder}</div></div>`;
 }
 
@@ -334,7 +334,7 @@ function viewLeaderboard() {
       <td class="num tnum"><b>${r.rating}</b></td>
     </tr>`).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">El cohort</p><div class="page-title" style="font-size:20px">Leaderboard</div><div class="page-sub">Ranking por rating Glicko-2 — solo cuentan las rondas adjudicadas</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">El cohort</p><h1 class="page-title" style="font-size:20px">Leaderboard</h1><div class="page-sub">Ranking por rating Glicko-2 — solo cuentan las rondas adjudicadas</div></div></div>
     ${proUpsellStrip("¿Listo para subir de tier? Descubre todo lo que incluye OTR Pro.")}
     ${meRow}
     <div class="table-wrap scroll-m fade-up">
@@ -369,7 +369,7 @@ function viewTournaments() {
       </div>
     </div>`).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Compite de verdad</p><div class="page-title" style="font-size:20px">Torneos</div><div class="page-sub">Inscríbete a torneos OTR y externos</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Compite de verdad</p><h1 class="page-title" style="font-size:20px">Torneos</h1><div class="page-sub">Inscríbete a torneos OTR y externos</div></div></div>
     ${proUpsellStrip("Llega a los torneos con ventaja. Conoce OTR Pro.")}
     <div class="grid g-3">${cards}</div>`;
 }
@@ -397,7 +397,7 @@ function viewAnalytics(d) {
   // de los gráficos — el botón lleva a la pantalla de membresía.
   if (a.locked) {
     return `
-      <div class="page-head fade-up"><div><p class="eyebrow">Conoce tu juego</p><div class="page-title" style="font-size:20px">Analytics</div><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
+      <div class="page-head fade-up"><div><p class="eyebrow">Conoce tu juego</p><h1 class="page-title" style="font-size:20px">Analytics</h1><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
       <div class="card fade-up"><div class="empty" style="padding:34px 24px">
         <div class="ill">${IC.chart}</div>
         <h4>Analytics completo es parte de OTR Pro</h4>
@@ -439,7 +439,7 @@ function viewAnalytics(d) {
       </div>
     </div>`;
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">Conoce tu juego</p><div class="page-title" style="font-size:20px">Analytics</div><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">Conoce tu juego</p><h1 class="page-title" style="font-size:20px">Analytics</h1><div class="page-sub">Tus patrones por formato, lado de la resolución y criterio de rúbrica</div></div></div>
     <div class="split">${critCard}<div class="stack" style="gap:16px">${formatCard}${sideCard}</div></div>`;
 }
 

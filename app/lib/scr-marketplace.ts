@@ -186,15 +186,15 @@ function coachCard(c, i) {
     ? `<span class="avatar lg" style="background:var(--otr-navy) url('${esc(c.photoUrl)}') center/cover no-repeat;color:transparent">${esc(c.initials)}</span>`
     : C.avatar(esc(c.initials), { size: "lg", bg: "var(--otr-navy)" });
   return `
-  <div class="tile click fade-up" data-coach="${esc(c.id)}" style="display:flex;flex-direction:column;--d:${i}">
+  <div class="tile click fade-up" data-coach="${esc(c.id)}" role="button" tabindex="0" aria-label="Ver perfil de ${c.name}" style="display:flex;flex-direction:column;--d:${i}">
     <div class="row" style="gap:12px">
       ${avatar}
       <div style="min-width:0;flex:1">
         <div class="row vcenter wrap" style="gap:7px">
-          <b style="font-size:14.5px;line-height:1.3">${esc(c.name)}</b>
+          <b style="font-size:14.5px;line-height:1.3">${c.name}</b>
           ${c.verified ? `<span class="badge sky" style="flex:none"><span style="display:inline-flex;width:12px;height:12px">${IC.checkCircle}</span>Verificado</span>` : ""}
         </div>
-        <div class="muted" style="font-size:12px;margin-top:3px">${esc(c.headline)}</div>
+        <div class="muted" style="font-size:12px;margin-top:3px">${c.headline}</div>
         <div class="row vcenter" style="gap:6px;margin-top:6px">
           ${stars(c.rating, 12)}<b style="font-size:12.5px">${c.rating ? c.rating.toFixed(1) : "—"}</b>
           <span class="faint" style="font-size:12px">(${c.reviews} reseña${c.reviews === 1 ? "" : "s"})</span>
@@ -203,7 +203,7 @@ function coachCard(c, i) {
     </div>
     <div class="row wrap" style="gap:6px;margin-top:12px">
       ${langBadges(c.languages)}
-      ${String(c.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean).slice(0, 2).map((s) => `<span class="badge">${esc(s)}</span>`).join("")}
+      ${String(c.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean).slice(0, 2).map((s) => `<span class="badge">${s}</span>`).join("")}
     </div>
     <div class="divider" style="margin:14px 0"></div>
     <div class="row between vcenter" style="margin-top:auto;gap:10px">
@@ -241,13 +241,13 @@ function renderGrid() {
   return `
   <div class="page-head"><div>
     <p class="eyebrow">Marketplace</p>
-    <div class="page-title">Coaches</div>
+    <h1 class="page-title">Coaches</h1>
     <div class="page-sub">Entrena 1:1 con los coaches de debate y oratoria de OTR</div>
   </div>
   <span class="badge sky">${list.length} coach${list.length === 1 ? "" : "es"}</span></div>
 
   <div class="row wrap vcenter" style="gap:8px;margin-bottom:12px" id="mk-specs">
-    ${specs.map((s) => `<button class="chip ${f.spec === s ? "active" : ""}" data-mk-spec="${esc(s)}">${esc(s)}</button>`).join("")}
+    ${specs.map((s) => `<button class="chip ${f.spec === s ? "active" : ""}" data-mk-spec="${esc(s)}">${s}</button>`).join("")}
   </div>
   <div class="row wrap vcenter" style="gap:10px;margin-bottom:22px">
     <select class="select" data-mk-lang style="width:auto;min-width:130px">
@@ -295,7 +295,7 @@ function heroBlock(c) {
     ${C.avatar(esc(c.initials), { size: "lg", bg: "rgba(255,255,255,.14)" })}
     <div>
       <p class="eyebrow" style="color:var(--otr-sky-hi)">Coach verificado de OTR</p>
-      <div class="brand-font" style="font-size:24px;font-weight:800;color:#fff;margin-top:2px">${esc(c.name)}</div>
+      <div class="brand-font" style="font-size:24px;font-weight:800;color:#fff;margin-top:2px">${c.name}</div>
       <p style="color:rgba(234,242,251,.72);font-size:12.5px;margin-top:4px">Su video de presentación llega pronto — su historial habla por él.</p>
     </div>
   </div>`;
@@ -438,11 +438,11 @@ function renderProfile(state) {
       <div class="row between wrap" style="gap:12px;align-items:flex-start">
         <div style="min-width:0">
           <div class="row vcenter wrap" style="gap:8px">
-            <b class="brand-font" style="font-size:19px">${esc(c.name)}</b>
+            <b class="brand-font" style="font-size:19px">${c.name}</b>
             ${c.verified ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.checkCircle}</span>Verificado</span>` : ""}
             ${langBadges(c.languages)}
           </div>
-          <div class="muted" style="font-size:13px;margin-top:4px">${esc(c.headline)}</div>
+          <div class="muted" style="font-size:13px;margin-top:4px">${c.headline}</div>
           <div class="row vcenter wrap" style="gap:8px;margin-top:8px;font-size:12.5px">
             ${stars(c.rating, 13)}<b>${c.rating ? c.rating.toFixed(1) : "—"}</b>
             <span class="faint">${c.reviews} reseña${c.reviews === 1 ? "" : "s"}</span>
@@ -462,7 +462,7 @@ function renderProfile(state) {
         <b style="font-size:13.5px">Sobre ${esc(c.name.split(" ")[0] || "el coach")}</b>
         <p class="muted" style="font-size:13.5px;line-height:1.6;margin-top:8px">${c.bio ? esc(c.bio) : "Este coach todavía no escribió su biografía."}</p>
         ${c.credentials ? `<div class="divider"></div><b style="font-size:13px">Credenciales</b><div class="stack" style="gap:6px;margin-top:8px">${String(c.credentials).split(/\n|;/).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-sky-lo);margin-top:1px">${IC.award}</span>${esc(x)}</div>`).join("")}</div>` : ""}
-        ${specs.length ? `<div class="divider"></div><b style="font-size:13px">Especialidades</b><div class="row wrap" style="gap:6px;margin-top:8px">${specs.map((s) => `<span class="badge">${esc(s)}</span>`).join("")}</div>` : ""}
+        ${specs.length ? `<div class="divider"></div><b style="font-size:13px">Especialidades</b><div class="row wrap" style="gap:6px;margin-top:8px">${specs.map((s) => `<span class="badge">${s}</span>`).join("")}</div>` : ""}
       </div>
 
       <div class="card card-pad fade-up" style="--d:2">

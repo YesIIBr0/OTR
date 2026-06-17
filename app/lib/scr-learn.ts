@@ -144,7 +144,7 @@ function priorQuizAttempt() {
       <div class="row between vcenter fade-up" style="--d:0;margin-bottom:18px;flex-wrap:wrap;gap:12px">
         <div>
           <div class="eyebrow">Entrega de tarea</div>
-          <div class="page-title" style="font-size:22px;margin-top:2px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</div>
+          <h1 class="page-title" style="font-size:22px;margin-top:2px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</h1>
           ${course && course.name ? `<div class="page-sub" style="margin-top:2px">${course.name}</div>` : ''}
         </div>
         ${dueLabel ? `<span class="badge warn" style="height:28px;align-self:flex-start">${IC.clock} Entrega: ${dueLabel}</span>` : ''}
@@ -372,7 +372,7 @@ function priorQuizAttempt() {
       if (!quiz || !(quiz.questions && quiz.questions.length)) {
         return `
         <div class="page-head"><div>
-          <div class="page-title">Examen</div>
+          <h1 class="page-title">Examen</h1>
           <div class="page-sub">Pon a prueba lo aprendido en esta unidad</div>
         </div></div>
         <div class="card"><div class="empty">
@@ -403,7 +403,7 @@ function priorQuizAttempt() {
       <div class="quiz-head fade-up" style="--d:0">
         <div>
           <div class="eyebrow">Examen de unidad</div>
-          <div class="page-title" style="font-size:var(--fs-20);margin-top:2px">${esc(quiz.title || 'Examen')}</div>
+          <h1 class="page-title" style="font-size:var(--fs-20);margin-top:2px">${esc(quiz.title || 'Examen')}</h1>
           <div class="page-sub" style="margin-top:2px">${total} pregunta${total!==1?'s':''} · aprobado con ${esc(String(passScore))}%</div>
         </div>
 
@@ -447,9 +447,9 @@ function priorQuizAttempt() {
         const opts = Q.options || [];
         card.innerHTML = `<div class="q-num">Pregunta ${i+1} de ${questions.length}</div>
           <div class="q-text">${esc(Q.prompt)}</div>
-          ${opts.map((o: any, oi: number) => `<div class="q-opt ${answers[Q.id]===o.id?'sel':''}" data-o="${esc(o.id)}"><span class="q-key">${'ABCDEFGH'[oi]||'•'}</span><span>${esc(o.text)}</span></div>`).join('')}`;
+          ${opts.map((o: any, oi: number) => `<div class="q-opt ${answers[Q.id]===o.id?'sel':''}" data-o="${esc(o.id)}" role="button" tabindex="0" aria-pressed="${answers[Q.id]===o.id?'true':'false'}"><span class="q-key">${'ABCDEFGH'[oi]||'•'}</span><span>${esc(o.text)}</span></div>`).join('')}`;
         card.querySelectorAll('.q-opt').forEach((el: any) => el.addEventListener('click', () => { answers[Q.id] = el.dataset.o; paint(); }));
-        dots.innerHTML = questions.map((q: any, d: number) => `<span class="q-dot ${d===i?'cur':''} ${answers[q.id]!=null?'done':''}" data-d="${d}">${d+1}</span>`).join('');
+        dots.innerHTML = questions.map((q: any, d: number) => `<span class="q-dot ${d===i?'cur':''} ${answers[q.id]!=null?'done':''}" data-d="${d}" role="button" tabindex="0" aria-label="Pregunta ${d+1}${answers[q.id]!=null?', respondida':''}">${d+1}</span>`).join('');
         dots.querySelectorAll('.q-dot').forEach((el: any) => el.addEventListener('click', () => { i = +el.dataset.d; paint(); }));
         prev.style.visibility = i===0 ? 'hidden' : 'visible';
         const last = i === questions.length - 1;
@@ -497,7 +497,7 @@ function priorQuizAttempt() {
       if (!res || !data || !(data.questions && data.questions.length)) {
         return `
         <div class="page-head"><div>
-          <div class="page-title">Resultados del examen</div>
+          <h1 class="page-title">Resultados del examen</h1>
         </div></div>
         <div class="card"><div class="empty">
           <div class="ill">${IC.chart}</div>
@@ -628,7 +628,7 @@ function priorQuizAttempt() {
 
       const mainCourseName = (DB.courses && DB.courses[0] && DB.courses[0].name) || null;
       const head = `
-      <div class="page-head fade-up" style="--d:0"><div><div class="page-title">Mis calificaciones</div><div class="page-sub">${mainCourseName ? esc(mainCourseName) + ' · ' : ''}promedio ponderado</div></div></div>`;
+      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">Mis calificaciones</h1><div class="page-sub">${mainCourseName ? esc(mainCourseName) + ' · ' : ''}promedio ponderado</div></div></div>`;
 
       if (!g.total) {
         return `${head}

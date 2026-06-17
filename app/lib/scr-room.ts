@@ -69,7 +69,7 @@ S.room = {
       const backLabel = isCoach ? "Ir a Reservas" : "Ir a Mis reservas";
       return `
       <div class="page-head fade-up"><div><p class="eyebrow">Sesión</p>
-        <div class="page-title">Sala de sesión</div></div></div>
+        <h1 class="page-title">Sala de sesión</h1></div></div>
       <div class="card card-pad fade-up" style="--d:0">
         <div class="empty" style="padding:36px 24px">
           <div class="ill">${IC.video}</div>
@@ -124,7 +124,7 @@ S.room = {
         <div class="kv" style="font-size:13px;display:grid;gap:7px">
           <div class="row between"><span class="faint">Cuándo</span><span style="font-weight:600">${esc(b.slotLabel || "")}</span></div>
           ${b.durationMin ? `<div class="row between"><span class="faint">Duración</span><span style="font-weight:600">${b.durationMin} min</span></div>` : ""}
-          ${b.packageName ? `<div class="row between"><span class="faint">Paquete</span><span style="font-weight:600">${esc(b.packageName)}</span></div>` : ""}
+          ${b.packageName ? `<div class="row between"><span class="faint">Paquete</span><span style="font-weight:600">${b.packageName}</span></div>` : ""}
           ${(b.priceLabel || b.amountLabel) ? `<div class="row between"><span class="faint">Monto</span><span style="font-weight:600">${esc(b.priceLabel || b.amountLabel)}</span></div>` : ""}
           <div class="row between"><span class="faint">Estado</span><span style="font-weight:600">${esc(b.status)}</span></div>
         </div>
@@ -133,7 +133,7 @@ S.room = {
 
     return `
     <div class="page-head fade-up"><div><p class="eyebrow">Sesión de coaching</p>
-      <div class="page-title">Sala de sesión</div>
+      <h1 class="page-title">Sala de sesión</h1>
       <div class="page-sub">${side === "coach" ? "Sesión con tu alumno" : "Sesión con tu coach"} · ${esc(b.slotLabel || "")}</div></div></div>
 
     <div class="grid" style="grid-template-columns:1.6fr 1fr;gap:18px;align-items:start">

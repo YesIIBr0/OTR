@@ -335,7 +335,7 @@ function membershipCard(kids) {
     return `
     <div class="row between vcenter" style="gap:10px">
       <span style="font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.name)}</span>
-      <select class="select" data-threshold-child="${esc(k.id)}" style="flex:none;width:auto;font-size:12.5px;padding:5px 26px 5px 10px">${opts}</select>
+      <select class="select" data-threshold-child="${esc(k.id)}" aria-label="Umbral de aprobación para ${esc(k.name)}" style="flex:none;width:auto;font-size:12.5px;padding:5px 26px 5px 10px">${opts}</select>
     </div>`;
   }).join("");
   return `
@@ -388,7 +388,7 @@ S.parentPortal = {
     const head = `
     <div class="page-head"><div>
       <p class="eyebrow">Portal de familia</p>
-      <div class="page-title">Pruebas y tranquilidad</div>
+      <h1 class="page-title">Pruebas y tranquilidad</h1>
       <div class="page-sub">El progreso real de tu hijo/a, cada sesión segura y cada peso bajo tu control</div>
     </div></div>`;
 

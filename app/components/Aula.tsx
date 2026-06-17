@@ -943,7 +943,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const goEl = t.closest("[data-go]") as HTMLElement | null;
       if (goEl) { e.preventDefault(); renderApp(goEl.getAttribute("data-go")!); return; }
       const acc = t.closest("[data-acc]") as HTMLElement | null;
-      if (acc) { acc.closest(".module")?.classList.toggle("open"); return; }
+      if (acc) { const open = acc.closest(".module")?.classList.toggle("open"); acc.setAttribute("aria-expanded", open ? "true" : "false"); return; }
       const toastEl = t.closest("[data-toast]") as HTMLElement | null;
       if (toastEl) { const v = toastEl.getAttribute("data-toast")!; const i = v.indexOf("::"); i > 0 ? toast(v.slice(i + 2), v.slice(0, i)) : toast(v); }
     };

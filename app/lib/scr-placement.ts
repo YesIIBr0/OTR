@@ -28,7 +28,7 @@ S.placement = {
       <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
         <div class="h-row">
           <div style="max-width:600px">
-            <p class="eyebrow" style="color:var(--otr-sky-hi)">Bienvenido a OTR${firstName ? ", " + firstName : ""}</p>
+            <h1 class="sr-only">Tu punto de partida</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">Bienvenido a OTR${firstName ? ", " + firstName : ""}</p>
             <h2 class="brand-font" style="margin-top:2px">Ubiquémonos en 3 minutos</h2>
             <p style="color:rgba(234,242,251,.82);font-size:14.5px;margin-top:12px;line-height:1.55">
               No hay respuestas incorrectas — esto fija <b>TU</b> punto de partida. Mueve cada barra

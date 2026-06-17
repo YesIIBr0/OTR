@@ -22,7 +22,7 @@ export const S = {};
         <div class="row vcenter" style="gap:11px;min-width:0">
           ${C.avatar(esc(rv.ini), { size: 'sm', bg: 'var(--otr-sky-lo)' })}
           <div style="min-width:0"><div style="font-weight:700;font-size:13.5px;line-height:1.2">${esc(rv.author)}</div>
-          <div class="faint" style="font-size:11.5px;margin-top:2px">${esc(rv.when)}${opts.showProgram && rv.programName ? ` · ${esc(rv.programName)}` : ''}</div></div>
+          <div class="faint" style="font-size:11.5px;margin-top:2px">${esc(rv.when)}${opts.showProgram && rv.programName ? ` · ${rv.programName}` : ''}</div></div>
         </div>
         ${starsRO(rv.rating)}
       </div>
@@ -32,7 +32,7 @@ export const S = {};
   const programCard = (p) => `
     <div class="card card-pad" style="border-top:3px solid ${p.color || 'var(--otr-sky)'}">
       <div class="row vcenter between" style="gap:8px;flex-wrap:wrap">
-        <div class="row vcenter" style="gap:9px;min-width:0">${C.courseDot(p.color || 'var(--otr-sky)')}<b style="font-size:14.5px;line-height:1.2">${esc(p.name)}</b></div>
+        <div class="row vcenter" style="gap:9px;min-width:0">${C.courseDot(p.color || 'var(--otr-sky)')}<b style="font-size:14.5px;line-height:1.2">${p.name}</b></div>
         ${p.code ? `<span class="mono faint" style="font-size:11.5px">${esc(p.code)}</span>` : ''}
       </div>
       ${p.summary ? `<p class="muted" style="font-size:13px;line-height:1.5;margin-top:8px">${esc(p.summary)}</p>` : ''}
@@ -74,7 +74,7 @@ export const S = {};
       const hasSkills = (DB.skills || []).length > 0;
       const comps = SKILL_DIMS.map((name) => [name, skillMap[name] != null ? skillMap[name] : 0]);
       return `
-      <div class="page-head fade-up" style="--d:0"><div><div class="page-title">Progreso y niveles</div>
+      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">Progreso y niveles</h1>
       <div class="page-sub">Tu camino de Novato a Elite en el sistema OTR</div></div>
       ${C.levelBadge(curName)}</div>
 
@@ -138,7 +138,7 @@ export const S = {};
       const got = DB.badges.filter(b=>b.got).length;
       const certs = DB.certificates || [];
       return `
-      <div class="page-head fade-up" style="--d:0"><div><div class="page-title">Insignias y certificados</div>
+      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">Insignias y certificados</h1>
       <div class="page-sub">${got} de ${DB.badges.length} insignias · sigue ganando logros de campeón</div></div></div>
 
       <div class="fade-up" style="--d:1;margin-bottom:12px"><div class="eyebrow" style="margin-bottom:2px">Logros</div><b style="font-size:15px;display:block">Tus certificados</b></div>
@@ -150,7 +150,7 @@ export const S = {};
             <div style="flex:1;min-width:0">
               <div class="badge gold" style="margin-bottom:7px">Certificado oficial OTR</div>
               <h3 style="font-size:17px;font-weight:750;line-height:1.2">${esc(ct.title)}</h3>
-              <p class="muted" style="font-size:13px;margin-top:4px">${esc(ct.programName)}${ct.issuedAt ? ` · ${esc(ct.issuedAt)}` : ''}</p>
+              <p class="muted" style="font-size:13px;margin-top:4px">${ct.programName}${ct.issuedAt ? ` · ${esc(ct.issuedAt)}` : ''}</p>
             </div>
             <button class="btn btn-navy btn-sm" onclick="window.__cert='${esc(ct.id)}';go('certificate')">Ver certificado</button>
           </div>`).join('')}
@@ -203,7 +203,7 @@ export const S = {};
         ${C.avatar(esc(ini), { size: 'xl', bg: 'var(--otr-navy)' })}
         <div style="flex:1;min-width:200px">
           <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
-            <h2 style="font-size:22px;font-weight:750">${esc(name)}</h2>${C.badge('Coach', 'navy')}
+            <h1 style="font-size:22px;font-weight:750;margin:0">${esc(name)}</h1>${C.badge('Coach', 'navy')}
           </div>
           ${headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${esc(headline)}</div>` : ''}
           <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
@@ -276,8 +276,8 @@ export const S = {};
       <div class="profile-head">
         ${C.avatar(esc(me.initials), { size: 'xl', bg: 'var(--otr-sky-lo)' })}
         <div style="flex:1;min-width:200px">
-          <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h2 style="font-size:22px;font-weight:750">${esc(me.name)}</h2>${C.levelBadge(me.level || 'Novato')}</div>
-          ${me.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${esc(me.headline)}</div>` : ''}
+          <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:22px;font-weight:750;margin:0">${me.name}</h1>${C.levelBadge(me.level || 'Novato')}</div>
+          ${me.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${me.headline}</div>` : ''}
           <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${esc(me.location)}` : ''}</div>
           ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(me.bio)}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px">
@@ -298,11 +298,11 @@ export const S = {};
           <div class="row between vcenter"><b style="font-size:14px">Mis programas</b><button class="btn btn-ghost btn-sm" onclick="go('catalog')">Explorar ${IC.chevR}</button></div>
           ${courses.length
             ? `<div class="stack" style="gap:12px;margin-top:14px">${courses.map((c) => `
-              <div class="card card-pad lift" style="padding:12px 14px;cursor:pointer" onclick="go('course')">
+              <div class="card card-pad lift" role="button" tabindex="0" aria-label="Abrir ${c.name}" style="padding:12px 14px;cursor:pointer" onclick="go('course')">
                 <div class="row vcenter between" style="gap:10px">
                   <div class="row vcenter" style="gap:10px">${C.courseDot(c.color || 'var(--otr-sky)')}
-                    <div><div style="font-weight:650;font-size:14px">${esc(c.name)}</div>
-                    <div class="faint" style="font-size:12px">${esc(c.coach)}${c.format ? ` · ${esc(c.format)}` : ''}${c.modality ? ` · ${esc(c.modality)}` : ''}</div></div>
+                    <div><div style="font-weight:650;font-size:14px">${c.name}</div>
+                    <div class="faint" style="font-size:12px">${c.coach}${c.format ? ` · ${c.format}` : ''}${c.modality ? ` · ${c.modality}` : ''}</div></div>
                   </div>
                   <span class="tnum faint" style="font-size:12.5px">${c.progress != null ? c.progress + '%' : ''}</span>
                 </div>
@@ -356,9 +356,9 @@ export const S = {};
           ${C.avatar(esc(cp.initials), { size: 'xl', bg: 'var(--otr-navy)' })}
           <div style="flex:1;min-width:200px">
             <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
-              <h2 style="font-size:22px;font-weight:750">${esc(cp.name)}</h2>${C.badge('Coach', 'navy')}
+              <h1 style="font-size:22px;font-weight:750;margin:0">${cp.name}</h1>${C.badge('Coach', 'navy')}
             </div>
-            ${cp.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${esc(cp.headline)}</div>` : ''}
+            ${cp.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${cp.headline}</div>` : ''}
             <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
               <span class="row vcenter" style="gap:6px">${starsRO(rating)}<b class="tnum" style="font-size:13.5px">${Number(rating).toFixed(1)}</b></span>
               <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? 'reseña' : 'reseñas'}</span>

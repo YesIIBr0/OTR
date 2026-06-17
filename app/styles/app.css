@@ -113,7 +113,9 @@ svg.ic{width:18px;height:18px;flex:none}
 .content{flex:1;overflow-y:auto;min-height:0;scroll-behavior:smooth}
 .page{max-width:var(--maxw);margin:0 auto;padding:22px 26px 64px}
 .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px}
-.page-title{font-size:var(--fs-24);font-weight:800;letter-spacing:var(--track-tight);color:var(--text);line-height:1.1}
+.page-title{font-size:var(--fs-24);font-weight:800;letter-spacing:var(--track-tight);color:var(--text);line-height:1.1;margin:0}
+/* Encabezado solo para lectores de pantalla (a11y): da a cada pantalla un h1 sin cambio visual */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .page-sub{color:var(--text-2);font-size:13.5px;margin-top:3px}
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--action)}
 
