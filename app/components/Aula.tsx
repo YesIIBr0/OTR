@@ -153,7 +153,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             ? wrap(`<div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", "Negrita"], ["italic", "<i>I</i>", "Cursiva"], ["formatBlock:h3", "H", "Subtítulo"], ["insertUnorderedList", "• Lista", "Lista"], ["createLink", '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11.5 6.5l1-1a4 4 0 0 1 6 6l-1 1"/><path d="M12.5 17.5l-1 1a4 4 0 0 1-6-6l1-1"/></svg>', "Enlace"], ["removeFormat", "⨯", "Quitar formato"]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" id="${fid}" data-f="${f.name}" data-rich="1" contenteditable="true" aria-describedby="${hintId}"${req} style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div>`)
             : f.type === "textarea"
               ? wrap(`<textarea class="input" id="${fid}" data-f="${f.name}" rows="6" placeholder="${f.ph || ""}" aria-describedby="${hintId}"${req} style="resize:vertical;min-height:96px;font-family:inherit;line-height:1.5">${f.value || ""}</textarea>`)
-              : wrap(`<input class="input" id="${fid}" data-f="${f.name}"${f.type === "number" ? ` type="number" min="0" max="1000"` : f.type === "date" ? ` type="date"` : ""} placeholder="${f.ph || ""}" value="${f.value != null ? f.value : ""}" aria-describedby="${hintId}"${req}/>`);
+              : wrap(`<input class="input" id="${fid}" data-f="${f.name}"${f.type === "number" ? ` type="number" min="0" max="1000"` : f.type === "date" ? ` type="date"` : f.type === "password" ? ` type="password" autocomplete="new-password"` : ""} placeholder="${f.ph || ""}" value="${f.value != null ? f.value : ""}" aria-describedby="${hintId}"${req}/>`);
       }).join("");
       scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body">${inner}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:4px 0 0"></p></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button><button class="btn btn-primary" data-ok>Guardar</button></div></div>`;
       document.body.appendChild(scrim);
@@ -215,6 +215,9 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         (scrim.querySelector("[data-ok]") as HTMLElement)?.click();
       });
     }
+    // [UIC-03] Exponemos formModal para que otras pantallas (Ajustes) abran un modal
+    // consistente (validación + a11y + Enter/Esc) sin duplicar el helper.
+    (window as any).otrFormModal = formModal;
 
     // Modal de progreso para tareas largas (aplicar plantilla / duplicar).
     function progressModal(title: string) {
@@ -553,7 +556,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const rows = subs.length ? subs.map((s: any) => `
         <div class="card card-pad" data-sub="${s.id}" style="margin-bottom:12px">
           <div class="row between vcenter" style="gap:10px">
-            <div style="min-width:0"><div style="font-weight:600;font-size:13.5px">${esc(s.userName)}</div><div class="faint" style="font-size:12px">${esc(s.activity)} · ${s.status === "GRADED" ? "Calificado: " + (s.grade ?? "—") : "Pendiente"}</div></div>
+            <label class="row vcenter" style="gap:10px;min-width:0;cursor:pointer"><input type="checkbox" class="gsub-check" style="flex:none;width:16px;height:16px"/><span style="min-width:0"><span style="display:block;font-weight:600;font-size:13.5px">${esc(s.userName)}</span><span class="faint" style="display:block;font-size:12px">${esc(s.activity)} · ${s.status === "GRADED" ? "Calificado: " + (s.grade ?? "—") : "Pendiente"}</span></span></label>
             <span class="badge" style="height:18px;font-size:10px;flex:none">${esc(s.kind || "entrega")}</span>
           </div>
           ${subContent(s)}
@@ -566,13 +569,57 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             <button class="btn btn-primary btn-sm gsub-save" style="align-self:flex-end">Guardar</button>
           </div>
         </div>`).join("") : `<div class="empty" style="padding:20px"><b>Sin entregas todavía</b><p>Cuando un alumno entregue una tarea, aparecerá aquí.</p></div>`;
-      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>Calificar entregas</h3></div><div class="modal-body">${rows}</div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cerrar</button></div></div>`;
+      // [PRD-02] Calificación en lote: selección múltiple + nota/feedback comunes aplicados
+      // a las seleccionadas (calificar 25 grabaciones del mismo drill deja de ser 25 ciclos).
+      const batchBar = subs.length > 1 ? `
+        <div class="card card-pad" style="margin-bottom:14px;background:var(--bg-sunken)">
+          <div class="row vcenter" style="gap:8px;flex-wrap:wrap">
+            <label class="row vcenter" style="gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="gsub-all" style="width:16px;height:16px"/> Seleccionar todas</label>
+            <span style="flex:1"></span>
+            <input class="input" id="gsub-bgrade" type="number" min="0" max="100" placeholder="Nota" style="width:84px"/>
+            <input class="input" id="gsub-bfeedback" placeholder="Feedback común (opcional)" style="flex:1;min-width:150px"/>
+            <button class="btn btn-primary btn-sm" id="gsub-bapply">Aplicar a seleccionadas</button>
+          </div>
+        </div>` : "";
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>Calificar entregas</h3></div><div class="modal-body">${batchBar}${rows}</div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cerrar</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       let gdirty = false;
       const close = () => { scrim.remove(); if (gdirty) refresh(); };
       scrim.addEventListener("click", async (e: any) => {
         if (e.target === scrim || e.target.closest("[data-x]")) { close(); return; }
+        // [PRD-02] Seleccionar todas.
+        if (e.target.id === "gsub-all") {
+          const on = e.target.checked;
+          scrim.querySelectorAll(".gsub-check").forEach((c: any) => (c.checked = on));
+          return;
+        }
+        // [PRD-02] Aplicar nota/feedback comunes a las entregas seleccionadas.
+        const bapply = e.target.closest("#gsub-bapply");
+        if (bapply) {
+          const bgrade = String((scrim.querySelector("#gsub-bgrade") as any)?.value || "").trim();
+          const bfeedback = String((scrim.querySelector("#gsub-bfeedback") as any)?.value || "").trim();
+          const checked = Array.from(scrim.querySelectorAll(".gsub-check")).filter((c: any) => c.checked);
+          if (!checked.length) { toast("Selecciona al menos una entrega", "warn"); return; }
+          if (!bgrade && !bfeedback) { toast("Pon una nota o un feedback para aplicar", "warn"); return; }
+          (bapply as any).disabled = true; bapply.textContent = "Aplicando…";
+          let okN = 0;
+          for (const chk of checked) {
+            const row = (chk as any).closest("[data-sub]"); const id = row?.getAttribute("data-sub");
+            if (!id) continue;
+            const body: any = {}; if (bgrade) body.grade = bgrade; if (bfeedback) body.feedback = bfeedback;
+            try {
+              await api(`/api/submissions/${id}`, body, "PATCH"); okN++;
+              if (bgrade) (row.querySelector(".gsub-grade") as any).value = bgrade;
+              if (bfeedback) (row.querySelector(".gsub-feedback") as any).value = bfeedback;
+              (chk as any).checked = false;
+            } catch {}
+          }
+          gdirty = true;
+          (bapply as any).disabled = false; bapply.textContent = "Aplicar a seleccionadas";
+          toast(`${okN} entrega${okN === 1 ? "" : "s"} calificada${okN === 1 ? "" : "s"}`, okN ? "ok" : "danger");
+          return;
+        }
         const save = e.target.closest(".gsub-save");
         if (save) {
           const row = save.closest("[data-sub]"); const id = row.getAttribute("data-sub");

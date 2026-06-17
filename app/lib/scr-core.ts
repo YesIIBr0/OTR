@@ -303,6 +303,9 @@ function activeItemsFlat() {
             <span class="tnum">${xpToNext.toLocaleString('es')} XP para ${nextName}</span>
             ${nextBadge?`<span class="sky" style="font-weight:600">Próx: ${esc(nextBadge.n)}</span>`:''}
           </div>
+          ${/* [CNV-05] CTA que cierra el gap: el loop de gamificación deja de ser decorativo
+               apuntando a la acción concreta (la misma del hero "siguiente paso"). */""}
+          <button class="btn btn-soft btn-sm" style="width:100%;margin-top:12px" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
         </div>`;
 
       /* ---- BOTTOM: tira de leaderboard del cohort ---- */

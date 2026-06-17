@@ -91,7 +91,7 @@ S.settings = {
         ? row(IC.lock, "Consentimiento y privacidad del hijo/a", "Aprobaciones de reserva, visibilidad de sesiones y perfil público del menor.", `<button class="btn btn-soft btn-sm" data-go="parent">Gestionar</button>`)
         : row(IC.lock, "Perfil público", "Controla si tu trayectoria es compartible (apagado por defecto para menores).", `<button class="btn btn-soft btn-sm" data-go="lifetime">Mi trayectoria ${IC.arrowR}</button>`),
       leaderboardRow,
-      row(IC.doc, "Contraseña", "Para cambiarla, cierra sesión y usa “¿Olvidaste tu contraseña?” en el inicio.", ""),
+      row(IC.doc, "Contraseña", "Cámbiala con tu contraseña actual — sin salir de tu cuenta.", `<button class="btn btn-soft btn-sm" data-action="change-pw">Cambiar contraseña</button>`),
     ].join("");
 
     return `
@@ -148,6 +148,24 @@ S.settings = {
         if (knob) knob.style.left = !next ? "22px" : "3px";
         w.toast?.("No se pudo guardar el cambio", "error");
       }
+    });
+    // [UIC-03] Cambiar contraseña: modal dedicado (actual + nueva + confirmar) → PATCH /api/profile.
+    const pwBtn = root.querySelector('[data-action="change-pw"]');
+    if (pwBtn) pwBtn.addEventListener("click", () => {
+      if (!w.otrFormModal) { w.toast?.("No disponible aquí", "warn"); return; }
+      w.otrFormModal("Cambiar contraseña", [
+        { name: "currentPassword", label: "Contraseña actual", type: "password", req: true },
+        { name: "newPassword", label: "Nueva contraseña (mín. 6)", type: "password", req: true },
+        { name: "confirm", label: "Confirmar nueva contraseña", type: "password", req: true },
+      ], async (v) => {
+        const cur = String(v.currentPassword || "").trim();
+        const nw = String(v.newPassword || "").trim();
+        const cf = String(v.confirm || "").trim();
+        if (nw.length < 6) throw new Error("La nueva contraseña debe tener al menos 6 caracteres");
+        if (nw !== cf) throw new Error("Las contraseñas no coinciden");
+        await w.api("/api/profile", { currentPassword: cur, newPassword: nw }, "PATCH");
+        w.toast?.("Contraseña actualizada", "ok");
+      });
     });
   },
 };
