@@ -4,6 +4,7 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
+import { logActivitySafe } from "../../lib/activity";
 
 // Las 6 dimensiones válidas, en orden de contrato.
 const SKILLS = ["Confianza", "Estructura", "Evidencia", "Refutación", "Cross-ex", "Delivery"] as const;
@@ -49,16 +50,33 @@ export async function POST(req: Request) {
   if (typeof scores !== "object" || Array.isArray(scores)) return bad("scores inválido");
 
   let count = 0;
+  // [SPINE-01 / §8.2] Atribución: registramos el antes/después de cada dimensión movida.
+  const ledger: Array<{ skill: string; before: number; after: number }> = [];
   for (const [skill, raw] of Object.entries(scores)) {
     if (!VALID.has(skill)) continue;
     if (raw === undefined || raw === null || raw === "") continue;
     const score = clampScore(raw);
+    const existing = await db.studentSkill.findUnique({ where: { userId_skill: { userId, skill } } });
+    const before = existing?.score ?? 0;
     await db.studentSkill.upsert({
       where: { userId_skill: { userId, skill } },
       update: { score },
       create: { userId, skill, score },
     });
+    if (score !== before) ledger.push({ skill, before, after: score });
     count++;
+  }
+
+  // [SPINE-01 / §8.2] El cambio de skill por el coach DEBE ser atribuible (sin cajas negras):
+  // un ActivityEvent con meta.skillBumps hace que al tocar la skill el alumno vea quién la movió.
+  if (ledger.length) {
+    await logActivitySafe({
+      userId,
+      type: "skill_eval",
+      title: `Evaluación de habilidades por ${user.name || "tu coach"}`,
+      source: "coach-skill-eval",
+      meta: { skillBumps: ledger },
+    });
   }
 
   return ok({ count });

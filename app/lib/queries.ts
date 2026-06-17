@@ -1117,10 +1117,15 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       : [];
     return { ...a, _bumpedSkills: bumpedSkills };
   });
-  const SKILL_EVENT_TYPES = new Set(["quiz_passed", "lesson_done", "debate_logged", "skill_eval", "booking_made", "session_done"]);
+  // [SPINE-03 / §8.2] Tipos REALES de ActivityEvent escritos por las rutas (antes usaba
+  // "quiz_passed"/"debate_logged" que NUNCA se escriben → el fallback de atribución no
+  // hallaba nada). La atribución primaria es meta.skillBumps; este set/mapa es el respaldo.
+  const SKILL_EVENT_TYPES = new Set(["quiz_done", "quiz", "lesson_done", "debate_win", "debate_loss", "skill_eval", "placement_done", "booking_made", "session_done"]);
   const TYPE_TO_SKILLS: Record<string, string[]> = {
-    debate_logged: ["Refutación", "Estructura"],
-    quiz_passed: ["Evidencia"],
+    debate_win: ["Refutación", "Estructura"],
+    debate_loss: ["Refutación", "Estructura"],
+    quiz_done: ["Evidencia"],
+    quiz: ["Evidencia"],
     lesson_done: ["Estructura"],
     booking_made: ["Delivery"],
     session_done: ["Delivery"],

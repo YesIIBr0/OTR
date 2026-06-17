@@ -44,9 +44,14 @@ export async function POST(req: Request) {
 
   // Acota cada dimensión 0-100 y upsert por la unique (userId_skill).
   const clamped: Record<string, number> = {};
+  // [SPINE-02 / §8.2] Ledger antes/después para que el placement (el mayor cambio de skill
+  // del sistema) sea ATRIBUIBLE al tocar la dimensión, vía meta.skillBumps.
+  const ledger: Array<{ skill: string; before: number; after: number }> = [];
   for (const skill of SKILLS) {
     const score = clampScore(scores[skill]);
     clamped[skill] = score;
+    const existing = await db.studentSkill.findUnique({ where: { userId_skill: { userId: user.id, skill } } });
+    ledger.push({ skill, before: existing?.score ?? 0, after: score });
     await db.studentSkill.upsert({
       where: { userId_skill: { userId: user.id, skill } },
       update: { score },
@@ -67,7 +72,7 @@ export async function POST(req: Request) {
     type: "placement_done",
     title: "Completó su evaluación inicial",
     source: "placement",
-    meta: { scores: clamped },
+    meta: { scores: clamped, skillBumps: ledger },
   });
 
   return ok({ placed: true, level });
