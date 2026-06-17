@@ -255,13 +255,17 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       : Promise.resolve([]),
     // Marketplace (PRD §7): perfiles de coach ACTIVOS con paquetes y disponibilidad.
     // Visible para TODOS los roles (browse/search de coaches).
+    // [ENT-07] El filtro/orden del marketplace es en cliente sobre este conjunto. Subimos el
+    // techo a 500 para eliminar el "cliff" de coaches que desaparecían >100 en cualquier escala
+    // realista cercana. La paginación server-side real (cursor + filtro/orden en /api/coaches,
+    // que ya existe) es el fix definitivo para miles de coaches — diferido a su propio esfuerzo.
     db.coachProfile.findMany({
       where: { active: true },
       include: {
         packages: { orderBy: { position: "asc" } },
         availability: { orderBy: [{ weekday: "asc" }, { startMin: "asc" }] },
       },
-      take: 100,
+      take: 500,
     }),
   ]);
 
