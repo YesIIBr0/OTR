@@ -89,6 +89,14 @@ function priorQuizAttempt() {
         : due;
       const maxPoints = (L && L.maxPoints != null) ? L.maxPoints : 100;
 
+      // [COG-04] Respeta los métodos de entrega que el coach configuró (L.submitKinds).
+      // Sin configurar → los tres (compat). Se ocultan con display:none (no se quitan del
+      // DOM) para no romper el montaje del grabador; una entrega oculta no aporta contenido.
+      const subKinds = (L && typeof L.submitKinds === "string" && L.submitKinds) ? L.submitKinds.split(",").map((s) => s.trim()).filter(Boolean) : null;
+      const showRec = !subKinds || subKinds.includes("audio");
+      const showFile = !subKinds || subKinds.includes("file") || subKinds.includes("video") || subKinds.includes("audio");
+      const showText = !subKinds || subKinds.includes("text");
+
       // ¿El alumno ya entregó esta actividad? mySubmissions está indexado por el
       // nombre de la actividad (DB lo guardó con esc(), igual que L.t).
       const subs = DB.mySubmissions || {};
@@ -148,7 +156,7 @@ function priorQuizAttempt() {
 
       <div class="split fade-up" style="--d:1">
         <div class="stack" style="gap:16px">
-          <div class="recorder" id="asg-recorder" data-supported="0">
+          <div class="recorder" id="asg-recorder" data-supported="0"${showRec ? "" : ' style="display:none"'}>
             <div class="rec-inner">
               <span class="badge" style="background:rgba(255,255,255,.12);color:#fff">${IC.mic} Grabador de voz</span>
               <div class="rec-wave" id="rec-wave">${bars}</div>
@@ -163,8 +171,8 @@ function priorQuizAttempt() {
             </div>
           </div>
 
-          <div class="card card-pad">
-            <div class="row between vcenter" style="margin-bottom:12px"><b>O sube un archivo</b><span class="badge">${IC.file} Audio / video / PDF</span></div>
+          <div class="card card-pad"${showFile ? "" : ' style="display:none"'}>
+            <div class="row between vcenter" style="margin-bottom:12px"><b>${showRec ? "O " : ""}Sube un archivo</b><span class="badge">${IC.file} Audio / video / PDF</span></div>
             <div class="dropzone" id="asg-drop">
               <div class="ill">${IC.file}</div>
               <b style="color:var(--text)">Selecciona tu archivo</b>
@@ -175,8 +183,8 @@ function priorQuizAttempt() {
             <div id="asg-filepreview" style="display:none;margin-top:12px"></div>
           </div>
 
-          <div class="card card-pad">
-            <div class="row between vcenter" style="margin-bottom:10px"><b>O escribe tu respuesta</b><span class="badge">${IC.doc} Texto</span></div>
+          <div class="card card-pad"${showText ? "" : ' style="display:none"'}>
+            <div class="row between vcenter" style="margin-bottom:10px"><b>${(showRec || showFile) ? "O " : ""}Escribe tu respuesta</b><span class="badge">${IC.doc} Texto</span></div>
             <textarea id="asg-text" class="input" rows="5" placeholder="Escribe aquí tu entrega de texto (opcional)…" style="resize:vertical;min-height:96px;font-family:inherit;line-height:1.5;width:100%"></textarea>
           </div>
         </div>
@@ -528,6 +536,12 @@ function priorQuizAttempt() {
           <div class="badge ${tone}" style="height:24px;margin-bottom:8px">${passed?(pct>=90?'¡Aprobado con honores!':'Aprobado'):'A reforzar'}</div>
           <h2 style="font-size:22px;font-weight:800;letter-spacing:var(--track-tight)">${esc(data.title || 'Examen')}</h2>
           <p class="muted" style="margin-top:4px">Acertaste <b class="sky">${score} de ${total}</b>. Revisa las respuestas abajo para afinar tu técnica.</p>
+          ${/* [FLW-07] Confirma que el progreso del curso avanzó (antes el alumno dudaba si "contaba"). */""}
+          ${passed && res.courseProgress != null ? `<div class="row vcenter" style="gap:8px;margin-top:10px;flex-wrap:wrap">
+            <span class="badge ok" style="height:24px">${IC.checkCircle} Lección completada</span>
+            <span class="badge sky" style="height:24px">Curso al ${res.courseProgress}%</span>
+            ${res.xpGain > 0 ? `<span class="badge sky" style="height:24px">+${res.xpGain} XP</span>` : ""}
+          </div>` : ""}
           <div class="row" style="gap:10px;margin-top:14px">
             <button class="btn btn-primary" onclick="go('course')">Continuar curso ${IC.arrowR}</button>
             <button class="btn btn-ghost" onclick="go('quiz')">Reintentar examen</button>
@@ -576,7 +590,7 @@ function priorQuizAttempt() {
         : "go('course')";
       const nextLabel = nextItem ? `Siguiente: ${nextItem.t} ${IC.arrowR}` : `Volver al curso ${IC.arrowR}`;
       // Marcar como completada (delegado en Aula.tsx). data-done = estado a fijar.
-      const markBtn = L ? `<button class="btn ${doneByMe ? "btn-soft" : "btn-primary"} btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="${doneByMe ? "false" : "true"}">${doneByMe ? `${IC.checkCircle} Completada` : `${IC.check} Marcar como completada`}</button>` : "";
+      const markBtn = L ? `<button class="btn ${doneByMe ? "btn-soft" : "btn-primary"} btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="${doneByMe ? "false" : "true"}" ${doneByMe ? 'title="Quitar la marca de completada"' : ""}>${doneByMe ? `${IC.checkCircle} Completada · deshacer` : `${IC.check} Marcar como completada`}</button>` : "";
 
       // Transcripción/contenido SOLO si la lección trae contentHtml real (sin inventar).
       const transcript = L && L.contentHtml ? `

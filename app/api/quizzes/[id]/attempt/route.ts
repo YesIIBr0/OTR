@@ -67,6 +67,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // [P2] Auto-completar: aprobar el examen marca su lección como completada y
   // recalcula el progreso del curso (así se desbloquea la lección siguiente si la usa de prereq).
+  let courseProgress: number | null = null; // [FLW-07] se devuelve para confirmar el avance al alumno
   if (passed && courseId) {
     await db.lessonProgress.upsert({
       where: { userId_lessonId: { userId: user.id, lessonId: quiz.lessonId } },
@@ -77,6 +78,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const doneCount = await db.lessonProgress.count({ where: { userId: user.id, done: true, lessonId: { in: courseLessons.map((l) => l.id) } } });
     const prog = courseLessons.length ? Math.round((doneCount / courseLessons.length) * 100) : 0;
     await db.enrollment.updateMany({ where: { userId: user.id, courseId }, data: { progress: prog } });
+    courseProgress = prog;
   }
 
   // --- XP solo-si-mejora: lógica EXACTA de /api/quiz-attempts ---
@@ -113,5 +115,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     meta: { score, total, percent, passed },
   });
 
-  return ok({ score, total, percent, passed, results });
+  return ok({ score, total, percent, passed, results, courseProgress, xpGain });
 }

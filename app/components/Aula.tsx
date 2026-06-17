@@ -762,7 +762,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
               if (cl) cl.progress = d.progress;
               else if (DB.courses && DB.courses[0]) DB.courses[0].progress = d.progress;
             }
-            toast("Progreso guardado", "ok");
+            toast(done ? "Lección marcada como completada" : "Lección desmarcada", "ok");
             renderApp(currentRoute);
           })
           .catch((err: any) => toast(err.message || "Error", "danger"));

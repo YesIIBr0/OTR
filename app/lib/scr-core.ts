@@ -601,7 +601,7 @@ function activeItemsFlat() {
           <div class="divider"></div>
           ${hasL && L.id
             ? (L.doneByMe
-                ? `<button class="btn btn-soft btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="false">Completada ${IC.check}</button>`
+                ? `<button class="btn btn-soft btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="false" title="Quitar la marca de completada">${IC.checkCircle} Completada · deshacer</button>`
                 : `<button class="btn btn-primary btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="true">Marcar como completada</button>`)
             : `<label class="check"><input type="checkbox" /> Marcar como completada</label>`}
         </aside>

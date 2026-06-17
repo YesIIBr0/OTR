@@ -266,6 +266,9 @@ function renderGrid() {
       <option value="priceAsc" ${f.sort === "priceAsc" ? "selected" : ""}>Precio: menor a mayor</option>
       <option value="priceDesc" ${f.sort === "priceDesc" ? "selected" : ""}>Precio: mayor a menor</option>
     </select>
+    ${/* [COG-07] Limpiar filtros visible solo cuando hay alguno activo (distinto del default). */""}
+    ${(f.lang !== "all" || f.spec !== "Todos" || f.price !== "all" || f.sort !== "top")
+      ? `<button class="btn btn-ghost btn-sm" data-mk-clear style="white-space:nowrap">${IC.close || ""} Limpiar filtros</button>` : ""}
   </div>
 
   ${list.length
@@ -535,6 +538,10 @@ S.marketplace = {
     root.querySelectorAll("[data-mk-spec]").forEach((el) =>
       el.addEventListener("click", () => { filtersState().spec = el.getAttribute("data-mk-spec"); repaint(); })
     );
+    // [COG-07] Limpiar todos los filtros → estado por defecto.
+    root.querySelector("[data-mk-clear]")?.addEventListener("click", () => {
+      const f = filtersState(); f.lang = "all"; f.spec = "Todos"; f.price = "all"; f.sort = "top"; repaint();
+    });
     const bindSel = (attr, key) => {
       const sel = root.querySelector(`[${attr}]`);
       sel?.addEventListener("change", () => { filtersState()[key] = sel.value; repaint(); });
