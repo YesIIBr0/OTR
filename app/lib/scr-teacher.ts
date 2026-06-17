@@ -81,21 +81,29 @@ export const S = {};
       </div>
 
       <div class="split rail-320">
-        <div class="table-wrap scroll-m fade-up">
-          <table class="tbl">
-            <thead><tr><th>Estudiante</th><th>Nivel</th><th class="num">Nota</th><th class="num">Asist.</th><th>Engagement</th><th class="center">7 días</th><th class="num">Últ. acceso</th></tr></thead>
-            <tbody>
-              ${DB.students.map(s=>`<tr>
-                <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.badge('Riesgo','danger'):''}</div></td>
-                <td>${C.levelBadge(s.lvl)}</td>
-                <td class="num"><b style="color:${s.grade>=85?'var(--ok)':s.grade>=70?'var(--warn)':'var(--danger)'}">${s.grade}%</b></td>
-                <td class="num tnum">${s.att}%</td>
-                <td><span class="eng-pill eng-${s.eng}">${esc(s.eng)}</span></td>
-                <td class="center">${spark(s.trend==='up'?[40,55,50,68,72,80,88]:s.trend==='down'?[80,70,64,55,48,40,34]:[60,62,58,64,60,62,60], s.risk?'var(--danger)':'var(--otr-sky)')}</td>
-                <td class="num faint" style="font-size:12px">${esc(s.last)}</td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
+        <div class="fade-up">
+          ${/* [ENT-06] Búsqueda + filtro de riesgo (cliente), consistente con Participantes */""}
+          <div class="row vcenter" style="gap:8px;margin-bottom:10px">
+            <div class="searchbox" style="flex:1"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="tr-search" placeholder="Buscar alumno…" aria-label="Buscar alumno"/></div>
+            <span class="chip" id="tr-risk" data-on="0" role="button" tabindex="0">${IC.flag} En riesgo</span>
+          </div>
+          <div class="table-wrap scroll-m">
+            <table class="tbl">
+              <thead><tr><th>Estudiante</th><th>Nivel</th><th class="num">Nota</th><th class="num">Asist.</th><th>Engagement</th><th class="center">7 días</th><th class="num">Últ. acceso</th></tr></thead>
+              <tbody id="tr-body">
+                ${DB.students.map(s=>`<tr data-name="${esc(String(s.n).toLowerCase())}" data-risk="${s.risk?'1':'0'}">
+                  <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.badge('Riesgo','danger'):''}</div></td>
+                  <td>${C.levelBadge(s.lvl)}</td>
+                  <td class="num"><b style="color:${s.grade>=85?'var(--ok)':s.grade>=70?'var(--warn)':'var(--danger)'}">${s.grade}%</b></td>
+                  <td class="num tnum">${s.att}%</td>
+                  <td><span class="eng-pill eng-${s.eng}">${esc(s.eng)}</span></td>
+                  <td class="center">${spark(s.trend==='up'?[40,55,50,68,72,80,88]:s.trend==='down'?[80,70,64,55,48,40,34]:[60,62,58,64,60,62,60], s.risk?'var(--danger)':'var(--otr-sky)')}</td>
+                  <td class="num faint" style="font-size:12px">${esc(s.last)}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+            <div id="tr-empty" class="faint" style="display:none;padding:16px;text-align:center;font-size:13px">Sin alumnos para este filtro.</div>
+          </div>
         </div>
 
         <div class="stack" style="gap:16px">
@@ -203,6 +211,36 @@ export const S = {};
         else if (kind === "lesson-video") openLessonVideo(btn.getAttribute("data-lesson"), btn.getAttribute("data-title"));
         else if (kind === "resource") openResourceUpload();
       });
+
+      // [ENT-06] Búsqueda + filtro de riesgo del roster (cliente, sobre las filas ya pintadas).
+      const trBody = root.querySelector("#tr-body");
+      const trSearch = root.querySelector("#tr-search");
+      const trRisk = root.querySelector("#tr-risk");
+      const trEmpty = root.querySelector("#tr-empty");
+      if (trBody) {
+        const applyTr = () => {
+          const q = (trSearch && trSearch.value || "").toLowerCase().trim();
+          const riskOnly = trRisk && trRisk.getAttribute("data-on") === "1";
+          let shown = 0;
+          trBody.querySelectorAll("tr").forEach((tr) => {
+            const name = tr.getAttribute("data-name") || "";
+            const risk = tr.getAttribute("data-risk") === "1";
+            const ok = (!q || name.includes(q)) && (!riskOnly || risk);
+            tr.style.display = ok ? "" : "none";
+            if (ok) shown++;
+          });
+          if (trEmpty) trEmpty.style.display = shown ? "none" : "";
+        };
+        trSearch && trSearch.addEventListener("input", applyTr);
+        const toggleRisk = () => {
+          const on = trRisk.getAttribute("data-on") === "1";
+          trRisk.setAttribute("data-on", on ? "0" : "1");
+          trRisk.classList.toggle("active", !on);
+          applyTr();
+        };
+        trRisk && trRisk.addEventListener("click", toggleRisk);
+        trRisk && trRisk.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleRisk(); } });
+      }
     },
   };
 

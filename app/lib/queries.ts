@@ -426,7 +426,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     // Coach Workspace (PRD §7.5): TODOS los bookings donde el usuario es el coach,
     // con su escrow (inbox + earnings se derivan en JS, una sola consulta).
     isTeacher && me
-      ? db.booking.findMany({ where: { coachId: me.id }, include: { escrow: true }, orderBy: { slotAt: "desc" } })
+      // [ENT-08] Acota el inbox del coach (antes sin límite → degradaba para coaches de
+      // alto volumen). 200 reservas recientes cubren agenda próxima + historial mostrado.
+      ? db.booking.findMany({ where: { coachId: me.id }, include: { escrow: true }, orderBy: { slotAt: "desc" }, take: 200 })
       : Promise.resolve([]),
     // Coach Workspace (PRD §7.5): perfil propio del coach. Se reusa coachProfiles
     // (browse) si ya viene ahí; esta consulta extra solo corre si NO está (p.ej.

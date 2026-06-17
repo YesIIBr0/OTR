@@ -17,7 +17,7 @@ export const S = {};
 /* ---------------- estado del cliente (window.__mod) ---------------- */
 function modState() {
   const w = window as any;
-  if (!w.__mod) w.__mod = { loaded: false, loading: false, reports: [] };
+  if (!w.__mod) w.__mod = { loaded: false, loading: false, reports: [], total: 0 };
   return w.__mod;
 }
 
@@ -130,10 +130,10 @@ S.adminConsole = {
 
     <div class="grid g-2 fade-up" style="--d:1;margin-bottom:18px">
       <div class="tile">${C.kpi("Reportes abiertos", String(open), { ic: "flag" })}</div>
-      <div class="tile">${C.kpi("En la cola", String(reports.length), { ic: "doc" })}</div>
+      <div class="tile">${C.kpi("En la cola", String(st.total || reports.length), { ic: "doc" })}</div>
     </div>
 
-    <div class="fade-up" style="--d:2" id="mod-body">${viewBody()}</div>`;
+    <div class="fade-up" style="--d:2" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="mod-more">Cargar más · ${reports.length} de ${st.total}</button></div>` : ""}</div>`;
   },
 
   mount(root, state) {
@@ -147,16 +147,20 @@ S.adminConsole = {
       S.adminConsole.mount(root, state);
     };
 
-    // Carga inicial de la cola de reportes (una sola vez por sesión de pantalla).
-    if (!st.loaded && !st.loading) {
+    // [ENT-01] load(append): append=true pagina (skip = nº ya cargado); si no, reemplaza.
+    const load = (append) => {
       st.loading = true;
-      w.api("/api/reports", null, "GET")
+      const skip = append ? (Array.isArray(st.reports) ? st.reports.length : 0) : 0;
+      const qs = skip ? `?skip=${skip}` : "";
+      w.api("/api/reports" + qs, null, "GET")
         .then((d) => {
-          st.reports = Array.isArray(d && d.reports) ? d.reports : [];
+          const rows = Array.isArray(d && d.reports) ? d.reports : [];
+          st.reports = append ? [...(Array.isArray(st.reports) ? st.reports : []), ...rows] : rows;
+          st.total = d && typeof d.total === "number" ? d.total : st.reports.length;
           st.loaded = true;
         })
         .catch((e) => {
-          st.reports = [];
+          if (!append) st.reports = [];
           st.loaded = true;
           w.toast?.((e && e.message) || "No se pudo cargar la cola de moderación", "danger");
         })
@@ -164,7 +168,10 @@ S.adminConsole = {
           st.loading = false;
           repaint();
         });
-    }
+    };
+
+    // Carga inicial (una sola vez por sesión de pantalla).
+    if (!st.loaded && !st.loading) { load(false); return; }
 
     // Resuelve un reporte: PATCH status → mutación local + toast + re-render.
     const resolve = async (btn, id, status) => {
@@ -231,5 +238,11 @@ S.adminConsole = {
     root.querySelectorAll("[data-rep-suspend]").forEach((btn) =>
       btn.addEventListener("click", () => suspendUser(btn, btn.getAttribute("data-rep-suspend")))
     );
+
+    // [ENT-01] Cargar más reportes (paginación).
+    root.querySelector("#mod-more")?.addEventListener("click", (e) => {
+      const b = e.currentTarget; if (b) { b.disabled = true; b.textContent = "Cargando…"; }
+      load(true);
+    });
   },
 };

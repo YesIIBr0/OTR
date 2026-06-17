@@ -49,17 +49,26 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const q = clean(url.searchParams.get("q"), 80);
   const roleFilter = clean(url.searchParams.get("role"), 16).toUpperCase();
+  // [ENT-02] Paginación por offset: page de 100, skip acumulativo desde el cliente.
+  const skip = Math.max(0, Number(url.searchParams.get("skip")) || 0);
+  const PAGE = 100;
 
   const where: Prisma.UserWhereInput = {};
   if (q) where.OR = caseVariants(q).flatMap((v) => [{ name: { contains: v } }, { email: { contains: v } }]);
   if (ROLES.has(roleFilter)) where.role = roleFilter;
 
-  const [users, total] = await Promise.all([
-    db.user.findMany({ where, orderBy: { name: "asc" }, take: 200, select: SELECT }),
+  // total = coincidencias del filtro actual (para "cargar más"); counts = stats GLOBALES
+  // (KPIs estables, no sesgados por el filtro/página — antes se calculaban sobre el array cargado).
+  const [users, total, allUsers, coaches, admins, suspended] = await Promise.all([
+    db.user.findMany({ where, orderBy: { name: "asc" }, skip, take: PAGE, select: SELECT }),
     db.user.count({ where }),
+    db.user.count(),
+    db.user.count({ where: { role: { in: ["TEACHER", "COACH"] } } }),
+    db.user.count({ where: { role: "ADMIN" } }),
+    db.user.count({ where: { suspended: true } }),
   ]);
 
-  return ok({ users, total });
+  return ok({ users, total, counts: { users: allUsers, coaches, admins, suspended } });
 }
 
 export async function PATCH(req: Request) {

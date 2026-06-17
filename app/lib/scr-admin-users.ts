@@ -18,7 +18,7 @@ export const S = {};
 /* ---------------- estado del cliente (window.__adminUsers) ---------------- */
 function usersState() {
   const w = window as any;
-  if (!w.__adminUsers) w.__adminUsers = { loaded: false, loading: false, users: [], total: 0, q: "" };
+  if (!w.__adminUsers) w.__adminUsers = { loaded: false, loading: false, users: [], total: 0, q: "", role: "", counts: null };
   return w.__adminUsers;
 }
 
@@ -118,9 +118,25 @@ S.adminUsers = {
   render(state) {
     const st = usersState();
     const users = Array.isArray(st.users) ? st.users : [];
-    const coaches = users.filter((u) => isCoachRole(String(u.role || "").toUpperCase())).length;
-    const admins = users.filter((u) => String(u.role || "").toUpperCase() === "ADMIN").length;
-    const suspended = users.filter((u) => u.suspended).length;
+    // [ENT-02] KPIs desde counts GLOBALES del servidor (estables); fallback al array cargado.
+    const c = st.counts || {};
+    const kUsers = c.users != null ? c.users : (st.total || users.length);
+    const kCoaches = c.coaches != null ? c.coaches : users.filter((u) => isCoachRole(String(u.role || "").toUpperCase())).length;
+    const kAdmins = c.admins != null ? c.admins : users.filter((u) => String(u.role || "").toUpperCase() === "ADMIN").length;
+    const kSusp = c.suspended != null ? c.suspended : users.filter((u) => u.suspended).length;
+
+    // [ENT-04] Filtro por rol (la API ya soporta ?role=); reusa la capacidad del backend.
+    const FILTERS = [
+      { v: "", l: "Todos" }, { v: "STUDENT", l: "Estudiantes" }, { v: "TEACHER", l: "Coaches" },
+      { v: "PARENT", l: "Familias" }, { v: "ADMIN", l: "Admins" },
+    ];
+    const chips = FILTERS.map((f) =>
+      `<span class="chip ${(st.role || "") === f.v ? "active" : ""}" data-au-role="${f.v}">${f.l}</span>`).join("");
+
+    // [ENT-02] Cargar más mientras la lista cargada sea menor que el total filtrado.
+    const more = (st.total || 0) > users.length
+      ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="au-more">Cargar más · ${users.length} de ${st.total}</button></div>`
+      : "";
 
     return `
     <div class="page-head fade-up"><div>
@@ -130,10 +146,10 @@ S.adminUsers = {
     </div></div>
 
     <div class="grid g-4 fade-up" style="--d:1;margin-bottom:18px">
-      <div class="tile">${C.kpi("Usuarios", String(st.total || users.length), { ic: "users" })}</div>
-      <div class="tile">${C.kpi("Coaches", String(coaches), { ic: "user" })}</div>
-      <div class="tile">${C.kpi("Admins", String(admins), { ic: "check" })}</div>
-      <div class="tile">${C.kpi("Suspendidos", String(suspended), { ic: "flag" })}</div>
+      <div class="tile">${C.kpi("Usuarios", String(kUsers), { ic: "users" })}</div>
+      <div class="tile">${C.kpi("Coaches", String(kCoaches), { ic: "user" })}</div>
+      <div class="tile">${C.kpi("Admins", String(kAdmins), { ic: "check" })}</div>
+      <div class="tile">${C.kpi("Suspendidos", String(kSusp), { ic: "flag" })}</div>
     </div>
 
     <div class="card card-pad fade-up" style="--d:2;margin-bottom:16px">
@@ -141,9 +157,10 @@ S.adminUsers = {
         <input class="input" id="au-search" placeholder="Buscar por nombre o correo…" value="${esc(st.q || "")}" style="flex:1"/>
         <button class="btn btn-primary btn-sm" id="au-search-btn">${IC.search} Buscar</button>
       </div>
+      <div class="row wrap" style="gap:8px;margin-top:12px" id="au-roles">${chips}</div>
     </div>
 
-    <div class="fade-up" style="--d:3" id="au-body">${viewBody()}</div>`;
+    <div class="fade-up" style="--d:3" id="au-body">${viewBody()}${more}</div>`;
   },
 
   mount(root, state) {
@@ -157,18 +174,30 @@ S.adminUsers = {
       S.adminUsers.mount(root, state);
     };
 
-    const load = (q) => {
+    // load({ q?, role?, append? }): append=true pagina (skip = nº ya cargado);
+    // q/role omitidos conservan el estado actual. Reemplaza la lista salvo append.
+    const load = (opts) => {
+      opts = opts || {};
       st.loading = true;
-      st.q = q != null ? q : st.q;
-      const qs = st.q ? `?q=${encodeURIComponent(st.q)}` : "";
+      if (opts.q != null) st.q = opts.q;
+      if (opts.role != null) st.role = opts.role;
+      const append = !!opts.append;
+      const skip = append ? (Array.isArray(st.users) ? st.users.length : 0) : 0;
+      const p = new URLSearchParams();
+      if (st.q) p.set("q", st.q);
+      if (st.role) p.set("role", st.role);
+      if (skip) p.set("skip", String(skip));
+      const qs = p.toString() ? `?${p.toString()}` : "";
       w.api("/api/admin/users" + qs, null, "GET")
         .then((d) => {
-          st.users = Array.isArray(d && d.users) ? d.users : [];
+          const rows = Array.isArray(d && d.users) ? d.users : [];
+          st.users = append ? [...(Array.isArray(st.users) ? st.users : []), ...rows] : rows;
           st.total = d && typeof d.total === "number" ? d.total : st.users.length;
+          if (d && d.counts) st.counts = d.counts;
           st.loaded = true;
         })
         .catch((e) => {
-          st.users = [];
+          if (!append) st.users = [];
           st.loaded = true;
           w.toast?.((e && e.message) || "No se pudo cargar la lista de usuarios", "danger");
         })
@@ -180,16 +209,26 @@ S.adminUsers = {
 
     // Carga inicial (una sola vez por sesión de pantalla).
     if (!st.loaded && !st.loading) {
-      load(st.q);
+      load();
       return; // el repaint del finally re-montará con los datos
     }
 
     // --- Búsqueda ---
     const searchEl = root.querySelector("#au-search");
-    const doSearch = () => load(String(searchEl?.value || "").trim());
+    const doSearch = () => load({ q: String(searchEl?.value || "").trim() });
     root.querySelector("#au-search-btn")?.addEventListener("click", doSearch);
     searchEl?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); doSearch(); }
+    });
+
+    // --- [ENT-04] Filtro por rol ---
+    root.querySelectorAll("[data-au-role]").forEach((chip) =>
+      chip.addEventListener("click", () => load({ role: chip.getAttribute("data-au-role") || "" })));
+
+    // --- [ENT-02] Cargar más (paginación) ---
+    root.querySelector("#au-more")?.addEventListener("click", (e) => {
+      const btn = e.currentTarget; if (btn) { btn.disabled = true; btn.textContent = "Cargando…"; }
+      load({ append: true });
     });
 
     // --- Cambiar rol (select) ---

@@ -46,15 +46,20 @@ export async function POST(req: Request) {
   return ok({ reportId: report.id });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
   if (user.role !== "ADMIN") return bad("Solo administradores", 403);
 
-  const reports = await db.report.findMany({
-    where: { status: { in: ["OPEN", "REVIEWED"] } },
-    orderBy: { createdAt: "desc" },
-  });
+  // [ENT-01] Acota la cola: antes la query era sin límite (degradaba con miles de
+  // reportes). Page de 100 + skip acumulativo + total para "cargar más" en el cliente.
+  const url = new URL(req.url);
+  const skip = Math.max(0, Number(url.searchParams.get("skip")) || 0);
+  const where = { status: { in: ["OPEN", "REVIEWED"] } };
+  const [reports, total] = await Promise.all([
+    db.report.findMany({ where, orderBy: { createdAt: "desc" }, skip, take: 100 }),
+    db.report.count({ where }),
+  ]);
 
   // Resuelve los nombres de los reporters en una sola consulta.
   const reporterIds = [...new Set(reports.map((r) => r.reporterId))];
@@ -79,7 +84,7 @@ export async function GET() {
     reporterName: nameById[r.reporterId] || "Usuario OTR",
   }));
 
-  return ok({ reports: items });
+  return ok({ reports: items, total });
 }
 
 export async function PATCH(req: Request) {
