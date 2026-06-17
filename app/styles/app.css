@@ -8,7 +8,7 @@ body{
   font-size:var(--fs-14);
   line-height:var(--lh);
   color:var(--text);
-  background:var(--bg-sunken);
+  background:var(--bg); /* [VIS-08] crema de marca #F7F7ED (no --bg-sunken) */
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
 }
@@ -84,7 +84,7 @@ svg.ic{width:18px;height:18px;flex:none}
 .app.mini .sb-user .meta{display:none}
 
 /* ---------- Topbar ---------- */
-.main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg-sunken)}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
 .topbar{
   height:var(--topbar-h);flex:none;background:var(--otr-white);border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:14px;padding:0 18px;position:sticky;top:0;z-index:20;
@@ -158,7 +158,7 @@ svg.ic{width:18px;height:18px;flex:none}
 .input-group{position:relative;display:flex;align-items:center}
 .input-group .lead{position:absolute;left:11px;color:var(--text-3);display:flex}
 .input-group .input{padding-left:36px}
-.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235F7390' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px}
+.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235F5F56' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px}
 .check{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer}
 .check input{width:17px;height:17px;accent-color:var(--action)}
 

@@ -78,7 +78,7 @@
 .mitem .mi-ic{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--otr-offwhite);color:var(--text-2)}
 .mitem.done .mi-ic{background:var(--ok-soft);color:var(--ok)}
 .mitem.lock{opacity:.6;cursor:not-allowed}
-.mitem .mi-t{font-weight:550;font-size:13.5px}
+.mitem .mi-t{font-weight:500;font-size:13.5px}
 .mitem .mi-meta{margin-left:auto;font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:10px}
 
 .split{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start}
@@ -133,7 +133,7 @@
 .quiz-timer{display:inline-flex;align-items:center;gap:8px;background:var(--warn-soft);color:var(--otr-gold-text);font-weight:700;padding:7px 13px;border-radius:var(--r-pill);font-variant-numeric:tabular-nums}
 .q-card{border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;padding:24px;box-shadow:var(--sh-1);max-width:760px;margin:0 auto}
 .q-num{font-size:12px;font-weight:700;color:var(--action);letter-spacing:.06em;text-transform:uppercase}
-.q-text{font-size:18px;font-weight:650;line-height:1.4;margin:8px 0 20px}
+.q-text{font-size:18px;font-weight:600;line-height:1.4;margin:8px 0 20px}
 .q-opt{display:flex;align-items:center;gap:13px;padding:14px 16px;border:1.5px solid var(--border-strong);border-radius:var(--r-md);margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s}
 .q-opt:hover{border-color:var(--otr-sky);background:var(--n-25)}
 .q-opt.sel{border-color:var(--otr-sky-lo);background:var(--otr-pale)}
@@ -245,7 +245,7 @@
 .forum-row:last-child{border-bottom:0}
 .forum-row:hover{background:var(--n-25)}
 .fr-main{flex:1;min-width:0}
-.fr-title{font-weight:650;font-size:14.5px;display:flex;align-items:center;gap:7px}
+.fr-title{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:7px}
 .fr-title .pin{display:inline-flex;color:var(--otr-sky-lo)}.fr-title .pin svg{width:13px;height:13px}
 .fr-sub{font-size:13px;color:var(--text-2);margin:3px 0 7px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 .fr-meta{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--text-3)}
@@ -306,7 +306,7 @@
 .notif-item .nt-t{font-weight:600;font-size:13px;line-height:1.35}.notif-item .nt-d{font-size:12px;color:var(--text-2);margin-top:2px;line-height:1.35}
 .notif-item .nt-w{font-size:11px;color:var(--text-3);margin-top:3px}
 .notif-foot{padding:10px 16px;text-align:center}
-.bell-count{position:absolute;top:4px;right:4px;background:var(--danger);color:#fff;font-size:9.5px;font-weight:700;min-width:15px;height:15px;border-radius:var(--r-pill);display:flex;align-items:center;justify-content:center;border:2px solid #fff;padding:0 3px}
+.bell-count{position:absolute;top:4px;right:4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:var(--r-pill);display:flex;align-items:center;justify-content:center;border:2px solid #fff;padding:0 3px}
 
 /* ---------------- TOASTS ---------------- */
 .toast-wrap{position:fixed;bottom:20px;right:20px;z-index:90;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
@@ -317,10 +317,10 @@
 @media (max-width:760px){ .toast-wrap{left:16px;right:16px;align-items:stretch} .notif-panel{top:52px} }
 
 /* ---------------- MODAL ---------------- */
-.modal-scrim{position:fixed;inset:0;background:rgba(10,26,47,.5);backdrop-filter:blur(2px);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px;animation:rise .2s var(--ease)}
+.modal-scrim{position:fixed;inset:0;background:rgba(12,12,12,.5);backdrop-filter:blur(2px);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px;animation:rise .2s var(--ease)}
 .modal{background:#fff;border-radius:var(--r-xl);width:100%;max-width:440px;box-shadow:var(--sh-pop);overflow:hidden}
 .modal-head{padding:20px 22px 0}
-.modal-head h3{font-size:18px;font-weight:750}
+.modal-head h3{font-size:18px;font-weight:700}
 .modal-body{padding:14px 22px;color:var(--text-2);font-size:14px;line-height:1.5}
 .modal-foot{padding:16px 22px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border);margin-top:6px}
 

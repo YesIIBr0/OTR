@@ -4,14 +4,14 @@
 .mobile-only{display:none}
 .desk-only{display:flex}
 .tabbar{display:none}
-.scrim{position:fixed;inset:0;background:rgba(10,26,47,.45);z-index:35;backdrop-filter:blur(1px)}
+.scrim{position:fixed;inset:0;background:rgba(12,12,12,.45);z-index:35;backdrop-filter:blur(1px)}
 
 /* ---- Tablet ---- */
 @media (max-width:1100px){
   .app{grid-template-columns:var(--sidebar-mini) 1fr}
   .app .sb-logo .txt,.app .sb-item .lbl,.app .sb-item .badge-count,.app .sb-user .meta{display:none}
   .app .sb-item{justify-content:center;padding:9px 0}
-  .app .sb-group{text-align:center;font-size:9px;padding:0 0 6px}
+  .app .sb-group{text-align:center;font-size:11px;padding:0 0 6px}
   .searchbox{width:200px}
   .g-4{grid-template-columns:repeat(2,1fr)}
 }
@@ -45,7 +45,7 @@
     padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;
   }
   .tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;padding:5px 0;border-radius:var(--r-sm);
-    color:var(--text-3);font-size:10.5px;font-weight:600}
+    color:var(--text-3);font-size:11px;font-weight:600}
   .tabbar a .ic{width:22px;height:22px}
   .tabbar a.active{color:var(--action-hover)}
   .tabbar a.active .ic{color:var(--action)}

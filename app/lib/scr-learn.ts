@@ -144,7 +144,7 @@ function priorQuizAttempt() {
 
       ${prevCard}
 
-      ${prev ? `<div class="page-sub fade-up" style="--d:1;margin-bottom:12px">${prev.status === "GRADED" ? "Puedes re-entregar y subir tu nota." : "Puedes re-entregar mientras esté en revisión."}</div>` : ""}
+      ${prev && prev.status === "GRADED" ? `<div class="page-sub fade-up" style="--d:1;margin-bottom:12px">Ya calificada — puedes re-entregar para subir tu nota.</div>` : prev ? `<div class="page-sub fade-up" style="--d:1;margin-bottom:12px">En revisión por tu coach.</div>` : ""}
 
       <div class="split fade-up" style="--d:1">
         <div class="stack" style="gap:16px">
@@ -384,7 +384,7 @@ function priorQuizAttempt() {
         <div class="card-body" style="padding:18px 16px;text-align:center">
           <div class="ill" style="color:var(--ok)">${IC.checkCircle}</div>
           <h4 style="margin:6px 0 2px">Ya completaste este examen</h4>
-          <p class="muted" style="font-size:13.5px">${attempt.best >= passScore ? "Aprobado" : "A reforzar"} · puedes reintentarlo y subir tu marca.</p>
+          <p class="muted" style="font-size:13.5px">${attempt.best >= passScore ? "Aprobado" : "A reforzar"} · reintenta cuando quieras — conservamos tu mejor marca.</p>
           <div class="row vcenter" style="gap:8px;justify-content:center;margin-top:12px">
             <span class="badge ${attempt.best >= passScore ? "ok" : "warn"}" style="height:26px">${IC.star} Mejor: ${esc(String(attempt.best))}%</span>
             <button class="btn btn-primary btn-sm" id="qz-retry">${IC.refresh} Reintentar examen</button>
@@ -530,7 +530,7 @@ function priorQuizAttempt() {
           <p class="muted" style="margin-top:4px">Acertaste <b class="sky">${score} de ${total}</b>. Revisa las respuestas abajo para afinar tu técnica.</p>
           <div class="row" style="gap:10px;margin-top:14px">
             <button class="btn btn-primary" onclick="go('course')">Continuar curso ${IC.arrowR}</button>
-            <button class="btn btn-ghost" onclick="go('quiz')">Reintentar</button>
+            <button class="btn btn-ghost" onclick="go('quiz')">Reintentar examen</button>
           </div>
         </div>
       </div>

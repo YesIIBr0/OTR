@@ -225,7 +225,7 @@ export default function Auth() {
 
           {notice && (
             <p style={{
-              color: "var(--ok, #1E8C16)", background: "var(--ok-soft, #E1F2DE)",
+              color: "var(--otr-green-text, #176B11)", background: "var(--ok-soft, #E1F2DE)",
               border: "1px solid color-mix(in srgb, var(--otr-green) 30%, transparent)", borderRadius: 10,
               fontSize: 13, padding: "10px 12px", marginBottom: 14, lineHeight: 1.45,
             }}>{notice}</p>
@@ -357,7 +357,7 @@ export default function Auth() {
           {mode === "login" && (
             <p style={{ textAlign: "center", marginTop: 14, fontSize: 12.5 }}>
               <button type="button" onClick={() => switchMode("forgot")}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--link, #1E8C16)", fontWeight: 600 }}>
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--otr-green-text, #176B11)", fontWeight: 600 }}>
                 ¿Olvidaste tu contraseña?
               </button>
             </p>

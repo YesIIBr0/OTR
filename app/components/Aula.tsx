@@ -91,7 +91,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       enter(scrim.querySelector(".modal") as HTMLElement);
       const close = () => scrim.remove();
       scrim.addEventListener("click", (e: any) => { if (e.target === scrim || e.target.closest("[data-x]")) close(); });
-      scrim.querySelector("[data-ok]")?.addEventListener("click", () => { close(); toast("Acción confirmada", "ok"); });
+      scrim.querySelector("[data-ok]")?.addEventListener("click", () => { close(); toast("Cambios guardados", "ok"); });
     };
 
     async function api(url: string, body?: any, method = "POST") {
