@@ -335,12 +335,15 @@ model QuizAttempt {
 }
 
 model EventItem {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   title     String
   course    String
+  // [auditoría] startsAt = fecha real; el label se DERIVA en lectura (como Tournament.startsAt),
+  // así "Hoy/Mañana" se recalcula y no queda congelado. whenLabel queda como fallback legado.
+  startsAt  DateTime?
   whenLabel String
   tone      String
-  position  Int    @default(0)
+  position  Int      @default(0)
 }
 
 model ActivityItem {

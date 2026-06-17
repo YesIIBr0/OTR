@@ -304,7 +304,7 @@ function viewPractice() {
       <div class="stack" style="gap:2px;margin-top:12px">
         ${near.length ? near.map((r) => `
           <div class="row between vcenter" style="padding:9px 0;border-bottom:1px solid var(--border)">
-            <span class="row vcenter" style="gap:10px">${C.avatar(esc(r.initials || "?"), { size: "sm", bg: "var(--otr-navy)" })}<span><span style="display:block;font-weight:600;font-size:13px">${esc(r.name || "Debatiente")}</span><span class="faint" style="font-size:11.5px">${esc(r.tier || "")}</span></span></span>
+            <span class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: "var(--otr-navy)" })}<span><span style="display:block;font-weight:600;font-size:13px">${r.name || "Debatiente"}</span><span class="faint" style="font-size:11.5px">${esc(r.tier || "")}</span></span></span>
             <span class="row vcenter" style="gap:8px"><span class="tnum" style="font-weight:700;font-size:13px">${r.rating}</span><span class="badge ${r.diff <= 50 ? "ok" : "sky"}" style="font-size:10.5px">±${r.diff}</span></span>
           </div>`).join("") : `<p class="faint" style="font-size:13px">Tu cohort aún no entra a la arena. En cuanto jueguen rondas, tendrás rivales a tu altura.</p>`}
       </div>
@@ -328,7 +328,8 @@ function viewLeaderboard() {
   const rows = lb.rows.map((r) => `
     <tr ${r.you ? 'style="background:var(--action-soft)"' : ""}>
       <td><span class="badge ${r.rank <= 3 ? "gold" : ""}" style="min-width:30px;justify-content:center">${r.rank}</span></td>
-      <td><div class="row vcenter" style="gap:10px">${C.avatar(esc(r.initials || "?"), { size: "sm", bg: r.you ? "var(--otr-sky-lo)" : "var(--otr-navy)" })}<b style="font-weight:600">${esc(r.name || "")}${r.you ? ' <span class="badge sky" style="font-size:10px;margin-left:4px">Tú</span>' : ""}</b></div></td>
+      ${/* [auditoría] name/initials ya vienen esc() de queries (leaderboardRowsOut) → render crudo, sin doble-escape */""}
+      <td><div class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: r.you ? "var(--otr-sky-lo)" : "var(--otr-navy)" })}<b style="font-weight:600">${r.name || ""}${r.you ? ' <span class="badge sky" style="font-size:10px;margin-left:4px">Tú</span>' : ""}</b></div></td>
       <td>${esc(r.tier || "")}</td>
       <td class="num tnum"><b>${r.rating}</b></td>
     </tr>`).join("");

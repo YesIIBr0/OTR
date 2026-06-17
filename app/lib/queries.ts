@@ -1415,7 +1415,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     mySubmissions: mySubmissionsByActivity,
     competencies: competencies.map((c) => ({ name: c.name, score: c.score })),
     badges: badges.map((b) => ({ n: b.name, d: b.description, got: gotBadge(b.name), ic: b.icon, tone: b.tone })),
-    events: events.map((e) => ({ t: e.title, c: e.course, when: e.whenLabel, tone: e.tone })),
+    // [auditoría] La etiqueta de fecha se DERIVA de startsAt (viva, como los torneos); whenLabel
+    // es solo fallback para eventos legados sin startsAt. Así "Hoy/Mañana" no queda congelado.
+    events: events.map((e) => ({ t: e.title, c: e.course, when: (e as any).startsAt ? eventDateLabel((e as any).startsAt) : e.whenLabel, tone: e.tone })),
     // PRD §4: DB.activity = timeline del Progress Profile (ActivityEvent del usuario,
     // los últimos 15 de la consulta compartida con journey). esc() en texto de usuario.
     activity: (activityEvents || []).slice(0, 15).map((a) => ({

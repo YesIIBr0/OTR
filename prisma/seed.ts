@@ -1472,11 +1472,16 @@ async function main() {
   // ----------------------------------------------------------------
   //  14) AGENDA + ACTIVIDAD
   // ----------------------------------------------------------------
+  // [auditoría] startsAt reales (relativos al seed) → la etiqueta se deriva viva (no "Hoy" congelado).
+  // El "Torneo interno OTR" se quita de aquí: los torneos viven en la tabla Tournament (DB.tournaments),
+  // no se duplican como evento de texto.
+  const evNow = new Date();
+  const evStart1 = new Date(evNow); evStart1.setDate(evStart1.getDate() + 1); evStart1.setHours(16, 0, 0, 0);
+  const evStart2 = new Date(evNow); evStart2.setDate(evStart2.getDate() + 3); evStart2.setHours(23, 59, 0, 0);
   await db.eventItem.createMany({
     data: [
-      { title: "Simulacro con jueces", course: "Public Forum I", whenLabel: "Hoy · 4:00 PM", tone: "sky", position: 0 },
-      { title: "Entrega: primer contention", course: "Public Forum I", whenLabel: "Mañana · 11:59 PM", tone: "warn", position: 1 },
-      { title: "Torneo interno OTR", course: "Todos los programas", whenLabel: "Sáb · 9:00 AM", tone: "navy", position: 2 },
+      { title: "Simulacro con jueces", course: "Public Forum I", startsAt: evStart1, whenLabel: "Próximamente", tone: "sky", position: 0 },
+      { title: "Entrega: primer contention", course: "Public Forum I", startsAt: evStart2, whenLabel: "Próximamente", tone: "warn", position: 1 },
     ],
   });
   await db.activityItem.createMany({
