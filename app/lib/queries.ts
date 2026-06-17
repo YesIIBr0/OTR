@@ -269,7 +269,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     }),
   ]);
 
-  const curLevel = levels.find((l) => l.name === me?.level) ?? levels[0];
+  // [fix nivel] El rango (Novato 0-999 · JV 1000-2499 · Varsity 2500-4999 · Elite 5000+) se
+  // DERIVA del XP, NO del User.level almacenado: el placement llegó a fijar level por el promedio
+  // de skills, dejando a alumnos con 0 XP marcados como JV. La fuente de verdad es el XP (igual que
+  // el quiz-attempt al subir de nivel). Así "todos inician en Novato" y el badge nunca contradice al XP.
+  const _meXp = me?.xp ?? 0;
+  const curLevel = [...levels].sort((a, b) => (b.startXp ?? 0) - (a.startXp ?? 0)).find((l) => _meXp >= (l.startXp ?? 0)) ?? levels[0];
+  const derivedLevelName = curLevel?.name || "Novato";
   const nextLevel = levels.find((l) => l.position === (curLevel?.position ?? 0) + 1);
   const xpLevelStart = curLevel?.startXp ?? 0;
   const xpNext = nextLevel?.startXp ?? (curLevel?.startXp ?? 0);
@@ -1290,7 +1296,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         identity: {
           name: esc(me.name),
           initials: esc(me.initials),
-          level: me.level,
+          level: derivedLevelName, // [fix nivel] derivado del XP, no del valor almacenado
           ageBand: me.ageBand || null,
           memberSinceLabel,
           // Bilingüe nativo: ES siempre lleva EN al lado; cuenta en EN → solo EN.
@@ -1325,7 +1331,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   };
 
   const base: any = {
-    me: { name: esc(me?.name), email: me?.email, initials: esc(me?.initials), level: me?.level, streak: streakDays, role: myRole,
+    me: { name: esc(me?.name), email: me?.email, initials: esc(me?.initials), level: derivedLevelName, streak: streakDays, role: myRole,
       // [DASHBOARD-ACCESS-2 §4] ciclo de vida para adaptar el saludo y el siguiente paso.
       lifecycle: lifecycle.state, daysAway: lifecycle.daysAway,
       headline: esc(me?.headline), bio: esc(me?.bio), teachingStyle: esc(me?.teachingStyle), formats: esc(me?.formats), location: esc(me?.location), preferences: me?.preferences ?? null,

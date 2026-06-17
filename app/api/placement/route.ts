@@ -59,13 +59,14 @@ export async function POST(req: Request) {
     });
   }
 
-  // [P0-8] Nivel de debut sugerido por el promedio del placement.
+  // Nivel SUGERIDO por el promedio del placement — SOLO informativo (no fija el rango).
   const vals = SKILLS.map((s) => clamped[s]);
   const avg = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
   const level = levelFor(avg);
-  // Marca al usuario como ubicado (placedAt) Y fija su nivel inicial — antes solo guardaba
-  // placedAt y el nivel calculado se descartaba (el alumno quedaba sin rango de debut).
-  await db.user.update({ where: { id: user.id }, data: { placedAt: new Date(), level } });
+  // [fix nivel] El placement fija el BASELINE de skills (Skill Graph) + placedAt, pero NO el
+  // rango (level): el rango se DERIVA del XP — todos inician en Novato con 0 XP. Antes esto
+  // fijaba level = levelFor(skill-avg), marcando a alumnos recién llegados (0 XP) como JV/Varsity.
+  await db.user.update({ where: { id: user.id }, data: { placedAt: new Date() } });
 
   await logActivitySafe({
     userId: user.id,
