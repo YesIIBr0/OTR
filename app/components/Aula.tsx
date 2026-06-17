@@ -28,8 +28,13 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // Vista role-scoped (PRD §2/§3.3): una cuenta, experiencia fijada por el rol REAL.
     const viewRole: "student" | "teacher" | "parent" | "admin" =
       isAdmin ? "admin" : isTeacher ? "teacher" : isParent ? "parent" : "student";
-    const _pf = { headline: data?.me?.headline, bio: data?.me?.bio, teachingStyle: data?.me?.teachingStyle, formats: data?.me?.formats, location: data?.me?.location, preferences: data?.me?.preferences };
-    DB.me = { name: esc(user.name), email: user.email, initials: esc(user.initials), level: user.level || "Novato", streak: user.streak || 0, role: viewRole, ..._pf };
+    // [fix nivel/datos-vivos] DB.me = el `me` RICO de queries (level DERIVADO del XP, streak
+    // computado, lifecycle, leaderboardOptIn, ageBand, speakerAvg, needsPlacement, avatarUrl…),
+    // con el rol forzado a viewRole. Antes se reconstruía desde el `user` prop (User.level
+    // ALMACENADO = JV) y se descartaban todos los campos derivados — pisando los fixes de queries
+    // en la carga inicial (la ruta de refresh ya usaba ...fresh.me, ahora son consistentes).
+    // Fallback a los campos del user prop solo si data.me faltara (no debería para un logueado).
+    DB.me = { name: esc(user.name), email: user.email, initials: esc(user.initials), level: user.level || "Novato", streak: user.streak || 0, ...(data?.me || {}), role: viewRole };
     const state: { role: "student" | "teacher" | "parent" | "admin" } = { role: viewRole };
     let currentRoute = "dashboard";
 
