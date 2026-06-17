@@ -21,6 +21,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { matches } from "./text";
 
 export const S = {};
 
@@ -46,6 +47,29 @@ const safeSrc = (u) => {
 const langBadges = (languages) =>
   String(languages || "ES").split(/[,·\/]/).map((l) => l.trim()).filter(Boolean).slice(0, 3)
     .map((l) => `<span class="badge">${esc(l.toUpperCase())}</span>`).join("");
+// Etiqueta relativa simple desde un ISO ("hoy", "hace 3 días", "hace 2 meses").
+const whenAgo = (iso) => {
+  const t = Date.parse(iso || "");
+  if (Number.isNaN(t)) return "";
+  const days = Math.floor((Date.now() - t) / 86400000);
+  if (days <= 0) return "hoy";
+  if (days === 1) return "ayer";
+  if (days < 30) return `hace ${days} días`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `hace ${months} ${months === 1 ? "mes" : "meses"}`;
+  const years = Math.floor(months / 12);
+  return `hace ${years} ${years === 1 ? "año" : "años"}`;
+};
+// Normaliza una reseña de la API ({studentName,studentInitials,createdAt,verifiedBooking})
+// o legacy ({author,initials,when}) a la forma única que consume el renderer.
+const normReview = (r) => ({
+  author: r.author || r.name || r.studentName || "Alumno OTR",
+  initials: r.initials || r.studentInitials || ini(r.author || r.name || r.studentName),
+  rating: Number(r.rating) || 0,
+  body: r.body || "",
+  when: r.when || whenAgo(r.createdAt),
+  verified: !!r.verifiedBooking,
+});
 
 /* ---------------- normalización de datos (defensiva) ---------------- */
 function normCoach(c = {}) {
@@ -61,6 +85,9 @@ function normCoach(c = {}) {
   const fromCents = Number(c.fromPriceCents) || Number(c.fromCents) || (perSession.length ? Math.round(Math.min(...perSession)) : 0) || hourly;
   return {
     id: c.id || "",
+    // [REPORT] coachProfile.id — el reporte de coach (POST /api/reports targetType:coach) se
+    // resuelve por coachProfile.id en la cola de admin (no por userId). Fallback al id.
+    profileId: c.profileId || c.id || "",
     name,
     initials: c.initials || ini(name),
     headline: c.headline || "Coach OTR",
@@ -80,7 +107,7 @@ function normCoach(c = {}) {
     photoUrl: safeSrc(c.photoUrl || c.avatarUrl),
     packages,
     availability: Array.isArray(c.availability) ? c.availability : [],
-    reviewsList: Array.isArray(c.reviewsList) ? c.reviewsList : Array.isArray(c.reviewItems) ? c.reviewItems : [],
+    reviewsList: (Array.isArray(c.reviewsList) ? c.reviewsList : Array.isArray(c.reviewItems) ? c.reviewItems : []).map(normReview),
   };
 }
 function mkCoaches() {
@@ -97,7 +124,7 @@ const isMinor = () => viewerAgeBand() === "minor";
 /* ---------------- estado local de la pantalla (patrón window.__x) ---------------- */
 const filtersState = () => {
   const w = window;
-  if (!w.__mkF) w.__mkF = { lang: "all", spec: "Todos", price: "all", sort: "top" };
+  if (!w.__mkF) w.__mkF = { lang: "all", spec: "Todos", price: "all", sort: "top", q: "" };
   return w.__mkF;
 };
 const selState = () => {
@@ -219,8 +246,10 @@ function coachCard(c, i) {
 function applyFilters(list) {
   const f = filtersState();
   let out = list.filter((c) => {
+    // [ENT-03] Búsqueda libre acento-insensible sobre nombre + headline + especialidades.
+    if (f.q && !matches(`${c.name} ${c.headline} ${c.specialties}`, f.q)) return false;
     if (f.lang !== "all" && !String(c.languages).toUpperCase().includes(f.lang)) return false;
-    if (f.spec !== "Todos" && !String(c.specialties).toLowerCase().includes(f.spec.toLowerCase())) return false;
+    if (f.spec !== "Todos" && !matches(c.specialties, f.spec)) return false;
     if (f.price === "low" && !(c.fromCents > 0 && c.fromCents < 5000)) return false;
     if (f.price === "mid" && !(c.fromCents >= 5000 && c.fromCents <= 10000)) return false;
     if (f.price === "high" && !(c.fromCents > 10000)) return false;
@@ -246,6 +275,10 @@ function renderGrid() {
   </div>
   <span class="badge sky">${list.length} coach${list.length === 1 ? "" : "es"}</span></div>
 
+  <div class="searchbox" style="width:100%;max-width:440px;margin-bottom:12px">
+    <span style="display:flex;width:16px;height:16px">${IC.search}</span>
+    <input data-mk-q placeholder="Buscar coach por nombre o especialidad…" value="${esc(f.q || "")}" aria-label="Buscar coaches" style="flex:1"/>
+  </div>
   <div class="row wrap vcenter" style="gap:8px;margin-bottom:12px" id="mk-specs">
     ${specs.map((s) => `<button class="chip ${f.spec === s ? "active" : ""}" data-mk-spec="${esc(s)}">${s}</button>`).join("")}
   </div>
@@ -268,7 +301,7 @@ function renderGrid() {
       <option value="priceDesc" ${f.sort === "priceDesc" ? "selected" : ""}>Precio: mayor a menor</option>
     </select>
     ${/* [COG-07] Limpiar filtros visible solo cuando hay alguno activo (distinto del default). */""}
-    ${(f.lang !== "all" || f.spec !== "Todos" || f.price !== "all" || f.sort !== "top")
+    ${(f.lang !== "all" || f.spec !== "Todos" || f.price !== "all" || f.sort !== "top" || f.q)
       ? `<button class="btn btn-ghost btn-sm" data-mk-clear style="white-space:nowrap">${IC.close || ""} Limpiar filtros</button>` : ""}
   </div>
 
@@ -333,7 +366,7 @@ function bookedPanel(b) {
       : "Tu pago quedó protegido en custodia (escrow). La sesión ocurre dentro de OTR y los fondos se liberan al coach cuando se completa."}</p>
     <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-primary btn-sm" data-go="my-bookings">${IC.calendar} Ver mis reservas</button>
-      <button class="btn btn-soft btn-sm" data-go="messages">${IC.msg} Mensajes</button>
+      <button class="btn btn-soft btn-sm" data-mk-message="${esc(c.id)}">${IC.msg} Enviar mensaje</button>
       <button class="btn btn-ghost btn-sm" data-mk-back>Ver más coaches</button>
     </div>
   </div>`;
@@ -411,7 +444,7 @@ function bookingCard(c, canBook, role) {
     <button class="btn btn-primary btn-block" id="mk-confirm" style="margin-top:14px" ${ready ? "" : "disabled"}>
       ${isMinor() ? "Solicitar aprobación y reservar" : "Confirmar reserva"}
     </button>
-    <button class="btn btn-soft btn-block btn-sm" data-go="messages" style="margin-top:8px">${IC.msg} Enviar mensaje</button>
+    <button class="btn btn-soft btn-block btn-sm" data-mk-message="${esc(c.id)}" style="margin-top:8px">${IC.msg} Enviar mensaje</button>
   </div>`;
 }
 
@@ -474,6 +507,7 @@ function renderProfile(state) {
               ${C.avatar(esc(r.initials || ini(r.author || r.name)), { size: "sm", bg: "var(--otr-sky-lo)" })}
               <b style="font-size:12.5px">${esc(r.author || r.name || "Alumno OTR")}</b>
               ${stars(Number(r.rating) || 0, 11)}
+              ${r.verified ? `<span class="badge sky" style="height:18px;font-size:10px;padding:0 6px">Verificada</span>` : ""}
               <span class="faint" style="font-size:11.5px;margin-left:auto">${esc(r.when || "")}</span>
             </div>
             ${r.body ? `<p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:7px">${esc(r.body)}</p>` : ""}
@@ -483,6 +517,9 @@ function renderProfile(state) {
 
       <div class="alert info fade-up" style="--d:3"><span class="ai">${IC.lock}</span>
         <div><div class="at">Tu seguridad primero</div>Las sesiones se hacen dentro de OTR, los pagos quedan en custodia (escrow) y nunca se comparte contacto fuera de la plataforma.</div>
+      </div>
+      <div class="row fade-up" style="--d:3;justify-content:center">
+        <button class="btn btn-quiet btn-sm" data-mk-report="${esc(c.profileId || c.id)}" data-coach-name="${esc(c.name)}" style="font-size:11.5px;color:var(--text-3)">${IC.flag || ""} Reportar a este coach</button>
       </div>
     </div>
 
@@ -520,7 +557,9 @@ S.marketplace = {
         if (!(w.__mkDetail && w.__mkDetail.id === id)) {
           try {
             const d = await w.api(`/api/coaches/${encodeURIComponent(id)}`, null, "GET");
-            w.__mkDetail = { id, data: (d && (d.coach || d)) || {} };
+            // [REVIEWS-RENDER] La API devuelve `reviews` como clave HERMANA de `coach`; sin esto
+            // se descartaba y el perfil nunca mostraba reseñas. Las fusionamos como reviewsList.
+            w.__mkDetail = { id, data: { ...((d && (d.coach || d)) || {}), reviewsList: (d && d.reviews) || [] } };
             w.__mkDetailFail = null;
           } catch (e) {
             w.__mkDetailFail = id; // seguimos con los datos del listado
@@ -535,13 +574,63 @@ S.marketplace = {
       el.addEventListener("click", () => { w.__mkCoachId = null; repaint(); })
     );
 
+    // [SEND-MESSAGE §7] "Enviar mensaje" → find-or-create de la conversación con el coach +
+    // deep-link al hilo. window.__convo es un ÍNDICE en DB.messages, así que refrescamos
+    // app-data (para que incluya el hilo) y seleccionamos su índice.
+    root.querySelectorAll("[data-mk-message]").forEach((el) =>
+      el.addEventListener("click", async () => {
+        const coachId = el.getAttribute("data-mk-message") || "";
+        if (!coachId) return;
+        el.setAttribute("disabled", "true");
+        try {
+          const r = await w.api("/api/conversations", { coachId }, "POST");
+          const cid = (r && (r.conversationId || (r.data && r.data.conversationId))) || "";
+          try {
+            const res = await fetch("/api/app-data");
+            if (res.ok) { const fresh = await res.json(); const role = DB.me?.role; Object.assign(DB, fresh); if (role) DB.me = { ...(fresh.me || {}), role }; }
+          } catch { /* seguimos con lo que haya */ }
+          const idx = (DB.messages || []).findIndex((m) => m.id === cid);
+          w.__convo = idx >= 0 ? idx : 0;
+          w.go?.("messages");
+        } catch (e) {
+          w.toast?.((e && e.message) || "No se pudo iniciar la conversación", "danger");
+          el.removeAttribute("disabled");
+        }
+      })
+    );
+
+    // [REPORT §7.4] "Reportar a este coach" → POST /api/reports (targetType coach, targetId =
+    // coachProfile.id). Da entrada a la cadena reporte→moderación→suspensión (antes sin entrada).
+    root.querySelectorAll("[data-mk-report]").forEach((el) =>
+      el.addEventListener("click", () => {
+        const targetId = el.getAttribute("data-mk-report") || "";
+        const coachName = el.getAttribute("data-coach-name") || "este coach";
+        if (!targetId || !w.otrFormModal) return;
+        w.otrFormModal(`Reportar a ${coachName}`, [
+          { name: "reason", label: "Motivo del reporte", type: "textarea", req: true, ph: "Cuéntanos qué ocurrió. Nuestro equipo de confianza y seguridad lo revisará." },
+        ], async (v) => {
+          await w.api("/api/reports", { targetType: "coach", targetId, reason: v.reason || "" }, "POST");
+          w.toast?.("Reporte enviado — gracias por cuidar la comunidad", "ok");
+        });
+      })
+    );
+
     // Filtros del grid.
     root.querySelectorAll("[data-mk-spec]").forEach((el) =>
       el.addEventListener("click", () => { filtersState().spec = el.getAttribute("data-mk-spec"); repaint(); })
     );
     // [COG-07] Limpiar todos los filtros → estado por defecto.
     root.querySelector("[data-mk-clear]")?.addEventListener("click", () => {
-      const f = filtersState(); f.lang = "all"; f.spec = "Todos"; f.price = "all"; f.sort = "top"; repaint();
+      const f = filtersState(); f.lang = "all"; f.spec = "Todos"; f.price = "all"; f.sort = "top"; f.q = ""; repaint();
+    });
+    // [ENT-03] Búsqueda libre: repinta y restaura foco + caret (no perder el cursor al teclear).
+    const qbox = root.querySelector("[data-mk-q]");
+    if (qbox) qbox.addEventListener("input", () => {
+      filtersState().q = qbox.value;
+      const pos = qbox.selectionStart;
+      repaint();
+      const nq = root.querySelector("[data-mk-q]");
+      if (nq) { nq.focus(); try { nq.setSelectionRange(pos, pos); } catch (e) {} }
     });
     const bindSel = (attr, key) => {
       const sel = root.querySelector(`[${attr}]`);

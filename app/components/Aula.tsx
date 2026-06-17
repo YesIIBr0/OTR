@@ -179,7 +179,32 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const editor = b.closest(".field")?.querySelector("[data-rich]") as HTMLElement | null;
         editor?.focus();
         if (cmd.startsWith("formatBlock:")) document.execCommand("formatBlock", false, cmd.split(":")[1]);
-        else if (cmd === "createLink") { const url = window.prompt("URL del enlace:"); if (url) document.execCommand("createLink", false, url); }
+        else if (cmd === "createLink") {
+          const raw = window.prompt("URL del enlace:");
+          const url = (raw || "").trim();
+          // Solo permitimos http/https; rechazamos javascript:, data:, etc.
+          if (url && /^https?:\/\//i.test(url)) {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+              const range = sel.getRangeAt(0);
+              const anchor = document.createElement("a");
+              anchor.href = url;
+              anchor.target = "_blank";
+              anchor.rel = "noopener noreferrer";
+              try {
+                range.surroundContents(anchor);
+              } catch {
+                // surroundContents falla si la selección cruza límites de nodo;
+                // extraemos el contenido y lo envolvemos manualmente.
+                anchor.appendChild(range.extractContents());
+                range.insertNode(anchor);
+              }
+              sel.removeAllRanges();
+            }
+          } else if (url) {
+            toast("Solo se permiten enlaces http o https", "warn");
+          }
+        }
         else document.execCommand(cmd, false);
       }));
       const close = () => scrim.remove();

@@ -4,6 +4,7 @@
 // de contacto. Diseño claro premium: navy #0C0C0C + sky #2CAA20, Inter.
 import { notFound } from "next/navigation";
 import { db } from "../../lib/db";
+import { MILESTONE_ACTIVITY_TYPES } from "../../lib/activity";
 
 export const dynamic = "force-dynamic";
 
@@ -57,8 +58,10 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       }),
       db.debateRecord.count({ where: { userId: user.id } }),
       db.debateRecord.count({ where: { userId: user.id, result: "WIN" } }),
+      // [§8.4] Solo HITOS reales (no eventos meta como "Activó su perfil público"). El filtro
+      // va en la DB para que take:20 rinda hasta 20 hitos en vez de encoger tras filtrar en JS.
       db.activityEvent.findMany({
-        where: { userId: user.id },
+        where: { userId: user.id, type: { in: MILESTONE_ACTIVITY_TYPES } },
         orderBy: { createdAt: "asc" },
         take: 20,
       }),

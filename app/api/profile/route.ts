@@ -27,6 +27,13 @@ export async function PATCH(req: Request) {
   // [GAMIFICATION-1 §9] Opt-out de la clasificación pública (los menores quedan fuera del
   // ranking global SIEMPRE; este flag es el control por usuario para los demás).
   if (typeof body.leaderboardOptIn === "boolean") data.leaderboardOptIn = body.leaderboardOptIn;
+  // [NOTIF-PERSIST] Preferencias de notificación (JSON string). Antes solo localStorage; ahora
+  // persisten por usuario (sobreviven a logout/cambio de dispositivo). El envío real sigue
+  // pendiente de SMTP/push, pero la preferencia ya se guarda.
+  if (body.notificationPrefs !== undefined) {
+    const np = typeof body.notificationPrefs === "string" ? body.notificationPrefs : JSON.stringify(body.notificationPrefs);
+    data.notificationPrefs = clean(np, 1000) || null;
+  }
 
   if (body.newPassword) {
     if (String(body.newPassword).length < 6) {

@@ -117,6 +117,10 @@ function eventDateLabel(d?: Date | null): string {
 // Las 6 dimensiones del radar OTR, en el orden fijo del contrato.
 const OTR_SKILLS = ["Confianza", "Estructura", "Evidencia", "Refutación", "Cross-ex", "Delivery"];
 
+// [§6.2] Umbral de Glicko-2 RD por encima del cual el rating aún es "soft"/provisional.
+// Una sola fuente para los call-sites del Debate Hub y del dashboard (antes el comentario decía 200).
+const PROVISIONAL_RD = 150;
+
 // Promedio de ratings redondeado a 1 decimal (0 si no hay reseñas).
 function avgRating(ratings: number[]): number {
   if (!ratings.length) return 0;
@@ -187,6 +191,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       placedAt: true,
       // PRD §13: membresía simulada · PRD §8 identity (lang) · §8.4 perfil público.
       membership: true, membershipSince: true, publicSlug: true, publicProfile: true, lang: true,
+      // [NOTIF-PERSIST] toggles de notificación persistidos (antes solo localStorage).
+      notificationPrefs: true,
     },
   });
   const isTeacher = me?.role === "TEACHER" || me?.role === "ADMIN";
@@ -442,9 +448,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     me && me.role === "STUDENT"
       ? db.booking.findMany({ where: { studentId: me.id }, include: { escrow: true }, orderBy: { slotAt: "desc" }, take: 100 })
       : Promise.resolve([]),
-    // Parent Portal (PRD §11): vínculos ACTIVE del padre con sus hijos.
+    // Parent Portal (PRD §11): vínculos del padre. [MINORS-CONSENT-01 §11.3] Carga ACTIVE
+    // (hijos del portal) + PENDING (solicitudes que el padre debe confirmar). Incluye el
+    // student para mostrar nombre/email en la tarjeta de confirmación. Downstream filtra por status.
     me && me.role === "PARENT"
-      ? db.guardianship.findMany({ where: { parentId: me.id, status: "ACTIVE" }, orderBy: { createdAt: "asc" } })
+      ? db.guardianship.findMany({ where: { parentId: me.id, status: { in: ["ACTIVE", "PENDING"] } }, include: { student: { select: { id: true, name: true, email: true, initials: true, ageBand: true } } }, orderBy: { createdAt: "asc" } })
       : Promise.resolve([]),
     // PRD §8 ledger: nº de torneos en los que el usuario se ha registrado.
     me ? db.tournamentRegistration.count({ where: { userId: me.id } }) : Promise.resolve(0),
@@ -557,15 +565,20 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   });
   // Entregas del alumno por nombre de actividad (para que S.assignment muestre el
   // estado: ya entregaste / en revisión / calificada + nota + feedback + archivo).
+  // [i18n] Indexado por lessonId (clave ESTABLE, independiente del idioma del título) Y por
+  // activity (fallback legacy para entregas viejas sin lessonId). S.assignment busca por id primero.
   const mySubmissionsByActivity: Record<string, any> = {};
+  const mySubmissionsByLesson: Record<string, any> = {};
   (mySubs as any[]).forEach((s: any) => {
     if (!mySubmissionsByActivity[s.activity]) {
-      mySubmissionsByActivity[s.activity] = {
+      const entry = {
         id: s.id, activity: esc(s.activity), status: s.status, grade: s.grade ?? null,
         feedback: esc(s.feedback || ""), kind: s.kind, fileUrl: safeUrl(s.fileUrl),
         fileName: esc(s.fileName || ""), textBody: esc(s.textBody || ""), when: esc(s.createdLabel || ""),
         letter: typeof s.grade === "number" ? letterFor(s.grade) : "—",
       };
+      mySubmissionsByActivity[s.activity] = entry;
+      if (s.lessonId && !mySubmissionsByLesson[s.lessonId]) mySubmissionsByLesson[s.lessonId] = entry;
     }
   });
   const numericScores = gradeRows.map((r) => r.score).filter((s) => typeof s === "number") as number[];
@@ -723,6 +736,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     eventName: esc(r.eventName || ""),
     roundLabel: esc(r.roundLabel || ""),
     ratingAfter: r.rating ? Math.round(r.rating.ratingAfter) : null,
+    // [§6.2] adjudicada = tiene RatingUpdate 1:1 (el rating solo se mueve en ronda juzgada).
+    // El overview separa "rondas adjudicadas" de los auto-reportes de práctica.
+    adjudicated: !!r.rating,
     when: whenLabel(r.recordedAt),
   }));
 
@@ -773,7 +789,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         rating: Math.round(me.debateRating ?? 1500),
         rd: Math.round(me.debateRd ?? 350),
         tier: me.debateTier || "Novato",
-        provisional: (me.debateRd ?? 350) >= 150,
+        provisional: (me.debateRd ?? 350) >= PROVISIONAL_RD,
         // [RATING-2 §6.2] Speaker Rating: promedio de oratoria (0-100), separado del W/L.
         // null cuando aún no hay rondas juzgadas (no se muestra una métrica vacía).
         speakerAvg: (me.speakerRounds ?? 0) > 0 ? Math.round(me.speakerAvg ?? 0) : null,
@@ -894,12 +910,28 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   };
 
   // --- Parent Portal (PRD §11): tercera ola, depende de los guardianships ----
-  const childIds = (parentGuardianships as any[]).map((g) => g.studentId);
+  // [MINORS-CONSENT-01 §11.3] Solo los vínculos ACTIVE alimentan los hijos del portal;
+  // los PENDING son solicitudes que el padre aún debe confirmar (pendingLinks, abajo).
+  const activeGuardianships = (parentGuardianships as any[]).filter((g) => g.status === "ACTIVE");
+  const childIds = activeGuardianships.map((g) => g.studentId);
   // PRD §11.3: el Guardianship por hijo guarda el umbral de auto-aprobación
   // (approveUnderCents) y el nivel de consentimiento (consentLevel) → P4 los muestra.
   const guardianshipByChild = new Map<string, any>(
-    (parentGuardianships as any[]).map((g) => [g.studentId, g]),
+    activeGuardianships.map((g) => [g.studentId, g]),
   );
+  // [MINORS-CONSENT-01 §11.3] Solicitudes PENDIENTES: un menor declaró a este adulto como
+  // tutor al registrarse; nace PENDING y el adulto la confirma (POST /api/guardianship,
+  // flip PENDING→ACTIVE). El portal DEBE mostrarlas para que el padre pueda confirmar.
+  const pendingLinks = (parentGuardianships as any[])
+    .filter((g) => g.status === "PENDING")
+    .map((g) => ({
+      id: g.id,
+      studentId: g.studentId,
+      name: esc(g.student?.name || ""),
+      email: esc(g.student?.email || ""),
+      initials: esc(g.student?.initials || (g.student?.name || "?").slice(0, 2).toUpperCase()),
+      ageBand: g.student?.ageBand || "", // minor → el padre confirma; adult → espera al alumno
+    }));
   // Coach Workspace (§7.5): estudiantes de los bookings del coach (nombre/iniciales).
   const coachStudentIds = [...new Set((coachBookingRows as any[]).map((b: any) => b.studentId))];
   const [childUsers, childBookings, childCertRows, childSkills, coachStudentUsers] = await Promise.all([
@@ -945,6 +977,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
 
   const nowMs = Date.now();
 
+  // [REVIEW-CHAIN §7.4] Coaches que el alumno YA reseñó (por cualquier curso o reseña directa)
+  // → no volver a ofrecer "Dejar reseña" para ese coach. Una sola consulta para el flag canReview.
+  const myReviewedCoachIds = me && me.role === "STUDENT"
+    ? new Set((await db.review.findMany({ where: { studentId: me.id }, select: { teacherId: true } })).map((r) => r.teacherId))
+    : new Set<string>();
+
   // --- "Mis reservas" (STUDENT): bookings propios con coach + slot + precio --
   const myBookings = (myBookingRows as any[]).map((b) => ({
     id: b.id,
@@ -964,6 +1002,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     priceLabel: (b.escrow?.amountCents ?? b.priceCents ?? 0) > 0 ? usdLabel(b.escrow?.amountCents ?? b.priceCents) : "",
     escrowStatus: b.escrow?.status ?? null, // HELD | RELEASED | REFUNDED
     videoUrl: safeUrl(b.videoUrl), // sala on-platform
+    recordingUrl: safeUrl(b.recordingUrl), // [P0-9] grabación adjunta por el coach (si la hay)
+    // [REVIEW-CHAIN §7.4] reseñable si la sesión se completó y aún no reseñó a este coach.
+    canReview: b.status === "COMPLETED" && !myReviewedCoachIds.has(b.coachId),
   }));
 
   // --- PRD §7.5: Coach Workspace (supply-side) — SOLO TEACHER/ADMIN ----------
@@ -1006,6 +1047,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       // [BOOKING-ESCROW-1] PENDING no tiene escrow → cae al snapshot Booking.priceCents.
       amountCents: b.escrow?.amountCents ?? b.priceCents ?? 0,
       amountLabel: (b.escrow?.amountCents ?? b.priceCents ?? 0) > 0 ? usdLabel(b.escrow?.amountCents ?? b.priceCents) : "",
+      slotAtIso: new Date(b.slotAt).toISOString(), // [ROOM] cuenta atrás de la sala (lado coach)
+      videoUrl: safeUrl(b.videoUrl), // sala on-platform
+      recordingUrl: safeUrl(b.recordingUrl), // [P0-9] grabación que el coach adjunta
       // PENDING = espera el consentimiento parental del menor (Safety Gate §7).
       awaitingConsent: b.status === "PENDING",
     });
@@ -1157,13 +1201,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
             // §8.4: estado del perfil público del hijo (el padre es quien lo
             // habilita para menores — aquí solo viajan los datos, sin UI).
             publicProfile: { enabled: !!u.publicProfile, slug: u.publicSlug ? esc(u.publicSlug) : null },
-            // Skill growth: score actual por dimensión; delta=0 (placeholder hasta
-            // tener histórico mensual de StudentSkill).
+            // [skill] score ACTUAL por dimensión. El delta mes-a-mes requiere histórico
+            // (StudentSkillSnapshot) — Fase 2-4; hasta entonces NO se promete "crecimiento".
             skillDeltas: (skillsByChild.get(id) || []).map((s: any) => ({
               skill: esc(s.skill),
               name: esc(s.skill), // alias: scr-parent renderiza s.name
               score: Math.max(0, Math.min(100, Number(s.score) || 0)),
-              delta: 0,
             })),
             attendance: { attended, scheduled },
             achievements: certsByChild.get(id) || [],
@@ -1177,6 +1220,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
             consentLevel: guardianshipByChild.get(id)?.consentLevel || "standard", // [fix] default seguro (no "full")
           };
         }),
+      // [MINORS-CONSENT-01 §11.3] Solicitudes de tutela PENDIENTES — el padre las confirma desde el portal.
+      pendingLinks,
     };
   }
 
@@ -1284,7 +1329,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     rating: Math.round(me?.debateRating ?? 1500),
     tier: me?.debateTier || "Novato",
     rd: Math.round(me?.debateRd ?? 350),
-    provisional: (me?.debateRd ?? 350) >= 150,
+    provisional: (me?.debateRd ?? 350) >= PROVISIONAL_RD,
     history: ratingHistory,
   };
 
@@ -1372,7 +1417,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     courseModules: modulesForDashboard.filter((m: any) => !m.hidden).map((m) => ({
       t: esc(pickLang(m.title, m.titleEn)), done: m.done, locked: m.locked,
       items: m.lessons.filter((l: any) => !l.hidden).map((l) => ({
-        id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id), locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
+        id: l.id, t: esc(pickLang(l.title, l.titleEn)), titleEs: esc(l.title), type: l.type, done: l.done, doneByMe: doneSet.has(l.id), locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
         dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
         videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
         // Examen real adjunto solo a lecciones type='quiz' (null si no tiene).
@@ -1398,7 +1443,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           modules: (c.modules || []).filter((m: any) => !m.hidden).map((m: any) => ({
             t: esc(pickLang(m.title, m.titleEn)), done: false, locked: false,
             items: (m.lessons || []).filter((l: any) => !l.hidden).map((l: any) => ({
-              id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: false, doneByMe: false,
+              id: l.id, t: esc(pickLang(l.title, l.titleEn)), titleEs: esc(l.title), type: l.type, done: false, doneByMe: false,
               locked: false, grade: null, dur: l.dur, due: l.due,
               dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
               videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
@@ -1425,7 +1470,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         modules: (byCourse.get(e.course.id) || []).filter((m: any) => !m.hidden).map((m: any) => ({
           t: esc(pickLang(m.title, m.titleEn)), done: m.done, locked: m.locked,
           items: m.lessons.filter((l: any) => !l.hidden).map((l: any) => ({
-            id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id),
+            id: l.id, t: esc(pickLang(l.title, l.titleEn)), titleEs: esc(l.title), type: l.type, done: l.done, doneByMe: doneSet.has(l.id),
             locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
             dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
             videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
@@ -1436,6 +1481,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     })(),
     // Estado de las entregas del alumno por actividad (S.assignment lo lee).
     mySubmissions: mySubmissionsByActivity,
+    // [i18n] Mismo estado indexado por lessonId (clave estable) — S.assignment lo prefiere.
+    mySubmissionsByLesson,
     competencies: competencies.map((c) => ({ name: c.name, score: c.score })),
     badges: badges.map((b) => ({ n: b.name, d: b.description, got: gotBadge(b.name), ic: b.icon, tone: b.tone })),
     // [auditoría] La etiqueta de fecha se DERIVA de startsAt (viva, como los torneos); whenLabel
@@ -1479,13 +1526,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     myGrades,
     // Mapa lessonId -> quiz real (misma forma del contrato; alumno sin 'correct').
     quizByLesson,
-    // PRD §4: Debate Rank card. Si el RD es alto (>= 200, default 350) el rating
+    // PRD §4: Debate Rank card. Si el RD es alto (>= PROVISIONAL_RD, default 350) el rating
     // aún es "soft"/provisional → estado novato para quien no ha debatido.
     debateRank: {
       rating: Math.round(me?.debateRating ?? 1500),
       rd: Math.round(me?.debateRd ?? 350),
       tier: me?.debateTier || "Novato",
-      provisional: (me?.debateRd ?? 350) >= 150,
+      provisional: (me?.debateRd ?? 350) >= PROVISIONAL_RD,
       recentForm,
     },
     // PRD §6: Debate Hub (flagship). Sólo para roles CON sesión (null si no hay me).

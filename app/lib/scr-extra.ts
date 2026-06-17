@@ -4,6 +4,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { matches } from "./text";
 
 /* ---- Helpers de autoría reutilizados por "Mis cursos" y el constructor de curso ---- */
 // Fecha de entrega legible (de un ISO) → "15 nov".
@@ -292,12 +293,12 @@ export const S = {
 
   search: {
     render() {
-      const q = (window.__q || "").toLowerCase().trim();
-      const courses = (DB.catalog || []).filter((c) => `${c.name} ${c.code} ${c.coach}`.toLowerCase().includes(q));
+      const q = (window.__q || "").trim();
+      const courses = (DB.catalog || []).filter((c) => matches(`${c.name} ${c.code} ${c.coach}`, q));
       // [CORE-02] Privacidad: el índice de personas es solo para staff (coach/admin).
       // Estudiantes y familias NO pueden buscar personas (protege la privacidad de menores).
       const isStaff = DB.me?.role === "teacher" || DB.me?.role === "admin";
-      const people = isStaff ? (DB.students || []).filter((s) => s.n.toLowerCase().includes(q)) : [];
+      const people = isStaff ? (DB.students || []).filter((s) => matches(s.n, q)) : [];
       // Foro APAGADO (PRD-estricto): sin sección de discusiones en los resultados.
       const total = courses.length + people.length;
       let _sec = 0;

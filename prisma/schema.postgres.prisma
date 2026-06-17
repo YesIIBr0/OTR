@@ -56,6 +56,7 @@ model User {
   location      String?      // ciudad / país
   avatarUrl     String?      // foto (opcional; si no, iniciales)
   preferences   String?      // JSON: { pace, schedule, goals } — "Mi experiencia"
+  notificationPrefs String?  // JSON: toggles de notificación persistidos (antes solo localStorage)
   coursesTaught Course[]     @relation("CourseTeacher")
   enrollments   Enrollment[]
   reviewsGiven  Review[]     @relation("ReviewAuthor")
@@ -118,8 +119,8 @@ model Course {
 
 model Review {
   id        String   @id @default(cuid())
-  courseId  String
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId  String?  // null = reseña de coach del marketplace (sin curso); set = reseña de programa
+  course    Course?  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   teacherId String
   teacher   User     @relation("ReviewTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
   studentId String
@@ -457,6 +458,7 @@ model Submission {
   fileUrl      String?  // archivo real subido por el alumno (/uploads/...)
   fileName     String?  // nombre original del archivo
   textBody     String?  // entrega de texto (ensayo / caso escrito)
+  lessonId     String?  // [i18n] clave estable de la lección (independiente del idioma del título)
   createdLabel String  @default("ahora")
   createdAt    DateTime @default(now())
 

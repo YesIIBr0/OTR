@@ -80,6 +80,10 @@ function normBooking(b = {}) {
     amountLabel: b.amountLabel || b.priceLabel || (amountCents ? money(amountCents) : ""),
     status: String(b.status || "").toUpperCase(),
     escrowStatus: String(b.escrowStatus || (b.escrow && b.escrow.status) || "").toUpperCase(),
+    // Contrato C1: campos de sala/grabación que llegan en el inbox del coach.
+    slotAtIso: b.slotAtIso || "",
+    videoUrl: b.videoUrl || "",
+    recordingUrl: b.recordingUrl || "",
   };
 }
 function getLists() {
@@ -171,6 +175,7 @@ function escrowBadge(st) {
 function bookingRow(b, opts = {}) {
   const actions = opts.actions && b.status === "CONFIRMED"
     ? `<div class="row" style="gap:8px;flex:none">
+         <button class="btn btn-soft btn-sm" data-cw-join="${esc(b.id)}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>Unirse a la sesión</span></button>
          <button class="btn btn-primary btn-sm" data-cw-complete="${esc(b.id)}">Completar sesión</button>
          <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">Cancelar</button>
        </div>`
@@ -179,6 +184,13 @@ function bookingRow(b, opts = {}) {
     : opts.actions && b.status === "PENDING"
     ? `<div class="row" style="gap:8px;flex:none">
          <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">Rechazar reserva</button>
+       </div>`
+    // [COACH-REC] Grabación: en sesiones COMPLETED el coach adjunta el enlace de la grabación
+    // (PATCH action:'recording'). Si ya hay una, además ofrece verla.
+    : opts.recording && b.status === "COMPLETED"
+    ? `<div class="row" style="gap:8px;flex:none">
+         ${b.recordingUrl ? `<a class="btn btn-quiet btn-sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.play}</span>Ver grabación</span></a>` : ""}
+         <button class="btn btn-soft btn-sm" data-cw-recording="${esc(b.id)}">${b.recordingUrl ? "Cambiar grabación" : "Adjuntar grabación"}</button>
        </div>`
     : "";
   return `
@@ -235,7 +247,7 @@ function viewAgenda() {
       <span class="badge">${past.length}</span>
     </div>
     ${past.length
-      ? `<div style="margin-top:6px">${past.map((b) => bookingRow(b, { escrow: true })).join("")}</div>`
+      ? `<div style="margin-top:6px">${past.map((b) => bookingRow(b, { escrow: true, recording: true })).join("")}</div>`
       : `<p class="muted" style="font-size:13px;margin-top:12px">Todavía no completaste ninguna sesión.</p>`}
   </div>`;
 }
@@ -324,6 +336,7 @@ function viewAvailability() {
         </div>
         ${specs.length ? `<div class="row wrap" style="gap:6px;margin-top:12px">${specs.map((s) => `<span class="chip soft">${esc(s)}</span>`).join("")}</div>` : ""}
         <p class="faint" style="font-size:12px;margin-top:12px">Edita tarifa, bio y video desde tu perfil de coach.</p>
+        <button class="btn btn-soft btn-sm" data-go="profile" style="margin-top:10px">Editar tarifa y paquetes</button>
       </div>
 
       <div class="card card-pad fade-up" style="--d:1">
@@ -492,6 +505,52 @@ S.coachwork = {
           btn.removeAttribute("data-armed");
           btn.textContent = "Cancelar";
         }
+      })
+    );
+
+    // [COACH-01b] Unirse a la sesión (filas CONFIRMED) → sala SPA-nativa. Igual que el
+    // alumno: fijamos window.__room con el bookingId y navegamos a 'room' (que lee
+    // slotAtIso/videoUrl ya incluidos en el inbox del coach por el contrato C1).
+    root.querySelectorAll("[data-cw-join]").forEach((btn) =>
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const id = btn.getAttribute("data-cw-join") || "";
+        if (!id) return;
+        w.__room = id;
+        w.go?.("room");
+      })
+    );
+
+    // [COACH-REC] Refresco duro re-pidiendo /api/app-data y re-navegando a 'coachwork'
+    // (mismo patrón que scr-mybookings: preserva el role de DB.me al fusionar).
+    const softRefresh = async () => {
+      try {
+        const r = await fetch("/api/app-data");
+        if (r.ok) {
+          const fresh = await r.json();
+          const role = DB.me?.role;
+          Object.assign(DB, fresh);
+          if (role) DB.me = { ...(fresh.me || {}), role };
+        }
+      } catch { /* silencioso */ }
+      if (w.go) w.go("coachwork");
+    };
+
+    // [COACH-REC] Adjuntar/cambiar el enlace de la grabación de una sesión COMPLETED.
+    // El endpoint PATCH /api/bookings/[id] { action:'recording' } valida la URL.
+    root.querySelectorAll("[data-cw-recording]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-cw-recording");
+        if (!id) return;
+        w.otrFormModal?.(
+          "Enlace de la grabación",
+          [{ name: "recordingUrl", label: "Enlace de la grabación", type: "text", ph: "https://..." }],
+          async (values) => {
+            await w.api(`/api/bookings/${encodeURIComponent(id)}`, { action: "recording", recordingUrl: values.recordingUrl }, "PATCH");
+            w.toast?.("Grabación guardada", "ok");
+            await softRefresh();
+          }
+        );
       })
     );
 

@@ -102,6 +102,8 @@ function historyRow(b) {
     </div>
     ${statusBadge(b.status)}
     ${escrowBadge(b.escrowStatus)}
+    ${b.recordingUrl ? `<a class="btn btn-quiet btn-sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer" style="flex:none"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.video}</span>Grabación</span></a>` : ""}
+    ${b.canReview ? `<button class="btn btn-soft btn-sm" data-mb-review="${esc(b.id)}" data-coach="${esc(b.coachId)}" data-coach-name="${esc(b.coachName || "")}" style="flex:none">Dejar reseña</button>` : ""}
   </div>`;
 }
 
@@ -206,6 +208,30 @@ S.myBookings = {
           btn.removeAttribute("data-armed");
           btn.textContent = "Cancelar";
         }
+      }),
+    );
+
+    // [REVIEW-CHAIN §7.4] Dejar reseña tras una sesión COMPLETADA (canReview del payload).
+    // Postea contra el coach (coachId) → /api/reviews crea la Review sin necesitar un curso.
+    root.querySelectorAll("[data-mb-review]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const coachId = btn.getAttribute("data-coach") || "";
+        const coachName = btn.getAttribute("data-coach-name") || "tu coach";
+        if (!coachId || !w.otrFormModal) return;
+        w.otrFormModal(`Reseñar a ${coachName}`, [
+          { name: "rating", label: "Tu valoración", type: "select", value: "5", options: [
+            { value: "5", label: "★★★★★ Excelente" },
+            { value: "4", label: "★★★★ Muy bueno" },
+            { value: "3", label: "★★★ Bueno" },
+            { value: "2", label: "★★ Regular" },
+            { value: "1", label: "★ Malo" },
+          ] },
+          { name: "body", label: "Tu comentario (opcional)", type: "textarea", ph: "¿Qué tal fue tu sesión de coaching?" },
+        ], async (v) => {
+          await w.api("/api/reviews", { coachId, rating: Number(v.rating) || 5, body: v.body || "" }, "POST");
+          w.toast?.("¡Gracias por tu reseña!", "ok");
+          await softRefresh();
+        });
       }),
     );
   },

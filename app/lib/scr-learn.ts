@@ -55,8 +55,11 @@ function currentQuiz() {
 function priorQuizAttempt() {
   const lid = (window as any).__quizLesson;
   const { lesson } = lid ? findLesson(lid) : { lesson: currentLesson() };
-  if (!lesson || !lesson.t) return null;
-  const title = lesson.t; // ya viene esc() desde queries.ts
+  // Comparamos contra titleEs (título RAW en español, independiente del idioma):
+  // myGrades.rows[].activity guarda el título español, mientras que lesson.t viene
+  // localizado → en EN no coincidirían y el banner no aparecería.
+  if (!lesson || !lesson.titleEs) return null;
+  const title = lesson.titleEs;
   const rows = (DB.myGrades && DB.myGrades.rows) || [];
   let best: number | null = null;
   for (const r of rows) {
@@ -97,10 +100,12 @@ function priorQuizAttempt() {
       const showFile = !subKinds || subKinds.includes("file") || subKinds.includes("video") || subKinds.includes("audio");
       const showText = !subKinds || subKinds.includes("text");
 
-      // ¿El alumno ya entregó esta actividad? mySubmissions está indexado por el
-      // nombre de la actividad (DB lo guardó con esc(), igual que L.t).
+      // ¿El alumno ya entregó esta actividad? Preferimos la clave ESTABLE por lessonId
+      // (DB.mySubmissionsByLesson), que no cambia con el idioma. Caemos al índice legacy
+      // por nombre de actividad (DB.mySubmissions, indexado por el título esc() = L.t).
       const subs = DB.mySubmissions || {};
-      const prev = subs[activity] || null;
+      const subsByLesson = DB.mySubmissionsByLesson || {};
+      const prev = (L && L.id && subsByLesson[L.id]) || subs[activity] || null;
 
       // Tarjeta "Tu entrega" (solo si ya hay una entrega previa): muestra el archivo o
       // texto, el estado (En revisión / Calificada) y, si GRADED, la nota + feedback.
@@ -346,9 +351,13 @@ function priorQuizAttempt() {
         const orig = submitBtn.textContent;
         submitBtn.textContent = 'Entregando…'; submitBtn.classList.add('disabled');
         try {
+          // lessonId estable: el endpoint lo persiste y permite la búsqueda por
+          // DB.mySubmissionsByLesson (independiente del idioma).
+          const lessonId = (window as any).__lesson || undefined;
           await (window as any).api('/api/submissions', {
             activity,
             kind,
+            lessonId,
             fileUrl: up.fileUrl || undefined,
             fileName: up.fileName || undefined,
             textBody: textBody || undefined,

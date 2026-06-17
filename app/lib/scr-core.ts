@@ -119,7 +119,7 @@ function activeItemsFlat() {
         <div class="h-row">
           <div style="max-width:560px">
             <h1 class="sr-only">Inicio</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
-            <h2 class="brand-font" style="margin-top:2px">${DB.me?.lifecycle==='lapsed'?`Qué bueno verte de nuevo, ${firstName}`:DB.me?.lifecycle==='new'?`Bienvenido, ${firstName}`:`Buenas, ${firstName}`}</h2>
+            <h2 class="brand-font" style="margin-top:2px">${DB.me?.lifecycle==='lapsed'?`Qué bueno verte de nuevo, ${firstName}`:DB.me?.lifecycle==='new'?`Bienvenido, ${firstName}`:DB.me?.lifecycle==='returning'?`Bienvenido/a de vuelta, ${firstName}`:`Buenas, ${firstName}`}</h2>
             <p style="color:#fff;font-size:15px;font-weight:650;margin-top:10px">${na.title}</p>
             ${na.sub ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
             <button class="btn btn-primary" style="margin-top:14px" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
@@ -168,9 +168,11 @@ function activeItemsFlat() {
       // [DASHBOARD-ACCESS-1 §4] Cada recomendación explica POR QUÉ se sugiere: si el
       // programa cubre un formato que el alumno ya debate → "Para tu formato X"; si no,
       // se enmarca como el siguiente paso para su nivel (señal real, no genérica).
-      const myFmts = String(DB.me?.formats||'').toLowerCase();
-      const recoWhy = (c)=> (c.format && myFmts.includes(String(c.format).toLowerCase()))
-        ? `Para tu formato ${c.format}`
+      const myFmts = new Set(courses.map(c=>String(c.format||'').toLowerCase()).filter(Boolean));
+      const recoWhy = (c)=> (c.format && myFmts.has(String(c.format).toLowerCase()))
+        ? `Refuerza tu ${c.format}`
+        : c.format
+        ? `Suma ${c.format} a tu repertorio`
         : `Siguiente paso para ${esc(DB.me?.level || 'tu nivel')}`;
       const recoCards = recos.map(c=>`
         <div class="tile course-card click" role="button" tabindex="0" onclick="go('catalog')">

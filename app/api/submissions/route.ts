@@ -9,6 +9,7 @@ export async function POST(req: Request) {
     activity?: string;
     kind?: string;
     courseCode?: string;
+    lessonId?: string;
     fileUrl?: string;
     fileName?: string;
     textBody?: string;
@@ -16,6 +17,8 @@ export async function POST(req: Request) {
   const activity = clean(body.activity, 160) || "Entrega";
   const kind = clean(body.kind, 24) || "audio";
   const courseCode = clean(body.courseCode, 24) || "";
+  // [i18n] clave estable de la lección (independiente del idioma del título mostrado).
+  const lessonId = clean(body.lessonId, 64) || null;
 
   // Verifica que el usuario esté INSCRITO en el curso (courseCode→course→enrollment)
   // antes de crear la entrega.
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
   if (!fileUrl && !textBody) return bad("Adjunta un archivo o escribe tu respuesta antes de entregar", 400);
 
   const submission = await db.submission.create({
-    data: { userId: user.id, userName: user.name, activity, kind, courseCode, fileUrl, fileName, textBody },
+    data: { userId: user.id, userName: user.name, activity, kind, courseCode, lessonId, fileUrl, fileName, textBody },
   });
   return ok({ submission });
 }

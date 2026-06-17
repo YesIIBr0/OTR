@@ -20,8 +20,23 @@ const NOTIF = [
   { k: "marketplace", label: "Novedades del marketplace", desc: "Nuevos coaches y recomendaciones para ti.", def: false },
 ];
 
+// Preferencias persistidas en backend (DB.me.notificationPrefs es un JSON string, puede ser null).
+// localStorage queda como caché local; el server es la fuente de verdad entre dispositivos.
+function serverPrefs() {
+  try { const p = JSON.parse((DB.me && DB.me.notificationPrefs) || "null"); return p && typeof p === "object" ? p : null; } catch { return null; }
+}
+
 function notifOn(k, def) {
+  const sp = serverPrefs();
+  if (sp && Object.prototype.hasOwnProperty.call(sp, k)) return sp[k] === true;
   try { const v = localStorage.getItem("otr_notif_" + k); return v === null ? def : v === "1"; } catch { return def; }
+}
+
+// Estado actual de todos los toggles (server > localStorage > default) para construir el payload completo.
+function currentPrefs() {
+  const out = {};
+  for (const n of NOTIF) out[n.k] = notifOn(n.k, n.def);
+  return out;
 }
 
 // Switch on/off premium (verde de marca al activar). role=switch + aria-checked accesible.
@@ -123,16 +138,32 @@ S.settings = {
     // Idioma: reusa el toggle global (persistente en localStorage + re-render del shell).
     root.querySelectorAll("[data-set-lang]").forEach((b) =>
       b.addEventListener("click", () => { const lg = b.getAttribute("data-set-lang"); if (w.otrSetLang) w.otrSetLang(lg); }));
-    // Notificaciones: persistencia local (MVP) + toggle visual accesible.
+    // Notificaciones: persiste en backend (PATCH /api/profile) + caché local; toggle optimista accesible.
     root.querySelectorAll("[data-notif]").forEach((sw) =>
-      sw.addEventListener("click", () => {
+      sw.addEventListener("click", async () => {
         const k = sw.getAttribute("data-notif");
         const next = sw.getAttribute("aria-checked") !== "true";
+        const knob = sw.querySelector("span");
+        // Optimista: actualiza UI + caché local de inmediato.
         try { localStorage.setItem("otr_notif_" + k, next ? "1" : "0"); } catch {}
         sw.setAttribute("aria-checked", String(next));
         sw.style.background = next ? "var(--otr-green)" : "var(--n-200)";
-        const knob = sw.querySelector("span"); if (knob) knob.style.left = next ? "22px" : "3px";
+        if (knob) knob.style.left = next ? "22px" : "3px";
         w.toast?.(next ? "Notificación activada" : "Notificación desactivada", "ok");
+        // Construye el objeto completo de prefs (con el nuevo valor) y persiste server-side.
+        const prefs = currentPrefs();
+        prefs[k] = next;
+        try {
+          await w.api("/api/profile", { notificationPrefs: JSON.stringify(prefs) }, "PATCH");
+          if (w.DB?.me) w.DB.me.notificationPrefs = JSON.stringify(prefs);
+        } catch {
+          // Revertir el switch y la caché si falló el guardado.
+          try { localStorage.setItem("otr_notif_" + k, next ? "0" : "1"); } catch {}
+          sw.setAttribute("aria-checked", String(!next));
+          sw.style.background = !next ? "var(--otr-green)" : "var(--n-200)";
+          if (knob) knob.style.left = !next ? "22px" : "3px";
+          w.toast?.("No se pudo guardar el cambio", "error");
+        }
       }));
     // [GAMIFICATION-1 §9] Clasificación pública: persiste en backend (PATCH /api/profile).
     const lb = root.querySelector("[data-leaderboard]");

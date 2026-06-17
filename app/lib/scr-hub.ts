@@ -10,6 +10,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { matches } from "./text";
 
 const stars = (n, size = 13) => {
   let s = "";
@@ -196,7 +197,7 @@ export const S = {
         c.classList.add("active");
         const f = c.dataset.f;
         root.querySelectorAll(".program-card").forEach((p) => {
-          p.style.display = (f === "Todos" || p.dataset.tags.toLowerCase().includes(f.toLowerCase())) ? "" : "none";
+          p.style.display = (f === "Todos" || matches(p.dataset.tags, f)) ? "" : "none";
         });
       }));
     },

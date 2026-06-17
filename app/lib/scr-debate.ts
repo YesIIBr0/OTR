@@ -159,10 +159,11 @@ function subTabs(active) {
 
 /* ================= SECCIÓN · RESUMEN ================= */
 function viewOverview(d) {
-  const wins = d.history.filter((h) => String(h.result).toUpperCase() === "WIN").length;
-  const losses = d.history.filter((h) => String(h.result).toUpperCase() === "LOSS").length;
-  const draws = d.history.filter((h) => String(h.result).toUpperCase() === "DRAW").length;
-  const total = d.history.length;
+  const adj = d.history.filter((h) => h.adjudicated);
+  const wins = adj.filter((h) => String(h.result).toUpperCase() === "WIN").length;
+  const losses = adj.filter((h) => String(h.result).toUpperCase() === "LOSS").length;
+  const draws = adj.filter((h) => String(h.result).toUpperCase() === "DRAW").length;
+  const total = adj.length;
   const winRate = total ? Math.round((wins / total) * 100) : 0;
   const nextEvent = getTournaments().find((t) => !t.registered) || getTournaments()[0] || null;
 

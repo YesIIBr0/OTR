@@ -122,6 +122,7 @@ export const S = {};
           <div class="mt-head">
             <div class="avatar" style="background:${head.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${esc(head.ini)}${head.online?'<span class="online-dot"></span>':''}</div>
             <div><b>${esc(head.name)}</b>${head.online?`<div class="faint" style="font-size:12px">En línea</div>`:''}</div>
+            <button class="btn btn-quiet btn-sm" id="mt-report" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px"><span style="display:flex;width:14px;height:14px">${IC.flag}</span>Reportar</button>
           </div>
           <div class="mt-body" id="mt-body">
             <div class="chat-day">Hoy</div>
@@ -144,6 +145,18 @@ export const S = {};
         el.addEventListener('click', open);
         el.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
       });
+      const head = list[active] || null; // conversación activa (para reportar)
+      const reportBtn = root.querySelector('#mt-report');
+      if (reportBtn && head) {
+        reportBtn.addEventListener('click', ()=>{
+          window.otrFormModal('Reportar conversación', [
+            { name:'reason', label:'Motivo del reporte', type:'textarea', req:true, ph:'Cuéntanos qué ocurrió.' }
+          ], async (value)=>{
+            await window.api('/api/reports', { targetType:'conversation', targetId: head.id, reason: value.reason }, 'POST');
+            window.toast('Reporte enviado, lo revisará nuestro equipo', 'ok');
+          });
+        });
+      }
       const body=root.querySelector('#mt-body'), input=root.querySelector('#chat-input'), send=root.querySelector('#chat-send');
       if (!body || !send) return;
       const conv = list[active] || null;

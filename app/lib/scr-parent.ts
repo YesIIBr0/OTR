@@ -55,7 +55,7 @@ function normChild(k = {}) {
     // PRD §11.3: umbral de auto-aprobación por hijo. null = aprobar cada reserva;
     // N centavos = auto-aprueba bajo N; consentLevel 'full' = confianza total.
     approveUnderCents: k.approveUnderCents == null ? null : Number(k.approveUnderCents),
-    consentLevel: k.consentLevel || "full",
+    consentLevel: k.consentLevel || "standard", // [fix] default SEGURO (coincide con schema + queries)
   };
 }
 // DB.parent (contrato completo) → fallback de window.__parentFallback (GET /api/guardianship).
@@ -117,6 +117,36 @@ function consentRow(child, pc, i) {
     <div class="row" style="gap:6px;flex:none">
       <button class="btn btn-primary btn-sm" data-consent="${esc(pc.bookingId)}" data-act="ok">${IC.check} Aprobar</button>
       <button class="btn btn-ghost btn-sm" data-consent="${esc(pc.bookingId)}" data-act="no">Rechazar</button>
+    </div>
+  </div>`;
+}
+
+// [MINORS-CONSENT-01 §11.3] Solicitudes de tutela PENDIENTES — el menor declaró a este adulto
+// como tutor al registrarse (nace PENDING); el padre las confirma aquí (POST /api/guardianship →
+// flip PENDING→ACTIVE). Antes el portal NO las mostraba: el padre no tenía forma de confirmar.
+function pendingLinksBlock(pending) {
+  if (!pending || !pending.length) return "";
+  return `
+  <div class="card card-pad fade-up" style="border-color:var(--otr-sky);margin-bottom:18px">
+    <div class="row between vcenter">
+      <b style="font-size:14px">Solicitudes de vínculo pendientes</b>
+      <span class="badge sky"><span class="dot"></span>${pending.length}</span>
+    </div>
+    <p class="muted" style="font-size:12.5px;margin-top:4px">Estos estudiantes te declararon como su tutor al registrarse. Confirma el vínculo para ver su progreso y aprobar sus reservas.</p>
+    <div class="stack" style="gap:0;margin-top:6px">
+      ${pending.map((pl, i) => `
+      <div class="lrow fade-up" style="padding:12px 0;gap:12px;border-bottom:1px solid var(--border);--d:${i}">
+        ${C.avatar(esc(pl.initials || "?"), { size: "sm", bg: "var(--otr-sky-lo)" })}
+        <div style="flex:1;min-width:0">
+          <b style="font-size:13.5px">${esc(pl.name || "Estudiante")}</b>
+          <div class="faint" style="font-size:12px;margin-top:2px">${esc(pl.email || "")}${pl.ageBand === "minor" ? " · menor protegido" : ""}</div>
+        </div>
+        <div class="row" style="gap:6px;flex:none">
+          ${pl.ageBand === "adult"
+            ? `<span class="faint" style="font-size:11.5px">Esperando que ${esc((pl.name || "el alumno").split(" ")[0])} acepte</span>`
+            : `<button class="btn btn-primary btn-sm" data-glink-confirm="${esc(pl.email)}">${IC.check} Confirmar vínculo</button>`}
+        </div>
+      </div>`).join("")}
     </div>
   </div>`;
 }
@@ -220,7 +250,7 @@ function reportCard(kids) {
   return `
   <div class="card card-pad fade-up" style="--d:3;background:linear-gradient(140deg,var(--otr-pale),#fff)" id="pr-card">
     <b style="font-size:13.5px">Reporte mensual</b>
-    <p class="muted" style="font-size:12.5px;margin-top:6px">Resumen del mes con asistencia, crecimiento de habilidades, logros y gasto. Cada fin de mes también llega por correo.</p>
+    <p class="muted" style="font-size:12.5px;margin-top:6px">Resumen del mes con asistencia, habilidades, logros y gasto — disponible aquí cuando quieras, listo para imprimir.</p>
     ${withId.length > 1 ? `
     <div class="field" style="margin-top:10px;margin-bottom:0">
       <label class="label">Hijo/a</label>
@@ -367,7 +397,7 @@ function emptyState() {
         <b style="font-size:13.5px">Qué verás aquí</b>
         <div class="stack" style="gap:10px;margin-top:12px">
           ${[
-            { ic: "levels", t: "Progreso real", d: "Nivel, habilidades y sus avances del mes." },
+            { ic: "levels", t: "Progreso real", d: "Nivel, habilidades y logros, al día." },
             { ic: "calendar", t: "Asistencia y sesiones", d: "Sesiones asistidas vs agendadas y lo que viene." },
             { ic: "lock", t: "Seguridad y consentimiento", d: "Cada reserva con un coach pasa por tu aprobación." },
             { ic: "chart", t: "Gasto claro", d: "Cuánto inviertes, con pagos protegidos en escrow." },
@@ -385,6 +415,7 @@ function emptyState() {
 S.parentPortal = {
   render() {
     const kids = getChildren();
+    const pending = (DB.parent && Array.isArray(DB.parent.pendingLinks)) ? DB.parent.pendingLinks : [];
     const head = `
     <div class="page-head"><div>
       <p class="eyebrow">Portal de familia</p>
@@ -396,13 +427,14 @@ S.parentPortal = {
       return `${head}
       <div class="card fade-up"><div class="empty"><div class="ill">${IC.users}</div><h4>Cargando tu portal…</h4><p>Buscando a tus estudiantes vinculados.</p></div></div>`;
     }
-    if (!kids.length) return `${head}${emptyState()}`;
+    if (!kids.length) return `${head}${pendingLinksBlock(pending)}${emptyState()}`;
 
     const consents = kids.flatMap((k) => k.pendingConsents.map((pc) => ({ child: k, pc })));
     const upcomingTotal = kids.reduce((s, k) => s + k.upcoming.length, 0);
     const spendTotal = kids.reduce((s, k) => s + k.spendCents, 0);
 
     return `${head}
+    ${pendingLinksBlock(pending)}
     <div class="grid g-4 fade-up" style="margin-bottom:18px">
       ${C.kpi("Hijos vinculados", String(kids.length), { ic: "users" })}
       ${C.kpi("Próximas sesiones", String(upcomingTotal), { ic: "calendar" })}
@@ -581,18 +613,21 @@ S.parentPortal = {
         if (!studentId) return;
         sel.disabled = true;
         try {
-          const body = { studentId, approveUnderCents: opt.cents };
-          if (opt.full) body.consentLevel = "full";
+          // [MINORS-CONSENT-02 §11.3 · fix seguridad] SIEMPRE enviar consentLevel: 'full' solo
+          // en "Confianza total", 'standard' en cualquier otro umbral. Antes, bajar DESDE 'full'
+          // NO mandaba consentLevel → la fila quedaba en 'full' y las reservas seguían
+          // auto-confirmándose (el gate de booking compara consentLevel === 'full').
+          const nextConsent = opt.full ? "full" : "standard";
+          const body = { studentId, approveUnderCents: opt.cents, consentLevel: nextConsent };
           await w.api("/api/guardianship", body, "PATCH");
-          // Actualización local sin re-fetch: refleja el nuevo umbral en el hijo.
+          // Actualización local sin re-fetch: refleja el nuevo umbral + consentimiento en el hijo.
           const lists = [];
           if (DB.parent && Array.isArray(DB.parent.children)) lists.push(...DB.parent.children);
           if (Array.isArray(w.__parentFallback)) lists.push(...w.__parentFallback);
           lists.forEach((k) => {
             if (k.id === studentId || k.childId === studentId) {
               k.approveUnderCents = opt.cents;
-              if (opt.full) k.consentLevel = "full";
-              else if (k.consentLevel === "full") k.consentLevel = "progress_only";
+              k.consentLevel = nextConsent;
             }
           });
           w.toast?.(`Umbral actualizado — ${opt.label}`, "ok");
@@ -600,6 +635,34 @@ S.parentPortal = {
           w.toast?.((e && e.message) || "No se pudo actualizar el umbral", "danger");
         } finally {
           sel.disabled = false;
+        }
+      })
+    );
+
+    // [MINORS-CONSENT-01 §11.3] Confirmar una solicitud de tutela PENDIENTE (el menor declaró a
+    // este adulto al registrarse). POST /api/guardianship por email → flip PENDING→ACTIVE.
+    root.querySelectorAll("[data-glink-confirm]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const email = btn.getAttribute("data-glink-confirm") || "";
+        if (!email) return;
+        btn.disabled = true;
+        btn.textContent = "Confirmando…";
+        try {
+          const d = await w.api("/api/guardianship", { email }, "POST");
+          const g = d && d.guardianship;
+          const active = g && String(g.status).toUpperCase() === "ACTIVE";
+          w.toast?.(active ? "Vínculo confirmado — ya ves su progreso" : "El estudiante debe aceptar la solicitud", active ? "ok" : "warn");
+          // Refresca app-data para que DB.parent traiga al hijo activo y quite el pendiente.
+          try {
+            const res = await fetch("/api/app-data");
+            if (res.ok) { const fresh = await res.json(); const role = DB.me?.role; Object.assign(DB, fresh); if (role) DB.me = { ...(fresh.me || {}), role }; }
+          } catch { /* seguimos */ }
+          w.__parentFallback = null; // re-derivar desde DB.parent fresco
+          repaint();
+        } catch (e) {
+          w.toast?.((e && e.message) || "No se pudo confirmar el vínculo", "danger");
+          btn.disabled = false;
+          btn.textContent = "Confirmar vínculo";
         }
       })
     );

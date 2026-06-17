@@ -3,6 +3,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { matches } from "./text";
 export const S = {};
   const spark = (vals,color='var(--otr-sky)') => `<div class="spark">${vals.map(v=>`<i style="height:${v}%;background:${color}"></i>`).join('')}</div>`;
   const trendIc = t => t==='up'?`<span class="trend-up">${IC.chevD}</span>`.replace('chevD','') && `<span class="trend-up">▴</span>` : t==='down'?'<span class="trend-down">▾</span>':'<span class="trend-flat">→</span>';
@@ -25,20 +26,6 @@ export const S = {};
       }
     } catch { /* silencioso: si falla la red, al menos re-renderiza con lo que hay */ }
     if (typeof window !== "undefined" && window.go) window.go(route);
-  }
-
-  // Etiqueta legible para el tipo de lección.
-  const LESSON_TYPES = {
-    lesson: "Lección", video: "Video", quiz: "Examen",
-    assign: "Tarea", mic: "Grabación", file: "Archivo",
-  };
-
-  // Badge del proveedor de video de una lección.
-  function videoBadge(l) {
-    const k = l.videoKind;
-    if (!k || k === "none") return "";
-    const label = k === "youtube" ? "YouTube" : k === "cloudflare" ? "Stream" : k === "upload" ? "Subido" : k;
-    return `<span class="badge sky" style="height:18px;font-size:10px;gap:3px;flex:none"><span style="display:inline-flex;width:11px">${IC.video}</span>${esc(label)}</span>`;
   }
 
   // Recorre teacherCourses y devuelve la lección por id (para prefills).
@@ -140,42 +127,27 @@ export const S = {};
     managePanel({courseCount,moduleCount,lessonCount,quizCount}) {
       const courses = DB.teacherCourses || [];
 
-      // Una lección dentro del árbol de gestión.
-      const lessonRow = (l) => {
-        const hasQuiz = l.type === 'quiz';
-        const quizInDb = (DB.quizByLesson || {})[l.id];
-        const quizState = hasQuiz
-          ? (quizInDb
-              ? `<span class="badge ok" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.check} ${quizInDb.questions?.length || 0} preg.</span>`
-              : `<span class="badge warn" style="height:18px;font-size:10px;flex:none">Sin preguntas</span>`)
-          : '';
-        return `<div class="tm-lesson row between vcenter" data-lesson-id="${esc(l.id)}" style="padding:8px 0 8px 20px;font-size:13px;color:var(--text-2)">
-          <span class="row vcenter" style="gap:8px;min-width:0">
-            <span style="display:flex;width:15px;color:var(--text-3);flex:none">${C.typeIcon(l.type)}</span>
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.title)}</span>
-            <span class="badge" style="height:18px;font-size:10px;flex:none">${esc(LESSON_TYPES[l.type] || l.type)}</span>
-            ${videoBadge(l)}${quizState}
-          </span>
-          <span class="row" style="gap:4px;flex:none">
-            ${hasQuiz ? `<button class="btn btn-soft btn-sm" data-tm="quiz" data-lesson="${esc(l.id)}" data-title="${esc(l.title)}" title="Constructor de examen">${IC.doc} Examen</button>` : ''}
-            <button class="btn btn-quiet btn-sm" data-tm="lesson-video" data-lesson="${esc(l.id)}" data-title="${esc(l.title)}" title="Subir / cambiar video">${IC.video}</button>
-          </span>
-        </div>`;
-      };
-
-      const moduleRow = (m) => `<div class="tm-module" style="border-top:1px solid var(--border);padding:12px 0 6px">
-        <div class="row vcenter" style="margin-bottom:2px"><b class="row vcenter" style="gap:7px;font-size:13.5px"><span style="display:flex;width:14px;color:var(--text-3)">${IC.grid}</span>${esc(m.title)}</b>
-          <span class="faint" style="font-size:12px;margin-left:8px">${(m.lessons?.length || 0)} lección${(m.lessons?.length||0)===1?'':'es'}</span></div>
-        ${(m.lessons || []).map(lessonRow).join('') || '<div class="faint" style="font-size:12px;padding:6px 0 0 20px">Sin lecciones — añade con "+ Crear"</div>'}
-      </div>`;
-
-      const courseCard = (c, i = 0) => `<div class="card card-pad tm-course fade-up" style="margin-bottom:14px;--d:${i}">
+      // [PRD-05] Tarjeta-resumen fina por curso. El árbol completo (Cursos → Módulos →
+      // Lecciones → Examen) y su edición viven en el constructor canónico (S.manage,
+      // scr-extra.ts) al que se llega con go("manage"). Aquí solo mostramos un resumen
+      // y un único CTA que enruta al editor, evitando duplicar la jerarquía.
+      const courseCard = (c, i = 0) => {
+        const mods = c.modules || [];
+        const lessons = mods.reduce((n, m) => n + (m.lessons?.length || 0), 0);
+        const quizzes = mods.reduce((n, m) => n + (m.lessons || []).filter(l => l.type === 'quiz').length, 0);
+        const pluralize = (n, sing, plur) => `${n} ${n === 1 ? sing : plur}`;
+        return `<div class="card card-pad tm-course fade-up" style="margin-bottom:14px;--d:${i}">
         <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
-          <div class="row vcenter" style="gap:10px;min-width:0">${C.courseDot(c.color)}<b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${c.name}</b></div>
-          <span class="faint" style="font-size:12px">${(c.modules?.length||0)} módulos</span>
+          <div class="row vcenter" style="gap:10px;min-width:0">${C.courseDot(c.color)}
+            <div style="min-width:0">
+              <b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${esc(c.name)}</b>
+              <div class="faint" style="font-size:12px;margin-top:2px">${pluralize(mods.length,'módulo','módulos')} · ${pluralize(lessons,'lección','lecciones')} · ${pluralize(quizzes,'examen','exámenes')}</div>
+            </div>
+          </div>
+          <button class="btn btn-soft btn-sm" onclick="go('manage')" style="flex:none">${IC.sliders} Editar contenido</button>
         </div>
-        ${(c.modules || []).map(moduleRow).join('') || '<div class="faint" style="font-size:12px;margin-top:10px">Sin módulos todavía — añade con "+ Crear → Nuevo módulo"</div>'}
       </div>`;
+      };
 
       const empty = `<div class="card"><div class="empty"><div class="ill">${IC.book}</div>
         <h4>Aún no tienes cursos</h4><p>Crea tu primer curso con el botón <b>+ Crear</b> de la barra superior, y luego añade módulos, lecciones y exámenes.</p></div></div>`;
@@ -220,9 +192,9 @@ export const S = {};
         if (!btn || !root.contains(btn)) return;
         e.preventDefault();
         const kind = btn.getAttribute("data-tm");
-        if (kind === "quiz") openQuizBuilder(btn.getAttribute("data-lesson"), btn.getAttribute("data-title"));
-        else if (kind === "lesson-video") openLessonVideo(btn.getAttribute("data-lesson"), btn.getAttribute("data-title"));
-        else if (kind === "resource") openResourceUpload();
+        // [PRD-05] La autoría de examen/video por lección vive ahora en el editor
+        // canónico (S.manage, scr-extra.ts). Aquí solo queda el alta de recurso suelto.
+        if (kind === "resource") openResourceUpload();
       });
 
       // [ENT-06] Búsqueda + filtro de riesgo del roster (cliente, sobre las filas ya pintadas).
@@ -232,13 +204,13 @@ export const S = {};
       const trEmpty = root.querySelector("#tr-empty");
       if (trBody) {
         const applyTr = () => {
-          const q = (trSearch && trSearch.value || "").toLowerCase().trim();
+          const q = (trSearch && trSearch.value || "").trim();
           const riskOnly = trRisk && trRisk.getAttribute("data-on") === "1";
           let shown = 0;
           trBody.querySelectorAll("tr").forEach((tr) => {
             const name = tr.getAttribute("data-name") || "";
             const risk = tr.getAttribute("data-risk") === "1";
-            const ok = (!q || name.includes(q)) && (!riskOnly || risk);
+            const ok = (!q || matches(name, q)) && (!riskOnly || risk);
             tr.style.display = ok ? "" : "none";
             if (ok) shown++;
           });
@@ -666,7 +638,7 @@ export const S = {};
       let activeFilter = "all";
 
       function apply() {
-        const q = (search?.value || "").toLowerCase().trim();
+        const q = (search?.value || "").trim();
         let shown = 0;
         body.querySelectorAll("tr").forEach((tr) => {
           const role = tr.getAttribute("data-role");
@@ -676,7 +648,7 @@ export const S = {};
             activeFilter === "all" ? true :
             activeFilter === "risk" ? risk :
             activeFilter === role;
-          const matchesQuery = !q || name.includes(q);
+          const matchesQuery = !q || matches(name, q);
           const show = matchesFilter && matchesQuery;
           tr.style.display = show ? "" : "none";
           if (show) shown++;

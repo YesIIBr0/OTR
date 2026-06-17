@@ -18,6 +18,23 @@ export type ActivityType =
   | "tournament_result"
   | "booking_made";
 
+// [PUBLIC-PROFILE §8.4] Tipos de hito REALES de aprendizaje que el timeline PÚBLICO muestra.
+// Excluye eventos meta (public_profile_on, membership_changed, message_sent…) que no son hitos
+// verificados y ensuciaban el perfil público ("Activó su perfil público").
+export const MILESTONE_ACTIVITY_TYPES: ActivityType[] = [
+  "lesson_done",
+  "quiz_done",
+  "submission_graded",
+  "debate_win",
+  "debate_loss",
+  "session_done",
+  "badge_earned",
+  "cert_earned",
+  "skill_up",
+  "tournament_result",
+  "booking_made",
+];
+
 export interface LogActivityInput {
   userId: string;
   type: ActivityType | string;
