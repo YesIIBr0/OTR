@@ -32,8 +32,17 @@ Leyenda: **✓** construido · **◐** parcial / apagado-pero-en-PRD (roadmap) �
 - **`gradebook`** (matriz de notas) — removido; el PRD §6.5 define el feedback como **ballots/rúbricas**, no una matriz.
 - `/consulta` (funnel "Reserva tu consulta gratis") **se conserva**: lo enlaza el landing congelado (top-of-funnel, §18 GHL-adjacent).
 
+## Wave-3 — cierre de Fase 1 (auditoría UX de 68 hallazgos, reconciliada vs. código actual)
+Triage multi-agente de `docs/ux-audit/PRIORITY_MATRIX.md` contra el código de hoy: **33 ya estaban resueltos** en olas previas, **~35 abiertos cerrados** en esta ola, el resto son refactors arquitectónicos diferidos (abajo). Cerrados:
+- **Visual/a11y:** VIS-05 (azul del rebrand fuera), VIS-06 (pesos), VIS-07 (tamaños mínimos), VIS-08 (crema de marca), A11Y-08 (verde accesible en login).
+- **Navegación:** NAV-04 (migas navegables), NAV-06 (tabbar admin), NAV-08 (membresía en nav del padre).
+- **Sala de sesión:** NAV-07/COG-06/FLW-04/CNV-04 (pantalla `room` real; el botón "Unirse" ya entrega el servicio).
+- **Admin/escala:** ENT-01 (cola de moderación acotada+paginada), ENT-02 (usuarios paginados + KPIs reales), ENT-04 (filtro por rol), ENT-06 (búsqueda en el roster), ENT-08 (inbox del coach acotado).
+- **Autoría/coach:** FE-03 (doble-escape), PRD-01 (Enter-enviar), PRD-02 (calificación en lote), PRD-04 (duplicar pregunta), FLW-08 (preview de plantilla), UIC-03 (cambiar contraseña).
+- **Alumno/copy:** FLW-07 (avance confirmado), COG-04 (métodos de entrega), UIC-10 (deshacer completada), COG-07 (limpiar filtros), CNV-05 (CTA de gamificación), CNT-03/CNT-06/COG-09/UIC-07/FLW-09/FE-05 (microcopy).
+- **Diferidos (refactor arquitectónico riesgoso, NO "de golpe"):** FE-01 (render incremental), FE-02 (trocear Aula.tsx), FE-04 (reemplazar execCommand), BE-03 (aplanar getAppData), BE-04 (suite de tests), ENT-07 (paginación server del marketplace), ENT-03 (búsqueda acento-insensible), PRD-03 (reorder optimista por flechas — el drag&drop ya es fluido), PRD-05 (consolidar Panel↔Builder). Cada uno merece su propio esfuerzo enfocado.
+
 ## Backlog restante (del PRD, por construir — nada es "sobra")
-- **Wave-3 (pulidos, ~29):** reprogramar reserva, reseñar-coach (req. migración), resolución de reportes, adjuntar grabación, iniciar conversación (seguridad de menores), des-inscribir torneo, etc. Ver `docs/ux-audit/PRIORITY_MATRIX.md`.
 - **Fase 2:** gamificación completa (seasons/challenges/streak-freeze), certificaciones pagadas, torneos hosted con brackets/matchmaking, analytics profundo, app nativa, perfil público compartible, tier Elite.
 - **Fase 3:** Community a full (clubs/mentorship/discussion boards), B2B/institucional, multi-categoría marketplace.
 - **Fase 4:** capa de IA (drills/sparring), red de credenciales, expansión internacional.
