@@ -59,8 +59,8 @@ function reportCard(r, d) {
     <div class="row between vcenter wrap" style="gap:10px">
       <div class="row vcenter" style="gap:9px;min-width:0">
         <span style="display:inline-flex;width:16px;height:16px;color:var(--otr-sky-lo);flex:none">${IC.flag}</span>
-        <b style="font-size:13.5px">${type}</b>
-        <span class="chip soft" style="font-size:11px">${esc(r.targetId)}</span>
+        <b style="font-size:13.5px">${type}${r.targetName ? ` · ${esc(r.targetName)}` : ""}</b>
+        ${r.targetName ? "" : `<span class="chip soft" style="font-size:11px">${esc(r.targetId)}</span>`}
       </div>
       ${statusBadge(r.status)}
     </div>

@@ -72,10 +72,32 @@ export async function GET(req: Request) {
   const nameById: Record<string, string> = {};
   for (const r of reporters) nameById[r.id] = r.name;
 
+  // [ADM-03] Resuelve un nombre legible del objetivo (usuario/coach) para que la
+  // cola de moderación muestre A QUIÉN se reporta, no un id opaco.
+  const userTargetIds = [...new Set(reports.filter((r) => r.targetType === "user").map((r) => r.targetId))];
+  const coachTargetIds = [...new Set(reports.filter((r) => r.targetType === "coach").map((r) => r.targetId))];
+  const coachProfiles = coachTargetIds.length
+    ? await db.coachProfile.findMany({ where: { id: { in: coachTargetIds } }, select: { id: true, userId: true } })
+    : [];
+  const coachUserId: Record<string, string> = {};
+  for (const cp of coachProfiles) coachUserId[cp.id] = cp.userId;
+  const allTargetUserIds = [...new Set([...userTargetIds, ...Object.values(coachUserId)])];
+  const targetUsers = allTargetUserIds.length
+    ? await db.user.findMany({ where: { id: { in: allTargetUserIds } }, select: { id: true, name: true } })
+    : [];
+  const userNameById: Record<string, string> = {};
+  for (const u of targetUsers) userNameById[u.id] = u.name;
+  const targetNameById: Record<string, string> = {};
+  for (const r of reports) {
+    if (r.targetType === "user") targetNameById[r.targetId] = userNameById[r.targetId] || "";
+    else if (r.targetType === "coach") targetNameById[r.targetId] = userNameById[coachUserId[r.targetId]] || "";
+  }
+
   const items = reports.map((r) => ({
     id: r.id,
     targetType: r.targetType,
     targetId: r.targetId,
+    targetName: targetNameById[r.targetId] || null,
     reason: r.reason,
     status: r.status,
     resolution: r.resolution,

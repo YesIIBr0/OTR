@@ -62,6 +62,8 @@ export const S = {};
       const moduleCount = courses.reduce((a,c)=>a+(c.modules?.length||0),0);
       const lessonCount = courses.reduce((a,c)=>a+(c.modules||[]).reduce((b,m)=>b+(m.lessons?.length||0),0),0);
       const quizCount = courses.reduce((a,c)=>a+(c.modules||[]).reduce((b,m)=>b+(m.lessons||[]).filter(l=>l.type==='quiz').length,0),0);
+      // [COG-01] Pestañas: separar el seguimiento del grupo (tracking) de la gestión de contenido.
+      const tab = (typeof window!=='undefined' && (window as any).__teacherTab === 'contenido') ? 'contenido' : 'grupo';
 
       return `
       <div class="page-head">
@@ -73,7 +75,11 @@ export const S = {};
         </div>
       </div>
 
-      <div class="grid g-4" style="margin-bottom:18px">
+      <div class="tabs fade-up" id="tr-tabs" style="--d:0">
+        <button class="tab ${tab==='grupo'?'active':''}" data-teacher-tab="grupo"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.users}</span>Grupo</span></button>
+        <button class="tab ${tab==='contenido'?'active':''}" data-teacher-tab="contenido"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.book}</span>Contenido</span></button>
+      </div>
+      ${tab==='grupo' ? `<div class="grid g-4" style="margin-bottom:18px">
         <div class="tile fade-up" style="--d:0">${C.kpi('Promedio del grupo',String(k.avg),{unit:'%',ic:'chart'})}</div>
         <div class="tile fade-up" style="--d:1">${C.kpi('Asistencia',String(k.attendance),{unit:'%',ic:'users'})}</div>
         ${/* [auditoría] el valor deriva de Enrollment.engagement (Alto/Medio/Bajo→%), no de entregas vs dueAt: se etiqueta como engagement, no como puntualidad medida */""}
@@ -90,7 +96,7 @@ export const S = {};
           </div>
           <div class="table-wrap scroll-m">
             <table class="tbl">
-              <thead><tr><th>Estudiante</th><th>Nivel</th><th class="num">Nota</th><th class="num">Asist.</th><th>Engagement</th><th class="center">7 días</th><th class="num">Últ. acceso</th></tr></thead>
+              <thead><tr><th>Estudiante</th><th>Nivel</th><th class="num">Nota</th><th class="num">Asist.</th><th>Engagement</th><th class="center">Tendencia</th><th class="num">Últ. acceso</th></tr></thead>
               <tbody id="tr-body">
                 ${DB.students.map(s=>`<tr data-name="${esc(String(s.n).toLowerCase())}" data-risk="${s.risk?'1':'0'}">
                   <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.badge('Riesgo','danger'):''}</div></td>
@@ -127,9 +133,7 @@ export const S = {};
               : `<div class="empty" style="padding:20px 16px"><div class="ill">${IC.checkCircle}</div><h4>Todo al día</h4><p>No tienes entregas pendientes de calificar.</p></div>`}
           </div>
         </div>
-      </div>
-
-      ${this.managePanel({courseCount,moduleCount,lessonCount,quizCount})}`;
+      </div>` : this.managePanel({courseCount,moduleCount,lessonCount,quizCount})}`;
     },
 
     /* ---------------- PANEL DE GESTIÓN (Cursos → Módulos → Lecciones → Examen) ---------------- */
@@ -202,6 +206,14 @@ export const S = {};
     /* ---------------- MOUNT: cablea el panel de gestión (quiz, uploads, recursos) ---------------- */
     mount(root) {
       if (!root) return;
+
+      // [COG-01] Cambio de pestaña Grupo/Contenido (re-render, patrón de coachwork).
+      root.querySelectorAll("[data-teacher-tab]").forEach((el) =>
+        el.addEventListener("click", () => {
+          (window as any).__teacherTab = el.getAttribute("data-teacher-tab");
+          if (typeof window !== "undefined" && (window as any).go) (window as any).go("teacher");
+        })
+      );
 
       root.addEventListener("click", (e) => {
         const btn = e.target.closest && e.target.closest("[data-tm]");

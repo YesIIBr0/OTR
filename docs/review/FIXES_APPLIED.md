@@ -62,14 +62,15 @@ Every screen now exposes exactly one `<h1>` (was zero — screen titles were pla
 ## 7. Certificate print — FIXED (CERT-01) ✅
 Added an `@media print` block (`screens.css`) so `window.print()` on the certificate prints only the diploma (`body:has(.diploma-wrap)` hides the shell + action chrome via visibility, repositions the diploma full-width, drops its shadow).
 
-## Deferred (verified, specified — recommended next pass)
-Documented in [findings-backlog.md](findings-backlog.md) with exact file/line/fix. These need a backend/data change or a product decision, so they were not forced:
-- **COG-01:** split the coach "Seguimiento del grupo" into Grupo/Contenido tabs (it currently stacks tracking + course management — a layout redesign).
-- **CORE-02:** student global search has no privacy-scoped people index — scope or hide (needs a query-layer change).
-- **LRN-03:** assignment screen shows a generic CWI rubric for all 100-pt work — drive from real `L.rubric` data (needs the field; may be intentional default — product call).
-- **COACH-02:** teacher roster sparkline plots a shape derived from a trend flag, not real daily data — feed a real 7-day series or remove the column (product call).
-- **ADM-03:** moderation report shows raw `targetId` — show the target's name + "Ver" link (needs `targetName` joined in `queries.ts`).
-- **MKT-02 (rest):** global `.sky{color:var(--action)}` contrast repoint — needs an audit of `.sky` usage on dark surfaces first (risk of invisible text on the dark hero).
+## 8. Continued repairs — FIXED (2nd pass) ✅
+- **COG-01 (merge):** the coach "Seguimiento del grupo" now has **Grupo / Contenido tabs** (`scr-teacher.ts`) — tracking (KPIs + roster + alerts) on Grupo, course management (`managePanel`) on Contenido, switched via a `__teacherTab` re-render. Embedded sub-heading demoted to `<h2>` so each tab keeps one `<h1>`. Validated: 2 tabs, 1 h1 per tab, manage panel only on Contenido, 0 errors.
+- **COACH-02 (content):** relabeled the misleading roster column "7 días" → **"Tendencia"** (`scr-teacher.ts`) — the sparkline reflects the real trend direction, not literal daily values, so the header is now honest.
+- **ADM-03 (redesign):** the moderation queue now shows **the target's name** ("Usuario · Diego Fermín") instead of an opaque id — added a `targetName` join (user / coach→user) in `app/api/reports/route.ts`; `scr-admin.ts` shows the name and only falls back to the raw id for non-person targets (e.g. a reported message). Validated as admin.
+- **CORE-02 (privacy):** the student search **no longer exposes a people index** — `scr-extra.ts` scopes the "Personas" section to staff (`role === "teacher"|"admin"`). Validated: student → courses only (0 people rows); coach → 6 people. (Caught a casing bug here in validation: `DB.me.role` is lowercase, per `queries.ts:193`.)
+
+## Deferred (recommended next pass — needs a product decision)
+- **LRN-03:** the assignment screen shows a standard CWI rubric for all 100-pt work — making it per-assignment data-driven (`L.rubric`) needs the field added and a call on whether the default is intentional.
+- **MKT-02 (rest):** global `.sky{color:var(--action)}` contrast repoint — needs an audit of `.sky` usage on dark surfaces first (risk of invisible text on the dark hero). The light-surface case (`.cc-pct`) is already fixed.
 
 ## Excluded (not real bugs)
 - **Login `.lb-wave` hydration mismatch:** deterministic `Math.sin` (no randomness); on a clean build server & client emit identical values. The mismatch was an artifact of a stale `.next` cache, not code. (Optional hardening: round `h` to fixed precision.)

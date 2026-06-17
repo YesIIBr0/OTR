@@ -294,7 +294,10 @@ export const S = {
     render() {
       const q = (window.__q || "").toLowerCase().trim();
       const courses = (DB.catalog || []).filter((c) => `${c.name} ${c.code} ${c.coach}`.toLowerCase().includes(q));
-      const people = (DB.students || []).filter((s) => s.n.toLowerCase().includes(q));
+      // [CORE-02] Privacidad: el índice de personas es solo para staff (coach/admin).
+      // Estudiantes y familias NO pueden buscar personas (protege la privacidad de menores).
+      const isStaff = DB.me?.role === "teacher" || DB.me?.role === "admin";
+      const people = isStaff ? (DB.students || []).filter((s) => s.n.toLowerCase().includes(q)) : [];
       // Foro APAGADO (PRD-estricto): sin sección de discusiones en los resultados.
       const total = courses.length + people.length;
       let _sec = 0;
