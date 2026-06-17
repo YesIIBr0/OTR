@@ -38,8 +38,11 @@ export async function POST(req: Request) {
     where: { parentId_studentId: { parentId: user.id, studentId: student.id } },
   });
   if (existing) {
-    // Reactiva si estaba revocado; en otro caso, idempotente.
-    if (existing.status === "REVOKED") {
+    // [MINORS-CONSENT-01 §11.3] El PARENT confirma el vínculo: si no estaba activo
+    // (REVOKED, o PENDING que el menor creó al registrarse) y ahora corresponde
+    // ACTIVE (menor con su tutor presente), actívalo. Para un estudiante ADULTO el
+    // status calculado es PENDING → el vínculo permanece idempotente (espera al alumno).
+    if (existing.status !== "ACTIVE" && status === "ACTIVE") {
       const updated = await db.guardianship.update({
         where: { id: existing.id },
         data: { status, consentLevel },
@@ -73,7 +76,7 @@ export async function POST(req: Request) {
 // approveUnderCents?: number|null, consentLevel? }.
 //  - approveUnderCents: null = aprobar CADA reserva manualmente; N (entero >=0) =
 //    auto-aprueba reservas hasta N centavos. Omitido = no se toca.
-//  - consentLevel: full | progress_only (allowlist). Omitido = no se toca.
+//  - consentLevel: full | standard | progress_only (allowlist). Omitido = no se toca.
 // Requiere un Guardianship ACTIVE con parentId = yo y el studentId dado.
 export async function PATCH(req: Request) {
   const user = await getSessionUser();
@@ -106,7 +109,9 @@ export async function PATCH(req: Request) {
   }
 
   if (data.consentLevel !== undefined) {
-    if (data.consentLevel !== "full" && data.consentLevel !== "progress_only") {
+    // [MINORS-CONSENT-02 §11.3] allowlist completa: full (confianza total) |
+    // standard (aprobar cada reserva, default seguro) | progress_only (solo ve progreso).
+    if (!["full", "standard", "progress_only"].includes(data.consentLevel)) {
       return bad("Nivel de consentimiento inválido", 400);
     }
     patch.consentLevel = data.consentLevel;

@@ -537,7 +537,7 @@ model Guardianship {
   studentId    String   // User(STUDENT)
   student      User     @relation("GuardianStudent", fields: [studentId], references: [id], onDelete: Restrict)
   status       String   @default("ACTIVE") // PENDING | ACTIVE | REVOKED
-  consentLevel String   @default("full")   // full | progress_only
+  consentLevel String   @default("standard") // [MINORS-CONSENT-02 §11.3] default seguro: aprobar cada reserva. full | standard | progress_only
   // PRD §11.3: umbral de aprobación per-booking configurable. null = aprobar cada
   // reserva; N = auto-aprueba reservas de hasta N centavos (sobre N requiere OK).
   approveUnderCents Int?
@@ -660,6 +660,7 @@ model Booking {
   packageId   String?
   slotAt      DateTime
   durationMin Int           @default(60)
+  priceCents  Int           @default(0) // [BOOKING-ESCROW-1 §7.4] snapshot del precio acordado; el escrow nace al CONFIRMAR
   status      String        @default("PENDING") // PENDING | CONFIRMED | COMPLETED | CANCELLED | DISPUTED
   consentBy   String?       // parentId si el alumno es menor
   videoUrl    String?       // sala on-platform

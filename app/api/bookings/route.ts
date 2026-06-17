@@ -3,13 +3,14 @@
 //  POST (STUDENT) — body { coachId, packageId, slotAt }.
 //    Flujo: valida coach+paquete → valida slot (futuro, alineado, dentro de la
 //    disponibilidad del coach si la publicó, sin choque con otro Booking activo)
-//    → SAFETY GATE de menores → crea Booking + EscrowTxn HELD en transacción.
+//    → SAFETY GATE de menores → crea Booking (+ EscrowTxn HELD solo si CONFIRMED).
 //    SAFETY GATE (Trust & Safety): si el alumno es ageBand "minor" necesita un
 //    Guardianship ACTIVE; consentBy = parentId. consentLevel "full" → CONFIRMED
 //    (consentimiento amplio ya dado); si no → PENDING (el padre aprueba vía
 //    PATCH /api/bookings/[id]). Menor sin guardián vinculado → 403.
-//    ESCROW SIMULADO: sin Stripe real en esta fase — la EscrowTxn nace HELD con
-//    amountCents = precio del paquete, takeRatePct 18 y stripeRef null. Al
+//    ESCROW SIMULADO (§7.4): sin Stripe real en esta fase. La EscrowTxn nace HELD
+//    SOLO al confirmar (no se retienen fondos de un booking PENDING de un menor;
+//    se crea al aprobar el tutor). amountCents = precio del paquete, takeRatePct 18. Al
 //    completarse la sesión se marca RELEASED (payout = monto − take rate); al
 //    cancelarse, REFUNDED. Cuando se integre Stripe, stripeRef guardará el
 //    PaymentIntent y HELD/RELEASED/REFUNDED se mapearán a capturas/transferencias.
@@ -145,6 +146,9 @@ export async function POST(req: Request) {
           packageId: pkg ? pkg.id : null,
           slotAt,
           durationMin: DURATION_MIN,
+          // [BOOKING-ESCROW-1 §7.4] snapshot del precio acordado: el escrow de un
+          // booking PENDING (menor esperando al tutor) se crea al aprobar, con este monto.
+          priceCents: amountCents,
           status,
           consentBy,
         },
@@ -160,16 +164,20 @@ export async function POST(req: Request) {
           data: { videoUrl: `/aula?room=${b.id}` },
         });
       }
-      // Escrow simulado: fondos retenidos (HELD) hasta completar la sesión.
-      await tx.escrowTxn.create({
-        data: {
-          bookingId: b.id,
-          amountCents,
-          takeRatePct: 18,
-          status: "HELD",
-          stripeRef: null,
-        },
-      });
+      // [BOOKING-ESCROW-1 §7.4] El escrow nace HELD SOLO al confirmar. Si el booking
+      // queda PENDING (menor esperando consentimiento del tutor) NO se retienen fondos
+      // todavía: la EscrowTxn HELD se crea cuando el padre aprueba (PATCH /api/bookings/[id]).
+      if (b.status === "CONFIRMED") {
+        await tx.escrowTxn.create({
+          data: {
+            bookingId: b.id,
+            amountCents,
+            takeRatePct: 18,
+            status: "HELD",
+            stripeRef: null,
+          },
+        });
+      }
       await tx.coachProfile.update({
         where: { id: profile.id },
         data: { bookingCount: { increment: 1 } },
@@ -256,6 +264,9 @@ export async function GET() {
         consentBy: b.consentBy,
         // El padre vinculado ve de un vistazo qué espera su aprobación.
         awaitingConsent: b.status === "PENDING" && !!b.consentBy,
+        // [BOOKING-ESCROW-1] precio acordado (snapshot): visible aun cuando el escrow
+        // todavía no existe (booking PENDING de un menor, fondos no retenidos aún).
+        priceCents: b.priceCents,
         student: { id: b.studentId, name: student?.name ?? "Estudiante", initials: student?.initials ?? "ES" },
         coach: { id: b.coachId, name: coach?.name ?? "Coach", initials: coach?.initials ?? "C" },
         package: pkg,

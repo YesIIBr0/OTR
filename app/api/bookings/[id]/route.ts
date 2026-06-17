@@ -1,7 +1,8 @@
 // Marketplace (PRD §7) · PATCH /api/bookings/[id] — transiciones de una reserva.
 // body { action: "approve" | "complete" | "cancel" } — validadas por rol/propiedad:
 //
-//  approve  — el PADRE designado (consentBy) aprueba: PENDING → CONFIRMED.
+//  approve  — el PADRE designado (consentBy) aprueba: PENDING → CONFIRMED; recién
+//             aquí nace la EscrowTxn HELD (no se retienen fondos de un PENDING).
 //  complete — el COACH de la sesión la marca COMPLETED: CONFIRMED → COMPLETED,
 //             EscrowTxn HELD → RELEASED (payout simulado = monto − take rate 18%),
 //             upsert CoachSession.completedAt y logActivity "session_done".
@@ -48,10 +49,25 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     // Al confirmar (PRD §7.3 paso 6) se asigna la sala on-platform
     // '/aula?room=<id>' si aún no tiene una. La videollamada real
     // (Cloudflare/Daily) se cabla luego; por ahora la sala es una vista interna.
-    const updated = await db.booking.update({
-      where: { id },
-      data: { status: "CONFIRMED", ...(booking.videoUrl ? {} : { videoUrl: `/aula?room=${id}` }) },
-    });
+    //
+    // [BOOKING-ESCROW-1 §7.4] Recién AHORA (el tutor consiente) nacen los fondos
+    // retenidos: la EscrowTxn HELD no existía mientras el booking estaba PENDING.
+    // Se crea con el precio snapshot del booking, atómico con la confirmación. Si
+    // ya existiera (reserva legada anterior al diferido), no se duplica (bookingId @unique).
+    const ops: any[] = [
+      db.booking.update({
+        where: { id },
+        data: { status: "CONFIRMED", ...(booking.videoUrl ? {} : { videoUrl: `/aula?room=${id}` }) },
+      }),
+    ];
+    if (!booking.escrow) {
+      ops.push(
+        db.escrowTxn.create({
+          data: { bookingId: id, amountCents: booking.priceCents, takeRatePct: 18, status: "HELD", stripeRef: null },
+        }),
+      );
+    }
+    const [updated] = await db.$transaction(ops);
     await logActivitySafe({
       userId: booking.studentId,
       type: "booking_confirmed",

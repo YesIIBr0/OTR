@@ -75,10 +75,15 @@ export async function POST(req: Request) {
     },
   });
   // PRD §11.3 'parental sign-off on account creation': si un STUDENT MENOR llega
-  // con guardianEmail (correo del padre/madre), intentamos vincularlo de una vez.
+  // con guardianEmail (correo del padre/madre), intentamos vincularlo.
   // Comportamiento:
-  //  - Si existe un User PARENT con ese correo → se crea Guardianship ACTIVE
-  //    (el tutor de un menor tiene custodia; no requiere su consentimiento).
+  //  - Si existe un User PARENT con ese correo → se crea Guardianship PENDING.
+  //    [MINORS-CONSENT-01 §11.3] El menor AFIRMA quién es su tutor, pero el vínculo
+  //    NO queda ACTIVE por la sola palabra del menor (podría nombrar a cualquier
+  //    adulto sin su consentimiento). Queda PENDING hasta que ese PARENT lo confirme
+  //    (POST /api/guardianship con el correo del menor → PENDING→ACTIVE). Mientras
+  //    tanto el Safety Gate del marketplace exige Guardianship ACTIVE, así que el
+  //    menor no puede reservar hasta que el tutor confirme.
   //  - Si NO existe (o no es PARENT) → el menor se crea igual SIN guardián. El
   //    Safety Gate del marketplace (POST /api/bookings) ya bloquea sus reservas
   //    hasta que un padre lo vincule (POST /api/guardianship). No inventamos modelo
@@ -96,10 +101,10 @@ export async function POST(req: Request) {
         });
         if (!existingLink) {
           const guardianship = await db.guardianship.create({
-            // PRD §11.3: el default seguro es "standard" (aprobar CADA reserva del
-            // menor). "full" (confianza total) es opt-in explícito del padre desde
-            // el selector del Portal de familia — nunca por defecto al vincular.
-            data: { parentId: parent.id, studentId: user.id, status: "ACTIVE", consentLevel: "standard" },
+            // [MINORS-CONSENT-01 §11.3] PENDING: lo afirma el menor, lo confirma el tutor.
+            // consentLevel "standard" = aprobar CADA reserva (default seguro); "full"
+            // (confianza total) es opt-in explícito del padre desde el Portal de familia.
+            data: { parentId: parent.id, studentId: user.id, status: "PENDING", consentLevel: "standard" },
           });
           // Ledger universal (cara del parent): toda acción escribe en ActivityEvent.
           await db.activityEvent.create({
@@ -108,8 +113,8 @@ export async function POST(req: Request) {
               type: "guardianship_linked",
               source: "guardianship",
               refId: guardianship.id,
-              title: `Vinculó a ${user.name}`,
-              detail: "Vínculo creado en el registro del menor",
+              title: `${user.name} te designó como tutor`,
+              detail: "Pendiente de tu confirmación (vincular para activar)",
             },
           });
         }
