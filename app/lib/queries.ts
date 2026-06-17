@@ -276,6 +276,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const _meXp = me?.xp ?? 0;
   const curLevel = [...levels].sort((a, b) => (b.startXp ?? 0) - (a.startXp ?? 0)).find((l) => _meXp >= (l.startXp ?? 0)) ?? levels[0];
   const derivedLevelName = curLevel?.name || "Novato";
+  // [fix] Helper reutilizable: nombre de rango DERIVADO del XP (para el usuario y para los hijos
+  // del portal de familia) — la fuente canónica del rango es el XP, no el User.level almacenado.
+  const levelNameForXp = (xp: number) => ([...levels].sort((a, b) => (b.startXp ?? 0) - (a.startXp ?? 0)).find((l) => (Number(xp) || 0) >= (l.startXp ?? 0)) ?? levels[0])?.name || "Novato";
   const nextLevel = levels.find((l) => l.position === (curLevel?.position ?? 0) + 1);
   const xpLevelStart = curLevel?.startXp ?? 0;
   const xpNext = nextLevel?.startXp ?? (curLevel?.startXp ?? 0);
@@ -568,7 +571,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
 
   // Insignias automáticas (derivadas de logros reales del usuario).
   // mySubs ya se cargó arriba (consulta única de entregas del usuario).
-  const lvl = me?.level || "Novato";
+  const lvl = derivedLevelName; // [fix] rango DERIVADO del XP (no el User.level almacenado) para los badges Semifinalista/Campeón
   const gotBadge = (name: string) => {
     switch (name) {
       case "Primer discurso": return mySubs.length >= 1;
@@ -762,7 +765,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         rating: Math.round(me.debateRating ?? 1500),
         rd: Math.round(me.debateRd ?? 350),
         tier: me.debateTier || "Novato",
-        provisional: (me.debateRd ?? 350) > 150,
+        provisional: (me.debateRd ?? 350) >= 150,
         // [RATING-2 §6.2] Speaker Rating: promedio de oratoria (0-100), separado del W/L.
         // null cuando aún no hay rondas juzgadas (no se muestra una métrica vacía).
         speakerAvg: (me.speakerRounds ?? 0) > 0 ? Math.round(me.speakerAvg ?? 0) : null,
@@ -897,7 +900,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           where: { id: { in: childIds } },
           // §8.4: publicProfile/publicSlug del hijo — el padre habilita el perfil
           // público del menor desde su portal (solo datos aquí, sin UI todavía).
-          select: { id: true, name: true, initials: true, level: true, ageBand: true, publicProfile: true, publicSlug: true },
+          select: { id: true, name: true, initials: true, level: true, xp: true, ageBand: true, publicProfile: true, publicSlug: true },
         })
       : Promise.resolve([]),
     childIds.length
@@ -1141,7 +1144,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
             childId: u.id, // alias explícito para el toggle de consentimiento §8.4
             name: esc(u.name),
             initials: esc(u.initials),
-            level: u.level,
+            level: levelNameForXp(u.xp), // [fix] rango del hijo DERIVADO del XP (no el almacenado)
             ageBand: u.ageBand || "minor",
             // §8.4: estado del perfil público del hijo (el padre es quien lo
             // habilita para menores — aquí solo viajan los datos, sin UI).
@@ -1163,7 +1166,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
             // PRD §11.3: umbral configurable del padre para ESTE hijo. null en
             // approveUnderCents = aprobar cada reserva; N = auto-aprueba hasta N centavos.
             approveUnderCents: guardianshipByChild.get(id)?.approveUnderCents ?? null,
-            consentLevel: guardianshipByChild.get(id)?.consentLevel || "full",
+            consentLevel: guardianshipByChild.get(id)?.consentLevel || "standard", // [fix] default seguro (no "full")
           };
         }),
     };
@@ -1253,7 +1256,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     wins: records.filter((r) => r.result === "WIN").length,
     sessionsAttended,
     tournaments: myTournamentRegs as number,
-    hoursStudied: Math.round(lessonsDoneCount * 0.4 + sessionsAttended * 1),
+    // [fix] Horas REALES de coaching = sesiones completadas (cada Booking ~1h). Antes sumaba
+    // lecciones×0.4 (24 min/lección inventados — no hay tracking de tiempo de lección en el schema).
+    hoursStudied: sessionsAttended,
   };
 
   // Performance record: historia de rating (RatingUpdate 1:1 de cada DebateRecord,
@@ -1472,7 +1477,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       rating: Math.round(me?.debateRating ?? 1500),
       rd: Math.round(me?.debateRd ?? 350),
       tier: me?.debateTier || "Novato",
-      provisional: (me?.debateRd ?? 350) >= 200,
+      provisional: (me?.debateRd ?? 350) >= 150,
       recentForm,
     },
     // PRD §6: Debate Hub (flagship). Sólo para roles CON sesión (null si no hay me).

@@ -46,6 +46,23 @@ export async function POST(req: Request) {
     },
   });
 
+  // [auditoría/stale-stored §7.4] Recalcula el agregado CANÓNICO del coach desde las Review
+  // reales y lo persiste en CoachProfile. ratingAvg/reviewCount son la fuente que el marketplace
+  // MUESTRA y ORDENA; antes solo los fijaba el seed y nunca se sincronizaban con las reseñas → un
+  // coach con reseñas reales seguía mostrando la cifra sembrada. updateMany = no-op si no hay perfil.
+  const agg = await db.review.aggregate({
+    where: { teacherId: course.teacherId },
+    _avg: { rating: true },
+    _count: { _all: true },
+  });
+  await db.coachProfile.updateMany({
+    where: { userId: course.teacherId },
+    data: {
+      ratingAvg: Math.round((agg._avg.rating || 0) * 10) / 10,
+      reviewCount: agg._count._all || 0,
+    },
+  });
+
   return ok({ review });
 }
 

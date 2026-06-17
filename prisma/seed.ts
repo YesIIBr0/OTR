@@ -151,7 +151,7 @@ async function main() {
     { id: "u-jo", name: "Jose Fernández", email: "jose.fernandez@otr.do", initials: "JF", level: "JV", xp: 2210, streak: 4, location: "La Vega, RD", debateRating: 1480, debateRd: 130, debateVol: 0.06, debateTier: "Silver", birthYear: 2009, ageBand: "minor" },
     { id: "u-sg", name: "Sigmund Castillo", email: "sigmund.castillo@otr.do", initials: "SC", level: "JV", xp: 2480, streak: 5, location: "La Vega, RD", debateRating: 1545, debateRd: 120, debateVol: 0.06, debateTier: "Silver", birthYear: 2010, ageBand: "minor" },
     { id: "u-cn", name: "Camila Núñez", email: "camila.nunez@otr.do", initials: "CN", level: "JV", xp: 1980, streak: 3, location: "Santo Domingo, RD", debateRating: 1420, debateRd: 160, debateVol: 0.062, debateTier: "Bronze", birthYear: 2010, ageBand: "minor" },
-    { id: "u-df", name: "Diego Fermín", email: "diego.fermin@otr.do", initials: "DF", level: "Novato", xp: 820, streak: 0, location: "Punta Cana, RD", debateRating: 1360, debateRd: 220, debateVol: 0.065, debateTier: "Novato", birthYear: 2011, ageBand: "minor" },
+    { id: "u-df", name: "Diego Fermín", email: "diego.fermin@otr.do", initials: "DF", level: "Novato", xp: 820, streak: 0, location: "Punta Cana, RD", debateRating: 1360, debateRd: 220, debateVol: 0.065, debateTier: "Bronze", birthYear: 2011, ageBand: "minor" }, // [fix] tierFor(1360)=Bronze (no Novato)
   ];
   await db.user.createMany({
     data: students.map((s) => ({
@@ -1376,6 +1376,14 @@ async function main() {
       },
     ],
   });
+
+  // [auditoría/stale-stored] Sincroniza CoachProfile.ratingAvg/reviewCount con las Review REALES
+  // recién sembradas (supersede las constantes 4.9/12 y 4.7/8 de arriba, que contradecían las
+  // reseñas). Misma lógica que el POST de /api/reviews → el stored nunca diverge de su fuente.
+  for (const cp of await db.coachProfile.findMany({ select: { id: true, userId: true } })) {
+    const agg = await db.review.aggregate({ where: { teacherId: cp.userId }, _avg: { rating: true }, _count: { _all: true } });
+    await db.coachProfile.update({ where: { id: cp.id }, data: { ratingAvg: Math.round((agg._avg.rating || 0) * 10) / 10, reviewCount: agg._count._all || 0 } });
+  }
 
   // ----------------------------------------------------------------
   //  10) ARSENAL — recursos reales (briefs, templates, drills)

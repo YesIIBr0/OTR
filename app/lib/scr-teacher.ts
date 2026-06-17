@@ -76,7 +76,8 @@ export const S = {};
       <div class="grid g-4" style="margin-bottom:18px">
         <div class="tile fade-up" style="--d:0">${C.kpi('Promedio del grupo',String(k.avg),{unit:'%',ic:'chart'})}</div>
         <div class="tile fade-up" style="--d:1">${C.kpi('Asistencia',String(k.attendance),{unit:'%',ic:'users'})}</div>
-        <div class="tile fade-up" style="--d:2">${C.kpi('Entregas a tiempo',String(k.onTime),{unit:'%',ic:'clock'})}</div>
+        ${/* [auditoría] el valor deriva de Enrollment.engagement (Alto/Medio/Bajo→%), no de entregas vs dueAt: se etiqueta como engagement, no como puntualidad medida */""}
+        <div class="tile fade-up" style="--d:2">${C.kpi('Engagement promedio',String(k.onTime),{unit:'%',ic:'chart'})}</div>
         <div class="tile fade-up" style="--d:3;border-color:#eeb9b4;background:var(--danger-soft)">${C.kpi('En riesgo',String(k.atRisk),{ic:'flag'})}</div>
       </div>
 
@@ -605,7 +606,8 @@ export const S = {};
         <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div><div class="nm">${esc(s.n)}</div>${s.risk?C.badge('Riesgo','danger'):''}</div></div></td>
         <td>${C.badge('Estudiante')}</td>
         <td>${C.levelBadge(s.lvl)}</td>
-        <td><div style="width:120px">${C.bar(Math.min(98,s.xp/55),{cls:'thin'})}</div></td>
+        ${/* [auditoría] XP real del alumno (antes la barra "Progreso" era xp/55, una constante inventada que no reflejaba avance de curso) */""}
+        <td class="num tnum" style="font-size:12px">${(s.xp||0).toLocaleString('es')}</td>
         <td class="num faint" style="font-size:12px">${esc(s.last)}</td>
         <td class="center"><div class="row vcenter" style="gap:6px;justify-content:flex-end">
           <button class="btn btn-soft btn-sm" data-adjudicate="${s.id}" data-name="${esc(s.n)}">Adjudicar</button>
@@ -630,7 +632,7 @@ export const S = {};
 
       <div class="table-wrap scroll-m fade-up">
         <table class="tbl">
-          <thead><tr><th>Nombre</th><th>Rol</th><th>Nivel</th><th>Progreso</th><th class="num">Últ. acceso</th><th></th></tr></thead>
+          <thead><tr><th>Nombre</th><th>Rol</th><th>Nivel</th><th class="num">XP</th><th class="num">Últ. acceso</th><th></th></tr></thead>
           <tbody id="pt-body">
             <tr data-role="coach" data-risk="0" data-name="${coachName.toLowerCase()}">
               <td><div class="cell-user">${C.avatar(coachInit,{size:'sm',bg:'var(--otr-navy)'})}<div><div class="nm">${coachName}</div>${coach.headline?`<div class="em">${coach.headline}</div>`:''}</div></div></td>

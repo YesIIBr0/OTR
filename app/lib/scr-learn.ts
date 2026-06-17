@@ -383,7 +383,7 @@ function priorQuizAttempt() {
         </div></div>`;
       }
       const total = quiz.questions.length;
-      const passScore = quiz.passScore != null ? quiz.passScore : 70;
+      const passScore = quiz.passScore != null ? quiz.passScore : 60; // [fix] alinea con Quiz.passScore @default(60)
       const attempt = priorQuizAttempt();
       // Si ya hay un intento previo: badge "Ya completado · mejor: X%" + tarjeta resumen
       // con CTA "Reintentar examen". El examen empieza oculto y se revela al reintentar.
