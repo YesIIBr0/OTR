@@ -80,6 +80,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   });
   const completedBy = new Set(completed.map((b) => b.studentId));
 
+  // [auditoría/stale-stored] Rating y nº de reseñas DERIVADOS de las Review reales recién
+  // cargadas (canónico), no del agregado almacenado en CoachProfile (que podía estar desfasado).
+  const liveReviewCount = reviews.length;
+  const liveRatingAvg = liveReviewCount ? Math.round((reviews.reduce((s, r) => s + (r.rating || 0), 0) / liveReviewCount) * 10) / 10 : 0;
+
   return ok({
     coach: {
       id: profile.id,
@@ -100,8 +105,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       hourlyCents: profile.hourlyCents,
       responseTime: profile.responseTime,
       cancelPolicy: profile.cancelPolicy,
-      ratingAvg: profile.ratingAvg,
-      reviewCount: profile.reviewCount,
+      ratingAvg: liveRatingAvg,
+      reviewCount: liveReviewCount,
       bookingCount: profile.bookingCount,
       packages: profile.packages.map((k) => ({
         id: k.id,

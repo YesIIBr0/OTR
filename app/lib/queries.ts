@@ -280,6 +280,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // del portal de familia) — la fuente canónica del rango es el XP, no el User.level almacenado.
   const levelNameForXp = (xp: number) => ([...levels].sort((a, b) => (b.startXp ?? 0) - (a.startXp ?? 0)).find((l) => (Number(xp) || 0) >= (l.startXp ?? 0)) ?? levels[0])?.name || "Novato";
   const nextLevel = levels.find((l) => l.position === (curLevel?.position ?? 0) + 1);
+  // [auditoría/stale-stored] Rating y nº de reseñas del coach DERIVADOS EN VIVO de las Review
+  // reales (fuente canónica), no del agregado ALMACENADO en CoachProfile (que podía estar
+  // desfasado del seed o en 0 para coaches nuevos). Una sola agregación por teacher para todo
+  // el payload (marketplace + workspace). Así el valor mostrado siempre coincide con las reseñas.
+  const reviewAgg = await db.review.groupBy({ by: ["teacherId"], _avg: { rating: true }, _count: { _all: true } });
+  const reviewByTeacher = new Map<string, { avg: number; count: number }>(
+    reviewAgg.map((r: any) => [r.teacherId, { avg: Math.round((r._avg.rating || 0) * 10) / 10, count: r._count._all || 0 }]),
+  );
   const xpLevelStart = curLevel?.startXp ?? 0;
   const xpNext = nextLevel?.startXp ?? (curLevel?.startXp ?? 0);
 
@@ -874,8 +882,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           hourlyLabel: usdLabel(p.hourlyCents),
           responseTime: esc(p.responseTime),
           cancelPolicy: esc(p.cancelPolicy),
-          ratingAvg: Math.round((p.ratingAvg || 0) * 10) / 10,
-          reviewCount: p.reviewCount,
+          ratingAvg: reviewByTeacher.get(p.userId)?.avg ?? 0, // [auditoría] en vivo desde Review
+          reviewCount: reviewByTeacher.get(p.userId)?.count ?? 0,
           bookingCount: p.bookingCount,
           packages: pkgs,
           availability: (p.availability || []).map((a: any) => ({ weekday: a.weekday, startMin: a.startMin, endMin: a.endMin })),
@@ -1047,8 +1055,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         monthPayoutLabel: usdLabel(monthPayoutCents),
       },
       metrics: {
-        ratingAvg: Math.round((myCoachProfile?.ratingAvg || 0) * 10) / 10,
-        reviewCount: myCoachProfile?.reviewCount ?? 0,
+        ratingAvg: reviewByTeacher.get(myCoachProfile?.userId ?? "")?.avg ?? 0, // [auditoría] en vivo desde Review
+        reviewCount: reviewByTeacher.get(myCoachProfile?.userId ?? "")?.count ?? 0,
         bookingCount: myCoachProfile?.bookingCount ?? 0,
         completed: completedCount,
         repeatStudents,

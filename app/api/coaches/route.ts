@@ -46,6 +46,14 @@ export async function GET(req: Request) {
     : [];
   const byId = new Map(users.map((u) => [u.id, u]));
 
+  // [auditoría/stale-stored] Rating y nº de reseñas EN VIVO desde la tabla Review (fuente
+  // canónica), no el agregado almacenado en CoachProfile (podía estar desfasado/del seed).
+  // Esto alimenta también el orden por rating de abajo.
+  const reviewAgg = profiles.length
+    ? await db.review.groupBy({ by: ["teacherId"], where: { teacherId: { in: profiles.map((p) => p.userId) } }, _avg: { rating: true }, _count: { _all: true } })
+    : [];
+  const ratingByCoach = new Map(reviewAgg.map((r: any) => [r.teacherId, { avg: Math.round((r._avg.rating || 0) * 10) / 10, count: r._count._all || 0 }]));
+
   // Solo perfiles cuyo coach está verificado (byId ya filtró a coachVerified:true).
   let coaches = profiles.filter((p) => byId.has(p.userId)).map((p) => {
     const u = byId.get(p.userId);
@@ -63,8 +71,8 @@ export async function GET(req: Request) {
       avatarUrl: u?.avatarUrl ?? null,
       verified: u?.coachVerified ?? false,
       location: u?.location ?? null,
-      ratingAvg: p.ratingAvg,
-      reviewCount: p.reviewCount,
+      ratingAvg: ratingByCoach.get(p.userId)?.avg ?? 0,
+      reviewCount: ratingByCoach.get(p.userId)?.count ?? 0,
       bookingCount: p.bookingCount,
       hourlyCents: p.hourlyCents,
       specialties: p.specialties,
