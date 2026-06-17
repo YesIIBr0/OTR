@@ -216,7 +216,7 @@ function viewOverview(d) {
 /* ================= SECCIÓN · MIS DEBATES ================= */
 function viewHistory(d) {
   if (!d.history.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>Tu historial empieza hoy</h4><p>Registra un debate (OTR o externo) o juega una práctica. Cada ronda cuenta.</p><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} Registrar un debate</button></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>Registra tu primer debate</h4><p>Un debate (OTR o externo) o una práctica — cada ronda cuenta para tu rating.</p><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} Registrar un debate</button></div></div>`;
   }
   const cards = d.history.map((h, i) => {
     const rs = resultStyle(h.result);
@@ -320,7 +320,7 @@ function viewPractice() {
 function viewLeaderboard() {
   const lb = getLeaderboard();
   if (!lb.rows.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>El leaderboard se está formando</h4><p>Juega rondas adjudicadas y reclama tu posición antes que el resto del cohort.</p></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>Entra en la clasificación</h4><p>Juega rondas adjudicadas y reclama tu posición antes que el resto del cohort.</p></div></div>`;
   }
   const meRow = lb.me
     ? `<div class="alert info fade-up" style="margin-bottom:16px"><span class="ai">${IC.target}</span><div><div class="at">Tu posición</div>#${lb.me.rank} · ${lb.me.rating} de rating · ${esc(lb.me.tier || "")}</div></div>`

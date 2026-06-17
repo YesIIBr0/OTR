@@ -634,8 +634,8 @@ function priorQuizAttempt() {
         return `${head}
         <div class="card"><div class="empty">
           <div class="ill">${IC.chart}</div>
-          <h4>Tu marcador está en blanco</h4>
-          <p>Entrega una tarea o completa un examen — tus notas y tu promedio se construyen aquí.</p>
+          <h4>Completa un examen o entrega para tu primera nota</h4>
+          <p>Tus notas y tu promedio se construyen aquí a medida que avanzas.</p>
         </div></div>`;
       }
 

@@ -355,7 +355,7 @@ function activeItemsFlat() {
       const c = activeCourse();
       if (!c) {
         return `<div class="page-head"><div><div class="page-title">Tu entrenamiento empieza aquí</div><div class="page-sub">Elige tu primer programa y entra a entrenar.</div></div></div>
-        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Tu primer programa te espera</h4><p>Entrena con los coaches más dominantes — explora el catálogo.</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">Explorar catálogo</button></div></div>`;
+        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>Inscríbete en tu primer programa</h4><p>Entrena con los coaches más dominantes — explora el catálogo.</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">Explorar catálogo</button></div></div>`;
       }
       // Metadatos extra (estudiantes/lecciones) solo viven en DB.courses; los unimos por code.
       const meta = (DB.courses || []).find((x: any) => x.code === c.code) || {};
