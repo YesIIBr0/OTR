@@ -38,6 +38,19 @@ Leyenda: **✓** construido · **◐** parcial / apagado-pero-en-PRD (roadmap) �
 - **Fase 3:** Community a full (clubs/mentorship/discussion boards), B2B/institucional, multi-categoría marketplace.
 - **Fase 4:** capa de IA (drills/sparring), red de credenciales, expansión internacional.
 
+## Rectificaciones de conformidad PDF (auditoría de lógica — 10/10 aplicadas)
+Desvíos donde la lógica no cortaba al PDF (no faltaban features; la regla estaba mal). Todos corregidos:
+- **§11.3 MINORS-CONSENT-01:** la tutela que un menor afirma al registrarse nace `PENDING` (el adulto la confirma vía `POST /api/guardianship`), no `ACTIVE` por su sola palabra.
+- **§11.3 MINORS-CONSENT-02:** `Guardianship.consentLevel` default `full`→`standard` (aprobar cada reserva); vocabulario `full|standard|progress_only` reconciliado en API y schema.
+- **§7.4 BOOKING-ESCROW-1:** la `EscrowTxn` HELD nace solo al CONFIRMAR; un booking PENDING de un menor no retiene fondos (se crea al aprobar el tutor). `Booking.priceCents` guarda el snapshot.
+- **§6.2 RATING-1:** PF/Policy/Parli 2v2 → `DebateRecord.partnerUserId`; al adjudicar, el rating del compañero también se mueve (selector en el modal de adjudicación).
+- **§6.2 RATING-2:** Speaker Rating separado del W/L (`User.speakerAvg`/`speakerRounds`, media de la rúbrica×10 por ronda juzgada); visible en el Debate Hub.
+- **§9 GAMIFICATION-1:** `User.leaderboardOptIn` (opt-out por usuario, toggle en Ajustes); menores fuera del ranking global SIEMPRE.
+- **§9 GAMIFICATION-2:** racha real y no predatoria, derivada del ledger con grace de 1 día (antes era un contador estático en 0).
+- **§17.3 I18N-2:** `Module.titleEn` + `pickLang` en el render a alumno.
+- **§4 DASHBOARD-ACCESS-1:** cada recomendación explica POR QUÉ se sugiere.
+- **§4 DASHBOARD-ACCESS-2:** ciclo de vida (new/active/returning/lapsed) que adapta el saludo del dashboard.
+
 ## Bloqueadores de lanzamiento (requieren credenciales del fundador, no código)
 - **Sala de video real** (Daily / Cloudflare Stream) → `BOOKING-4`, `COACH-03`.
 - **SMTP** (reset de contraseña, reportes por correo).
