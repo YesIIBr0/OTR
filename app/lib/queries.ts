@@ -132,6 +132,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       formats: true, location: true, avatarUrl: true, preferences: true,
       // PRD §4: rating de debate (Glicko-2) para la Debate Rank card del dashboard.
       debateRating: true, debateRd: true, debateTier: true,
+      // [RATING-2 §6.2] Speaker Rating: promedio de oratoria, métrica separada del W/L.
+      speakerAvg: true, speakerRounds: true,
+      // [GAMIFICATION-1 §9] opt-in de la clasificación pública (toggle en Ajustes).
+      leaderboardOptIn: true,
       // PRD §7 Safety Gate: ageBand alimenta el candado de consentimiento del marketplace.
       ageBand: true,
       // PRD §11.3 / §2.2: placedAt (null = estudiante nuevo sin placement) → me.needsPlacement.
@@ -342,7 +346,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     // leaderboard.rows: top 50 usuarios por debateRating desc.
     me
       ? db.user.findMany({
-          where: { ageBand: { not: "minor" } }, // [P0-2] menores fuera del ranking público
+          where: { ageBand: { not: "minor" }, leaderboardOptIn: true }, // [P0-2] menores fuera; [GAMIFICATION-1 §9] solo quienes optaron por aparecer
           orderBy: { debateRating: "desc" },
           take: 50,
           select: { id: true, name: true, initials: true, debateRating: true, debateTier: true },
@@ -359,7 +363,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       : Promise.resolve([]),
     // Rank real del usuario en el leaderboard global: nº de usuarios con
     // debateRating ESTRICTAMENTE mayor + 1 (sirve aunque no esté en el top 50).
-    me ? db.user.count({ where: { debateRating: { gt: me.debateRating } } }) : Promise.resolve(0),
+    me ? db.user.count({ where: { ageBand: { not: "minor" }, leaderboardOptIn: true, debateRating: { gt: me.debateRating } } }) : Promise.resolve(0),
     // Marketplace (PRD §7): datos públicos del User de cada coach activo.
     // select defensivo: NUNCA passwordHash ni email (no se exponen en browse).
     coachProfiles.length
@@ -687,6 +691,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
         rd: Math.round(me.debateRd ?? 350),
         tier: me.debateTier || "Novato",
         provisional: (me.debateRd ?? 350) > 150,
+        // [RATING-2 §6.2] Speaker Rating: promedio de oratoria (0-100), separado del W/L.
+        // null cuando aún no hay rondas juzgadas (no se muestra una métrica vacía).
+        speakerAvg: (me.speakerRounds ?? 0) > 0 ? Math.round(me.speakerAvg ?? 0) : null,
+        speakerRounds: me.speakerRounds ?? 0,
         recentForm,
         history: debateHistory,
         analytics: debateAnalytics,
@@ -1251,7 +1259,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       headline: esc(me?.headline), bio: esc(me?.bio), teachingStyle: esc(me?.teachingStyle), formats: esc(me?.formats), location: esc(me?.location), preferences: me?.preferences ?? null,
       // PRD §11.3 / §2.2: estudiante sin placement aún (placedAt null) → P1/Aula.tsx lo enruta al placement.
       needsPlacement: me?.role === "STUDENT" && !me?.placedAt,
-      avatarUrl: safeUrl(me?.avatarUrl) },
+      avatarUrl: safeUrl(me?.avatarUrl),
+      ageBand: me?.ageBand || null,
+      // [GAMIFICATION-1 §9] estado del opt-in (toggle en Ajustes). [RATING-2 §6.2] speaker rating.
+      leaderboardOptIn: me?.leaderboardOptIn !== false,
+      speakerAvg: Math.round(me?.speakerAvg ?? 0), speakerRounds: me?.speakerRounds ?? 0 },
     teacher: { name: esc(headCoach?.name), email: headCoach?.email, initials: esc(headCoach?.initials), role: "teacher",
       headline: esc(headCoach?.headline), bio: esc(headCoach?.bio), teachingStyle: esc(headCoach?.teachingStyle), formats: esc(headCoach?.formats), location: esc(headCoach?.location) },
     levels: levels.map((l) => ({ id: l.name.toLowerCase(), name: l.name, range: l.range, color: l.color })),
@@ -1267,7 +1279,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     })),
     // Dashboard: solo secciones/actividades VISIBLES para el alumno (filtra hidden).
     courseModules: modulesForDashboard.filter((m: any) => !m.hidden).map((m) => ({
-      t: esc(m.title), done: m.done, locked: m.locked,
+      t: esc(pickLang(m.title, m.titleEn)), done: m.done, locked: m.locked,
       items: m.lessons.filter((l: any) => !l.hidden).map((l) => ({
         id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id), locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
         dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
@@ -1293,7 +1305,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
           format: esc(c.format), modality: esc(c.modality),
           layout: c.layout || "modules",
           modules: (c.modules || []).filter((m: any) => !m.hidden).map((m: any) => ({
-            t: esc(m.title), done: false, locked: false,
+            t: esc(pickLang(m.title, m.titleEn)), done: false, locked: false,
             items: (m.lessons || []).filter((l: any) => !l.hidden).map((l: any) => ({
               id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: false, doneByMe: false,
               locked: false, grade: null, dur: l.dur, due: l.due,
@@ -1320,7 +1332,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
         layout: e.course.layout || "modules",
         // Solo secciones/actividades VISIBLES para el alumno (filtra hidden).
         modules: (byCourse.get(e.course.id) || []).filter((m: any) => !m.hidden).map((m: any) => ({
-          t: esc(m.title), done: m.done, locked: m.locked,
+          t: esc(pickLang(m.title, m.titleEn)), done: m.done, locked: m.locked,
           items: m.lessons.filter((l: any) => !l.hidden).map((l: any) => ({
             id: l.id, t: esc(pickLang(l.title, l.titleEn)), type: l.type, done: l.done, doneByMe: doneSet.has(l.id),
             locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,

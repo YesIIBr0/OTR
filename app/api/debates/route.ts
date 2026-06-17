@@ -58,6 +58,7 @@ export async function POST(req: Request) {
     opponentRating?: unknown;
     adjudicated?: unknown;
     targetUserId?: string;
+    partnerUserId?: string;
     ballot?: {
       judge?: string;
       comments?: string;
@@ -109,6 +110,26 @@ export async function POST(req: Request) {
     }
     subject = target;
   }
+
+  // [RATING-1 §6.2] PF/Policy/Parli/Worlds son 2v2: el coach puede nombrar al COMPAÑERO
+  // real (body.partnerUserId) para que SU rating también se mueva con el resultado de
+  // equipo. Misma authz de relación que el subject (el coach solo adjudica a sus alumnos);
+  // solo aplica en formatos de equipo y cuando adjudica un coach/admin (isJudgeRole).
+  const TEAM_FORMATS = new Set(["PF", "POLICY", "PARLI", "WORLDS"]);
+  const isTeamFormat = TEAM_FORMATS.has(format.toUpperCase());
+  const partnerUserId = clean(body.partnerUserId, 64);
+  let partnerUser: Awaited<ReturnType<typeof db.user.findUnique>> = null;
+  if (partnerUserId && partnerUserId !== subject.id && isTeamFormat && isJudgeRole) {
+    const p = await db.user.findUnique({ where: { id: partnerUserId } });
+    if (!p) return bad("Compañero no encontrado", 404);
+    if (p.role !== "STUDENT") return bad("El compañero de equipo debe ser un alumno", 400);
+    if (user.role === "TEACHER") {
+      const booked = await db.booking.count({ where: { coachId: user.id, studentId: p.id } });
+      const enrolled = booked > 0 ? 1 : await db.enrollment.count({ where: { userId: p.id, course: { teacher: { email: user.email } } } });
+      if (booked === 0 && enrolled === 0) return bad("Solo puedes adjudicar al compañero si también es tu alumno (con reserva contigo o inscrito en tu curso)", 403);
+    }
+    partnerUser = p;
+  }
   // El rating SOLO se mueve en rondas adjudicadas. isJudgeRole es true tanto al auto-
   // registrar un coach como al adjudicar a un alumno → ambos adjudican; un alumno que
   // auto-reporta (isJudgeRole=false) queda en el historial SIN mover su rating.
@@ -139,7 +160,11 @@ export async function POST(req: Request) {
   // --- Crear el DebateRecord (marca quién adjudicó, si aplica). ---
   const record = await db.debateRecord.create({
     data: {
-      userId: subject.id, format, side, opponent, partner, result, source, eventName, roundLabel,
+      userId: subject.id, format, side, opponent,
+      // [RATING-1] si se nombró un compañero REAL, su nombre y su User.id quedan en el record.
+      partner: partnerUser ? partnerUser.name : partner,
+      partnerUserId: partnerUser ? partnerUser.id : null,
+      result, source, eventName, roundLabel,
       adjudicated,
       adjudicatedBy: adjudicated ? user.id : null,
     },
@@ -166,6 +191,58 @@ export async function POST(req: Request) {
         rdAfter: next.rd,
         volAfter: next.vol,
         tierAfter,
+      },
+    });
+  }
+
+  // [RATING-1 §6.2] El COMPAÑERO de equipo comparte el resultado: su rating se mueve con
+  // su PROPIA terna Glicko-2 vs el mismo oponente. Tiene su DebateRecord + RatingUpdate
+  // propios (su historial), con partnerUserId apuntando de vuelta al subject. NO hereda
+  // la rúbrica ni los nudges de skill del subject (eso es individual de cada orador).
+  if (partnerUser && adjudicated) {
+    const pNext = updateRating(
+      { rating: partnerUser.debateRating, rd: partnerUser.debateRd, vol: partnerUser.debateVol },
+      [{ rating: opponentRating, rd: DEFAULT_OPP_RD, score: scoreFor(result) }],
+    );
+    const pTierAfter = tierFor(pNext.rating);
+    const pRecord = await db.debateRecord.create({
+      data: {
+        userId: partnerUser.id, format, side, opponent,
+        partner: subject.name, partnerUserId: subject.id,
+        result, source, eventName, roundLabel,
+        adjudicated: true, adjudicatedBy: user.id,
+      },
+    });
+    await db.user.update({
+      where: { id: partnerUser.id },
+      data: { debateRating: pNext.rating, debateRd: pNext.rd, debateVol: pNext.vol, debateTier: pTierAfter },
+    });
+    await db.ratingUpdate.create({
+      data: {
+        debateId: pRecord.id,
+        ratingBefore: partnerUser.debateRating,
+        ratingAfter: pNext.rating,
+        rdAfter: pNext.rd,
+        volAfter: pNext.vol,
+        tierAfter: pTierAfter,
+      },
+    });
+    await logActivitySafe({
+      userId: partnerUser.id,
+      type: result === "LOSS" ? "debate_loss" : "debate_win",
+      title: `${result === "WIN" ? "Ganó" : result === "LOSS" ? "Perdió" : "Empató"} ronda ${format}${opponent ? ` vs ${opponent}` : ""}${eventName ? ` · ${eventName}` : ""}`,
+      detail: `En equipo con ${subject.name}`,
+      source: "debate",
+      refId: pRecord.id,
+      meta: {
+        result, format, adjudicated: true,
+        ratingBefore: Math.round(partnerUser.debateRating),
+        ratingAfter: Math.round(pNext.rating),
+        delta: Math.round(pNext.rating - partnerUser.debateRating),
+        tierBefore: partnerUser.debateTier,
+        tierAfter: pTierAfter,
+        promoted: pTierAfter !== partnerUser.debateTier && pNext.rating > partnerUser.debateRating,
+        partnerOf: subject.id,
       },
     });
   }
@@ -199,6 +276,25 @@ export async function POST(req: Request) {
           scores: { create: rows.map((r) => ({ criterion: r.criterion, score: r.score, flagged: r.flagged })) },
         },
       });
+
+      // [RATING-2 §6.2] Speaker Rating del subject: SEPARADO del rating de victoria/derrota.
+      // Cada ronda JUZGADA aporta un puntaje de oratoria = media de la rúbrica (0-10) ×10
+      // → 0-100, acumulado como promedio móvil. (El resultado W/L mide quién ganó; el
+      // speaker rating mide qué tan bien hablaste, como los "speaker points" reales.)
+      if (adjudicated) {
+        const roundSpeaker = (rows.reduce((s, r) => s + r.score, 0) / rows.length) * 10; // 0-100
+        // Lee el estado actual del DB (no del objeto de sesión, que puede no traerlo).
+        const cur = await db.user.findUnique({
+          where: { id: subject.id },
+          select: { speakerAvg: true, speakerRounds: true },
+        });
+        const prevAvg = cur?.speakerAvg ?? 0;
+        const prevN = cur?.speakerRounds ?? 0;
+        await db.user.update({
+          where: { id: subject.id },
+          data: { speakerAvg: (prevAvg * prevN + roundSpeaker) / (prevN + 1), speakerRounds: prevN + 1 },
+        });
+      }
 
       // Nudge: el criterio (0-10) marca un objetivo en 0-100 (score*10). Movemos
       // la skill ~30% hacia ese objetivo, para que suba/baje suavemente con cada ronda.

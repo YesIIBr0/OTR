@@ -12,6 +12,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json().catch(() => ({}));
   const data: Record<string, unknown> = {};
   if (body.title != null) data.title = String(body.title).slice(0, 120);
+  // [I18N-2 §17.3] variante EN del título (puede limpiarse pasando "").
+  if (body.titleEn !== undefined) data.titleEn = body.titleEn ? String(body.titleEn).slice(0, 120) : null;
   // Mostrar/ocultar la sección al alumno (ojo) — distinto de locked (gating de progreso).
   if (typeof body.hidden === "boolean") data.hidden = body.hidden;
   if (!Object.keys(data).length) return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });

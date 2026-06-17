@@ -45,6 +45,9 @@ function getDebate() {
     rd: typeof d.rd === "number" ? d.rd : 350,
     tier: d.tier || "Novato",
     provisional: d.provisional != null ? !!d.provisional : true,
+    // [RATING-2 §6.2] Speaker Rating (promedio de oratoria); null si aún no hay rondas juzgadas.
+    speakerAvg: typeof d.speakerAvg === "number" ? d.speakerAvg : null,
+    speakerRounds: typeof d.speakerRounds === "number" ? d.speakerRounds : 0,
     recentForm: Array.isArray(d.recentForm) ? d.recentForm : [],
     history: Array.isArray(d.history) ? d.history : [],
     analytics: d.analytics || { byFormat: [], bySide: [], criteria: [] },
@@ -120,6 +123,7 @@ function heroPanel(d) {
           <div class="stack" style="gap:7px">
             <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22)"><span class="dot" style="background:var(--otr-sky-hi)"></span>${esc(d.tier)}</span>
             <span style="font-size:12.5px;color:rgba(234,242,251,.72)">±${d.rd} RD ${d.provisional ? "· provisional" : "· estable"}</span>
+            ${d.speakerAvg != null ? `<span style="font-size:12.5px;color:rgba(234,242,251,.72)" title="Promedio de oratoria juzgada (separado del rating de victoria/derrota)">Orador <b style="color:var(--otr-sky-hi)">${d.speakerAvg}</b>/100 · ${d.speakerRounds} ${d.speakerRounds === 1 ? "ronda" : "rondas"}</span>` : ""}
           </div>
         </div>
         ${d.provisional

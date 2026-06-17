@@ -24,6 +24,9 @@ export async function PATCH(req: Request) {
   if (body.formats !== undefined) data.formats = clean(body.formats, 160) || null;
   if (body.teachingStyle !== undefined) data.teachingStyle = clean(body.teachingStyle, 600) || null;
   if (body.preferences !== undefined) data.preferences = clean(body.preferences, 1000) || null;
+  // [GAMIFICATION-1 §9] Opt-out de la clasificación pública (los menores quedan fuera del
+  // ranking global SIEMPRE; este flag es el control por usuario para los demás).
+  if (typeof body.leaderboardOptIn === "boolean") data.leaderboardOptIn = body.leaderboardOptIn;
 
   if (body.newPassword) {
     if (String(body.newPassword).length < 6) {

@@ -31,6 +31,13 @@ function toggle(key, on) {
     <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(12,12,12,.25)"></span></button>`;
 }
 
+// [GAMIFICATION-1 §9] Switch para el opt-in de la clasificación pública (persiste en backend).
+function lbToggle(on) {
+  return `<button type="button" role="switch" aria-checked="${on}" data-leaderboard="1" aria-label="Aparecer en la clasificación pública"
+    style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-green)" : "var(--n-200)"}">
+    <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(12,12,12,.25)"></span></button>`;
+}
+
 function row(icon, title, desc, right) {
   return `<div class="row vcenter between" style="gap:14px;padding:13px 0;border-bottom:1px solid var(--border)">
     <div class="row vcenter" style="gap:12px;min-width:0">
@@ -69,10 +76,21 @@ S.settings = {
 
     const notif = NOTIF.map((n) => row(IC.bell, n.label, n.desc, toggle(n.k, notifOn(n.k, n.def)))).join("");
 
+    const isMinor = me.ageBand === "minor";
+    // [GAMIFICATION-1 §9] Clasificación pública: opt-out por usuario. Los menores NUNCA
+    // aparecen en el ranking global (§9.4), así que no se les ofrece el toggle.
+    const leaderboardRow = (role === "STUDENT" || role === "TEACHER")
+      ? row(IC.trophy, "Aparecer en la clasificación",
+          isMinor
+            ? "Los menores nunca aparecen en el ranking público (protección de privacidad)."
+            : "Muestra tu nombre y rating en el ranking público de debate.",
+          isMinor ? `<span class="faint" style="font-size:12px">No disponible</span>` : lbToggle(me.leaderboardOptIn !== false))
+      : "";
     const privacy = [
       role === "PARENT"
         ? row(IC.lock, "Consentimiento y privacidad del hijo/a", "Aprobaciones de reserva, visibilidad de sesiones y perfil público del menor.", `<button class="btn btn-soft btn-sm" data-go="parent">Gestionar</button>`)
         : row(IC.lock, "Perfil público", "Controla si tu trayectoria es compartible (apagado por defecto para menores).", `<button class="btn btn-soft btn-sm" data-go="lifetime">Mi trayectoria ${IC.arrowR}</button>`),
+      leaderboardRow,
       row(IC.doc, "Contraseña", "Para cambiarla, cierra sesión y usa “¿Olvidaste tu contraseña?” en el inicio.", ""),
     ].join("");
 
@@ -112,5 +130,24 @@ S.settings = {
         const knob = sw.querySelector("span"); if (knob) knob.style.left = next ? "22px" : "3px";
         w.toast?.(next ? "Notificación activada" : "Notificación desactivada", "ok");
       }));
+    // [GAMIFICATION-1 §9] Clasificación pública: persiste en backend (PATCH /api/profile).
+    const lb = root.querySelector("[data-leaderboard]");
+    if (lb) lb.addEventListener("click", async () => {
+      const next = lb.getAttribute("aria-checked") !== "true";
+      lb.setAttribute("aria-checked", String(next));
+      lb.style.background = next ? "var(--otr-green)" : "var(--n-200)";
+      const knob = lb.querySelector("span"); if (knob) knob.style.left = next ? "22px" : "3px";
+      try {
+        await w.api("/api/profile", { leaderboardOptIn: next }, "PATCH");
+        if (w.DB?.me) w.DB.me.leaderboardOptIn = next;
+        w.toast?.(next ? "Apareces en la clasificación pública" : "Oculto en la clasificación pública", "ok");
+      } catch {
+        // revertir el switch si falló
+        lb.setAttribute("aria-checked", String(!next));
+        lb.style.background = !next ? "var(--otr-green)" : "var(--n-200)";
+        if (knob) knob.style.left = !next ? "22px" : "3px";
+        w.toast?.("No se pudo guardar el cambio", "error");
+      }
+    });
   },
 };

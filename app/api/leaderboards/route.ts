@@ -16,8 +16,9 @@ export async function GET(req: Request) {
   // Por ahora solo 'global'; el scope se reserva para region/club a futuro.
 
   // [P0-2] Excluir menores del ranking público — no exponer PII (nombre + rating) de menores.
+  // [GAMIFICATION-1 §9] Además, solo aparecen quienes optaron por la clasificación pública.
   const top = await db.user.findMany({
-    where: { ageBand: { not: "minor" } },
+    where: { ageBand: { not: "minor" }, leaderboardOptIn: true },
     orderBy: [{ debateRating: "desc" }, { name: "asc" }],
     take: 50,
     select: { id: true, name: true, initials: true, debateRating: true, debateTier: true },
@@ -40,9 +41,9 @@ export async function GET(req: Request) {
     myRank = meInTop.rank;
   } else {
     // Rank = (#usuarios con mayor rating) + (#empates con menor nombre) + 1.
-    const higher = await db.user.count({ where: { ageBand: { not: "minor" }, debateRating: { gt: user.debateRating } } });
+    const higher = await db.user.count({ where: { ageBand: { not: "minor" }, leaderboardOptIn: true, debateRating: { gt: user.debateRating } } });
     const tiedBefore = await db.user.count({
-      where: { ageBand: { not: "minor" }, debateRating: user.debateRating, name: { lt: user.name } },
+      where: { ageBand: { not: "minor" }, leaderboardOptIn: true, debateRating: user.debateRating, name: { lt: user.name } },
     });
     myRank = higher + tiedBefore + 1;
   }

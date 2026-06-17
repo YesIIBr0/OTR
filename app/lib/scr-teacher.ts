@@ -643,10 +643,15 @@ export const S = {};
           const name = btn.getAttribute("data-name") || "alumno";
           const rubric = CRIT.map(([k, es]) =>
             `<div class="row vcenter between" style="gap:10px;margin-bottom:8px"><span style="font-size:13px">${es}</span><input class="input bl-score" data-c="${k}" type="number" min="0" max="10" step="1" value="7" style="width:80px"/></div>`).join("");
+          // [RATING-1 §6.2] PF/Policy/Parli son 2v2: el coach puede nombrar al compañero
+          // (otro de sus alumnos) para que SU rating también se mueva con el resultado.
+          const partnerOpts = (DB.students || []).filter((s) => s.id !== uid)
+            .map((s) => `<option value="${s.id}">${esc(s.n)}</option>`).join("");
           const bodyHtml =
             fld("Resultado", `<select class="select" id="bl-result"><option value="WIN">Victoria</option><option value="LOSS">Derrota</option><option value="DRAW">Empate</option></select>`) +
             fld("Formato", `<select class="select" id="bl-format"><option value="PF">Public Forum</option><option value="LD">Lincoln-Douglas</option><option value="Policy">Policy</option><option value="Parli">Parlamentario</option></select>`) +
             fld("Oponente <span class='muted' style='font-weight:500'>(opcional)</span>", `<input class="input" id="bl-opp" placeholder="Equipo o escuela rival"/>`) +
+            (partnerOpts ? fld("Compañero de equipo <span class='muted' style='font-weight:500'>(2v2 · PF/Policy/Parli · opcional)</span>", `<select class="select" id="bl-partner"><option value="">— Sin compañero (1v1) —</option>${partnerOpts}</select>`) : "") +
             fld("Rúbrica (0–10) — mueve el rating y el Skill Graph", rubric) +
             fld("Comentarios del juez <span class='muted' style='font-weight:500'>(opcional)</span>", `<textarea class="input" id="bl-comments" rows="3" placeholder="Feedback para el alumno…" style="resize:vertical;min-height:72px"></textarea>`);
           const m = buildModal({ title: `Adjudicar ronda · ${name}`, bodyHtml, okLabel: "Adjudicar y publicar" });
@@ -654,16 +659,19 @@ export const S = {};
             const result = m.body.querySelector("#bl-result").value;
             const format = m.body.querySelector("#bl-format").value;
             const opponent = m.body.querySelector("#bl-opp").value.trim();
+            const partnerEl = m.body.querySelector("#bl-partner");
+            const partnerUserId = partnerEl ? partnerEl.value : "";
             const comments = m.body.querySelector("#bl-comments").value.trim();
             const scores = Array.from(m.body.querySelectorAll(".bl-score")).map((i) => ({ criterion: i.getAttribute("data-c"), score: Number(i.value) }));
             m.okBtn.disabled = true; m.okBtn.textContent = "Adjudicando…";
             try {
-              const d = await window.api("/api/debates", { targetUserId: uid, result, format, opponent, source: "OTR", ballot: { comments, scores } });
+              const d = await window.api("/api/debates", { targetUserId: uid, result, format, opponent, partnerUserId: partnerUserId || undefined, source: "OTR", ballot: { comments, scores } });
               m.close();
               const before = d?.ratingBefore, after = d?.ratingAfter;
               const delta = (typeof after === "number" && typeof before === "number") ? after - before : 0;
               const mv = delta ? ` · ${before}→${after} (${delta > 0 ? "+" : ""}${delta})` : "";
-              window.toast?.(`Ronda adjudicada para ${name}${mv}${d?.promoted ? ` · ¡ascendió a ${d.tierAfter}!` : ""}`, "ok");
+              const partnerNote = partnerUserId ? " · compañero también actualizado" : "";
+              window.toast?.(`Ronda adjudicada para ${name}${mv}${d?.promoted ? ` · ¡ascendió a ${d.tierAfter}!` : ""}${partnerNote}`, "ok");
             } catch (e) {
               m.okBtn.disabled = false; m.okBtn.textContent = "Adjudicar y publicar";
               m.showErr((e && e.message) || "No se pudo adjudicar la ronda");

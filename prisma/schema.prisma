@@ -31,6 +31,13 @@ model User {
   debateRd      Float        @default(350)
   debateVol     Float        @default(0.06)
   debateTier    String       @default("Novato") // Novato→Bronze→Silver→Gold→Platinum→Diamond→Master→Grandmaster
+  // [RATING-2 §6.2] Speaker Rating: métrica SEPARADA del rating de victoria/derrota.
+  // Promedio (0-100) de la calidad de oratoria juzgada por ronda (media de la rúbrica×10).
+  speakerAvg    Float        @default(0)
+  speakerRounds Int          @default(0)
+  // [GAMIFICATION-1 §9] Visibilidad en la clasificación pública (opt-out por usuario).
+  // Los menores quedan fuera del ranking global SIEMPRE (§9.4), aparte de este flag.
+  leaderboardOptIn Boolean   @default(true)
   coachVerified Boolean      @default(false) // PRD: verificación de coach (marketplace)
   suspended     Boolean      @default(false) // [P0-7] moderación: suspendido → sesión inválida
   // --- PRD §13: membresía (suscripción simulada — Stripe se cablea después) ---
@@ -176,6 +183,7 @@ model Module {
   courseId String
   course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   title    String
+  titleEn  String?  // [I18N-2 §17.3] variante EN del título de la sección
   position Int      @default(0)
   done     Boolean  @default(false)
   locked   Boolean  @default(false)
@@ -554,7 +562,8 @@ model DebateRecord {
   format     String        @default("PF") // PF | LD | Policy | Parli | Worlds
   side       String?       // PRO | CON
   opponent   String?
-  partner    String?       // PF es 2v2
+  partner    String?       // PF es 2v2 (nombre libre del compañero)
+  partnerUserId String?     // [RATING-1 §6.2] compañero REAL (User.id): en 2v2 su rating también se mueve
   result     String        // WIN | LOSS | DRAW
   source     String        @default("OTR") // OTR | EXTERNAL (NSDA...)
   eventName  String?
