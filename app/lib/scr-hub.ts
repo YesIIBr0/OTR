@@ -35,22 +35,32 @@ function savePrefs(p) {
   } catch (e) {}
 }
 
-/* ---------- coaches: usa DB.teachers si queries.ts lo provee; deriva del catálogo si no ---------- */
+/* ---------- coaches: fuente canónica DB.marketplace.coaches (rating/reseñas/headline REALES
+   por coach, verificados). [auditoría] Antes se guardaba en DB.teachers (que queries NUNCA
+   produce) y caía a derivar desde nombres de curso, inventando 'Coach OTR'/rating null para
+   todos salvo el único DB.coachProfile coincidente. Ahora reutiliza el mismo contrato que el
+   marketplace. Fallback (sin marketplace): deriva del catálogo SIN inventar rating/reseñas. */
 function coachList() {
-  if (DB.teachers && DB.teachers.length) return DB.teachers;
-  const cp = DB.coachProfile || {};
+  const mk = DB.marketplace && Array.isArray(DB.marketplace.coaches) ? DB.marketplace.coaches : [];
+  if (mk.length) {
+    return mk.map((c) => ({
+      id: c.id || c.userId || "coach",
+      name: c.name,
+      ini: c.initials || ((c.name || "").split(" ").map((w) => w[0]).join("") || "C").slice(0, 2).toUpperCase(),
+      tagline: c.headline || "Coach OTR",
+      rating: c.ratingAvg != null ? c.ratingAvg : null,
+      reviews: c.reviewCount != null ? c.reviewCount : null,
+      formats: Array.isArray(c.specialtiesList) ? c.specialtiesList.join(" · ") : (c.specialties || ""),
+      programs: (DB.catalog || []).filter((p) => p.coach === c.name),
+    }));
+  }
   const names = [...new Set((DB.catalog || []).map((c) => c.coach).filter(Boolean))];
-  return names.map((n) => {
-    const isCp = cp.name === n;
-    return {
-      id: "coach", name: n,
-      ini: (n.replace(/Coach /i, "").split(" ").map((w) => w[0]).join("") || "C").slice(0, 2).toUpperCase(),
-      tagline: isCp ? (cp.headline || "Coach OTR") : "Coach OTR",
-      rating: isCp ? cp.rating : null, reviews: isCp ? cp.reviewCount : null,
-      formats: isCp ? cp.formats : "",
-      programs: (DB.catalog || []).filter((c) => c.coach === n),
-    };
-  });
+  return names.map((n) => ({
+    id: "coach", name: n,
+    ini: ((n || "").replace(/Coach /i, "").split(" ").map((w) => w[0]).join("") || "C").slice(0, 2).toUpperCase(),
+    tagline: "Coach OTR", rating: null, reviews: null, formats: "",
+    programs: (DB.catalog || []).filter((c) => c.coach === n),
+  }));
 }
 const enrolledCourses = () => (DB.catalog || []).filter((c) => c.enrolled);
 

@@ -52,11 +52,13 @@ function normCoach(c = {}) {
   const name = c.name || "Coach OTR";
   const packages = Array.isArray(c.packages) ? c.packages : [];
   const hourly = Number(c.hourlyCents) || 0;
-  // "desde $X": el menor precio por sesión entre paquetes; si no hay, la tarifa por hora.
+  // [auditoría] "desde $X" = fuente canónica del contrato (queries: fromPriceCents = paquete
+  // más barato TOTAL, o tarifa por hora). Antes se recomputaba el mínimo POR SESIÓN aquí, dando
+  // un "desde" distinto al de la API /coaches para el mismo coach. Reusamos el contrato.
   const perSession = packages
     .map((p) => (Number(p.sessions) > 0 ? (Number(p.priceCents) || 0) / Number(p.sessions) : 0))
     .filter((v) => v > 0);
-  const fromCents = Number(c.fromCents) || (perSession.length ? Math.round(Math.min(...perSession)) : hourly);
+  const fromCents = Number(c.fromPriceCents) || Number(c.fromCents) || (perSession.length ? Math.round(Math.min(...perSession)) : 0) || hourly;
   return {
     id: c.id || "",
     name,
@@ -167,14 +169,13 @@ function coachPackages(c) {
         discountPct: Number(p.discountPct) || 0,
       }));
   }
-  // Sin paquetes publicados → derivamos los 3 del PRD desde la tarifa por hora (indicativos).
+  // [auditoría] Sin paquetes publicados → SOLO la sesión individual a la tarifa REAL por hora
+  // (es exactamente lo que el server cobra: amountCents = profile.hourlyCents). NO fabricar
+  // 'Paquete de 5/10' con descuentos 10%/20% inventados: esos paquetes tenían id:'' → el cliente
+  // nunca enviaba packageId y el server cobraba 1 hora, así que el total mostrado (con descuento)
+  // no coincidía con lo cobrado. Los multi-sesión con descuento deben venir de CoachPackage (DB).
   if (c.hourlyCents > 0) {
-    const h = c.hourlyCents;
-    return [
-      { key: "derived-1", id: "", name: "Sesión individual", sessions: 1, priceCents: h, discountPct: 0 },
-      { key: "derived-5", id: "", name: "Paquete de 5", sessions: 5, priceCents: Math.round(h * 5 * 0.9), discountPct: 10 },
-      { key: "derived-10", id: "", name: "Paquete de 10", sessions: 10, priceCents: Math.round(h * 10 * 0.8), discountPct: 20 },
-    ];
+    return [{ key: "derived-1", id: "", name: "Sesión individual", sessions: 1, priceCents: c.hourlyCents, discountPct: 0 }];
   }
   return [];
 }
@@ -386,7 +387,7 @@ function bookingCard(c, canBook, role) {
       }).join("")}
     </div>` : `<p class="faint" style="font-size:12.5px">Este coach aún no publicó paquetes — puedes reservar una sesión individual y acordar el precio dentro de OTR.</p>`}
 
-    <p class="label" style="margin:16px 0 8px">2 · Elige el día ${generic ? `<span class="faint" style="font-weight:400">(horario estándar OTR, 9:00–18:00)</span>` : ""}</p>
+    <p class="label" style="margin:16px 0 8px">2 · Elige el día ${generic ? `<span class="faint" style="font-weight:400">(horario sugerido 9:00–18:00 — el coach lo confirma al aprobar)</span>` : ""}</p>
     ${days.length
       ? `<div class="row wrap" style="gap:6px">${days.slice(0, 10).map((d) => `<button class="chip ${day && d.key === day.key ? "active" : ""}" data-mk-day="${d.key}">${d.label}</button>`).join("")}</div>`
       : `<p class="faint" style="font-size:12.5px">Este coach no tiene días disponibles en las próximas dos semanas.</p>`}

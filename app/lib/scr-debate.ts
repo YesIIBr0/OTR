@@ -380,7 +380,8 @@ function recordRow(r) {
   const wr = total ? Math.round((w / total) * 100) : 0;
   return `
     <div class="comp-row">
-      <span class="cr-name">${esc(r.name || "")}</span>
+      ${/* [auditoría] el contrato real de DB.debate.analytics es {format}/{side}, no {name}: leer la clave viva */""}
+      <span class="cr-name">${esc(r.format || r.side || r.name || "")}</span>
       <span class="cr-bar">${C.bar(wr, { cls: "navy" })}</span>
       <span class="cr-score">${wr}%</span>
     </div>
@@ -432,7 +433,7 @@ function viewAnalytics(d) {
         ${criteria.length ? criteria.map((c) => {
           const avg = Math.max(0, Math.min(10, Number(c.avg) || 0));
           const pct = Math.round((avg / 10) * 100);
-          return `<div class="comp-row"><span class="cr-name">${esc(c.name || "")}</span><span class="cr-bar">${C.bar(pct, { cls: "navy" })}</span><span class="cr-score">${avg.toFixed(1)}</span></div>`;
+          return `<div class="comp-row"><span class="cr-name">${esc(c.criterion || c.name || "")}</span><span class="cr-bar">${C.bar(pct, { cls: "navy" })}</span><span class="cr-score">${avg.toFixed(1)}</span></div>`;
         }).join("") : `<p class="faint" style="font-size:13px">Sin ballots todavía.</p>`}
       </div>
     </div>`;

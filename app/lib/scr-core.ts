@@ -308,17 +308,21 @@ function activeItemsFlat() {
           <button class="btn btn-soft btn-sm" style="width:100%;margin-top:12px" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
         </div>`;
 
-      /* ---- BOTTOM: tira de leaderboard del cohort ---- */
-      // STUDENT no recibe DB.students; usa DB.activity (timeline propio) como respaldo.
-      const roster = (DB.students || []).slice(0, 5);
-      const leaderboard = roster.length
+      /* ---- BOTTOM: tira de leaderboard global (por-usuario) ---- */
+      // [auditoría] Antes leía DB.students (solo lo recibe el profesor) → la tarjeta nunca
+      // aparecía para el alumno y caía siempre al fallback. Usamos el leaderboard CANÓNICO
+      // por-usuario (DB.leaderboard.rows: top por debateRating, con flag `you` + rating/tier),
+      // el mismo que consume el Debate Hub. name/initials ya vienen esc() de queries; tier es enum.
+      const lbRows = (DB.leaderboard && Array.isArray(DB.leaderboard.rows) ? DB.leaderboard.rows : []).slice(0, 5);
+      const myRank = DB.leaderboard && DB.leaderboard.me ? DB.leaderboard.me.rank : null;
+      const leaderboard = lbRows.length
         ? `<div class="card fade-up" style="--d:4;margin-top:18px">
-            <div class="card-head"><h3>Leaderboard del cohort</h3></div>
+            <div class="card-head"><h3>Leaderboard</h3>${myRank ? `<span class="badge sky">Tu posición #${myRank}</span>` : ""}</div>
             <div class="card-body" style="padding:6px 16px 12px">
-              ${roster.map((s,i)=>`<div class="agenda-item">
-                <span class="badge ${i<3?'gold':''}" style="min-width:26px;justify-content:center">${i+1}</span>
-                <div class="row vcenter" style="gap:9px;flex:1">${C.avatar(esc(s.i),{size:'sm'})}<div><div class="ai-t">${esc(s.n)}</div><div class="ai-c">${esc(s.lvl)}</div></div></div>
-                <span class="ai-w tnum">${(s.xp||0).toLocaleString('es')} XP</span></div>`).join('')}
+              ${lbRows.map((r)=>`<div class="agenda-item"${r.you?' style="background:var(--action-soft);border-radius:8px"':''}>
+                <span class="badge ${r.rank<=3?'gold':''}" style="min-width:26px;justify-content:center">${r.rank}</span>
+                <div class="row vcenter" style="gap:9px;flex:1">${C.avatar(r.initials||'?',{size:'sm',bg:r.you?'var(--otr-sky-lo)':'var(--otr-navy)'})}<div><div class="ai-t">${r.name||''}${r.you?' · tú':''}</div><div class="ai-c">${r.tier||''}</div></div></div>
+                <span class="ai-w tnum">${r.rating}</span></div>`).join('')}
             </div>
           </div>`
         : `<div class="card fade-up" style="--d:4;margin-top:18px">
