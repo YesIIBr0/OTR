@@ -98,6 +98,9 @@ svg.ic{width:18px;height:18px;flex:none}
 .icon-btn .dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid #fff}
 .crumbs{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);min-width:0}
 .crumbs .sep{color:var(--text-3)}
+.crumbs .crumb-link{color:var(--text-2);border-radius:4px}
+.crumbs .crumb-link:hover{color:var(--text);text-decoration:underline}
+.crumbs .crumb-link:focus-visible{box-shadow:var(--ring);outline:none}
 .crumbs .here{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .spacer{flex:1}
 .searchbox{display:flex;align-items:center;gap:8px;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-pill);padding:0 12px;height:36px;width:260px;color:var(--text-3)}

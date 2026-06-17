@@ -73,6 +73,9 @@ const NAV = {
   parent: [
     { gk:'group.main', group:'Principal', items:[
       { r:'parent', ic:'users', k:'nav.parent', l:'Portal de familia' },
+      // [NAV-08] "Gestionar plan" enruta a membership: el padre necesita el item en su
+      // nav para no caer en un destino huérfano (sin item activo ni camino de vuelta).
+      { r:'membership', ic:'star', k:'nav.membership', l:'Membresía' },
     ]},
     { gk:'group.marketplace', group:'Marketplace', items:[
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
@@ -94,11 +97,21 @@ const TABBAR = {
   student: [ {r:'dashboard',ic:'home',k:'nav.dashboard',l:'Inicio'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'course',ic:'book',k:'nav.course',l:'Aprender'},{r:'lifetime',ic:'award',k:'nav.lifetime',l:'Trayectoria'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   teacher: [ {r:'teacher',ic:'grid',k:'nav.workspace',l:'Panel'},{r:'coachwork',ic:'calendar',k:'nav.coachwork',l:'Reservas'},{r:'participants',ic:'users',k:'nav.participants',l:'Alumnos'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   parent: [ {r:'parent',ic:'users',k:'nav.parent',l:'Familia'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
+  // [NAV-06] Admin necesita su propio tabbar en móvil; sin él caía al de estudiante
+  // (Inicio/Debate/Aprender/Trayectoria/Perfil), sin Moderación ni Usuarios.
+  admin: [ {r:'admin',ic:'flag',k:'nav.admin',l:'Moderación'},{r:'admin-users',ic:'users',k:'nav.users',l:'Usuarios'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
 };
 
-function crumbsHtml(crumbs) {
+// [NAV-04] Migas navegables: el primer segmento corresponde al `nav` de la pantalla
+// (p.ej. 'Mi aprendizaje'→course), así que los segmentos no-finales enrutan a la raíz
+// de sección (navRoute). role=button+tabindex reusa el activador de teclado global.
+function crumbsHtml(crumbs, navRoute) {
   return crumbs.map((c,i)=>
-    i===crumbs.length-1 ? `<span class="here">${c}</span>` : `<span>${c}</span><span class="sep">/</span>`
+    i===crumbs.length-1
+      ? `<span class="here">${c}</span>`
+      : (navRoute
+          ? `<span class="crumb-link" role="button" tabindex="0" data-go="${navRoute}" style="cursor:pointer">${c}</span><span class="sep">/</span>`
+          : `<span>${c}</span><span class="sep">/</span>`)
   ).join('');
 }
 
@@ -155,7 +168,7 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
     <div class="main">
       <header class="topbar">
         <button class="icon-btn mobile-only" id="burger" aria-label="${t('top.menu', lang)}">${IC.menu}</button>
-        <div class="crumbs" id="crumbs">${crumbsHtml(crumbs)}</div>
+        <div class="crumbs" id="crumbs">${crumbsHtml(crumbs, activeNav)}</div>
         <div class="spacer"></div>
         <div class="searchbox desk-only">
           <span style="display:flex;width:16px;height:16px">${IC.search}</span>
