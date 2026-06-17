@@ -29,6 +29,47 @@ function whenLabel(d?: Date | null): string {
   return `hace ${years} ${years === 1 ? "año" : "años"}`;
 }
 
+// Día calendario en hora RD (UTC-4) como entero, para comparar actividad por día.
+const RD_OFFSET_MS = -4 * 3600000;
+function dayNumRD(d: Date): number {
+  const dt = d instanceof Date ? d : new Date(d);
+  return Math.floor((dt.getTime() + RD_OFFSET_MS) / 86400000);
+}
+
+// [GAMIFICATION-2 §9] Racha REAL y NO predatoria, derivada del ledger (ActivityEvent).
+// Cuenta días consecutivos con actividad y tolera UN día perdido (grace/freeze): un solo
+// hueco no rompe la racha; dos días seguidos sin actividad sí. Se calcula EN LECTURA (no
+// un contador almacenado que castiga un olvido reiniciándose a 0 — eso sería predatorio).
+function computeStreak(events: Array<{ createdAt: Date }>): number {
+  if (!events || !events.length) return 0;
+  const active = new Set(events.map((e) => dayNumRD(e.createdAt)));
+  const today = Math.floor((Date.now() + RD_OFFSET_MS) / 86400000);
+  // La racha está viva solo si hubo actividad hoy o ayer.
+  let cursor = active.has(today) ? today : active.has(today - 1) ? today - 1 : null;
+  if (cursor === null) return 0;
+  let streak = 0, graceUsed = false;
+  while (cursor >= today - 400) {
+    if (active.has(cursor)) { streak++; cursor--; }
+    else if (!graceUsed) { graceUsed = true; cursor--; } // perdona un único hueco (freeze)
+    else break;
+  }
+  return streak;
+}
+
+// [DASHBOARD-ACCESS-2 §4] Estado de ciclo de vida para adaptar el dashboard al usuario:
+//   new       — sin actividad aún (recién registrado / sin placement).
+//   active    — actividad en los últimos 2 días.
+//   returning — volvió tras 3-13 días fuera.
+//   lapsed    — 14+ días sin actividad ("bienvenido de nuevo").
+function lifecycleState(events: Array<{ createdAt: Date }>, isNew: boolean): { state: string; daysAway: number | null } {
+  if (isNew || !events || !events.length) return { state: "new", daysAway: null };
+  const today = Math.floor((Date.now() + RD_OFFSET_MS) / 86400000);
+  const last = Math.max(...events.map((e) => dayNumRD(e.createdAt)));
+  const daysAway = today - last;
+  const state = daysAway >= 14 ? "lapsed" : daysAway >= 3 ? "returning" : "active";
+  return { state, daysAway };
+}
+
 // Etiqueta legible mes + año en español, tipo "jun 2026" (texto generado por nosotros).
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -404,6 +445,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   // Entregas calificadas (GRADED) derivadas en JS de la consulta única de entregas.
   const mySubsGraded = (mySubs as any[]).filter((s) => s.status === "GRADED");
 
+  // [GAMIFICATION-2 §9] Racha real (con grace) + [DASHBOARD-ACCESS-2 §4] ciclo de vida,
+  // ambos derivados del ledger ya cargado (activityEvents) — sin consultas extra.
+  const streakDays = computeStreak(activityEvents as any[]);
+  const lifecycle = lifecycleState(activityEvents as any[], !!(me && me.role === "STUDENT" && !me.placedAt));
+
   // [l7] Origen de courseModules (dashboard): profesor → PF-101 (pfModules);
   // estudiante → módulos de su PRIMER curso inscrito. studentModules ahora trae
   // TODOS los cursos inscritos (Moodle multi-curso), así que filtramos al primero
@@ -500,7 +546,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   const gotBadge = (name: string) => {
     switch (name) {
       case "Primer discurso": return mySubs.length >= 1;
-      case "Racha de 7 días": return (me?.streak ?? 0) >= 7;
+      case "Racha de 7 días": return streakDays >= 7;
       case "Refutador": return (me?.xp ?? 0) >= 1500;
       case "Semifinalista": return ["Varsity", "Elite"].includes(lvl);
       case "Voz de oro": return mySubs.some((s) => (s.grade ?? 0) >= 95);
@@ -1255,7 +1301,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
   };
 
   const base: any = {
-    me: { name: esc(me?.name), email: me?.email, initials: esc(me?.initials), level: me?.level, streak: me?.streak, role: myRole,
+    me: { name: esc(me?.name), email: me?.email, initials: esc(me?.initials), level: me?.level, streak: streakDays, role: myRole,
+      // [DASHBOARD-ACCESS-2 §4] ciclo de vida para adaptar el saludo y el siguiente paso.
+      lifecycle: lifecycle.state, daysAway: lifecycle.daysAway,
       headline: esc(me?.headline), bio: esc(me?.bio), teachingStyle: esc(me?.teachingStyle), formats: esc(me?.formats), location: esc(me?.location), preferences: me?.preferences ?? null,
       // PRD §11.3 / §2.2: estudiante sin placement aún (placedAt null) → P1/Aula.tsx lo enruta al placement.
       needsPlacement: me?.role === "STUDENT" && !me?.placedAt,

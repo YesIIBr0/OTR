@@ -119,7 +119,7 @@ function activeItemsFlat() {
         <div class="h-row">
           <div style="max-width:560px">
             <p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
-            <h2 class="brand-font" style="margin-top:2px">Buenas, ${firstName}</h2>
+            <h2 class="brand-font" style="margin-top:2px">${DB.me?.lifecycle==='lapsed'?`Qué bueno verte de nuevo, ${firstName}`:DB.me?.lifecycle==='new'?`Bienvenido, ${firstName}`:`Buenas, ${firstName}`}</h2>
             <p style="color:#fff;font-size:15px;font-weight:650;margin-top:10px">${na.title}</p>
             ${na.sub ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
             <button class="btn btn-primary" style="margin-top:14px" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
@@ -165,6 +165,13 @@ function activeItemsFlat() {
       /* ---- ③ RECOMMENDED FOR YOU (cursos no inscritos / práctica) ---- */
       const enrolledCodes = new Set(courses.map(c=>c.code));
       const recos = (DB.catalog || []).filter(c=>!c.enrolled && !enrolledCodes.has(c.code)).slice(0,3);
+      // [DASHBOARD-ACCESS-1 §4] Cada recomendación explica POR QUÉ se sugiere: si el
+      // programa cubre un formato que el alumno ya debate → "Para tu formato X"; si no,
+      // se enmarca como el siguiente paso para su nivel (señal real, no genérica).
+      const myFmts = String(DB.me?.formats||'').toLowerCase();
+      const recoWhy = (c)=> (c.format && myFmts.includes(String(c.format).toLowerCase()))
+        ? `Para tu formato ${esc(c.format)}`
+        : `Siguiente paso para ${esc(DB.me?.level || 'tu nivel')}`;
       const recoCards = recos.map(c=>`
         <div class="tile course-card click" role="button" tabindex="0" onclick="go('catalog')">
           <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C0C0C))">
@@ -174,7 +181,8 @@ function activeItemsFlat() {
             <div class="cc-name">${esc(c.name)}</div>
             <div class="cc-coach">${esc(c.coach)}</div>
             <div class="cc-meta">${c.format?`<span class="row vcenter" style="gap:5px">${IC.flag} ${esc(c.format)}</span>`:''}${c.modality?`<span class="dot-sep"></span><span>${esc(c.modality)}</span>`:''}</div>
-            <button class="btn btn-soft btn-sm" style="margin-top:10px;width:100%">Ver programa ${IC.arrowR}</button>
+            <div class="eyebrow" style="margin-top:9px;color:var(--otr-green-text);font-size:10.5px">${recoWhy(c)}</div>
+            <button class="btn btn-soft btn-sm" style="margin-top:8px;width:100%">Ver programa ${IC.arrowR}</button>
           </div>
         </div>`).join('');
       const recoCard = `
