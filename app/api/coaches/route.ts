@@ -30,7 +30,9 @@ export async function GET(req: Request) {
   // CoachProfile.userId no tiene @relation en el schema → join manual (patrón guardianship).
   const users = profiles.length
     ? await db.user.findMany({
-        where: { id: { in: profiles.map((p) => p.userId) } },
+        // [§7.4 / MARKETPLACE-MEMBERSHIP-1] Solo coaches VERIFICADOS van al marketplace
+        // (la reserva ya lo exigía; el descubrimiento también debe — no listar no-verificados).
+        where: { id: { in: profiles.map((p) => p.userId) }, coachVerified: true },
         select: {
           id: true,
           name: true,
@@ -44,7 +46,8 @@ export async function GET(req: Request) {
     : [];
   const byId = new Map(users.map((u) => [u.id, u]));
 
-  let coaches = profiles.map((p) => {
+  // Solo perfiles cuyo coach está verificado (byId ya filtró a coachVerified:true).
+  let coaches = profiles.filter((p) => byId.has(p.userId)).map((p) => {
     const u = byId.get(p.userId);
     // Paquete más barato → "desde $X". Sin paquetes, cae a la tarifa por hora.
     const cheapest = p.packages.length

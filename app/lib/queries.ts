@@ -759,7 +759,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
     // (la barrera real vive en POST /api/bookings — esto es solo señalización).
     viewer: { ageBand: me?.ageBand || null },
     coaches: coachProfiles
-      .filter((p: any) => coachUserById.has(p.userId))
+      // [§7.4 / MARKETPLACE-MEMBERSHIP-1] Solo coaches VERIFICADOS en el marketplace.
+      .filter((p: any) => coachUserById.get(p.userId)?.coachVerified)
       .map((p: any) => {
         const u = coachUserById.get(p.userId);
         const pkgs = (p.packages || []).map((pk: any) => ({

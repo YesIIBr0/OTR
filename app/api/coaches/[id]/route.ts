@@ -61,6 +61,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     },
   });
   if (!coachUser) return bad("Coach no encontrado", 404);
+  // [§7.4 / MARKETPLACE-MEMBERSHIP-1] Un coach NO verificado no está "live" en el marketplace:
+  // su perfil público no se muestra (consistente con el filtro de la lista y el gate de reserva).
+  if (!coachUser.coachVerified) return bad("Coach no disponible", 404);
 
   // Reseñas del coach (Review.teacherId = User.id del coach). Solo alumnos
   // inscritos pueden crearlas (ver /api/reviews) → verificadas por construcción.
