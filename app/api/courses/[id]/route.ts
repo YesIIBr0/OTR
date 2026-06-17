@@ -20,7 +20,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json();
   // allowlist explícita — nunca el body crudo (evita mass-assignment de teacherId/priceCents/published)
   const data: Record<string, unknown> = {};
-  for (const k of ["name", "color", "next", "format", "summary"]) {
+  for (const k of ["name", "nameEn", "color", "next", "format", "summary", "summaryEn"]) {
     if (typeof body[k] === "string") data[k] = body[k].slice(0, 600);
   }
   if (typeof body.modality === "string" && ["online", "presencial", "híbrido"].includes(body.modality)) data.modality = body.modality;

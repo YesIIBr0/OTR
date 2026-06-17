@@ -14,12 +14,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = await req.json().catch(() => ({}));
   const data: Record<string, unknown> = {}; // allowlist explícita (anti mass-assignment)
   if (body.title != null) data.title = String(body.title).slice(0, 160);
+  // [I18N-1 / §17.3] Variante EN del título (puede limpiarse pasando "").
+  if (body.titleEn !== undefined) data.titleEn = body.titleEn ? String(body.titleEn).slice(0, 160) : null;
   if (body.type != null) data.type = String(body.type);
   if (body.dur !== undefined) data.dur = body.dur || null;
   const kind = body.videoKind != null ? normalizeKind(body.videoKind) : lesson.videoKind;
   if (body.videoKind != null) data.videoKind = kind;
   if (body.videoSrc !== undefined) data.videoSrc = normalizeVideoSrc(kind, body.videoSrc);
   if (body.contentHtml !== undefined) data.contentHtml = sanitizeHtml(body.contentHtml);
+  if (body.contentHtmlEn !== undefined) data.contentHtmlEn = body.contentHtmlEn ? sanitizeHtml(body.contentHtmlEn) : null;
   if (body.releaseAfterId !== undefined) data.releaseAfterId = body.releaseAfterId || null;
   // Mostrar/ocultar la actividad al alumno (ojo) — distinto de locked (prerrequisito).
   if (typeof body.hidden === "boolean") data.hidden = body.hidden;

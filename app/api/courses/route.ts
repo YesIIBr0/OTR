@@ -20,6 +20,9 @@ export async function POST(req: Request) {
   const format = clean(body.format, 40) || null;
   const modalityRaw = clean(body.modality, 40);
   const summary = clean(body.summary, 600) || null;
+  // [I18N-1 / §17.3] Variantes EN: el contenido nace bilingüe (no monolingüe). Campos opcionales.
+  const nameEn = clean(body.nameEn, 120) || null;
+  const summaryEn = clean(body.summaryEn, 600) || null;
   const capacity = body.capacity;
   const cap = capacity != null && capacity !== "" && !Number.isNaN(Number(capacity)) ? Number(capacity) : null;
   // Visibilidad (flujo Moodle: crear como borrador y publicar al terminar). Default true
@@ -35,6 +38,8 @@ export async function POST(req: Request) {
       modality: ["online", "presencial", "híbrido"].includes(modalityRaw) ? modalityRaw : "online",
       capacity: cap,
       summary,
+      nameEn,
+      summaryEn,
       published,
       layout,
     },

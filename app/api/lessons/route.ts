@@ -8,7 +8,7 @@ import { sanitizeHtml } from "../../lib/sanitize";
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  const { moduleId, title, type, dur, videoKind, videoSrc, contentHtml, dueAt, submitKinds, maxPoints } = await req.json();
+  const { moduleId, title, titleEn, type, dur, videoKind, videoSrc, contentHtml, contentHtmlEn, dueAt, submitKinds, maxPoints } = await req.json();
   if (!moduleId || !title) return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
   const mod = await teacherOwnsModule(moduleId, user);
   if (!mod) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
@@ -24,6 +24,9 @@ export async function POST(req: Request) {
     data: {
       moduleId, title: String(title).slice(0, 160), type: type || "lesson", dur: dur || null, position: count,
       videoKind: kind, videoSrc: normalizeVideoSrc(kind, videoSrc), contentHtml: sanitizeHtml(contentHtml),
+      // [I18N-1 / §17.3] Variantes EN opcionales → el contenido nace bilingüe.
+      titleEn: titleEn ? String(titleEn).slice(0, 160) : null,
+      contentHtmlEn: contentHtmlEn ? sanitizeHtml(contentHtmlEn) : null,
       dueAt: dueAtVal,
       submitKinds: sk.length ? sk.join(",") : null,
       maxPoints: maxPoints === "" || maxPoints == null || Number.isNaN(mp) ? null : Math.max(0, Math.min(1000, Math.round(mp))),
