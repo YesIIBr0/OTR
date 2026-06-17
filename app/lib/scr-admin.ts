@@ -185,6 +185,8 @@ S.adminConsole = {
         if (status === "DISMISSED") {
           // Descartado sale de la cola (la GET solo trae OPEN/REVIEWED).
           st.reports = (Array.isArray(st.reports) ? st.reports : []).filter((r) => r.id !== id);
+          // [fix verificación] Mantener st.total en sync: si no, 'Cargar más' queda visible con un total inflado.
+          if (typeof st.total === "number") st.total = Math.max(0, st.total - 1);
           w.toast?.("Reporte descartado", "ok");
         } else {
           (Array.isArray(st.reports) ? st.reports : []).forEach((r) => {

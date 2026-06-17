@@ -56,7 +56,11 @@ S.settings = {
   render() {
     const me = DB.me || {};
     const lang = getLang();
-    const role = me.role;
+    // DB.me.role llega en MINÚSCULA; normalizamos a MAYÚSCULA para todas las comparaciones
+    // de abajo (roleLabel, badge, toggle de clasificación, privacidad). Antes, comparar contra
+    // "ADMIN"/"TEACHER"/etc. siempre fallaba → roleLabel caía a "Estudiante" y el toggle de
+    // clasificación nunca se mostraba (regresión de GAMIFICATION-1).
+    const role = String(me.role || "").toUpperCase();
     const roleLabel = role === "ADMIN" ? "Administrador" : role === "TEACHER" ? "Coach" : role === "PARENT" ? "Familia" : "Estudiante";
 
     const account = `<div class="row vcenter" style="gap:14px;padding:8px 0 14px">

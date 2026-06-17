@@ -41,8 +41,9 @@ function countdown(iso) {
 /* Resuelve la reserva por id desde el lado que corresponde al rol. */
 function findBooking(id) {
   if (!id) return null;
-  const role = DB.me?.role;
-  if (role === "TEACHER" || role === "COACH") {
+  // DB.me.role es MINÚSCULA en el cliente (queries usa toLowerCase + Aula fija viewRole).
+  const role = String(DB.me?.role || "").toLowerCase();
+  if (role === "teacher" || role === "coach") {
     const box = (DB.coachwork && DB.coachwork.inbox) || {};
     const all = [...(box.upcoming || []), ...(box.past || [])];
     const b = all.find((x) => x && x.id === id);
@@ -62,9 +63,10 @@ S.room = {
 
     // Reserva inexistente / ajena / sin sesión: estado honesto + salida.
     if (!found) {
-      const role = DB.me?.role;
-      const back = role === "TEACHER" || role === "COACH" ? "coachwork" : "my-bookings";
-      const backLabel = role === "TEACHER" || role === "COACH" ? "Ir a Reservas" : "Ir a Mis reservas";
+      const role = String(DB.me?.role || "").toLowerCase();
+      const isCoach = role === "teacher" || role === "coach";
+      const back = isCoach ? "coachwork" : "my-bookings";
+      const backLabel = isCoach ? "Ir a Reservas" : "Ir a Mis reservas";
       return `
       <div class="page-head fade-up"><div><p class="eyebrow">Sesión</p>
         <div class="page-title">Sala de sesión</div></div></div>

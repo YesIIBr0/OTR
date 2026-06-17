@@ -242,6 +242,13 @@ S.adminUsers = {
             else onLocal?.(u);
           }
         });
+        // [fix verificación] Con un filtro de rol activo, si el cambio dejó a un usuario fuera
+        // del filtro, quítalo de la lista para que el skip de "Cargar más" (=length) siga
+        // alineado con el set filtrado del servidor (si no, se saltaría una fila de borde).
+        if (st.role) {
+          const matches = (r) => (st.role === "TEACHER" ? (r === "TEACHER" || r === "COACH") : r === st.role);
+          st.users = (Array.isArray(st.users) ? st.users : []).filter((u) => matches(String(u.role || "").toUpperCase()));
+        }
         w.toast?.(okMsg, "ok");
         repaint();
       } catch (e) {

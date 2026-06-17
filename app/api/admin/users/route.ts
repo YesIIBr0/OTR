@@ -55,7 +55,10 @@ export async function GET(req: Request) {
 
   const where: Prisma.UserWhereInput = {};
   if (q) where.OR = caseVariants(q).flatMap((v) => [{ name: { contains: v } }, { email: { contains: v } }]);
-  if (ROLES.has(roleFilter)) where.role = roleFilter;
+  // [ENT-04 fix] El chip "Coaches" envía TEACHER, pero el KPI de coaches cuenta TEACHER+COACH;
+  // mapeamos el filtro para que la lista coincida con el KPI (no omitir usuarios con rol COACH).
+  if (roleFilter === "TEACHER" || roleFilter === "COACH") where.role = { in: ["TEACHER", "COACH"] };
+  else if (ROLES.has(roleFilter)) where.role = roleFilter;
 
   // total = coincidencias del filtro actual (para "cargar más"); counts = stats GLOBALES
   // (KPIs estables, no sesgados por el filtro/página — antes se calculaban sobre el array cargado).

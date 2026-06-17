@@ -993,30 +993,28 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es") 
       .slice(0, 20) // ya vienen desc
       .map((b) => ({ ...bookingShape(b), escrowStatus: b.escrow?.status ?? null }));
 
-    // Earnings: retenido (HELD) vs liberado (RELEASED); payout = liberado − take rate.
-    const escrows = allCoachBookings.map((b) => b.escrow).filter(Boolean);
-    const heldCents = escrows
-      .filter((t: any) => t.status === "HELD")
-      .reduce((s: number, t: any) => s + (t.amountCents || 0), 0);
-    const released = escrows.filter((t: any) => t.status === "RELEASED");
-    const releasedCents = released.reduce((s: number, t: any) => s + (t.amountCents || 0), 0);
-    const payoutOf = (txns: any[]): number =>
-      Math.round(txns.reduce((s: number, t: any) => s + (t.amountCents || 0) * (1 - (t.takeRatePct ?? 18) / 100), 0));
-    const payoutCents = payoutOf(released);
-    // Payout del MES ACTUAL: RELEASED con releasedAt dentro del mes en curso.
+    // [ENT-08] Los TOTALES financieros y de éxito NO pueden derivar del array de bookings
+    // (capado a take:200 para el inbox): un coach con >200 reservas perdería las antiguas y
+    // subreportaría sus ingresos de por vida. Se calculan con agregaciones dedicadas (sin
+    // límite) sobre TODO el historial. takeRatePct es uniforme (EscrowTxn @default 18, y todo
+    // el código crea el escrow con 18), así que payout = liberado × (1 − 18%).
+    const coachId = me.id;
     const nowDate = new Date(nowMs);
-    const inCurrentMonth = (d: any): boolean => {
-      if (!d) return false;
-      const x = new Date(d);
-      return x.getMonth() === nowDate.getMonth() && x.getFullYear() === nowDate.getFullYear();
-    };
-    const monthPayoutCents = payoutOf(released.filter((t: any) => inCurrentMonth(t.releasedAt)));
-
-    // Métricas de éxito del coach (PRD §7.5): rating, volumen y repeat-booking.
-    const completedCount = allCoachBookings.filter((b) => b.status === "COMPLETED").length;
-    const bookingsByStudent = new Map<string, number>();
-    allCoachBookings.forEach((b) => bookingsByStudent.set(b.studentId, (bookingsByStudent.get(b.studentId) || 0) + 1));
-    const repeatStudents = [...bookingsByStudent.values()].filter((n) => n > 1).length;
+    const monthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
+    const TAKE_PCT = 18;
+    const payoutOfCents = (cents: number): number => Math.round((cents || 0) * (1 - TAKE_PCT / 100));
+    const [heldAgg, relAgg, monthRelAgg, completedCount, byStudent] = await Promise.all([
+      db.escrowTxn.aggregate({ where: { status: "HELD", booking: { coachId } }, _sum: { amountCents: true } }),
+      db.escrowTxn.aggregate({ where: { status: "RELEASED", booking: { coachId } }, _sum: { amountCents: true } }),
+      db.escrowTxn.aggregate({ where: { status: "RELEASED", releasedAt: { gte: monthStart }, booking: { coachId } }, _sum: { amountCents: true } }),
+      db.booking.count({ where: { coachId, status: "COMPLETED" } }),
+      db.booking.groupBy({ by: ["studentId"], where: { coachId }, _count: { studentId: true } }),
+    ]);
+    const heldCents = heldAgg._sum.amountCents || 0;
+    const releasedCents = relAgg._sum.amountCents || 0;
+    const payoutCents = payoutOfCents(releasedCents);
+    const monthPayoutCents = payoutOfCents(monthRelAgg._sum.amountCents || 0);
+    const repeatStudents = byStudent.filter((g: any) => (g._count?.studentId || 0) > 1).length;
 
     coachwork = {
       inbox: { upcoming: inboxUpcoming, past: inboxPast },
