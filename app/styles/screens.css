@@ -22,7 +22,7 @@
 @media (max-width:860px){ .login{grid-template-columns:1fr} .login-brand{display:none} }
 
 /* ---------------- DASHBOARD ---------------- */
-.hello-card{background:linear-gradient(120deg,var(--otr-navy),var(--otr-ink));color:#fff;border-radius:var(--r-lg);padding:22px 24px;position:relative;overflow:hidden}
+.hello-card{background:linear-gradient(120deg,var(--otr-navy),var(--otr-ink));color:#fff;border-radius:var(--r-xl);padding:26px 30px;position:relative;overflow:hidden}
 .hello-card::before{content:"";position:absolute;top:-40%;right:-5%;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle at 40% 40%,rgba(44,170,32,.35),transparent 62%)}
 .hello-card .h-row{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
 .hello-card h2{font-size:22px;font-weight:800;letter-spacing:var(--track-tight)}
