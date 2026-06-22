@@ -276,27 +276,13 @@ function viewPractice() {
     .sort((a, b) => a.diff - b.diff)
     .slice(0, 5);
 
-  const timer = `
+  const drills = `
     <div class="card card-pad fade-up">
-      <div class="row between vcenter">
-        <div><div class="eyebrow" style="margin-bottom:2px">${t("debate.timedPractice")}</div><b style="font-size:15px">${t("debate.pfFlow")}</b></div>
-        <span class="badge sky" id="pf-phase-badge">${t("debate.ready")}</span>
+      <div class="empty" style="padding:44px 20px">
+        <div class="ill">${IC.mic}</div>
+        <h4>${t("debate.drillsTitle")}</h4>
+        <p>${t("debate.drillsBody")}</p>
       </div>
-      <div style="text-align:center;margin:18px 0 8px">
-        <div class="brand-font tnum" id="pf-clock" style="font-size:54px;font-weight:800;color:var(--otr-navy);line-height:1">0:00</div>
-        <div class="muted" id="pf-phase" style="font-size:13.5px;margin-top:4px">${t("debate.pfStartHint")}</div>
-      </div>
-      <div class="bar thin navy" style="margin:8px 0 16px"><i id="pf-bar" style="width:0%"></i></div>
-      <div class="row" style="gap:var(--s-2);justify-content:center">
-        <button class="btn btn-primary btn-sm" id="pf-start">${IC.play} ${t("debate.start")}</button>
-        <button class="btn btn-soft btn-sm" id="pf-next">${t("debate.nextPhase")} ${IC.arrowR}</button>
-        <button class="btn btn-ghost btn-sm" id="pf-reset">${IC.refresh} ${t("debate.reset")}</button>
-      </div>
-      <div class="divider"></div>
-      <div class="row wrap" style="gap:6px" id="pf-steps">
-        ${PF_FLOW.map((p, i) => `<span class="chip" data-step="${i}">${i + 1}. ${p.name} · ${Math.round(p.secs / 60)}m</span>`).join("")}
-      </div>
-      <button class="btn btn-soft btn-sm btn-block" style="margin-top:16px" data-action="debate-record" data-source="OTR">${IC.check} ${t("debate.recordPracticeResult")}</button>
     </div>`;
 
   const finder = `
@@ -315,7 +301,7 @@ function viewPractice() {
 
   return `
     <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.practiceEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.practiceTitle")}</h1><div class="page-sub">${t("debate.practiceSub")}</div></div></div>
-    <div class="split">${timer}<div class="stack" style="gap:16px">${finder}</div></div>`;
+    <div class="split">${drills}<div class="stack" style="gap:16px">${finder}</div></div>`;
 }
 
 /* ================= SECCIÓN · LEADERBOARD ================= */
