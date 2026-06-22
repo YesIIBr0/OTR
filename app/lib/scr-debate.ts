@@ -173,7 +173,7 @@ function viewOverview(d) {
       <div class="tile">${C.kpi(t("debate.kpiAdjudicated"), String(total), { ic: "flag" })}</div>
       <div class="tile">${C.kpi(t("debate.kpiWins"), String(wins), { ic: "trophy" })}</div>
       <div class="tile">${C.kpi(t("debate.kpiWinRate"), String(winRate), { unit: "%", ic: "chart" })}</div>
-      <div class="tile">${C.kpi(t("debate.kpiDrawsLosses"), `${draws} · ${losses}`, { ic: "levels" })}</div>
+      <div class="tile">${C.kpi(t("debate.kpiDrawsLosses"), String(losses), { ic: "levels" })}</div>
     </div>`;
 
   const recentList = d.history.slice(0, 4);
@@ -576,7 +576,6 @@ function openRecordDebate(forcedSource, onDone) {
         <div class="seg" id="dr-result">
           <button type="button" data-v="WIN" class="on">${t("debate.resultWin")}</button>
           <button type="button" data-v="LOSS">${t("debate.resultLoss")}</button>
-          <button type="button" data-v="DRAW">${t("debate.resultDraw")}</button>
         </div>
       </div>
       <div class="field"><label class="label">${t("debate.fieldFormat")}</label>
