@@ -115,7 +115,7 @@ async function main() {
       email: "saul@otr.do",
       role: "TEACHER",
       initials: "SM",
-      level: "Elite",
+      level: "OTR Laureate",
       xp: 0,
       streak: 0,
       passwordHash: pw,
@@ -144,14 +144,14 @@ async function main() {
   // Analía (la cuenta demo) y las Varsity mayores quedan 'adult' para poder
   // demostrar la reserva directa sin gate.
   const students = [
-    { id: "u-ar", name: "Analía Reyes", email: "analia.reyes@otr.do", initials: "AR", level: "Varsity", xp: 3120, streak: 12, location: "Santiago, RD", debateRating: 1720, debateRd: 80, debateVol: 0.055, debateTier: "Gold", birthYear: 2007, ageBand: "adult" },
-    { id: "u-si", name: "Silvana Espaillat", email: "silvana.espaillat@otr.do", initials: "SE", level: "Varsity", xp: 3340, streak: 8, location: "Santiago, RD", debateRating: 1815, debateRd: 95, debateVol: 0.05, debateTier: "Platinum", birthYear: 2008, ageBand: "adult" },
-    { id: "u-is", name: "Isabella Guzmán", email: "isabella.guzman@otr.do", initials: "IG", level: "Varsity", xp: 4120, streak: 7, location: "Santo Domingo, RD", debateRating: 1850, debateRd: 70, debateVol: 0.048, debateTier: "Platinum", birthYear: 2008, ageBand: "adult" },
-    { id: "u-aa", name: "Aaron Méndez", email: "aaron.mendez@otr.do", initials: "AM", level: "Varsity", xp: 3980, streak: 6, location: "Santo Domingo, RD", debateRating: 1690, debateRd: 110, debateVol: 0.06, debateTier: "Gold", birthYear: 2009, ageBand: "minor" },
-    { id: "u-jo", name: "Jose Fernández", email: "jose.fernandez@otr.do", initials: "JF", level: "JV", xp: 2210, streak: 4, location: "La Vega, RD", debateRating: 1480, debateRd: 130, debateVol: 0.06, debateTier: "Silver", birthYear: 2009, ageBand: "minor" },
-    { id: "u-sg", name: "Sigmund Castillo", email: "sigmund.castillo@otr.do", initials: "SC", level: "JV", xp: 2480, streak: 5, location: "La Vega, RD", debateRating: 1545, debateRd: 120, debateVol: 0.06, debateTier: "Silver", birthYear: 2010, ageBand: "minor" },
-    { id: "u-cn", name: "Camila Núñez", email: "camila.nunez@otr.do", initials: "CN", level: "JV", xp: 1980, streak: 3, location: "Santo Domingo, RD", debateRating: 1420, debateRd: 160, debateVol: 0.062, debateTier: "Bronze", birthYear: 2010, ageBand: "minor" },
-    { id: "u-df", name: "Diego Fermín", email: "diego.fermin@otr.do", initials: "DF", level: "Novato", xp: 820, streak: 0, location: "Punta Cana, RD", debateRating: 1360, debateRd: 220, debateVol: 0.065, debateTier: "Bronze", birthYear: 2011, ageBand: "minor" }, // [fix] tierFor(1360)=Bronze (no Novato)
+    { id: "u-ar", name: "Analía Reyes", email: "analia.reyes@otr.do", initials: "AR", level: "OTR Competitor", xp: 3120, streak: 12, location: "Santiago, RD", debateRating: 1720, debateRd: 80, debateVol: 0.055, debateTier: "Gold", birthYear: 2007, ageBand: "adult" },
+    { id: "u-si", name: "Silvana Espaillat", email: "silvana.espaillat@otr.do", initials: "SE", level: "OTR Competitor", xp: 3340, streak: 8, location: "Santiago, RD", debateRating: 1815, debateRd: 95, debateVol: 0.05, debateTier: "Platinum", birthYear: 2008, ageBand: "adult" },
+    { id: "u-is", name: "Isabella Guzmán", email: "isabella.guzman@otr.do", initials: "IG", level: "OTR Competitor", xp: 4120, streak: 7, location: "Santo Domingo, RD", debateRating: 1850, debateRd: 70, debateVol: 0.048, debateTier: "Platinum", birthYear: 2008, ageBand: "adult" },
+    { id: "u-aa", name: "Aaron Méndez", email: "aaron.mendez@otr.do", initials: "AM", level: "OTR Competitor", xp: 3980, streak: 6, location: "Santo Domingo, RD", debateRating: 1690, debateRd: 110, debateVol: 0.06, debateTier: "Gold", birthYear: 2009, ageBand: "minor" },
+    { id: "u-jo", name: "Jose Fernández", email: "jose.fernandez@otr.do", initials: "JF", level: "OTR Apprentice", xp: 2210, streak: 4, location: "La Vega, RD", debateRating: 1480, debateRd: 130, debateVol: 0.06, debateTier: "Silver", birthYear: 2009, ageBand: "minor" },
+    { id: "u-sg", name: "Sigmund Castillo", email: "sigmund.castillo@otr.do", initials: "SC", level: "OTR Apprentice", xp: 2480, streak: 5, location: "La Vega, RD", debateRating: 1545, debateRd: 120, debateVol: 0.06, debateTier: "Silver", birthYear: 2010, ageBand: "minor" },
+    { id: "u-cn", name: "Camila Núñez", email: "camila.nunez@otr.do", initials: "CN", level: "OTR Apprentice", xp: 1980, streak: 3, location: "Santo Domingo, RD", debateRating: 1420, debateRd: 160, debateVol: 0.062, debateTier: "Bronze", birthYear: 2010, ageBand: "minor" },
+    { id: "u-df", name: "Diego Fermín", email: "diego.fermin@otr.do", initials: "DF", level: "OTR Initiate", xp: 820, streak: 0, location: "Punta Cana, RD", debateRating: 1360, debateRd: 220, debateVol: 0.065, debateTier: "Bronze", birthYear: 2011, ageBand: "minor" }, // [fix] tierFor(1360)=Bronze (no Novato)
   ];
   await db.user.createMany({
     data: students.map((s) => ({
@@ -201,7 +201,7 @@ async function main() {
       email: "rosa.fermin@otr.do",
       role: "PARENT",
       initials: "RF",
-      level: "Novato",
+      level: "OTR Initiate",
       xp: 0,
       streak: 0,
       passwordHash: pw,
@@ -232,7 +232,7 @@ async function main() {
       email: "admin@otr.do",
       role: "ADMIN",
       initials: "OT",
-      level: "Elite",
+      level: "OTR Laureate",
       xp: 0,
       streak: 0,
       passwordHash: pw,
@@ -246,10 +246,11 @@ async function main() {
   // ----------------------------------------------------------------
   await db.level.createMany({
     data: [
-      { name: "Novato", range: "0 – 999 XP", color: "var(--lvl-novato)", startXp: 0, position: 0 },
-      { name: "JV", range: "1.000 – 2.499 XP", color: "var(--lvl-jv)", startXp: 1000, position: 1 },
-      { name: "Varsity", range: "2.500 – 4.999 XP", color: "var(--lvl-varsity)", startXp: 2500, position: 2 },
-      { name: "Elite", range: "5.000+ XP", color: "var(--lvl-elite)", startXp: 5000, position: 3 },
+      { name: "OTR Initiate", range: "0 – 999 XP", color: "var(--lvl-novato)", startXp: 0, position: 0 },
+      { name: "OTR Apprentice", range: "1.000 – 2.499 XP", color: "var(--lvl-jv)", startXp: 1000, position: 1 },
+      { name: "OTR Competitor", range: "2.500 – 4.999 XP", color: "var(--lvl-varsity)", startXp: 2500, position: 2 },
+      { name: "OTR Strategist", range: "5.000 – 9.999 XP", color: "var(--lvl-strategist)", startXp: 5000, position: 3 },
+      { name: "OTR Laureate", range: "10.000+ XP", color: "var(--lvl-elite)", startXp: 10000, position: 4 },
     ],
   });
 
@@ -1154,7 +1155,7 @@ async function main() {
       email: "carla.jimenez@otr.do",
       role: "TEACHER",
       initials: "CJ",
-      level: "Elite",
+      level: "OTR Laureate",
       xp: 0,
       streak: 0,
       passwordHash: pw,

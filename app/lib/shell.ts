@@ -29,7 +29,7 @@ const NAV = {
     ]},
     { gk:'group.progress', group:'Centro de progreso', items:[
       { r:'lifetime', ic:'award', k:'nav.lifetime', l:'Mi trayectoria' },
-      { r:'progress', ic:'levels', k:'nav.progress', l:'Niveles', badge:'Varsity' },
+      { r:'progress', ic:'levels', k:'nav.progress', l:'Niveles' },
       { r:'grades', ic:'doc', k:'nav.grades', l:'Mis calificaciones' },
       { r:'badges', ic:'medal', k:'nav.badges', l:'Logros' },
     ]},

@@ -62,7 +62,7 @@ export async function POST(req: Request) {
     data: {
       name, email, role,
       passwordHash: hashPassword(password),
-      initials, level: "Novato", xp: 0, streak: 0,
+      initials, level: "OTR Initiate", xp: 0, streak: 0,
       // Age-gate: solo estudiantes guardan birthYear/ageBand
       ...(isStudent ? { birthYear, ageBand } : {}),
       // Si es profesor/coach, guarda lo que enseña (allowlist + saneo de longitud)

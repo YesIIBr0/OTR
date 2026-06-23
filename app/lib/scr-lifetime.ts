@@ -38,7 +38,7 @@ function getLifetime() {
     identity: {
       name: identity.name || "",
       initials: identity.initials || "?",
-      level: identity.level || "Novato",
+      level: identity.level || "OTR Initiate",
       ageBand: identity.ageBand || "",
       memberSinceLabel: identity.memberSinceLabel || "",
       languages: Array.isArray(identity.languages) ? identity.languages : [],

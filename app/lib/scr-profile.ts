@@ -57,7 +57,7 @@ export const S = {};
       // [fix de-mock] TODO dinámico desde los datos REALES del usuario.
       // (Antes estaba hardcodeado a 'Varsity' + racha de 12 + 3 eventos falsos.)
       const levels = DB.levels || [];
-      const curName = (DB.me && DB.me.level) || (levels[0] && levels[0].name) || 'Novato';
+      const curName = (DB.me && DB.me.level) || (levels[0] && levels[0].name) || 'OTR Initiate';
       let curIndex = levels.findIndex((l) => (l.name || '').toLowerCase() === String(curName).toLowerCase());
       if (curIndex < 0) curIndex = 0;
       const nextLevel = levels[curIndex + 1] || null;
@@ -277,7 +277,7 @@ export const S = {};
       <div class="profile-head">
         ${C.avatar(esc(me.initials), { size: 'xl', bg: 'var(--otr-sky-lo)' })}
         <div style="flex:1;min-width:200px">
-          <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:22px;font-weight:750;margin:0">${me.name}</h1>${C.levelBadge(me.level || 'Novato')}</div>
+          <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:22px;font-weight:750;margin:0">${me.name}</h1>${C.levelBadge(me.level || 'OTR Initiate')}</div>
           ${me.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${me.headline}</div>` : ''}
           <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${esc(me.location)}` : ''}</div>
           ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(me.bio)}</p>` : ''}
@@ -319,7 +319,7 @@ export const S = {};
           <b style="font-size:13.5px">${t("profile.currentLevel")}</b>
           <div class="row vcenter" style="gap:12px;margin:12px 0 14px">
             <div class="ln-badge brand-font" style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--otr-sky),var(--otr-sky-lo));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:var(--sh-2)">${esc((me.level || 'N')[0])}</div>
-            <div><b style="font-size:15px">${esc(me.level || 'Novato')}</b><div class="faint" style="font-size:12px;margin-top:1px">${(DB.xpNext - DB.xp)} ${t("profile.xpToNextLevel")}</div></div>
+            <div><b style="font-size:15px">${esc(me.level || 'OTR Initiate')}</b><div class="faint" style="font-size:12px;margin-top:1px">${(DB.xpNext - DB.xp)} ${t("profile.xpToNextLevel")}</div></div>
           </div>
           ${C.bar(DB.xpNext > DB.xpLevelStart ? Math.round(((DB.xp - DB.xpLevelStart) / (DB.xpNext - DB.xpLevelStart)) * 100) : 0, { cls: 'navy' })}
           <div class="row between vcenter" style="font-size:12px;color:var(--text-2);margin-top:10px"><span class="tnum">${(DB.xp || 0).toLocaleString('es')} XP</span><span class="streak">${IC.flame} ${(me.streak || 0)} días</span></div>

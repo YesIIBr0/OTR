@@ -13,8 +13,8 @@ export const C = {
     return `<span class="badge ${tone}">${dot}${text}</span>`;
   },
   levelBadge(lvl) {
-    const map = { Novato:'lvl-novato', JV:'lvl-jv', Varsity:'lvl-varsity', Elite:'lvl-elite' };
-    const v = map[lvl] || 'lvl-jv';
+    const map = { "OTR Initiate":'lvl-novato', "OTR Apprentice":'lvl-jv', "OTR Competitor":'lvl-varsity', "OTR Strategist":'lvl-strategist', "OTR Laureate":'lvl-elite' };
+    const v = map[lvl] || 'lvl-novato';
     return `<span class="badge" style="background:color-mix(in srgb, var(--${v}) 16%, white);color:var(--${v})"><span class="dot" style="background:var(--${v})"></span>${lvl}</span>`;
   },
   bar(pct, opts = {}) {

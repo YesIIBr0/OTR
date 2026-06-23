@@ -79,10 +79,10 @@ function activeItemsFlat() {
   S.dashboard = {
     render() {
       const firstName = esc((DB.me?.name || "").split(" ")[0] || "");
-      const myLevel = DB.me?.level || "Novato";
-      const order = ['Novato','JV','Varsity','Elite'];
+      const myLevel = DB.me?.level || "OTR Initiate";
+      const order = ['OTR Initiate','OTR Apprentice','OTR Competitor','OTR Strategist','OTR Laureate'];
       const myIdx = order.indexOf(myLevel);
-      const nextName = order[myIdx+1] || 'Elite';
+      const nextName = order[myIdx+1] || 'OTR Laureate';
       const courses = DB.courses || [];
       const pending = courses.reduce((s,c)=>s+(c.due||0),0);
       const avg = courses.length ? Math.round(courses.reduce((s,c)=>s+(c.progress||0),0)/courses.length) : 0;

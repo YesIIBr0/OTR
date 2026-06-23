@@ -281,10 +281,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // el quiz-attempt al subir de nivel). Así "todos inician en Novato" y el badge nunca contradice al XP.
   const _meXp = me?.xp ?? 0;
   const curLevel = [...levels].sort((a, b) => (b.startXp ?? 0) - (a.startXp ?? 0)).find((l) => _meXp >= (l.startXp ?? 0)) ?? levels[0];
-  const derivedLevelName = curLevel?.name || "Novato";
+  const derivedLevelName = curLevel?.name || "OTR Initiate";
   // [fix] Helper reutilizable: nombre de rango DERIVADO del XP (para el usuario y para los hijos
   // del portal de familia) — la fuente canónica del rango es el XP, no el User.level almacenado.
-  const levelNameForXp = (xp: number) => ([...levels].sort((a, b) => (b.startXp ?? 0) - (a.startXp ?? 0)).find((l) => (Number(xp) || 0) >= (l.startXp ?? 0)) ?? levels[0])?.name || "Novato";
+  const levelNameForXp = (xp: number) => ([...levels].sort((a, b) => (b.startXp ?? 0) - (a.startXp ?? 0)).find((l) => (Number(xp) || 0) >= (l.startXp ?? 0)) ?? levels[0])?.name || "OTR Initiate";
   const nextLevel = levels.find((l) => l.position === (curLevel?.position ?? 0) + 1);
   // [auditoría/stale-stored] Rating y nº de reseñas del coach DERIVADOS EN VIVO de las Review
   // reales (fuente canónica), no del agregado ALMACENADO en CoachProfile (que podía estar
@@ -598,9 +598,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       case "Primer discurso": return mySubs.length >= 1;
       case "Racha de 7 días": return streakDays >= 7;
       case "Refutador": return (me?.xp ?? 0) >= 1500;
-      case "Semifinalista": return ["Varsity", "Elite"].includes(lvl);
+      case "Semifinalista": return ["OTR Competitor", "OTR Strategist", "OTR Laureate"].includes(lvl);
       case "Voz de oro": return mySubs.some((s) => (s.grade ?? 0) >= 95);
-      case "Campeón": return lvl === "Elite";
+      case "Campeón": return lvl === "OTR Laureate";
       default: return false;
     }
   };

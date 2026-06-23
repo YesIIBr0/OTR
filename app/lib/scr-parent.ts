@@ -42,7 +42,7 @@ function normChild(k = {}) {
     id: (k.student && k.student.id) || k.childId || k.id || "",
     name: k.name || (k.student && k.student.name) || "Estudiante",
     initials: k.initials || (k.student && k.student.initials) || ini(k.name || (k.student && k.student.name)),
-    level: k.level || (k.student && k.student.level) || "Novato",
+    level: k.level || (k.student && k.student.level) || "OTR Initiate",
     ageBand: k.ageBand || (k.student && k.student.ageBand) || "",
     // §8.4: perfil público del hijo — el padre da el consentimiento desde aquí.
     publicProfile: { enabled: !!pp.enabled, slug: pp.slug || null },
