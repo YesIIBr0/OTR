@@ -28,6 +28,9 @@ export const dict = {
     // ── Dashboard · Skill snapshot ──
     "core.skillEyebrow": "Radar OTR",
     "core.skillTitle": "Tus habilidades",
+    "core.coursesEyebrow": "Tu progreso",
+    "core.coursesTitle": "Tus programas",
+    "core.coursesEmptyHeading": "Aún sin programas",
     "core.viewProgress": "Ver progreso",
     "core.skillEmptyHeading": "Mide tus 6 habilidades",
     "core.skillPlacementBody": "Tu evaluación inicial fija tu punto de partida en 3 minutos.",
@@ -164,6 +167,9 @@ export const dict = {
     // ── Dashboard · Skill snapshot ──
     "core.skillEyebrow": "OTR Radar",
     "core.skillTitle": "Your skills",
+    "core.coursesEyebrow": "Your progress",
+    "core.coursesTitle": "Your programs",
+    "core.coursesEmptyHeading": "No programs yet",
     "core.viewProgress": "View progress",
     "core.skillEmptyHeading": "Measure your 6 skills",
     "core.skillPlacementBody": "Your placement assessment sets your starting point in 3 minutes.",

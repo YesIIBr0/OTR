@@ -147,20 +147,26 @@ function activeItemsFlat() {
       const hasSkills = (DB.skills || []).length > 0;
       const comps = DASH_SKILL_DIMS.map((n)=>[n, skillMap[n] != null ? skillMap[n] : 0]);
       const skillAvg = hasSkills ? Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length) : 0;
+      // [Jean] Home: en vez del radar de skills (depende del programa), trackear los
+      // programas activos del estudiante — más universal para un academia multi-formato.
       const skillCard = `
         <div class="card card-pad">
           <div class="row between vcenter">
-            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.skillEyebrow")}</div><b style="font-size:15px">${t("core.skillTitle")}</b></div>
-            ${hasSkills ? `<span class="badge sky">${skillAvg} prom.</span>` : ''}
+            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.coursesEyebrow")}</div><b style="font-size:15px">${t("core.coursesTitle")}</b></div>
+            ${courses.length ? `<span class="badge sky">${avg}% prom.</span>` : ''}
           </div>
-          ${hasSkills
-            ? `<div style="margin-top:12px">${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${c[0]}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
-              <button class="btn btn-soft btn-sm" style="margin-top:12px" onclick="go('progress')">${t("core.viewProgress")} ${IC.arrowR}</button></div>`
-            : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.award}</div><h4>${t("core.skillEmptyHeading")}</h4>${DB.me?.needsPlacement
-                ? `<p>${t("core.skillPlacementBody")}</p><button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="go('placement')">${t("core.skillPlacementCta")} ${IC.arrowR}</button>`
-                : (courses && courses.length)
-                ? `<p>${t("core.skillFirstLesson")}</p>`
-                : `<p>${t("core.skillEnroll")}</p><button class="btn btn-soft btn-sm" style="margin-top:10px" onclick="go('catalog')">${t("core.exploreCatalog")} ${IC.arrowR}</button>`}</div>`}
+          ${courses.length
+            ? `<div style="margin-top:14px;display:flex;flex-direction:column;gap:15px">${courses.map(c=>`
+                <div role="button" tabindex="0" aria-label="Abrir ${c.name}" style="cursor:pointer" onclick="window.__course='${esc(c.code)}';go('course')">
+                  <div class="row between vcenter" style="margin-bottom:5px">
+                    <span class="row vcenter" style="gap:9px;min-width:0">${C.courseDot(c.color||'var(--otr-sky)')}<b style="font-size:13.5px">${c.name}</b></span>
+                    <span class="faint tnum" style="font-size:12.5px">${c.progress||0}%</span>
+                  </div>
+                  ${c.coach?`<div style="font-size:12px;color:var(--text-3);margin:0 0 7px 23px">con ${c.coach}</div>`:''}
+                  ${C.bar(c.progress||0,{cls:'navy'})}
+                </div>`).join('')}
+                <button class="btn btn-soft btn-sm" style="margin-top:2px" onclick="go('course')">${t("core.viewProgress")} ${IC.arrowR}</button></div>`
+            : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.book}</div><h4>${t("core.coursesEmptyHeading")}</h4><p>${t("core.skillEnroll")}</p><button class="btn btn-soft btn-sm" style="margin-top:10px" onclick="go('catalog')">${t("core.exploreCatalog")} ${IC.arrowR}</button></div>`}
         </div>`;
 
       /* ---- ③ RECOMMENDED FOR YOU (cursos no inscritos / práctica) ---- */
