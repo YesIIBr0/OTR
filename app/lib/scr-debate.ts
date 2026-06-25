@@ -554,10 +554,19 @@ async function openDebateDetail(id) {
 }
 
 /* ---------------- form: registrar un debate (OTR o externo) ---------------- */
+// [REQ-1] Formatos de EQUIPO (exigen compañero). LD es 1v1. Espeja isTeamFormat del backend.
+function drIsTeamFormat(f) {
+  const s = String(f || "").toUpperCase();
+  if (s.includes("LINCOLN") || s === "LD") return false;
+  return /PF|PUBLIC FORUM|POLICY|PARLI|WORLD/.test(s);
+}
+
 function openRecordDebate(forcedSource, onDone) {
   const isPractice = String(forcedSource || "").toUpperCase() === "OTR";
+  const req = `<span style="color:var(--danger)">*</span>`;
   const body = `
     <div class="stack" style="gap:12px">
+      <div class="card" style="background:var(--action-soft);border:none;padding:10px 12px;font-size:12.5px;color:var(--otr-green-text);line-height:1.45">${t("debate.requestIntro")}</div>
       <div class="field"><label class="label">${t("debate.fieldResult")}</label>
         <div class="seg" id="dr-result">
           <button type="button" data-v="WIN" class="on">${t("debate.resultWin")}</button>
@@ -571,7 +580,7 @@ function openRecordDebate(forcedSource, onDone) {
         <select class="select" id="dr-side"><option value="PRO">Pro</option><option value="CON">Con</option></select>
       </div>
       <div class="field"><label class="label">${t("debate.fieldOpponent")}</label><input class="input" id="dr-opponent" placeholder="${t("debate.phOpponent")}"/></div>
-      <div class="field"><label class="label">${t("debate.fieldPartner")}</label><input class="input" id="dr-partner" placeholder="${t("debate.phPartner")}"/></div>
+      <div class="field" id="dr-partner-wrap"><label class="label">${t("debate.fieldPartner")} ${req}</label><input class="input" id="dr-partner" placeholder="${t("debate.phPartner")}"/><div class="hint" style="font-size:11.5px;color:var(--text-3);margin-top:4px">${t("debate.partnerRequiredHint")}</div></div>
       ${!isPractice ? `
       <div class="field"><label class="label">${t("debate.fieldSource")}</label>
         <div class="seg" id="dr-source">
@@ -579,29 +588,48 @@ function openRecordDebate(forcedSource, onDone) {
           <button type="button" data-v="EXTERNAL">${t("debate.sourceExternalNsda")}</button>
         </div>
       </div>` : ""}
-      <div class="field"><label class="label">${t("debate.fieldEvent")}</label><input class="input" id="dr-event" placeholder="${t("debate.phEvent")}"/></div>
+      <div class="field"><label class="label">${t("debate.fieldEvent")} ${req}</label><input class="input" id="dr-event" placeholder="${t("debate.phEvent")}"/></div>
+      <div class="field"><label class="label">${t("debate.fieldTournamentCode")} ${req}</label><input class="input" id="dr-code" placeholder="${t("debate.phTournamentCode")}"/><div class="hint" style="font-size:11.5px;color:var(--text-3);margin-top:4px">${t("debate.tournamentCodeHint")}</div></div>
       <div class="field"><label class="label">${t("debate.fieldRound")}</label><input class="input" id="dr-round" placeholder="${t("debate.phRound")}"/></div>
       <div class="field"><label class="label">${t("debate.fieldJudgeComments")}</label><textarea class="input" id="dr-comments" rows="3" style="resize:vertical;font-family:inherit;line-height:1.5"></textarea></div>
     </div>`;
 
-  openModal(isPractice ? t("debate.recordPracticeResult") : t("debate.recordDebate"), body, {
-    okLabel: t("debate.save"),
+  openModal(t("debate.recordDebate"), body, {
+    drawer: true,
+    okLabel: t("debate.submitRequest"),
+    // [REQ-1] el campo Compañero solo aparece (y es obligatorio) en formatos de equipo.
+    afterMount: (scrim) => {
+      const fmt = scrim.querySelector("#dr-format");
+      const wrap = scrim.querySelector("#dr-partner-wrap");
+      const sync = () => { if (wrap) wrap.style.display = drIsTeamFormat(fmt?.value) ? "" : "none"; };
+      fmt && fmt.addEventListener("change", sync);
+      sync();
+    },
     onOk: async (scrim) => {
       const seg = (id) => scrim.querySelector(`#${id} button.on`)?.getAttribute("data-v");
       const val = (id) => (scrim.querySelector(`#${id}`)?.value || "").trim();
+      const format = val("dr-format") || "Public Forum";
+      const eventName = val("dr-event");
+      const tournamentCode = val("dr-code");
+      const partner = val("dr-partner");
+      // Validación en cliente (el backend la repite por seguridad).
+      if (!eventName) throw new Error(t("debate.errEvent"));
+      if (!tournamentCode) throw new Error(t("debate.errCode"));
+      if (drIsTeamFormat(format) && !partner) throw new Error(t("debate.errPartner"));
       const payload = {
         result: seg("dr-result") || "WIN",
-        format: val("dr-format") || "Public Forum",
+        format,
         side: seg("dr-side") || (scrim.querySelector("#dr-side")?.value) || "PRO",
         opponent: val("dr-opponent"),
-        partner: val("dr-partner"),
+        partner,
         source: isPractice ? "OTR" : (seg("dr-source") || "OTR"),
-        eventName: val("dr-event"),
+        eventName,
+        tournamentCode,
         roundLabel: val("dr-round"),
         comments: val("dr-comments"),
       };
       await (window as any).api("/api/debates", payload);
-      (window as any).toast?.(t("debate.debateRecorded"), "ok");
+      (window as any).toast?.(t("debate.requestSent"), "ok");
       onDone && onDone();
     },
   });
@@ -610,7 +638,8 @@ function openRecordDebate(forcedSource, onDone) {
 /* ---------------- modal mínimo (reusa estilos .modal del shell) ---------------- */
 function openModal(title, bodyHtml, opts = {}) {
   const scrim = document.createElement("div");
-  scrim.className = "modal-scrim";
+  // [REQ-1] opts.drawer ⇒ panel lateral derecho (registro de debate como "solicitud").
+  scrim.className = "modal-scrim" + (opts.drawer ? " is-drawer" : "");
   const foot = opts.onOk
     ? `<div class="modal-foot"><button class="btn btn-ghost" data-x>${t("debate.cancel")}</button><button class="btn btn-primary" data-ok>${esc(opts.okLabel || t("debate.save"))}</button></div>`
     : `<div class="modal-foot"><button class="btn btn-ghost" data-x>${t("debate.close")}</button></div>`;
@@ -629,6 +658,9 @@ function openModal(title, bodyHtml, opts = {}) {
   scrim.addEventListener("click", (e) => {
     if (e.target === scrim || e.target.closest("[data-x]")) close();
   });
+  // [REQ-1] hook post-render para que el llamador conecte interactividad (p. ej. el
+  // toggle formato→compañero del registro de debate).
+  if (opts.afterMount) opts.afterMount(scrim);
   const okBtn = scrim.querySelector("[data-ok]");
   if (okBtn && opts.onOk) {
     okBtn.addEventListener("click", async () => {

@@ -15,15 +15,21 @@ import { updateRating, tierFor } from "../../lib/glicko2";
 // RD por defecto del oponente cuando solo conocemos su rating (rondas adjudicadas).
 const DEFAULT_OPP_RD = 350;
 
-// Resultado del jugador → score Glicko-2 (1 win / 0.5 draw / 0 loss).
+// Resultado del jugador → score Glicko-2 (1 win / 0 loss). En debate no hay empates.
 function scoreFor(result: string): number {
-  if (result === "WIN") return 1;
-  if (result === "DRAW") return 0.5;
-  return 0; // LOSS
+  return result === "WIN" ? 1 : 0; // LOSS
 }
 
-const VALID_RESULTS = new Set(["WIN", "LOSS", "DRAW"]);
+const VALID_RESULTS = new Set(["WIN", "LOSS"]);
 const VALID_SOURCES = new Set(["OTR", "EXTERNAL"]);
+
+// [REQ-1] Formatos de EQUIPO (2v2+): exigen compañero. LD es 1v1 (sin compañero).
+// Acepta tanto el código (PF/POLICY/PARLI/WORLDS) como el nombre visible del form.
+function isTeamFmt(format: string): boolean {
+  const f = (format || "").toUpperCase();
+  if (f.includes("LINCOLN") || f === "LD") return false; // LD = 1v1
+  return /PF|PUBLIC FORUM|POLICY|PARLI|WORLD/.test(f);
+}
 const VALID_CRITERIA = new Set(["Argumentation", "Rebuttal", "Delivery", "Evidence/Research", "Crossfire"]);
 
 // Mapea cada criterio del ballot (0-10) a una o más StudentSkill (0-100) del usuario.
@@ -54,6 +60,7 @@ export async function POST(req: Request) {
     result?: string;
     source?: string;
     eventName?: string;
+    tournamentCode?: string;
     roundLabel?: string;
     opponentRating?: unknown;
     adjudicated?: unknown;
@@ -68,7 +75,7 @@ export async function POST(req: Request) {
   }>(req);
 
   const result = clean(body.result, 8).toUpperCase();
-  if (!VALID_RESULTS.has(result)) return bad("result inválido (WIN | LOSS | DRAW)");
+  if (!VALID_RESULTS.has(result)) return bad("result inválido (WIN | LOSS)");
 
   const format = clean(body.format, 16) || "PF";
   const source = VALID_SOURCES.has(clean(body.source, 16).toUpperCase())
@@ -79,6 +86,7 @@ export async function POST(req: Request) {
   const opponent = clean(body.opponent, 120) || null;
   const partner = clean(body.partner, 120) || null;
   const eventName = clean(body.eventName, 160) || null;
+  const tournamentCode = clean(body.tournamentCode, 40) || null;
   const roundLabel = clean(body.roundLabel, 80) || null;
 
   // --- ANTI-GAMING (PRD §6.2): el rating SOLO se mueve en rondas ADJUDICADAS. ---
@@ -89,6 +97,16 @@ export async function POST(req: Request) {
   // el historial con adjudicated=false: SÍ se guarda el DebateRecord (y su
   // ballot/skill nudge) pero NO se crea RatingUpdate ni se mueve el rating.
   const isJudgeRole = user.role === "TEACHER" || user.role === "ADMIN";
+
+  // [REQ-1] SOLICITUD del alumno: cuando un STUDENT auto-reporta, el registro es una
+  // SOLICITUD estructurada que su coach revisará — por eso exigimos datos verificables
+  // (evento + código de torneo) y, en formatos de equipo, el nombre del compañero.
+  // Un coach/admin (isJudgeRole) registra/adjudica directo y queda exento de esta puerta.
+  if (!isJudgeRole) {
+    if (!eventName) return bad("Indica el evento/torneo del debate");
+    if (!tournamentCode) return bad("Indica el código del torneo (lo da el tab del torneo)");
+    if (isTeamFmt(format) && !partner) return bad("Este formato es por parejas: indica a tu compañero");
+  }
 
   // [§6.5/§7.5] Adjudicación coach→alumno: un TEACHER/ADMIN puede adjudicar la ronda de
   // UN ALUMNO (body.targetUserId). El rating, el ballot (rúbrica) y los nudges de skill
@@ -164,7 +182,7 @@ export async function POST(req: Request) {
       // [RATING-1] si se nombró un compañero REAL, su nombre y su User.id quedan en el record.
       partner: partnerUser ? partnerUser.name : partner,
       partnerUserId: partnerUser ? partnerUser.id : null,
-      result, source, eventName, roundLabel,
+      result, source, eventName, tournamentCode, roundLabel,
       adjudicated,
       adjudicatedBy: adjudicated ? user.id : null,
     },
@@ -219,7 +237,7 @@ export async function POST(req: Request) {
         data: {
           userId: partnerUser.id, format, side, opponent,
           partner: subject.name, partnerUserId: subject.id,
-          result, source, eventName, roundLabel,
+          result, source, eventName, tournamentCode, roundLabel,
           adjudicated: true, adjudicatedBy: user.id,
         },
       });
@@ -242,7 +260,7 @@ export async function POST(req: Request) {
     await logActivitySafe({
       userId: partnerUser.id,
       type: result === "LOSS" ? "debate_loss" : "debate_win",
-      title: `${result === "WIN" ? "Ganó" : result === "LOSS" ? "Perdió" : "Empató"} ronda ${format}${opponent ? ` vs ${opponent}` : ""}${eventName ? ` · ${eventName}` : ""}`,
+      title: `${result === "WIN" ? "Ganó" : "Perdió"} ronda ${format}${opponent ? ` vs ${opponent}` : ""}${eventName ? ` · ${eventName}` : ""}`,
       detail: `En equipo con ${subject.name}`,
       source: "debate",
       refId: pRecord.id,
@@ -342,7 +360,7 @@ export async function POST(req: Request) {
   // --- ActivityEvent (spine): victoria/derrota con delta de rating en meta. ---
   const delta = Math.round(ratingAfter - ratingBefore);
   const type = result === "WIN" ? "debate_win" : result === "LOSS" ? "debate_loss" : "debate_win";
-  const verb = result === "WIN" ? "Ganó" : result === "LOSS" ? "Perdió" : "Empató";
+  const verb = result === "WIN" ? "Ganó" : "Perdió";
   const vs = opponent ? ` vs ${opponent}` : "";
   const where = eventName ? ` · ${eventName}` : "";
   await logActivitySafe({
@@ -379,9 +397,61 @@ export async function POST(req: Request) {
   });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
+
+  // [REQ-1] COLA DE APROBACIÓN del coach (?queue=1): las solicitudes (auto-reportes)
+  // pendientes de SUS alumnos — sin adjudicar y sin rechazar. Mismo vínculo de coaching
+  // que la adjudicación (T&S §7.4): ADMIN ve todas; TEACHER solo las de alumnos con
+  // reserva con él o inscritos en su curso.
+  const url = new URL(req.url);
+  if (url.searchParams.get("queue") === "1") {
+    if (user.role !== "TEACHER" && user.role !== "ADMIN") return bad("Solo un coach puede ver la cola", 403);
+
+    let studentIds: string[] | null = null; // null ⇒ ADMIN (sin filtro de alumno)
+    if (user.role === "TEACHER") {
+      const [booked, enrolled] = await Promise.all([
+        db.booking.findMany({ where: { coachId: user.id }, select: { studentId: true } }),
+        db.enrollment.findMany({ where: { course: { teacher: { email: user.email } } }, select: { userId: true } }),
+      ]);
+      studentIds = Array.from(new Set([...booked.map((b) => b.studentId), ...enrolled.map((e) => e.userId)]));
+      if (!studentIds.length) return ok({ requests: [] });
+    }
+
+    const pending = await db.debateRecord.findMany({
+      where: { adjudicated: false, rejectedAt: null, ...(studentIds ? { userId: { in: studentIds } } : {}) },
+      orderBy: { recordedAt: "desc" },
+      take: 100,
+    });
+
+    // DebateRecord no tiene relación a User → resolvemos nombre/rol en una sola consulta
+    // y conservamos SOLO los auto-reportes de alumnos (no rondas que registró el coach).
+    const ids = Array.from(new Set(pending.map((r) => r.userId)));
+    const owners = ids.length ? await db.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, role: true } }) : [];
+    const nameOf = new Map(owners.map((u) => [u.id, u.name] as const));
+    const roleOf = new Map(owners.map((u) => [u.id, u.role] as const));
+
+    const requests = pending
+      .filter((r) => roleOf.get(r.userId) === "STUDENT")
+      .map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        studentName: nameOf.get(r.userId) || "Alumno",
+        format: r.format,
+        side: r.side,
+        opponent: r.opponent,
+        partner: r.partner,
+        result: r.result,
+        source: r.source,
+        eventName: r.eventName,
+        tournamentCode: r.tournamentCode,
+        roundLabel: r.roundLabel,
+        recordedAt: r.recordedAt,
+      }));
+
+    return ok({ requests });
+  }
 
   const records = await db.debateRecord.findMany({
     where: { userId: user.id },
@@ -390,7 +460,7 @@ export async function GET() {
     include: { rating: true },
   });
 
-  // Forma compacta para la UI: cada ronda con su rating after/delta.
+  // Forma compacta para la UI: cada ronda con su rating after/delta + estado de solicitud.
   const debates = records.map((r) => ({
     id: r.id,
     format: r.format,
@@ -400,8 +470,12 @@ export async function GET() {
     result: r.result,
     source: r.source,
     eventName: r.eventName,
+    tournamentCode: r.tournamentCode,
     roundLabel: r.roundLabel,
     recordedAt: r.recordedAt,
+    // [REQ-1] estado de la solicitud para la UI del alumno.
+    status: r.rejectedAt ? "rejected" : r.adjudicated ? "approved" : "pending",
+    rejectionReason: r.rejectionReason,
     ratingBefore: r.rating ? Math.round(r.rating.ratingBefore) : null,
     ratingAfter: r.rating ? Math.round(r.rating.ratingAfter) : null,
     tierAfter: r.rating?.tierAfter ?? null,
