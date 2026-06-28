@@ -13,8 +13,12 @@ export const dict = {
     "events.emptyEventsTitle": "Aún no hay eventos en agenda",
     "events.emptyEventsBody": "Cuando OTR programe un seminario, sesión en vivo o workshop, aparecerá aquí.",
 
-    // sección Torneos
-    "events.tournamentsTitle": "Torneos",
+    // sección Próximos torneos (debate) — datos en DB.tournaments (status UPCOMING/LIVE).
+    "events.upcomingTournamentsTitle": "Próximos torneos",
+    "events.tournamentRegister": "Inscribirme",
+    "events.tournamentRegistered": "Inscripción confirmada",
+    "events.tournamentRegisterError": "No se pudo inscribir — inténtalo de nuevo",
+    "events.tournamentFallback": "Torneo",
     "events.viewAllDebateHub": "Ver todos en el Debate Hub",
     "events.emptyTournamentsTitle": "Sin torneos por ahora",
     "events.emptyTournamentsBody": "Cuando OTR abra inscripciones lo verás aquí. Mientras, suma rondas de práctica.",
@@ -29,8 +33,12 @@ export const dict = {
     "events.emptyEventsTitle": "No events on the calendar yet",
     "events.emptyEventsBody": "When OTR schedules a seminar, live session or workshop, it will appear here.",
 
-    // Tournaments section
-    "events.tournamentsTitle": "Tournaments",
+    // Upcoming tournaments section (debate) — data from DB.tournaments (status UPCOMING/LIVE).
+    "events.upcomingTournamentsTitle": "Upcoming tournaments",
+    "events.tournamentRegister": "Register",
+    "events.tournamentRegistered": "Registration confirmed",
+    "events.tournamentRegisterError": "Couldn't register — try again",
+    "events.tournamentFallback": "Tournament",
     "events.viewAllDebateHub": "View all in the Debate Hub",
     "events.emptyTournamentsTitle": "No tournaments right now",
     "events.emptyTournamentsBody": "When OTR opens registration you'll see it here. In the meantime, add practice rounds.",

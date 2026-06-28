@@ -79,7 +79,7 @@ function priorQuizAttempt() {
       const { lesson: L, course } = findLesson((window as any).__lesson);
       // Título de la actividad (= título de la lección). L.t YA viene esc() desde
       // queries.ts, igual que la clave de DB.mySubmissions y course.code/name.
-      const activity = L && L.t ? L.t : "Entrega";
+      const activity = L && L.t ? L.t : t("learn.activityFallback");
       // courseCode del curso activo (no el primero fijo). Cae al curso del primer
       // inscrito solo si no se pudo resolver la lección. Ya viene esc().
       const courseCode =
@@ -137,7 +137,7 @@ function priorQuizAttempt() {
       <div class="card fade-up" style="--d:1;margin-bottom:16px">
         <div class="card-head"><h3>${t("learn.yourSubmission")}</h3>${stateBadge}</div>
         <div class="card-body" style="padding:6px 16px 16px">
-          ${prev.when ? `<div class="faint" style="font-size:12px;margin-bottom:4px">Entregada ${prev.when}</div>` : ""}
+          ${prev.when ? `<div class="faint" style="font-size:12px;margin-bottom:4px">${t("learn.submittedAtPrefix")} ${prev.when}</div>` : ""}
           ${body || `<div class="muted" style="font-size:13px">${t("learn.submissionRecorded")}</div>`}
           ${gradeBlock}
           ${feedbackBlock}
@@ -153,7 +153,7 @@ function priorQuizAttempt() {
           <h1 class="page-title" style="font-size:22px;margin-top:2px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</h1>
           ${course && course.name ? `<div class="page-sub" style="margin-top:2px">${course.name}</div>` : ''}
         </div>
-        ${dueLabel ? `<span class="badge warn" style="height:28px;align-self:flex-start">${IC.clock} Entrega: ${dueLabel}</span>` : ''}
+        ${dueLabel ? `<span class="badge warn" style="height:28px;align-self:flex-start">${IC.clock} ${t("learn.dueLabelPrefix")} ${dueLabel}</span>` : ''}
       </div>
 
       ${prevCard}
@@ -202,7 +202,7 @@ function priorQuizAttempt() {
               ${maxPoints === 100
                 ? [[t("learn.rubricStructure"),'30'],[t("learn.rubricClarity"),'25'],[t("learn.rubricEvidence"),'25'],[t("learn.rubricTiming"),'20']].map(r=>`
                 <div class="rubric-row"><span>${r[0]}</span><span class="badge sky" style="margin-left:auto">${r[1]} pts</span></div>`).join('')
-                : `<div class="muted" style="font-size:13px;padding:6px 0">Esta entrega vale <b>${maxPoints} puntos</b>. Tu coach la revisará y te dará una nota con feedback.</div>`}
+                : `<div class="muted" style="font-size:13px;padding:6px 0">${t("learn.pointsCustomPrefix")} <b>${maxPoints}</b> ${t("learn.pointsCustomSuffix")}</div>`}
             </div>
           </div>
           <button class="btn btn-primary btn-lg btn-block" id="asg-submit">${prev ? t("learn.resubmit") : t("learn.submit")}</button>
@@ -404,7 +404,7 @@ function priorQuizAttempt() {
           <h4 style="margin:6px 0 2px">${t("learn.alreadyCompleted")}</h4>
           <p class="muted" style="font-size:13.5px">${attempt.best >= passScore ? t("learn.passed") : t("learn.toReinforce")} · ${t("learn.retryAnytime")}</p>
           <div class="row vcenter" style="gap:8px;justify-content:center;margin-top:12px">
-            <span class="badge ${attempt.best >= passScore ? "ok" : "warn"}" style="height:26px">${IC.star} Mejor: ${esc(String(attempt.best))}%</span>
+            <span class="badge ${attempt.best >= passScore ? "ok" : "warn"}" style="height:26px">${IC.star} ${t("learn.bestPrefix")} ${esc(String(attempt.best))}%</span>
             <button class="btn btn-primary btn-sm" id="qz-retry">${IC.refresh} ${t("learn.retryExam")}</button>
           </div>
         </div>
@@ -413,8 +413,8 @@ function priorQuizAttempt() {
       <div class="quiz-head fade-up" style="--d:0">
         <div>
           <div class="eyebrow">${t("learn.unitExamEyebrow")}</div>
-          <h1 class="page-title" style="font-size:var(--fs-20);margin-top:2px">${esc(quiz.title || 'Examen')}</h1>
-          <div class="page-sub" style="margin-top:2px">${total} pregunta${total!==1?'s':''} · aprobado con ${esc(String(passScore))}%</div>
+          <h1 class="page-title" style="font-size:var(--fs-20);margin-top:2px">${esc(quiz.title || t("learn.examFallback"))}</h1>
+          <div class="page-sub" style="margin-top:2px">${total} ${total!==1?t("learn.questionUnitPlural"):t("learn.questionUnitSingular")} · ${t("learn.passWithPrefix")} ${esc(String(passScore))}%</div>
         </div>
 
       </div>
@@ -534,7 +534,7 @@ function priorQuizAttempt() {
           <div class="lrow" style="align-items:flex-start">
             <span style="width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;line-height:1;background:var(--${ok?'ok':'danger'})">${ok?IC.check:'×'}</span>
             <div style="flex:1"><div style="font-weight:600;font-size:13.5px">${esc(Q.prompt)}</div>
-              <div style="font-size:12.5px;color:var(--text-2);margin-top:3px">${correctOpt?`Correcta: <b class="sky">${esc(correctOpt.text)}</b>`:''}${!ok?` · Tu respuesta: <span style="color:var(--danger)">${chosenOpt?esc(chosenOpt.text):'—'}</span>`:''}</div>
+              <div style="font-size:12.5px;color:var(--text-2);margin-top:3px">${correctOpt?`${t("learn.answerCorrect")} <b class="sky">${esc(correctOpt.text)}</b>`:''}${!ok?` · ${t("learn.answerYours")} <span style="color:var(--danger)">${chosenOpt?esc(chosenOpt.text):'—'}</span>`:''}</div>
             </div>
           </div>`;
       }).join('');
@@ -544,12 +544,12 @@ function priorQuizAttempt() {
         ${C.ring(pct,108,{color:`var(--${tone})`,label:`<b class="brand-font" style="font-size:30px">${pct}%</b><span style="font-size:11px;color:var(--text-3)">${score}/${total}</span>`})}
         <div style="flex:1;min-width:200px">
           <div class="badge ${tone}" style="height:24px;margin-bottom:8px">${passed?(pct>=90?t("learn.passedHonors"):t("learn.passed")):t("learn.toReinforce")}</div>
-          <h2 style="font-size:22px;font-weight:800;letter-spacing:var(--track-tight)">${esc(data.title || 'Examen')}</h2>
-          <p class="muted" style="margin-top:4px">Acertaste <b class="sky">${score} de ${total}</b>. Revisa las respuestas abajo para afinar tu técnica.</p>
+          <h2 style="font-size:22px;font-weight:800;letter-spacing:var(--track-tight)">${esc(data.title || t("learn.examFallback"))}</h2>
+          <p class="muted" style="margin-top:4px">${t("learn.gotRightPrefix")} <b class="sky">${score} ${t("learn.gotRightConnector")} ${total}</b>${t("learn.gotRightSuffix")}</p>
           ${/* [FLW-07] Confirma que el progreso del curso avanzó (antes el alumno dudaba si "contaba"). */""}
           ${passed && res.courseProgress != null ? `<div class="row vcenter" style="gap:8px;margin-top:10px;flex-wrap:wrap">
             <span class="badge ok" style="height:24px">${IC.checkCircle} ${t("learn.lessonCompleted")}</span>
-            <span class="badge sky" style="height:24px">Curso al ${res.courseProgress}%</span>
+            <span class="badge sky" style="height:24px">${t("learn.courseAtPrefix")} ${res.courseProgress}%</span>
             ${res.xpGain > 0 ? `<span class="badge sky" style="height:24px">+${res.xpGain} XP</span>` : ""}
           </div>` : ""}
           <div class="row" style="gap:10px;margin-top:14px">
@@ -598,7 +598,7 @@ function priorQuizAttempt() {
       const nextOnclick = nextItem
         ? `${nextItem.type === "quiz" ? `window.__quizLesson='${nextItem.id}';` : ""}window.__lesson='${nextItem.id}';go('${destFor(nextItem)}')`
         : "go('course')";
-      const nextLabel = nextItem ? `Siguiente: ${nextItem.t} ${IC.arrowR}` : `${t("learn.backToCourse")} ${IC.arrowR}`;
+      const nextLabel = nextItem ? `${t("learn.nextPrefix")} ${nextItem.t} ${IC.arrowR}` : `${t("learn.backToCourse")} ${IC.arrowR}`;
       // Marcar como completada (delegado en Aula.tsx). data-done = estado a fijar.
       const markBtn = L ? `<button class="btn ${doneByMe ? "btn-soft" : "btn-primary"} btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="${doneByMe ? "false" : "true"}" ${doneByMe ? `title="${t("learn.unmarkDone")}"` : ""}>${doneByMe ? `${IC.checkCircle} ${t("learn.completedUndo")}` : `${IC.check} ${t("learn.markComplete")}`}</button>` : "";
 

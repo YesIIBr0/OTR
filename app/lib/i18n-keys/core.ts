@@ -7,7 +7,16 @@ export const dict = {
     "core.heroSrTitle": "Inicio",
     "core.naResumeEyebrow": "Tu siguiente paso",
     "core.naResumeCta": "Continuar lección",
-    "core.naStartEyebrow": "Empieza aquí",
+    "core.naResumePrefix": "Retoma",
+    "core.pctCompleted": "% completado",
+    "core.helloLapsed": "Qué bueno verte de nuevo,",
+    "core.helloNew": "Bienvenido,",
+    "core.helloReturning": "Bienvenido/a de vuelta,",
+    "core.helloDefault": "Buenas,",
+    "core.streakDays": "días de racha",
+    "core.avgShort": "prom.",
+    "core.coachWith": "con",
+    "core.naStartEyebrow": "Tu entrenamiento",
     "core.naStartTitle": "Tu entrenamiento empieza hoy",
     "core.naStartSub": "Elige tu primer programa y reserva tu lugar.",
     "core.naStartCta": "Explorar catálogo",
@@ -29,7 +38,7 @@ export const dict = {
     "core.skillEyebrow": "Radar OTR",
     "core.skillTitle": "Tus habilidades",
     "core.coursesEyebrow": "Tu progreso",
-    "core.coursesTitle": "Tus programas",
+    "core.coursesTitle": "Programas activos",
     "core.coursesEmptyHeading": "Aún sin programas",
     "core.viewProgress": "Ver progreso",
     "core.skillEmptyHeading": "Mide tus 6 habilidades",
@@ -40,8 +49,8 @@ export const dict = {
     "core.exploreCatalog": "Explorar catálogo",
 
     // ── Dashboard · Recommended for you ──
-    "core.recoEyebrow": "Para ti",
-    "core.recoTitle": "Recomendado",
+    "core.recoEyebrow": "Explora el catálogo",
+    "core.recoTitle": "Programas recomendados",
     "core.viewProgram": "Ver programa",
     "core.recoEmptyHeading": "Estás en todos los programas",
     "core.recoEmptyBody": "Una sesión 1:1 con tu coach te lleva más lejos.",
@@ -56,6 +65,11 @@ export const dict = {
     "core.statusPending": "Esperando aprobación",
     "core.join": "Unirse",
     "core.view": "Ver",
+    "core.countdownInPrefix": "en",
+    "core.countdownMin": "min",
+    "core.countdownHour": "h",
+    "core.countdownDaySingular": "día",
+    "core.countdownDayPlural": "días",
 
     // ── Dashboard · Debate Rank ──
     "core.debateRankEyebrow": "Debate Rank",
@@ -66,11 +80,14 @@ export const dict = {
     "core.debatePlayFirst": "Practica tu primer debate",
     "core.debateStableBody": "Cada ronda adjudicada te acerca al siguiente tier.",
     "core.viewHistory": "Ver historial",
+    "core.debateHubCta": "Ir al Debate Hub",
 
     // ── Dashboard · Achievements ──
     "core.achievementsEyebrow": "Logros",
     "core.noBadgesYet": "Sin insignias todavía. Completa tu primera lección para ganar la primera.",
     "core.nextBadgeLabel": "Próx:",
+    "core.ofConnector": "de",
+    "core.xpToNextPrefix": "XP para",
 
     // ── Dashboard · Leaderboard / activity ──
     "core.leaderboardTitle": "Leaderboard",
@@ -100,14 +117,21 @@ export const dict = {
     "core.studentsUnit": "estudiantes",
     "core.lessonsUnit": "lecciones",
     "core.viewIndex": "Ver índice",
+    "core.welcomeVideoTitle": "Video de bienvenida",
     "core.tabContent": "Contenido",
     "core.tabGrades": "Calificaciones",
+    // ── Sub-tabs de la sección Cursos (Mis cursos / Catálogo) ──
+    "core.coursesTabMine": "Mis cursos",
+    "core.coursesTabCatalog": "Buscar nuevos",
+    "core.findCatalogCta": "Buscar catálogo",
     "core.yourProgress": "Tu progreso",
+    "core.activitiesCountUnit": "actividades",
     "core.claimCertificate": "Reclamar certificado",
     "core.currentAverage": "Promedio actual",
 
     // ── Course index ──
     "core.indexTitle": "Índice del curso",
+    "core.courseFallback": "Curso",
     "core.indexSub": "todo tu plan, actividad por actividad",
     "core.backToCourse": "Volver al curso",
     "core.kpiCompleted": "Completado",
@@ -146,7 +170,16 @@ export const dict = {
     "core.heroSrTitle": "Home",
     "core.naResumeEyebrow": "Your next step",
     "core.naResumeCta": "Continue lesson",
-    "core.naStartEyebrow": "Start here",
+    "core.naResumePrefix": "Resume",
+    "core.pctCompleted": "% complete",
+    "core.helloLapsed": "Great to see you again,",
+    "core.helloNew": "Welcome,",
+    "core.helloReturning": "Welcome back,",
+    "core.helloDefault": "Hi,",
+    "core.streakDays": "day streak",
+    "core.avgShort": "avg.",
+    "core.coachWith": "with",
+    "core.naStartEyebrow": "Your training",
     "core.naStartTitle": "Your training starts today",
     "core.naStartSub": "Choose your first program and claim your spot.",
     "core.naStartCta": "Browse catalog",
@@ -168,7 +201,7 @@ export const dict = {
     "core.skillEyebrow": "OTR Radar",
     "core.skillTitle": "Your skills",
     "core.coursesEyebrow": "Your progress",
-    "core.coursesTitle": "Your programs",
+    "core.coursesTitle": "Active programs",
     "core.coursesEmptyHeading": "No programs yet",
     "core.viewProgress": "View progress",
     "core.skillEmptyHeading": "Measure your 6 skills",
@@ -179,8 +212,8 @@ export const dict = {
     "core.exploreCatalog": "Browse catalog",
 
     // ── Dashboard · Recommended for you ──
-    "core.recoEyebrow": "For you",
-    "core.recoTitle": "Recommended",
+    "core.recoEyebrow": "Browse the catalog",
+    "core.recoTitle": "Recommended programs",
     "core.viewProgram": "View program",
     "core.recoEmptyHeading": "You're in every program",
     "core.recoEmptyBody": "A 1:1 session with your coach takes you further.",
@@ -195,6 +228,11 @@ export const dict = {
     "core.statusPending": "Awaiting approval",
     "core.join": "Join",
     "core.view": "View",
+    "core.countdownInPrefix": "in",
+    "core.countdownMin": "min",
+    "core.countdownHour": "h",
+    "core.countdownDaySingular": "day",
+    "core.countdownDayPlural": "days",
 
     // ── Dashboard · Debate Rank ──
     "core.debateRankEyebrow": "Debate Rank",
@@ -205,11 +243,14 @@ export const dict = {
     "core.debatePlayFirst": "Practice your first debate",
     "core.debateStableBody": "Every judged round brings you closer to the next tier.",
     "core.viewHistory": "View history",
+    "core.debateHubCta": "Go to Debate Hub",
 
     // ── Dashboard · Achievements ──
     "core.achievementsEyebrow": "Achievements",
     "core.noBadgesYet": "No badges yet. Complete your first lesson to earn your first one.",
     "core.nextBadgeLabel": "Next:",
+    "core.ofConnector": "of",
+    "core.xpToNextPrefix": "XP to",
 
     // ── Dashboard · Leaderboard / activity ──
     "core.leaderboardTitle": "Leaderboard",
@@ -239,14 +280,21 @@ export const dict = {
     "core.studentsUnit": "students",
     "core.lessonsUnit": "lessons",
     "core.viewIndex": "View index",
+    "core.welcomeVideoTitle": "Welcome video",
     "core.tabContent": "Content",
     "core.tabGrades": "Grades",
+    // ── Courses section sub-tabs (My courses / Catalog) ──
+    "core.coursesTabMine": "My courses",
+    "core.coursesTabCatalog": "Find new",
+    "core.findCatalogCta": "Browse catalog",
     "core.yourProgress": "Your progress",
+    "core.activitiesCountUnit": "activities",
     "core.claimCertificate": "Claim certificate",
     "core.currentAverage": "Current average",
 
     // ── Course index ──
     "core.indexTitle": "Course index",
+    "core.courseFallback": "Course",
     "core.indexSub": "your whole plan, activity by activity",
     "core.backToCourse": "Back to course",
     "core.kpiCompleted": "Completed",

@@ -30,17 +30,18 @@ function eventCard(e, i) {
   </div>`;
 }
 
-function tournamentRow(t) {
-  const open = String(t.status || "").toLowerCase() === "upcoming";
-  const meta = [t.format, t.region, t.startsLabel].filter(Boolean).map(esc).join(" · ");
+function tournamentRow(tour) {
+  const open = String(tour.status || "").toLowerCase() === "upcoming";
+  // metadata = formato · región · fecha (los campos ya vienen escapados desde queries.ts).
+  const meta = [tour.format, tour.region, tour.startsLabel].filter(Boolean).join(" · ");
   return `<div class="row vcenter between wrap" style="gap:10px;padding:13px 0;border-bottom:1px solid var(--border)">
-    <div style="min-width:0"><b style="font-size:13.5px">${esc(t.name || "Torneo")}</b>
+    <div style="min-width:0"><b style="font-size:13.5px">${tour.name || t("events.tournamentFallback")}</b>
       ${meta ? `<div class="faint" style="font-size:12px;margin-top:2px">${meta}</div>` : ""}</div>
-    ${t.registered
-      ? `<span class="badge ok" style="flex:none"><span class="dot"></span>Inscrito</span>`
+    ${tour.registered
+      ? `<span class="badge ok" style="flex:none"><span class="dot"></span>${t("debate.registered")}</span>`
       : open
-      ? `<button class="btn btn-soft btn-sm" style="flex:none" data-go-tournaments>Ver e inscribirme ${IC.arrowR}</button>`
-      : `<span class="badge" style="flex:none">${esc(t.status || "")}</span>`}
+      ? `<button class="btn btn-soft btn-sm" style="flex:none" data-tn-register="${esc(tour.id)}">${t("events.tournamentRegister")}</button>`
+      : `<span class="badge" style="flex:none">${esc(tour.status || "")}</span>`}
   </div>`;
 }
 
@@ -61,10 +62,9 @@ S.events = {
     </div>`;
 
     const tournamentsSection = `<div class="card card-pad fade-up" style="--d:1">
-      <div class="row between vcenter"><b style="font-size:14px">${t("events.tournamentsTitle")}</b><span class="badge">${tournaments.length}</span></div>
+      <div class="row between vcenter"><b style="font-size:14px">${t("events.upcomingTournamentsTitle")}</b><span class="badge">${tournaments.length}</span></div>
       ${tournaments.length
-        ? `<div style="margin-top:6px">${tournaments.slice(0, 6).map(tournamentRow).join("")}</div>
-           <button class="btn btn-ghost btn-sm" style="margin-top:12px" data-go-tournaments>${t("events.viewAllDebateHub")} ${IC.arrowR}</button>`
+        ? `<div style="margin-top:6px">${tournaments.slice(0, 6).map(tournamentRow).join("")}</div>`
         : `<div class="empty" style="padding:28px"><div class="ill">${IC.trophy}</div><h4>${t("events.emptyTournamentsTitle")}</h4><p>${t("events.emptyTournamentsBody")}</p></div>`}
     </div>`;
 
@@ -74,8 +74,20 @@ S.events = {
   mount(root) {
     if (!root) return;
     const w = window;
-    // [DRY] La inscripción a torneos vive en el Debate Hub: enrutamos allí, pestaña Torneos.
-    root.querySelectorAll("[data-go-tournaments]").forEach((b) =>
-      b.addEventListener("click", () => { w.__debateTab = "tournaments"; if (w.go) w.go("debate"); }));
+    // Inscripción a torneo desde Eventos: POST /api/tournaments (idempotente).
+    // Optimista: al confirmar, el botón pasa a sello "Inscrito" sin recargar.
+    root.querySelectorAll("[data-tn-register]").forEach((b) =>
+      b.addEventListener("click", async () => {
+        const id = b.getAttribute("data-tn-register");
+        b.disabled = true;
+        try {
+          await w.api("/api/tournaments", { tournamentId: id });
+          w.toast && w.toast(t("events.tournamentRegistered"), "ok");
+          b.outerHTML = `<span class="badge ok" style="flex:none"><span class="dot"></span>${t("debate.registered")}</span>`;
+        } catch (e) {
+          b.disabled = false;
+          w.toast && w.toast((e && e.message) || t("events.tournamentRegisterError"), "warn");
+        }
+      }));
   },
 };

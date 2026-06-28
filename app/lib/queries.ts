@@ -294,6 +294,15 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const reviewByTeacher = new Map<string, { avg: number; count: number }>(
     reviewAgg.map((r: any) => [r.teacherId, { avg: Math.round((r._avg.rating || 0) * 10) / 10, count: r._count._all || 0 }]),
   );
+  // [EPIC-5] Rating POR CURSO (reseñas de programa: Review.courseId != null) — para mostrar
+  // la valoración del programa en la cabecera del curso del alumno. Misma técnica que el
+  // agregado por teacher: una sola pasada, en vivo desde las Review reales.
+  const reviewByCourseAgg = await db.review.groupBy({ by: ["courseId"], _avg: { rating: true }, _count: { _all: true } });
+  const reviewByCourse = new Map<string, { avg: number; count: number }>(
+    reviewByCourseAgg
+      .filter((r: any) => r.courseId)
+      .map((r: any) => [r.courseId as string, { avg: Math.round((r._avg.rating || 0) * 10) / 10, count: r._count._all || 0 }]),
+  );
   const xpLevelStart = curLevel?.startXp ?? 0;
   const xpNext = nextLevel?.startXp ?? (curLevel?.startXp ?? 0);
 
@@ -1440,6 +1449,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           summary: esc(pickLang(c.summary, c.summaryEn)),
           format: esc(c.format), modality: esc(c.modality),
           layout: c.layout || "modules",
+          // [EPIC-5] Video de bienvenida del curso (kind/src crudos; el embed se arma con
+          // videoEmbedHtml en el render) + rating del programa (en vivo desde Review).
+          welcomeVideoKind: c.welcomeVideoKind || "none", welcomeVideoSrc: c.welcomeVideoSrc || "",
+          rating: reviewByCourse.get(c.id)?.avg ?? null, reviewCount: reviewByCourse.get(c.id)?.count ?? 0,
           modules: (c.modules || []).filter((m: any) => !m.hidden).map((m: any) => ({
             t: esc(pickLang(m.title, m.titleEn)), done: false, locked: false,
             items: (m.lessons || []).filter((l: any) => !l.hidden).map((l: any) => ({
@@ -1466,6 +1479,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         summary: esc(pickLang(e.course.summary, e.course.summaryEn)),
         format: esc(e.course.format), modality: esc(e.course.modality),
         layout: e.course.layout || "modules",
+        // [EPIC-5] Video de bienvenida del curso + rating del programa (en vivo desde Review).
+        welcomeVideoKind: e.course.welcomeVideoKind || "none", welcomeVideoSrc: e.course.welcomeVideoSrc || "",
+        rating: reviewByCourse.get(e.course.id)?.avg ?? null, reviewCount: reviewByCourse.get(e.course.id)?.count ?? 0,
         // Solo secciones/actividades VISIBLES para el alumno (filtra hidden).
         modules: (byCourse.get(e.course.id) || []).filter((m: any) => !m.hidden).map((m: any) => ({
           t: esc(pickLang(m.title, m.titleEn)), done: m.done, locked: m.locked,
@@ -1599,6 +1615,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     base.teacherCourses = taughtCourses.map((c: any) => ({
       id: c.id, code: c.code, name: esc(c.name), color: c.color, published: c.published, layout: c.layout || "modules",
       format: esc(c.format), modality: esc(c.modality), capacity: c.capacity, summary: esc(c.summary),
+      // [EPIC-5] Video de bienvenida (kind/src normalizados; el form de edición los precarga).
+      welcomeVideoKind: c.welcomeVideoKind || "none", welcomeVideoSrc: c.welcomeVideoSrc || "",
       modules: c.modules.map((m: any) => ({ id: m.id, title: esc(m.title), hidden: !!m.hidden, lessons: m.lessons.map((l: any) => ({ id: l.id, title: esc(l.title), type: l.type, dur: l.dur, due: l.due, hidden: !!l.hidden, dueAt: l.dueAt ? l.dueAt.toISOString() : null, submitKinds: l.submitKinds ?? null, maxPoints: l.maxPoints ?? null, videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml, releaseAfterId: l.releaseAfterId || null })) })),
     }));
     base.reviewsReceived = reviewsReceived;

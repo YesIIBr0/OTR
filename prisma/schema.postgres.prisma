@@ -108,6 +108,10 @@ model Course {
   format       String?      // PF | LD | Parli | Oratoria | ...
   modality     String       @default("online") // online | presencial | híbrido
   capacity     Int?         // cupo
+  // --- Video de bienvenida del CURSO (distinto del intro del COACH) ---
+  // Mismo esquema que las lecciones: kind none|youtube|cloudflare|upload, src = ID/UID/ruta.
+  welcomeVideoKind String?  // none | youtube | cloudflare | upload
+  welcomeVideoSrc  String?  // youtube: ID; cloudflare: UID; upload: /uploads/...
   // --- Personalización (estilo Moodle) ---
   layout       String       @default("modules") // modules (acordeón) | grid (tarjetas) | single (una sección por página)
   modules      Module[]
@@ -570,16 +574,15 @@ model DebateRecord {
   opponent   String?
   partner    String?       // PF es 2v2 (nombre libre del compañero)
   partnerUserId String?     // [RATING-1 §6.2] compañero REAL (User.id): en 2v2 su rating también se mueve
-  result     String        // WIN | LOSS | DRAW
+  result     String        // WIN | LOSS (en debate no hay empates)
   source     String        @default("OTR") // OTR | EXTERNAL (NSDA...)
   eventName  String?
   roundLabel String?
   recordedAt DateTime      @default(now())
-  // PRD §6.2 anti-gaming: el rating SOLO se mueve en rondas adjudicadas
-  // (registradas/validadas por un coach). Auto-reportes quedan en el historial
-  // sin RatingUpdate hasta que un TEACHER/ADMIN las valide.
+  // PRD §6.2: el rating SOLO se mueve en rondas registradas/adjudicadas por un
+  // coach (panel "Adjudicar"). El alumno no auto-registra debates.
   adjudicated   Boolean  @default(false)
-  adjudicatedBy String?  // userId del coach que validó
+  adjudicatedBy String?  // userId del coach que registró/adjudicó
   ballots    Ballot[]
   rating     RatingUpdate?
 

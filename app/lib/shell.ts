@@ -1,8 +1,9 @@
 // @ts-nocheck
 /* OTR LMS · shell (sidebar + topbar) + login — portado de index.html / app.js
    NAV reorganizado al MAPA TOP-LEVEL del PRD §3.1 (Fase 1 MVP):
-   Dashboard · Learn (Courses / My Learning) · Debate Hub (flagship) ·
-   Marketplace (coaches) · Progress Center (Levels / Achievements) ·
+   Dashboard · Learn (Cursos: activos + catálogo, sección unificada) · Membresía ·
+   Debate Hub (flagship) · Marketplace (coaches) ·
+   Progress Center (Levels / Achievements) ·
    Parent Portal (rol) · Coach Workspace (rol) · Settings.
    Diferidos APAGADOS del nav (no se borran archivos): Comunidad/Foro general
    ('forum') y Certificaciones como producto ('certificate' bajo Learn).
@@ -22,10 +23,16 @@ const NAV = {
       { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
       { r:'events', ic:'calendar', l:'Eventos' },
     ]},
-    // Learn según PDF §3.1: Courses + My Learning ('hub' y 'arsenal' apagadas — no están en el PDF).
+    // [EPIC-2] "Cursos" unificado: un solo item enruta a S.course, que internamente
+    // alterna entre "Mis cursos" (cursos activos) y "Catálogo" (buscar nuevos) vía
+    // sub-tabs (window.__coursesTab). Antes eran dos items separados (catalog + course).
     { gk:'group.learn', group:'Aprender', items:[
-      { r:'catalog', ic:'book', k:'nav.catalog', l:'Cursos' },
-      { r:'course', ic:'play', k:'nav.course', l:'Mi aprendizaje' },
+      { r:'course', ic:'book', k:'nav.course', l:'Cursos' },
+    ]},
+    // [EPIC-2] Membresía elevada a item de primer nivel (propio grupo), fuera de
+    // Marketplace y de Cursos: es la palanca de ingreso free→Pro y merece visibilidad.
+    { gk:'group.membership', group:'Membresía', items:[
+      { r:'membership', ic:'star', k:'nav.membership', l:'Membresía' },
     ]},
     { gk:'group.progress', group:'Centro de progreso', items:[
       { r:'lifetime', ic:'award', k:'nav.lifetime', l:'Mi trayectoria' },
@@ -36,9 +43,7 @@ const NAV = {
     { gk:'group.marketplace', group:'Marketplace', items:[
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
       { r:'my-bookings', ic:'calendar', k:'nav.mybookings', l:'Mis reservas' },
-      // [CNV-03] Membresía (free→Pro) elevada por encima de Mensajes: es la palanca
-      // de ingreso más desaprovechada y antes quedaba como último ítem del grupo.
-      { r:'membership', ic:'star', k:'nav.membership', l:'Membresía' },
+      // [EPIC-2] Membresía MOVIDA a su propio grupo de primer nivel (ver arriba).
       // 'messages' se conserva SOLO como canal coach↔alumno (permitido en marketplace).
       { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes', badge:'2' },
     ]},

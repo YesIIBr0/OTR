@@ -13,6 +13,15 @@ import { esc } from "./esc";
 import { matches } from "./text";
 import { t } from "./i18n";
 
+// Etiqueta visible de una opción de preferencia (ritmo/horario/meta). El VALOR crudo
+// (v) sigue siendo el dato guardado en prefs y comparado; solo se traduce el texto que
+// se muestra. Cae al valor crudo si no hay clave (p. ej. una meta nueva).
+function optLabel(v) {
+  const key = "hub.opt." + String(v ?? "");
+  const out = t(key);
+  return out === key ? v : out;
+}
+
 const stars = (n, size = 13) => {
   let s = "";
   for (let i = 1; i <= 5; i++) {
@@ -235,17 +244,17 @@ export const S = {
           <div class="card card-pad fade-up" style="--d:1">
             <b style="font-size:14px">${t("hub.xpPaceLabel")}</b>
             <div class="seg" style="margin-top:10px" id="xp-pace">
-              ${["Ligero", "Estándar", "Intensivo"].map((v) => `<button class="${prefs.pace === v ? "on" : ""}" data-v="${v}">${v}</button>`).join("")}
+              ${["Ligero", "Estándar", "Intensivo"].map((v) => `<button class="${prefs.pace === v ? "on" : ""}" data-v="${v}">${optLabel(v)}</button>`).join("")}
             </div>
             <div class="divider"></div>
             <b style="font-size:14px">${t("hub.xpScheduleLabel")}</b>
             <div class="row wrap" style="gap:8px;margin-top:10px" id="xp-sched">
-              ${["Tarde", "Noche", "Sábado"].map((v) => `<button class="chip ${prefs.schedule === v ? "active" : ""}" data-v="${v}">${v}</button>`).join("")}
+              ${["Tarde", "Noche", "Sábado"].map((v) => `<button class="chip ${prefs.schedule === v ? "active" : ""}" data-v="${v}">${optLabel(v)}</button>`).join("")}
             </div>
             <div class="divider"></div>
             <b style="font-size:14px">${t("hub.xpGoalsLabel")}</b>
             <div class="row wrap" style="gap:8px;margin-top:10px" id="xp-goals">
-              ${["Perder el miedo escénico", "Ganar torneos", "Hablar con claridad", "Prepararme para la universidad", "Liderazgo"].map((g) => `<button class="chip ${prefs.goals.includes(g) ? "active" : ""}" data-v="${g}">${g}</button>`).join("")}
+              ${["Perder el miedo escénico", "Ganar torneos", "Hablar con claridad", "Prepararme para la universidad", "Liderazgo"].map((g) => `<button class="chip ${prefs.goals.includes(g) ? "active" : ""}" data-v="${g}">${optLabel(g)}</button>`).join("")}
             </div>
           </div>
         </div>
@@ -254,7 +263,7 @@ export const S = {
           <div class="card card-pad fade-up" style="background:linear-gradient(150deg,var(--otr-navy),var(--otr-ink));color:#fff">
             <b style="font-size:13.5px;color:var(--otr-sky-hi)">${t("hub.xpYourWeek")}</b>
             <div class="brand-font" style="font-size:30px;font-weight:800;margin-top:10px">${mine.length * sessions} <span style="font-size:14px;font-weight:600;opacity:.7">${t("hub.xpSessionsPerWeek")}</span></div>
-            <div style="font-size:12.5px;opacity:.75;margin-top:4px">${mine.length} programa${mine.length === 1 ? "" : "s"} · ritmo ${esc(prefs.pace.toLowerCase())} · horario: ${esc(prefs.schedule.toLowerCase())}</div>
+            <div style="font-size:12.5px;opacity:.75;margin-top:4px">${mine.length} ${mine.length === 1 ? t("hub.xpProgramUnitSingular") : t("hub.xpProgramUnitPlural")} · ${t("hub.xpPaceWord")} ${esc(String(optLabel(prefs.pace)).toLowerCase())} · ${t("hub.xpScheduleWord")} ${esc(String(optLabel(prefs.schedule)).toLowerCase())}</div>
             <div class="divider" style="background:rgba(255,255,255,.14)"></div>
             <b style="font-size:12.5px;color:var(--otr-sky-hi)">${t("hub.xpYourCoaches")}</b>
             <div class="stack" style="gap:8px;margin-top:10px">
@@ -302,10 +311,10 @@ export const S = {
               <p class="muted" style="margin-bottom:18px">${t("hub.obStudentBody")}</p>
               <label class="label" style="margin-bottom:8px;display:block">${t("hub.obGoalsQuestion")}</label>
               <div class="ob-chips" data-group="goals">
-                ${["Perder el miedo escénico", "Ganar torneos", "Hablar con claridad", "Prepararme para la universidad", "Liderazgo"].map((g) => `<button class="chip ${prefs.goals.includes(g) ? "active" : ""}" data-v="${g}">${g}</button>`).join("")}
+                ${["Perder el miedo escénico", "Ganar torneos", "Hablar con claridad", "Prepararme para la universidad", "Liderazgo"].map((g) => `<button class="chip ${prefs.goals.includes(g) ? "active" : ""}" data-v="${g}">${optLabel(g)}</button>`).join("")}
               </div>
               <label class="label" style="margin:18px 0 8px;display:block">${t("hub.obPaceLabel")}</label>
-              <div class="seg" id="ob-pace">${["Ligero", "Estándar", "Intensivo"].map((v) => `<button class="${prefs.pace === v ? "on" : ""}" data-v="${v}">${v}</button>`).join("")}</div>
+              <div class="seg" id="ob-pace">${["Ligero", "Estándar", "Intensivo"].map((v) => `<button class="${prefs.pace === v ? "on" : ""}" data-v="${v}">${optLabel(v)}</button>`).join("")}</div>
               <label class="label" style="margin:18px 0 8px;display:block">${t("hub.obStartPrograms")}</label>
               <div class="grid g-2">${(DB.catalog || []).slice(0, 4).map(programCard).join("")}</div>
             `}

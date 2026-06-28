@@ -9,8 +9,6 @@ export const dict = {
     "debate.tabHistory": "Mis debates",
     "debate.tabPractice": "Práctica",
     "debate.tabLeaderboard": "Leaderboard",
-    "debate.tabTournaments": "Torneos",
-    "debate.tabAnalytics": "Analytics",
 
     // status badges de torneo
     "debate.statusOpen": "Inscripciones abiertas",
@@ -20,6 +18,16 @@ export const dict = {
 
     // upsell a Pro
     "debate.seeOtrPro": "Ver OTR Pro",
+
+    // tiers del rating (valor de DB intacto; solo la etiqueta visible se traduce)
+    "debate.tier.novato": "Novato",
+    "debate.tier.bronze": "Bronce",
+    "debate.tier.silver": "Plata",
+    "debate.tier.gold": "Oro",
+    "debate.tier.platinum": "Platino",
+    "debate.tier.diamond": "Diamante",
+    "debate.tier.master": "Maestro",
+    "debate.tier.grandmaster": "Gran Maestro",
 
     // panel HERO
     "debate.heroEyebrow": "Tu rating Glicko-2",
@@ -37,25 +45,22 @@ export const dict = {
     "debate.topSuffix": "Defiéndela.",
     "debate.recentForm": "Forma reciente",
     "debate.noRoundsForm": "Aún sin rondas. Tu forma empieza con la primera.",
-    "debate.recordDebate": "Registrar un debate",
 
     // resumen / overview
-    "debate.kpiAdjudicated": "Rondas adjudicadas",
+    "debate.kpiParticipated": "Rondas participadas",
     "debate.kpiWins": "Victorias",
     "debate.kpiWinRate": "% de victoria",
-    "debate.kpiDrawsLosses": "Derrotas",
     "debate.recentDebates": "Debates recientes",
     "debate.seeAll": "Ver todos",
-    "debate.historyEmpty": "Historial en cero. Practica o registra tu primera ronda.",
+    "debate.historyEmpty": "Historial en cero. Tu coach registra y adjudica tus rondas.",
     "debate.goToPractice": "Ir a práctica",
-    "debate.nextEvent": "Próximo evento",
-    "debate.seeTournaments": "Ver torneos",
-    "debate.noEventsTitle": "Sin eventos en el radar",
+    "debate.nextTournament": "Próximo torneo",
+    "debate.noEventsTitle": "Sin torneos en el radar",
     "debate.noEventsBody": "Cuando se abran torneos los verás aquí. Llega entrenado.",
 
     // mis debates / historial
-    "debate.historyEmptyTitle": "Registra tu primer debate",
-    "debate.historyEmptyBody": "Un debate (OTR o externo) o una práctica — cada ronda cuenta para tu rating.",
+    "debate.historyEmptyTitle": "Aún no tienes debates",
+    "debate.historyEmptyBody": "Tu coach registra y adjudica tus rondas. En cuanto las apruebe, aparecerán aquí y sumarán a tu rating.",
     "debate.sourceExternal": "Externo",
     "debate.viewDebateDetail": "Ver detalle del debate",
     "debate.historyEyebrow": "Tu palmarés",
@@ -63,14 +68,6 @@ export const dict = {
     "debate.historySubTap": "toca una tarjeta para ver el ballot",
 
     // práctica
-    "debate.timedPractice": "Práctica cronometrada",
-    "debate.pfFlow": "Flujo Public Forum",
-    "debate.ready": "Listo",
-    "debate.pfStartHint": 'Pulsa "Iniciar" para empezar el Constructive',
-    "debate.start": "Iniciar",
-    "debate.nextPhase": "Siguiente fase",
-    "debate.reset": "Reiniciar",
-    "debate.recordPracticeResult": "Registrar resultado de práctica",
     "debate.findPartner": "Encuentra compañero o rival",
     "debate.nearYourRating": "Cerca de tu rating",
     "debate.cohortEmptyFinder": "Tu cohort aún no entra a la arena. En cuanto jueguen rondas, tendrás rivales a tu altura.",
@@ -90,35 +87,18 @@ export const dict = {
     "debate.lbEyebrow": "El cohort",
     "debate.lbSub": "Ranking por rating Glicko-2 — solo cuentan las rondas adjudicadas",
     "debate.lbUpsell": "¿Listo para subir de tier? Descubre todo lo que incluye OTR Pro.",
+    "debate.sealPro": "OTR Pro",
+    "debate.sealElite": "OTR Elite",
+    "debate.sealActive": "Tu membresía está activa — todos los beneficios incluidos.",
     "debate.colDebater": "Debatiente",
     "debate.colTier": "Tier",
     "debate.colRating": "Rating",
 
     // torneos
-    "debate.tnEmptyTitle": "Sin torneos por ahora",
-    "debate.tnEmptyBody": "Cuando OTR abra inscripciones lo verás aquí. Mientras tanto, suma rondas de práctica.",
     "debate.registered": "Inscrito",
     "debate.register": "Registrarme",
-    "debate.tnEyebrow": "Compite de verdad",
-    "debate.tnTitle": "Torneos",
-    "debate.tnSub": "Inscríbete a torneos OTR y externos",
-    "debate.tnUpsell": "Llega a los torneos con ventaja. Conoce OTR Pro.",
 
     // analytics
-    "debate.anEyebrow": "Conoce tu juego",
-    "debate.anSub": "Tus patrones por formato, lado de la resolución y criterio de rúbrica",
-    "debate.anLockedTitle": "Analytics completo es parte de OTR Pro",
-    "debate.anLockedBody": "Desbloquea tu desglose por formato, por lado (Pro / Con) y el promedio por criterio de la rúbrica del juez. Tus datos ya se están registrando — activa Pro y úsalos a tu favor.",
-    "debate.anNoDataTitle": "Aún sin datos",
-    "debate.anNoDataBody": "Compite en rondas adjudicadas para ver tu desglose por formato y lado.",
-    "debate.performance": "Rendimiento",
-    "debate.byFormat": "Por formato",
-    "debate.noFormatData": "Sin datos por formato.",
-    "debate.bySide": "Por lado (Pro / Con)",
-    "debate.noSideData": "Sin datos por lado.",
-    "debate.judgeRubric": "Rúbrica del juez",
-    "debate.avgByCriterion": "Promedio por criterio",
-    "debate.noBallotsYet": "Sin ballots todavía.",
 
     // detalle del debate (modal)
     "debate.detailLoadError": "No se pudo cargar el detalle del debate",
@@ -131,25 +111,7 @@ export const dict = {
     "debate.detailModalTitle": "Detalle del debate",
 
     // form: registrar un debate
-    "debate.fieldResult": "Resultado",
-    "debate.resultWin": "Victoria",
-    "debate.resultLoss": "Derrota",
-    "debate.resultDraw": "Empate",
-    "debate.fieldFormat": "Formato",
-    "debate.fieldSide": "Lado",
-    "debate.fieldOpponent": "Rival",
-    "debate.phOpponent": "Equipo o debatiente rival",
-    "debate.fieldPartner": "Compañero (opcional)",
-    "debate.phPartner": "Tu compañero de equipo",
-    "debate.fieldSource": "Fuente",
-    "debate.sourceExternalNsda": "Externo / NSDA",
-    "debate.fieldEvent": "Evento (opcional)",
-    "debate.phEvent": "Torneo o sesión de práctica",
-    "debate.fieldRound": "Ronda (opcional)",
-    "debate.phRound": "Round 3, Cuartos…",
-    "debate.fieldJudgeComments": "Comentarios del juez (opcional)",
     "debate.save": "Guardar",
-    "debate.debateRecorded": "Debate registrado",
 
     // modal genérico
     "debate.cancel": "Cancelar",
@@ -163,15 +125,6 @@ export const dict = {
     "debate.registerError": "No se pudo registrar",
 
     // temporizador PF (runtime)
-    "debate.phase": "Fase",
-    "debate.ofWord": "de",
-    "debate.paused": "Pausa",
-    "debate.endOf": "Fin de",
-    "debate.pause": "Pausar",
-    "debate.resume": "Reanudar",
-    "debate.pfCompleted": "Flujo PF completado",
-    "debate.completed": "Completado",
-    "debate.restartFlow": "Reiniciar flujo",
   },
   en: {
     // sub-tabs
@@ -179,8 +132,6 @@ export const dict = {
     "debate.tabHistory": "My debates",
     "debate.tabPractice": "Practice",
     "debate.tabLeaderboard": "Leaderboard",
-    "debate.tabTournaments": "Tournaments",
-    "debate.tabAnalytics": "Analytics",
 
     // tournament status badges
     "debate.statusOpen": "Registration open",
@@ -190,6 +141,16 @@ export const dict = {
 
     // Pro upsell
     "debate.seeOtrPro": "See OTR Pro",
+
+    // rating tiers (DB value stays intact; only the visible label is translated)
+    "debate.tier.novato": "Novice",
+    "debate.tier.bronze": "Bronze",
+    "debate.tier.silver": "Silver",
+    "debate.tier.gold": "Gold",
+    "debate.tier.platinum": "Platinum",
+    "debate.tier.diamond": "Diamond",
+    "debate.tier.master": "Master",
+    "debate.tier.grandmaster": "Grandmaster",
 
     // HERO panel
     "debate.heroEyebrow": "Your Glicko-2 rating",
@@ -207,25 +168,22 @@ export const dict = {
     "debate.topSuffix": "Defend it.",
     "debate.recentForm": "Recent form",
     "debate.noRoundsForm": "No rounds yet. Your form starts with the first.",
-    "debate.recordDebate": "Record a debate",
 
     // overview
-    "debate.kpiAdjudicated": "Adjudicated rounds",
+    "debate.kpiParticipated": "Rounds participated",
     "debate.kpiWins": "Wins",
     "debate.kpiWinRate": "Win rate",
-    "debate.kpiDrawsLosses": "Losses",
     "debate.recentDebates": "Recent debates",
     "debate.seeAll": "See all",
-    "debate.historyEmpty": "No history yet. Run a practice or record your first round.",
+    "debate.historyEmpty": "No history yet. Your coach records and adjudicates your rounds.",
     "debate.goToPractice": "Go to practice",
-    "debate.nextEvent": "Next event",
-    "debate.seeTournaments": "See tournaments",
-    "debate.noEventsTitle": "No events on the radar",
+    "debate.nextTournament": "Next tournament",
+    "debate.noEventsTitle": "No tournaments on the radar",
     "debate.noEventsBody": "When tournaments open, you'll see them here. Show up trained.",
 
     // my debates / history
-    "debate.historyEmptyTitle": "Record your first debate",
-    "debate.historyEmptyBody": "A debate (OTR or external) or a practice — every round counts toward your rating.",
+    "debate.historyEmptyTitle": "No debates yet",
+    "debate.historyEmptyBody": "Your coach records and adjudicates your rounds. Once approved, they'll show up here and count toward your rating.",
     "debate.sourceExternal": "External",
     "debate.viewDebateDetail": "View debate detail",
     "debate.historyEyebrow": "Your record",
@@ -233,14 +191,6 @@ export const dict = {
     "debate.historySubTap": "tap a card to view the ballot",
 
     // practice
-    "debate.timedPractice": "Timed practice",
-    "debate.pfFlow": "Public Forum flow",
-    "debate.ready": "Ready",
-    "debate.pfStartHint": 'Press "Start" to begin the Constructive',
-    "debate.start": "Start",
-    "debate.nextPhase": "Next phase",
-    "debate.reset": "Reset",
-    "debate.recordPracticeResult": "Record practice result",
     "debate.findPartner": "Find a partner or opponent",
     "debate.nearYourRating": "Near your rating",
     "debate.cohortEmptyFinder": "Your cohort hasn't entered the arena yet. As soon as they play rounds, you'll have opponents at your level.",
@@ -260,35 +210,18 @@ export const dict = {
     "debate.lbEyebrow": "The cohort",
     "debate.lbSub": "Ranked by Glicko-2 rating — only adjudicated rounds count",
     "debate.lbUpsell": "Ready to climb a tier? Discover everything OTR Pro includes.",
+    "debate.sealPro": "OTR Pro",
+    "debate.sealElite": "OTR Elite",
+    "debate.sealActive": "Your membership is active — all benefits included.",
     "debate.colDebater": "Debater",
     "debate.colTier": "Tier",
     "debate.colRating": "Rating",
 
     // tournaments
-    "debate.tnEmptyTitle": "No tournaments right now",
-    "debate.tnEmptyBody": "When OTR opens registration, you'll see it here. In the meantime, log practice rounds.",
     "debate.registered": "Registered",
     "debate.register": "Register",
-    "debate.tnEyebrow": "Compete for real",
-    "debate.tnTitle": "Tournaments",
-    "debate.tnSub": "Register for OTR and external tournaments",
-    "debate.tnUpsell": "Arrive at tournaments with an edge. Get to know OTR Pro.",
 
     // analytics
-    "debate.anEyebrow": "Know your game",
-    "debate.anSub": "Your patterns by format, side of the resolution, and rubric criterion",
-    "debate.anLockedTitle": "Full analytics is part of OTR Pro",
-    "debate.anLockedBody": "Unlock your breakdown by format, by side (Pro / Con), and the average per criterion from the judge's rubric. Your data is already being recorded — turn on Pro and use it to your advantage.",
-    "debate.anNoDataTitle": "No data yet",
-    "debate.anNoDataBody": "Compete in adjudicated rounds to see your breakdown by format and side.",
-    "debate.performance": "Performance",
-    "debate.byFormat": "By format",
-    "debate.noFormatData": "No data by format.",
-    "debate.bySide": "By side (Pro / Con)",
-    "debate.noSideData": "No data by side.",
-    "debate.judgeRubric": "Judge's rubric",
-    "debate.avgByCriterion": "Average by criterion",
-    "debate.noBallotsYet": "No ballots yet.",
 
     // debate detail (modal)
     "debate.detailLoadError": "Couldn't load the debate detail",
@@ -301,25 +234,7 @@ export const dict = {
     "debate.detailModalTitle": "Debate detail",
 
     // form: record a debate
-    "debate.fieldResult": "Result",
-    "debate.resultWin": "Win",
-    "debate.resultLoss": "Loss",
-    "debate.resultDraw": "Draw",
-    "debate.fieldFormat": "Format",
-    "debate.fieldSide": "Side",
-    "debate.fieldOpponent": "Opponent",
-    "debate.phOpponent": "Opposing team or debater",
-    "debate.fieldPartner": "Partner (optional)",
-    "debate.phPartner": "Your teammate",
-    "debate.fieldSource": "Source",
-    "debate.sourceExternalNsda": "External / NSDA",
-    "debate.fieldEvent": "Event (optional)",
-    "debate.phEvent": "Tournament or practice session",
-    "debate.fieldRound": "Round (optional)",
-    "debate.phRound": "Round 3, Quarterfinals…",
-    "debate.fieldJudgeComments": "Judge's comments (optional)",
     "debate.save": "Save",
-    "debate.debateRecorded": "Debate recorded",
 
     // generic modal
     "debate.cancel": "Cancel",
@@ -333,14 +248,5 @@ export const dict = {
     "debate.registerError": "Couldn't register",
 
     // PF timer (runtime)
-    "debate.phase": "Phase",
-    "debate.ofWord": "of",
-    "debate.paused": "Paused",
-    "debate.endOf": "End of",
-    "debate.pause": "Pause",
-    "debate.resume": "Resume",
-    "debate.pfCompleted": "PF flow completed",
-    "debate.completed": "Completed",
-    "debate.restartFlow": "Restart flow",
   },
 };

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { teacherOwnsCourse } from "../../../lib/authz";
+import { normalizeKind, normalizeVideoSrc } from "../../../lib/video";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -32,6 +33,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (typeof body.published === "boolean") data.published = body.published;
   // Layout de la vista del alumno (validado contra lista blanca, nunca string libre).
   if (typeof body.layout === "string" && ["modules", "grid", "single"].includes(body.layout)) data.layout = body.layout;
+  // [EPIC-5] Video de bienvenida del curso — misma normalización/validación que las lecciones:
+  // normalizeKind acota a none|youtube|cloudflare y normalizeVideoSrc limpia el ID/UID (o null).
+  if (body.welcomeVideoKind != null) {
+    const kind = normalizeKind(body.welcomeVideoKind);
+    data.welcomeVideoKind = kind;
+    data.welcomeVideoSrc = normalizeVideoSrc(kind, body.welcomeVideoSrc);
+  } else if (body.welcomeVideoSrc !== undefined) {
+    // src sin kind explícito: revalida contra el kind ya guardado.
+    const cur = await db.course.findUnique({ where: { id }, select: { welcomeVideoKind: true } });
+    data.welcomeVideoSrc = normalizeVideoSrc(cur?.welcomeVideoKind ?? "none", body.welcomeVideoSrc);
+  }
   const course = await db.course.update({ where: { id }, data });
   return NextResponse.json({ ok: true, course });
 }

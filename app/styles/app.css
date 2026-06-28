@@ -198,6 +198,16 @@ svg.ic{width:18px;height:18px;flex:none}
 /* Badges / chips / pills */
 .badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--r-pill);font-size:11.5px;font-weight:700;letter-spacing:.01em;background:var(--otr-offwhite);color:var(--text-2)}
 .badge.sky{background:var(--action-soft);color:var(--otr-green-text)}
+/* sky--alive: variante con energía (rank/posición del dashboard). Mismo brandbook
+   (verde), pero con profundidad: gradiente sutil + borde verde + realce interno.
+   No interactivo; solo súbele vida visual a los badges de logro de posición. */
+.badge.sky--alive{
+  background:linear-gradient(135deg,#EAF7E7 0%,var(--otr-green-pale) 55%,#D6EFD1 100%);
+  color:var(--otr-green-text);
+  border:1px solid color-mix(in srgb,var(--otr-green) 32%,transparent);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 1px 3px color-mix(in srgb,var(--otr-green) 16%,transparent);
+}
+.badge.sky--alive .dot{box-shadow:0 0 0 3px color-mix(in srgb,var(--otr-green) 18%,transparent)}
 .badge.navy{background:var(--otr-navy);color:#fff}
 /* dorado = LOGRO (wins, certs, top-3, insignias ganadas) — nunca interactivo */
 .badge.gold{background:var(--otr-gold-pale);color:var(--otr-gold-text)}

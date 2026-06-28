@@ -44,6 +44,7 @@ const DICT = {
     // grupos del sidebar
     "group.main": "Principal",
     "group.learn": "Aprender",
+    "group.membership": "Membresía",
     "group.progress": "Centro de progreso",
     "group.marketplace": "Marketplace",
     "group.workspace": "Espacio de coach",
@@ -54,7 +55,7 @@ const DICT = {
     "nav.debate": "Debate Hub",
     "nav.learn": "Aprender",
     "nav.catalog": "Cursos",
-    "nav.course": "Mi aprendizaje",
+    "nav.course": "Cursos",
     "nav.progress": "Niveles",
     "nav.badges": "Logros",
     "nav.grades": "Mis calificaciones",
@@ -102,6 +103,7 @@ const DICT = {
     // sidebar groups
     "group.main": "Main",
     "group.learn": "Learn",
+    "group.membership": "Membership",
     "group.progress": "Progress Center",
     "group.marketplace": "Marketplace",
     "group.workspace": "Coach Workspace",
@@ -112,7 +114,7 @@ const DICT = {
     "nav.debate": "Debate Hub",
     "nav.learn": "Learn",
     "nav.catalog": "Courses",
-    "nav.course": "My Learning",
+    "nav.course": "Courses",
     "nav.progress": "Levels",
     "nav.badges": "Achievements",
     "nav.grades": "My Grades",
@@ -205,6 +207,18 @@ export function t(key, lang) {
   const base = DICT[DEFAULT_LANG];
   if (base && key in base) return base[key];
   return key;
+}
+
+/* tierLabel(tier, lang?) — etiqueta visible de un tier de debate (Novato, Bronze, …).
+   El valor de `tier` es un dato de DB y NO se altera; solo se mapea a la clave i18n
+   "debate.tier.<minúsculas>" para mostrarlo traducido. Si el tier no está mapeado,
+   devuelve el valor crudo (nunca rompe ni esconde un tier nuevo del backend). */
+export function tierLabel(tier, lang) {
+  const raw = String(tier ?? "").trim();
+  if (!raw) return raw;
+  const key = "debate.tier." + raw.toLowerCase();
+  const out = t(key, lang);
+  return out === key ? raw : out;
 }
 
 /* Exponemos setLang en window para que el toggle ES/EN del topbar (renderizado

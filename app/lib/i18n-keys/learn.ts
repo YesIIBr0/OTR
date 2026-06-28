@@ -17,6 +17,9 @@ export const dict = {
     "learn.coachGrade": "Nota del coach",
     "learn.coachComment": "Comentario del coach",
     "learn.submissionRecorded": "Entrega registrada.",
+    "learn.submittedAtPrefix": "Entregada",
+    "learn.activityFallback": "Entrega",
+    "learn.dueLabelPrefix": "Entrega:",
 
     // estado de la entrega
     "learn.gradedResubmitHint": "Ya calificada — puedes re-entregar para subir tu nota.",
@@ -59,6 +62,8 @@ export const dict = {
     "learn.rubricClarity": "Claridad y voz",
     "learn.rubricEvidence": "Evidencia",
     "learn.rubricTiming": "Tiempo y cierre",
+    "learn.pointsCustomPrefix": "Esta entrega vale",
+    "learn.pointsCustomSuffix": "puntos. Tu coach la revisará y te dará una nota con feedback.",
 
     // botón de entrega
     "learn.resubmit": "Re-entregar",
@@ -87,6 +92,11 @@ export const dict = {
     "learn.toReinforce": "A reforzar",
     "learn.retryAnytime": "reintenta cuando quieras — conservamos tu mejor marca.",
     "learn.retryExam": "Reintentar examen",
+    "learn.bestPrefix": "Mejor:",
+    "learn.examFallback": "Examen",
+    "learn.questionUnitSingular": "pregunta",
+    "learn.questionUnitPlural": "preguntas",
+    "learn.passWithPrefix": "aprobado con",
 
     // examen · cabecera y navegación
     "learn.unitExamEyebrow": "Examen de unidad",
@@ -104,6 +114,12 @@ export const dict = {
     "learn.lessonCompleted": "Lección completada",
     "learn.continueCourse": "Continuar curso",
     "learn.review": "Revisión",
+    "learn.answerCorrect": "Correcta:",
+    "learn.answerYours": "Tu respuesta:",
+    "learn.gotRightPrefix": "Acertaste",
+    "learn.gotRightConnector": "de",
+    "learn.gotRightSuffix": ". Revisa las respuestas abajo para afinar tu técnica.",
+    "learn.courseAtPrefix": "Curso al",
 
     // reproductor de video
     "learn.lessonFallback": "Lección",
@@ -113,6 +129,7 @@ export const dict = {
     "learn.completedUndo": "Completada · deshacer",
     "learn.markComplete": "Marcar como completada",
     "learn.back": "Volver",
+    "learn.nextPrefix": "Siguiente:",
 
     // mis calificaciones
     "learn.gradesTitle": "Mis calificaciones",
@@ -138,6 +155,9 @@ export const dict = {
     "learn.coachGrade": "Coach grade",
     "learn.coachComment": "Coach feedback",
     "learn.submissionRecorded": "Submission recorded.",
+    "learn.submittedAtPrefix": "Submitted",
+    "learn.activityFallback": "Submission",
+    "learn.dueLabelPrefix": "Due:",
 
     // submission status
     "learn.gradedResubmitHint": "Already graded — you can resubmit to raise your grade.",
@@ -180,6 +200,8 @@ export const dict = {
     "learn.rubricClarity": "Clarity and voice",
     "learn.rubricEvidence": "Evidence",
     "learn.rubricTiming": "Timing and close",
+    "learn.pointsCustomPrefix": "This submission is worth",
+    "learn.pointsCustomSuffix": "points. Your coach will review it and give you a grade with feedback.",
 
     // submit button
     "learn.resubmit": "Resubmit",
@@ -208,6 +230,11 @@ export const dict = {
     "learn.toReinforce": "Needs work",
     "learn.retryAnytime": "retry whenever you like — we keep your best score.",
     "learn.retryExam": "Retry exam",
+    "learn.bestPrefix": "Best:",
+    "learn.examFallback": "Exam",
+    "learn.questionUnitSingular": "question",
+    "learn.questionUnitPlural": "questions",
+    "learn.passWithPrefix": "pass with",
 
     // exam · header and navigation
     "learn.unitExamEyebrow": "Unit exam",
@@ -225,6 +252,12 @@ export const dict = {
     "learn.lessonCompleted": "Lesson completed",
     "learn.continueCourse": "Continue course",
     "learn.review": "Review",
+    "learn.answerCorrect": "Correct:",
+    "learn.answerYours": "Your answer:",
+    "learn.gotRightPrefix": "You got",
+    "learn.gotRightConnector": "of",
+    "learn.gotRightSuffix": " right. Review the answers below to sharpen your technique.",
+    "learn.courseAtPrefix": "Course at",
 
     // video player
     "learn.lessonFallback": "Lesson",
@@ -234,6 +267,7 @@ export const dict = {
     "learn.completedUndo": "Completed · undo",
     "learn.markComplete": "Mark as completed",
     "learn.back": "Back",
+    "learn.nextPrefix": "Next:",
 
     // my grades
     "learn.gradesTitle": "My grades",

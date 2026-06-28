@@ -681,6 +681,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           { value: "online", label: "Online" }, { value: "presencial", label: "Presencial" }, { value: "híbrido", label: "Híbrido" }] },
         { name: "capacity", label: "Cupo (capacidad)", value: c?.capacity || "", ph: "20" },
         { name: "summary", label: "Resumen del programa", type: "textarea", value: c?.summary || "", ph: "Describe de qué trata este programa…" },
+        // [EPIC-5] Video de bienvenida del curso (lo ve el alumno en la cabecera del programa).
+        // Mismo patrón que el video de lección: proveedor + fuente (ID/URL).
+        { name: "welcomeVideoKind", label: "Video de bienvenida", type: "select", value: c?.welcomeVideoKind || "none", options: [
+          { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube" }, { value: "cloudflare", label: "Cloudflare Stream" }] },
+        { name: "welcomeVideoSrc", label: "URL de YouTube o UID de Cloudflare", value: c?.welcomeVideoSrc || "", ph: "https://youtu.be/… o el UID de Cloudflare" },
         { name: "layout", label: "Layout (cómo lo ve el alumno)", type: "select", value: c?.layout || "modules", options: [
           { value: "modules", label: "Módulos (acordeón) — lista de secciones" }, { value: "grid", label: "Cuadrícula — tarjeta por sección" }, { value: "single", label: "Una sección por página" }] },
         { name: "published", label: "Estado", type: "select", value: (c?.published === false ? "false" : "true"), options: [

@@ -684,7 +684,7 @@ export const S = {};
           const partnerOpts = (DB.students || []).filter((s) => s.id !== uid)
             .map((s) => `<option value="${s.id}">${esc(s.n)}</option>`).join("");
           const bodyHtml =
-            fld(t("teacher.adjResultLabel"), `<select class="select" id="bl-result"><option value="WIN">${t("teacher.adjResultWin")}</option><option value="LOSS">${t("teacher.adjResultLoss")}</option><option value="DRAW">${t("teacher.adjResultDraw")}</option></select>`) +
+            fld(t("teacher.adjResultLabel"), `<select class="select" id="bl-result"><option value="WIN">${t("teacher.adjResultWin")}</option><option value="LOSS">${t("teacher.adjResultLoss")}</option></select>`) +
             fld(t("teacher.adjFormatLabel"), `<select class="select" id="bl-format"><option value="PF">Public Forum</option><option value="LD">Lincoln-Douglas</option><option value="Policy">Policy</option><option value="Parli">${t("teacher.adjFormatParli")}</option></select>`) +
             fld(t("teacher.adjOpponentLabel"), `<input class="input" id="bl-opp" placeholder="${t("teacher.adjOpponentPh")}"/>`) +
             (partnerOpts ? fld(t("teacher.adjPartnerLabel"), `<select class="select" id="bl-partner"><option value="">${t("teacher.adjPartnerNone")}</option>${partnerOpts}</select>`) : "") +

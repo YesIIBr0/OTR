@@ -4,8 +4,19 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { videoEmbedHtml } from "./video";
-import { t } from "./i18n";
+import { t, tierLabel } from "./i18n";
+// [EPIC-2] La sección "Cursos" unifica "Mis cursos" (S.course) + "Catálogo" (S.catalog).
+// Reusamos el render/mount del catálogo (vive en scr-extra) sin duplicar su lógica.
+// scr-extra NO importa scr-core → no hay ciclo.
+import { S as extraScreens } from "./scr-extra";
 export const S = {};
+
+// Sub-tab activo de la sección Cursos. Patrón window.__x como el resto del SPA
+// (cf. window.__debateTab). "mine" = cursos activos; "catalog" = buscar nuevos.
+function coursesTab() {
+  const v = (window as any).__coursesTab;
+  return v === "catalog" ? "catalog" : "mine";
+}
 
 // Curso ACTIVO (multi-curso Moodle): el seleccionado por window.__course, o el
 // primero de coursesContent. Todas las vistas (hero, módulos, progreso, índice,
@@ -96,8 +107,8 @@ function activeItemsFlat() {
         const setLesson = `${nextL.type==='quiz'?`window.__quizLesson='${nextL.id}';`:''}window.__lesson='${nextL.id}';`;
         na = {
           eyebrow: t("core.naResumeEyebrow"),
-          title: `Retoma "${esc(nextL.t)}"`,
-          sub: firstCourse ? `${firstCourse.name} · ${firstCourse.progress}% completado` : '',
+          title: `${t("core.naResumePrefix")} "${esc(nextL.t)}"`,
+          sub: firstCourse ? `${firstCourse.name} · ${firstCourse.progress}${t("core.pctCompleted")}` : '',
           cta: t("core.naResumeCta"), ic: IC.play,
           onclick: `${setLesson}go('${destFor(nextL)}')`,
         };
@@ -120,13 +131,13 @@ function activeItemsFlat() {
         <div class="h-row">
           <div style="max-width:560px">
             <h1 class="sr-only">${t("core.heroSrTitle")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
-            <h2 class="brand-font" style="margin-top:2px">${DB.me?.lifecycle==='lapsed'?`Qué bueno verte de nuevo, ${firstName}`:DB.me?.lifecycle==='new'?`Bienvenido, ${firstName}`:DB.me?.lifecycle==='returning'?`Bienvenido/a de vuelta, ${firstName}`:`Buenas, ${firstName}`}</h2>
+            <h2 class="brand-font" style="margin-top:2px">${DB.me?.lifecycle==='lapsed'?`${t("core.helloLapsed")} ${firstName}`:DB.me?.lifecycle==='new'?`${t("core.helloNew")} ${firstName}`:DB.me?.lifecycle==='returning'?`${t("core.helloReturning")} ${firstName}`:`${t("core.helloDefault")} ${firstName}`}</h2>
             <p style="color:#fff;font-size:15px;font-weight:650;margin-top:10px">${na.title}</p>
             ${na.sub ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
             <button class="btn btn-primary" style="margin-top:14px" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
           </div>
           <div class="row" style="gap:10px;align-self:flex-start">
-            <span class="streak">${IC.flame} ${DB.me?.streak||0} días de racha</span>
+            <span class="streak">${IC.flame} ${DB.me?.streak||0} ${t("core.streakDays")}</span>
             ${C.levelBadge(myLevel)}
           </div>
         </div>
@@ -153,7 +164,7 @@ function activeItemsFlat() {
         <div class="card card-pad">
           <div class="row between vcenter">
             <div><div class="eyebrow" style="margin-bottom:2px">${t("core.coursesEyebrow")}</div><b style="font-size:15px">${t("core.coursesTitle")}</b></div>
-            ${courses.length ? `<span class="badge sky">${avg}% prom.</span>` : ''}
+            ${courses.length ? `<span class="badge sky--alive">${avg}% ${t("core.avgShort")}</span>` : ''}
           </div>
           ${courses.length
             ? `<div style="margin-top:14px;display:flex;flex-direction:column;gap:15px">${courses.map(c=>`
@@ -162,7 +173,7 @@ function activeItemsFlat() {
                     <span class="row vcenter" style="gap:9px;min-width:0">${C.courseDot(c.color||'var(--otr-sky)')}<b style="font-size:13.5px">${c.name}</b></span>
                     <span class="faint tnum" style="font-size:12.5px">${c.progress||0}%</span>
                   </div>
-                  ${c.coach?`<div style="font-size:12px;color:var(--text-3);margin:0 0 7px 23px">con ${c.coach}</div>`:''}
+                  ${c.coach?`<div style="font-size:12px;color:var(--text-3);margin:0 0 7px 23px">${t("core.coachWith")} ${c.coach}</div>`:''}
                   ${C.bar(c.progress||0,{cls:'navy'})}
                 </div>`).join('')}
                 <button class="btn btn-soft btn-sm" style="margin-top:2px" onclick="go('course')">${t("core.viewProgress")} ${IC.arrowR}</button></div>`
@@ -217,16 +228,16 @@ function activeItemsFlat() {
       // Countdown textual desde el ISO del slot ("" si no hay fecha o ya pasó).
       const dashCountdown = (iso) => {
         if (!iso) return '';
-        const t = Date.parse(iso);
-        if (Number.isNaN(t)) return '';
-        const ms = t - Date.now();
+        const ts = Date.parse(iso);
+        if (Number.isNaN(ts)) return '';
+        const ms = ts - Date.now();
         if (ms <= 0) return '';
         const min = Math.round(ms/60000);
-        if (min < 60) return `en ${min} min`;
+        if (min < 60) return `${t("core.countdownInPrefix")} ${min} ${t("core.countdownMin")}`;
         const hours = Math.round(min/60);
-        if (hours < 24) return `en ${hours} h`;
+        if (hours < 24) return `${t("core.countdownInPrefix")} ${hours} ${t("core.countdownHour")}`;
         const days = Math.round(hours/24);
-        return `en ${days} día${days===1?'':'s'}`;
+        return `${t("core.countdownInPrefix")} ${days} ${days===1?t("core.countdownDaySingular"):t("core.countdownDayPlural")}`;
       };
 
       // EMPTY STATE: sin reservas próximas → CTA al marketplace (PRD §4.2 ④).
@@ -273,23 +284,22 @@ function activeItemsFlat() {
           </div>
         </div>`;
 
-      /* ---- ⑤ DEBATE RANK (DB.debateRank; no-debatientes ven CTA de práctica) ---- */
+      /* ---- ⑤ DEBATE RANK (atenuado: NO duplica el Debate Hub) ----
+         El Hub ya muestra rating/±rd/historial completos. Aquí solo un resumen
+         compacto (eyebrow + tier + estado) y UN CTA limpio al Hub; el rating crudo
+         vive en el Hub, no se re-muestra. Provisional → empuja a practicar. */
       const dr = DB.debateRank || { rating: 1500, rd: 350, tier: 'Novato', provisional: true };
       const debateCard = `
         <div class="card card-pad">
           <div class="row between vcenter">
-            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.debateRankEyebrow")}</div><b style="font-size:15px">${esc(dr.tier)}</b></div>
-            <span class="badge ${dr.provisional?'':'sky'}">${dr.provisional?t("core.debateProvisional"):t("core.debateStable")}</span>
-          </div>
-          <div class="row vcenter" style="gap:8px;margin:12px 0 4px">
-            <span class="brand-font" style="font-size:30px;font-weight:800;color:var(--otr-navy)">${dr.rating}</span>
-            <span class="muted" style="font-size:12.5px">${t("core.ratingLabel")} ${dr.provisional?`(±${dr.rd})`:''}</span>
+            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.debateRankEyebrow")}</div><b style="font-size:15px">${esc(tierLabel(dr.tier))}</b></div>
+            <span class="badge ${dr.provisional?'':'sky--alive'}">${dr.provisional?t("core.debateProvisional"):t("core.debateStable")}</span>
           </div>
           ${dr.provisional
-            ? `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">${t("core.debateProvisionalBody")}</p>
+            ? `<p class="faint" style="font-size:12.5px;margin:10px 0 12px">${t("core.debateProvisionalBody")}</p>
                <button class="btn btn-primary btn-sm" style="width:100%" onclick="window.__debateTab='practice';go('debate')">${IC.mic} ${t("core.debatePlayFirst")}</button>`
-            : `<p class="faint" style="font-size:12.5px;margin:6px 0 12px">${t("core.debateStableBody")}</p>
-               <button class="btn btn-soft btn-sm" style="width:100%" onclick="window.__debateTab='history';go('debate')">${t("core.viewHistory")} ${IC.arrowR}</button>`}
+            : `<p class="faint" style="font-size:12.5px;margin:10px 0 12px">${t("core.debateStableBody")}</p>
+               <button class="btn btn-soft btn-sm" style="width:100%" onclick="go('debate')">${t("core.debateHubCta")} ${IC.arrowR}</button>`}
         </div>`;
 
       /* ---- ⑥ ACHIEVEMENTS (badges recientes + "X para el siguiente") ---- */
@@ -300,7 +310,7 @@ function activeItemsFlat() {
       const achievements = `
         <div class="card card-pad">
           <div class="row between vcenter" style="margin-bottom:12px">
-            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.achievementsEyebrow")}</div><b style="font-size:15px">${earned.length} de ${badges.length}</b></div>
+            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.achievementsEyebrow")}</div><b style="font-size:15px">${earned.length} ${t("core.ofConnector")} ${badges.length}</b></div>
             <span class="badge gold">${IC.medal} ${earned.length}</span>
           </div>
           <div class="row wrap" style="gap:7px">
@@ -309,7 +319,7 @@ function activeItemsFlat() {
           <div class="divider"></div>
           ${C.bar(Math.max(0,Math.min(100,((DB.xp-DB.xpLevelStart)/((DB.xpNext-DB.xpLevelStart)||1))*100)),{cls:'thin navy'})}
           <div class="row between" style="font-size:12px;color:var(--text-2);margin-top:6px">
-            <span class="tnum">${xpToNext.toLocaleString('es')} XP para ${nextName}</span>
+            <span class="tnum">${xpToNext.toLocaleString('es')} ${t("core.xpToNextPrefix")} ${nextName}</span>
             ${nextBadge?`<span class="sky" style="font-weight:600">${t("core.nextBadgeLabel")} ${esc(nextBadge.n)}</span>`:''}
           </div>
           ${/* [CNV-05] CTA que cierra el gap: el loop de gamificación deja de ser decorativo
@@ -326,11 +336,11 @@ function activeItemsFlat() {
       const myRank = DB.leaderboard && DB.leaderboard.me ? DB.leaderboard.me.rank : null;
       const leaderboard = lbRows.length
         ? `<div class="card fade-up" style="--d:4;margin-top:18px">
-            <div class="card-head"><h3>${t("core.leaderboardTitle")}</h3>${myRank ? `<span class="badge sky">${t("core.yourRank")} #${myRank}</span>` : ""}</div>
+            <div class="card-head"><h3>${t("core.leaderboardTitle")}</h3>${myRank ? `<span class="badge sky--alive">${t("core.yourRank")} #${myRank}</span>` : ""}</div>
             <div class="card-body" style="padding:6px 16px 12px">
               ${lbRows.map((r)=>`<div class="agenda-item"${r.you?' style="background:var(--action-soft);border-radius:8px"':''}>
-                <span class="badge ${r.rank<=3?'gold':''}" style="min-width:26px;justify-content:center">${r.rank}</span>
-                <div class="row vcenter" style="gap:9px;flex:1">${C.avatar(r.initials||'?',{size:'sm',bg:r.you?'var(--otr-sky-lo)':'var(--otr-navy)'})}<div><div class="ai-t">${r.name||''}${r.you?` · ${t("core.youSuffix")}`:''}</div><div class="ai-c">${r.tier||''}</div></div></div>
+                <span class="badge ${r.rank<=3?'gold':r.you?'sky--alive':''}" style="min-width:26px;justify-content:center">${r.rank}</span>
+                <div class="row vcenter" style="gap:9px;flex:1">${C.avatar(r.initials||'?',{size:'sm',bg:r.you?'var(--otr-sky-lo)':'var(--otr-navy)'})}<div><div class="ai-t">${r.name||''}${r.you?` · ${t("core.youSuffix")}`:''}</div><div class="ai-c">${esc(tierLabel(r.tier||''))}</div></div></div>
                 <span class="ai-w tnum">${r.rating}</span></div>`).join('')}
             </div>
           </div>`
@@ -362,13 +372,15 @@ function activeItemsFlat() {
   };
 
   /* ---------------- VISTA DE CURSO ---------------- */
-  S.course = {
-    render() {
+  // [EPIC-2] Render de "Mis cursos" (cursos activos con progreso). Antes era el cuerpo
+  // directo de S.course.render; ahora es el sub-tab "Mis cursos" de la sección Cursos.
+  function renderMyCourses() {
       // Curso ACTIVO (multi-curso). El hero, módulos, progreso y % derivan de aquí.
       const c = activeCourse();
       if (!c) {
+        // Sin cursos activos: empuja al catálogo cambiando de sub-tab (no a la ruta vieja).
         return `<div class="page-head"><div><h1 class="page-title">${t("core.courseEmptyTitle")}</h1><div class="page-sub">${t("core.courseEmptySub")}</div></div></div>
-        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("core.courseEnrollHeading")}</h4><p>${t("core.courseEnrollBody")}</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">${t("core.exploreCatalog")}</button></div></div>`;
+        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("core.courseEnrollHeading")}</h4><p>${t("core.courseEnrollBody")}</p><button class="btn btn-primary btn-sm" data-courses-tab="catalog">${t("core.exploreCatalog")}</button></div></div>`;
       }
       // Metadatos extra (estudiantes/lecciones) solo viven en DB.courses; los unimos por code.
       const meta = (DB.courses || []).find((x: any) => x.code === c.code) || {};
@@ -386,7 +398,7 @@ function activeItemsFlat() {
               const on = x.code === c.code;
               return `<button class="chip-course${on ? ' active' : ''}" onclick="window.__course='${esc(x.code)}';go('course')" style="display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:12px;border:1.5px solid ${on ? 'var(--otr-sky)' : 'var(--line)'};background:${on ? 'color-mix(in srgb,var(--otr-sky) 12%,#fff)' : '#fff'};cursor:pointer;text-align:left">
                 <span class="cc-code" style="background:${x.color};color:#fff;border-radius:7px;padding:3px 7px;font-size:11px;font-weight:700">${esc(x.code)}</span>
-                <span style="display:flex;flex-direction:column;line-height:1.25"><b style="font-size:12.5px;color:var(--text)">${x.name}</b><span class="muted tnum" style="font-size:11.5px">${x.progress || 0}% completado</span></span>
+                <span style="display:flex;flex-direction:column;line-height:1.25"><b style="font-size:12.5px;color:var(--text)">${x.name}</b><span class="muted tnum" style="font-size:11.5px">${x.progress || 0}${t("core.pctCompleted")}</span></span>
               </button>`;
             }).join('')}
           </div>`
@@ -450,6 +462,22 @@ function activeItemsFlat() {
       const previewBar = isPreview
         ? `<div class="card card-pad fade-up" style="--d:0;margin-bottom:14px;background:color-mix(in srgb,var(--otr-sky) 8%,#fff);border-color:var(--otr-sky)"><div class="row between vcenter" style="gap:10px;flex-wrap:wrap"><span class="row vcenter" style="gap:8px;font-size:13px"><span style="display:flex;width:16px;color:var(--otr-sky-lo)">${IC.eye}</span><b>${t("core.previewLabel")}</b> ${t("core.previewHint")}</span><button class="btn btn-soft btn-sm" data-go="course-builder">${IC.chevL} ${t("core.backToBuilder")}</button></div></div>`
         : '';
+
+      // [EPIC-5] Video de bienvenida del curso (kind/src del coach) — embed armado con el
+      // helper compartido videoEmbedHtml; '' si no hay video configurado. Va en una tarjeta
+      // 16:9 dentro del overview del programa, junto al hero.
+      const welcomeEmbed = videoEmbedHtml(c.welcomeVideoKind, c.welcomeVideoSrc);
+      const welcomeVideo = welcomeEmbed
+        ? `<div class="card card-pad fade-up" style="--d:1;margin-bottom:16px">
+            <b class="row vcenter" style="gap:7px;font-size:14px;margin-bottom:10px"><span style="display:flex;width:16px;color:var(--otr-sky)">${IC.play}</span>${t("core.welcomeVideoTitle")}</b>
+            <div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000">${welcomeEmbed}</div>
+          </div>`
+        : '';
+
+      // [EPIC-5] Rating del programa (en vivo desde Review.courseId). Se omite sin reseñas.
+      const courseRating = (typeof c.rating === 'number' && c.rating > 0)
+        ? `<span class="dot-sep"></span><span class="row vcenter" style="gap:4px"><span style="display:flex;width:13px;color:var(--otr-gold)">${IC.star}</span><b>${c.rating}</b>${c.reviewCount ? `<span class="muted">(${c.reviewCount})</span>` : ''}</span>`
+        : '';
       return `
       ${previewBar}
       ${selector}
@@ -465,6 +493,7 @@ function activeItemsFlat() {
               <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${c.coach}</span>
               ${meta.students!=null?`<span class="dot-sep"></span><span>${meta.students} ${t("core.studentsUnit")}</span>`:''}
               ${meta.lessons!=null?`<span class="dot-sep"></span><span>${meta.lessons} ${t("core.lessonsUnit")}</span>`:''}
+              ${courseRating}
             </div>
           </div>
           <div class="row vcenter" style="gap:var(--s-5)">
@@ -472,10 +501,14 @@ function activeItemsFlat() {
             <div class="stack" style="gap:var(--s-2)">
               ${continueBtn}
               <button class="btn btn-ghost btn-sm" onclick="go('course-index')">${t("core.viewIndex")}</button>
+              ${/* [EPIC-2] CTA al sub-tab Catálogo (buscar nuevos cursos) sin salir de la sección */""}
+              <button class="btn btn-ghost btn-sm" data-courses-tab="catalog">${IC.search} ${t("core.findCatalogCta")}</button>
             </div>
           </div>
         </div>
       </div>
+
+      ${welcomeVideo}
 
       <div class="tabs fade-up" style="--d:1">
         <button class="tab active">${t("core.tabContent")}</button>
@@ -487,7 +520,7 @@ function activeItemsFlat() {
         <div class="stack" style="gap:16px">
           <div class="card card-pad">
             <b style="font-size:14px">${t("core.yourProgress")}</b>
-            <div class="row vcenter between" style="margin:14px 0 8px"><span class="muted" style="font-size:13px">${doneActs} de ${totalActs} actividades</span><b class="sky">${c.progress}%</b></div>
+            <div class="row vcenter between" style="margin:14px 0 8px"><span class="muted" style="font-size:13px">${doneActs} ${t("core.ofConnector")} ${totalActs} ${t("core.activitiesCountUnit")}</span><b class="sky">${c.progress}%</b></div>
             ${C.bar(c.progress)}
             ${(c.dbId && totalActs > 0 && doneActs === totalActs)
               ? `<button class="btn btn-primary btn-block" style="margin-top:14px" data-claim-cert="${esc(c.dbId)}">${IC.award} ${t("core.claimCertificate")}</button>`
@@ -497,11 +530,64 @@ function activeItemsFlat() {
           </div>
         </div>
       </div>`;
+  }
+
+  // [EPIC-2] Barra de sub-tabs de la sección Cursos (estilo Debate Hub): "Mis cursos"
+  // (cursos activos) y "Buscar nuevos" (catálogo). data-courses-tab cambia window.__coursesTab.
+  function coursesSubTabs(active) {
+    const tabs = [
+      { k: 'mine',    l: t("core.coursesTabMine"),    ic: 'book' },
+      { k: 'catalog', l: t("core.coursesTabCatalog"), ic: 'search' },
+    ];
+    return `
+    <div class="tabs fade-up" style="--d:0" id="courses-tabs">
+      ${tabs.map(x => `<button class="tab ${x.k === active ? 'active' : ''}" data-courses-tab="${x.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[x.ic]}</span>${x.l}</span></button>`).join('')}
+    </div>`;
+  }
+
+  // [EPIC-2] Sección "Cursos" unificada. Un solo item de nav (r:'course') con dos
+  // sub-tabs; cada uno REUSA el render existente (no duplica lógica): "Mis cursos"
+  // → renderMyCourses() (arriba); "Catálogo" → S.catalog.render() de scr-extra.
+  S.course = {
+    render() {
+      const tab = coursesTab();
+      const body = tab === 'catalog'
+        ? extraScreens.catalog.render()
+        : renderMyCourses();
+      return `${coursesSubTabs(tab)}<div class="fade-up" style="--d:1" id="courses-body">${body}</div>`;
     },
     mount(root) {
+      // Cambio de sub-tab: fija window.__coursesTab y repinta solo la página (conserva shell).
+      root.querySelectorAll('[data-courses-tab]').forEach(el =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          (window as any).__coursesTab = el.getAttribute('data-courses-tab');
+          const page = root.querySelector('.page');
+          if (page) { page.innerHTML = S.course.render(); S.course.mount(root); }
+          const content = root.querySelector('#content') || root;
+          if (content) content.scrollTop = 0;
+        }));
+      // Acordeón de módulos del tab "Mis cursos" (solo presente en ese tab).
       root.querySelectorAll('[data-acc]').forEach(h =>
         h.addEventListener('click', () => h.closest('.module').classList.toggle('open')));
+      // Mount del tab Catálogo (si lo tuviera): reusa el mount existente de S.catalog.
+      if (coursesTab() === 'catalog') extraScreens.catalog.mount?.(root);
     }
+  };
+
+  // [EPIC-2] Wrappers de ENTRADA por ruta: fijan el sub-tab inicial y delegan en
+  // S.course (el renderer puro, que solo LEE window.__coursesTab y nunca lo muta, para
+  // que el cambio de sub-tab in-place se conserve). La ruta 'course' arranca en
+  // "Mis cursos"; 'catalog' (y todos los go('catalog')/data-go="catalog" del SPA —
+  // dashboard, perfil, hub, arsenal) arrancan en "Buscar nuevos". Mismo nav 'course',
+  // mismo highlight de sidebar, sin duplicar lógica.
+  S.coursesMine = {
+    render() { (window as any).__coursesTab = 'mine'; return S.course.render(); },
+    mount(root) { S.course.mount(root); },
+  };
+  S.coursesCatalog = {
+    render() { (window as any).__coursesTab = 'catalog'; return S.course.render(); },
+    mount(root) { S.course.mount(root); },
   };
 
   /* ---------------- SHELL DE NAVEGACIÓN / ÍNDICE ---------------- */
@@ -520,7 +606,7 @@ function activeItemsFlat() {
       return `
       <div class="page-head fade-up" style="--d:0"><div>
         <h1 class="page-title">${t("core.indexTitle")}</h1>
-        <div class="page-sub">${c?.name || 'Curso'} · ${t("core.indexSub")}</div>
+        <div class="page-sub">${c?.name || t("core.courseFallback")} · ${t("core.indexSub")}</div>
       </div><button class="btn btn-ghost" onclick="go('course')">${IC.chevL} ${t("core.backToCourse")}</button></div>
 
       <div class="grid g-3 fade-up" style="--d:1;margin-bottom:20px">

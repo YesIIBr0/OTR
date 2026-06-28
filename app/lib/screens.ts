@@ -27,16 +27,21 @@ export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community
 export const ROUTES = {
   dashboard:      { screen:'dashboard',    nav:'dashboard',    crumbs:['Inicio'] },
   search:         { screen:'search',       nav:'',             crumbs:['Buscar'] },
-  catalog:        { screen:'catalog',      nav:'catalog',      crumbs:['Catálogo'] },
+  // [EPIC-2] 'catalog' ya no es un item de nav propio: enruta a la sección "Cursos"
+  // unificada (nav:'course') forzando el sub-tab Catálogo. El screen S.catalog crudo
+  // sigue existiendo (reusado dentro de S.course); aquí usamos el wrapper coursesCatalog.
+  catalog:        { screen:'coursesCatalog', nav:'course',     crumbs:['Cursos','Catálogo'] },
   // Crumbs genéricos (Moodle multi-curso): el nombre real del curso/lección se
   // muestra en el hero de cada pantalla, no se hardcodea aquí.
-  course:         { screen:'course',       nav:'course',       crumbs:['Mi aprendizaje'] },
-  'course-index': { screen:'courseIndex',  nav:'course',       crumbs:['Mi aprendizaje','Índice'] },
-  lesson:         { screen:'lesson',       nav:'course',       crumbs:['Mi aprendizaje','Lección'] },
-  assignment:     { screen:'assignment',   nav:'course',       crumbs:['Mi aprendizaje','Entrega'] },
-  quiz:           { screen:'quiz',         nav:'course',       crumbs:['Mi aprendizaje','Examen'] },
-  'quiz-results': { screen:'quizResults',  nav:'course',       crumbs:['Mi aprendizaje','Resultados'] },
-  player:         { screen:'player',       nav:'player',       crumbs:['Mi aprendizaje','Lección'] },
+  // [EPIC-2] La ruta raíz 'course' entra por "Mis cursos" (wrapper coursesMine);
+  // S.course es el renderer interno con los dos sub-tabs.
+  course:         { screen:'coursesMine',   nav:'course',       crumbs:['Cursos'] },
+  'course-index': { screen:'courseIndex',  nav:'course',       crumbs:['Cursos','Índice'] },
+  lesson:         { screen:'lesson',       nav:'course',       crumbs:['Cursos','Lección'] },
+  assignment:     { screen:'assignment',   nav:'course',       crumbs:['Cursos','Entrega'] },
+  quiz:           { screen:'quiz',         nav:'course',       crumbs:['Cursos','Examen'] },
+  'quiz-results': { screen:'quizResults',  nav:'course',       crumbs:['Cursos','Resultados'] },
+  player:         { screen:'player',       nav:'player',       crumbs:['Cursos','Lección'] },
   progress:       { screen:'progress',     nav:'progress',     crumbs:['Centro de progreso','Niveles'] },
   badges:         { screen:'badges',       nav:'badges',       crumbs:['Centro de progreso','Logros'] },
   // RE-REGISTRADA: el alumno necesita ver sus notas + el feedback del coach (S.grades).

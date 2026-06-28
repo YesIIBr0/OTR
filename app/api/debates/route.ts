@@ -15,15 +15,14 @@ import { updateRating, tierFor } from "../../lib/glicko2";
 // RD por defecto del oponente cuando solo conocemos su rating (rondas adjudicadas).
 const DEFAULT_OPP_RD = 350;
 
-// Resultado del jugador → score Glicko-2 (1 win / 0.5 draw / 0 loss).
+// Resultado del jugador → score Glicko-2 (1 win / 0 loss). En debate no hay empates.
 function scoreFor(result: string): number {
-  if (result === "WIN") return 1;
-  if (result === "DRAW") return 0.5;
-  return 0; // LOSS
+  return result === "WIN" ? 1 : 0; // LOSS
 }
 
-const VALID_RESULTS = new Set(["WIN", "LOSS", "DRAW"]);
+const VALID_RESULTS = new Set(["WIN", "LOSS"]);
 const VALID_SOURCES = new Set(["OTR", "EXTERNAL"]);
+
 const VALID_CRITERIA = new Set(["Argumentation", "Rebuttal", "Delivery", "Evidence/Research", "Crossfire"]);
 
 // Mapea cada criterio del ballot (0-10) a una o más StudentSkill (0-100) del usuario.
@@ -68,7 +67,7 @@ export async function POST(req: Request) {
   }>(req);
 
   const result = clean(body.result, 8).toUpperCase();
-  if (!VALID_RESULTS.has(result)) return bad("result inválido (WIN | LOSS | DRAW)");
+  if (!VALID_RESULTS.has(result)) return bad("result inválido (WIN | LOSS)");
 
   const format = clean(body.format, 16) || "PF";
   const source = VALID_SOURCES.has(clean(body.source, 16).toUpperCase())
@@ -89,6 +88,10 @@ export async function POST(req: Request) {
   // el historial con adjudicated=false: SÍ se guarda el DebateRecord (y su
   // ballot/skill nudge) pero NO se crea RatingUpdate ni se mueve el rating.
   const isJudgeRole = user.role === "TEACHER" || user.role === "ADMIN";
+
+  // [REDISEÑO] Solo un COACH/ADMIN registra debates (panel "Adjudicar"). El alumno ya
+  // no auto-reporta: un POST de alumno se rechaza. El rating solo se mueve aquí.
+  if (!isJudgeRole) return bad("Solo un coach o admin registra debates", 403);
 
   // [§6.5/§7.5] Adjudicación coach→alumno: un TEACHER/ADMIN puede adjudicar la ronda de
   // UN ALUMNO (body.targetUserId). El rating, el ballot (rúbrica) y los nudges de skill
@@ -242,7 +245,7 @@ export async function POST(req: Request) {
     await logActivitySafe({
       userId: partnerUser.id,
       type: result === "LOSS" ? "debate_loss" : "debate_win",
-      title: `${result === "WIN" ? "Ganó" : result === "LOSS" ? "Perdió" : "Empató"} ronda ${format}${opponent ? ` vs ${opponent}` : ""}${eventName ? ` · ${eventName}` : ""}`,
+      title: `${result === "WIN" ? "Ganó" : "Perdió"} ronda ${format}${opponent ? ` vs ${opponent}` : ""}${eventName ? ` · ${eventName}` : ""}`,
       detail: `En equipo con ${subject.name}`,
       source: "debate",
       refId: pRecord.id,
@@ -342,7 +345,7 @@ export async function POST(req: Request) {
   // --- ActivityEvent (spine): victoria/derrota con delta de rating en meta. ---
   const delta = Math.round(ratingAfter - ratingBefore);
   const type = result === "WIN" ? "debate_win" : result === "LOSS" ? "debate_loss" : "debate_win";
-  const verb = result === "WIN" ? "Ganó" : result === "LOSS" ? "Perdió" : "Empató";
+  const verb = result === "WIN" ? "Ganó" : "Perdió";
   const vs = opponent ? ` vs ${opponent}` : "";
   const where = eventName ? ` · ${eventName}` : "";
   await logActivitySafe({
