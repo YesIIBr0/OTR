@@ -393,12 +393,32 @@ function bookingCard(c, canBook, role) {
   }
   const sel = selState();
   const pkgs = coachPackages(c);
+  // [smart-default] Reservar exigía 3 decisiones manuales y el botón nacía deshabilitado.
+  // Pre-rellenamos lo recomendado: paquete de entrada (1er por posición) + primer día con
+  // huecos + primer hueco. Así el confirmar está activo de entrada; el usuario solo ajusta
+  // lo que quiera cambiar. No pisamos elecciones del usuario (solo rellena lo que esté en null).
+  if (!sel.pkg && pkgs.length) sel.pkg = pkgs[0].key;
   const pkg = pkgs.find((p) => p.key === sel.pkg) || pkgs[0] || null;
+  if (pkg) sel.pkg = pkg.key; // normaliza si el key quedó obsoleto (p. ej. tras cargar el detalle)
   const { rows, generic } = availRows(c);
   const days = nextDays(rows);
-  const day = days.find((d) => d.key === sel.dayKey) || days[0] || null;
+  // Día: re-deriva al primer día con huecos si el elegido ya no existe (la disponibilidad
+  // puede cambiar al cargar el detalle del coach sobre la base genérica del primer paint).
+  let day = days.find((d) => d.key === sel.dayKey) || null;
+  if (!day && days.length) {
+    day = days.find((d) => slotsFor(rows, d).length) || days[0];
+    sel.dayKey = day.key; sel.dayLabel = day.label;
+    sel.slotIso = null; sel.slotLabel = "";
+  }
   const slots = slotsFor(rows, day);
+  // Hora: smart default = primer hueco. Re-valida también si el slot ya no está disponible.
+  if (slots.length && !slots.some((s) => s.iso === sel.slotIso)) {
+    sel.slotIso = slots[0].iso; sel.slotLabel = slots[0].label;
+  }
   const ready = !!(sel.slotIso && (pkg || !pkgs.length));
+  // Atajo "próximo hueco": el primer día con disponibilidad y su hora más temprana.
+  const soonestDay = days.find((d) => slotsFor(rows, d).length);
+  const soonest = soonestDay ? { day: soonestDay, slot: slotsFor(rows, soonestDay)[0] } : null;
 
   return `
   <div class="card card-pad">
@@ -430,6 +450,9 @@ function bookingCard(c, canBook, role) {
     ${slots.length
       ? `<div class="row wrap" style="gap:6px">${slots.map((s) => `<button class="chip ${sel.slotIso === s.iso ? "active" : ""}" data-mk-slot="${s.iso}" data-mk-slot-label="${s.label}">${s.label}</button>`).join("")}</div>`
       : `<p class="faint" style="font-size:12.5px">${t("mkt.noSlotsThisDay")}</p>`}
+    ${soonest && (sel.dayKey !== soonest.day.key || sel.slotIso !== soonest.slot.iso)
+      ? `<button class="btn btn-quiet btn-sm" data-mk-soonest style="margin-top:8px;font-size:11.5px;gap:6px"><span style="display:inline-flex;width:13px;height:13px;flex:none">${IC.clock}</span>${t("mkt.soonestSlot")} · ${soonest.day.label} ${soonest.slot.label}</button>`
+      : ""}
 
     ${pkg && sel.slotIso ? `
     <div class="divider"></div>
@@ -666,6 +689,15 @@ S.marketplace = {
         repaint();
       })
     );
+
+    // Atajo "próximo hueco": limpia día+hora para que el render re-aplique el smart
+    // default (1er día con huecos + su hora más temprana). El paquete elegido se conserva.
+    root.querySelector("[data-mk-soonest]")?.addEventListener("click", () => {
+      const s = selState();
+      s.dayKey = null; s.dayLabel = "";
+      s.slotIso = null; s.slotLabel = "";
+      repaint();
+    });
 
     // Confirmar → POST /api/bookings (escrow + safety gate del lado del servidor).
     const confirm = root.querySelector("#mk-confirm");
