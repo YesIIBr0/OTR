@@ -117,9 +117,11 @@ function activeItemsFlat() {
         na = { eyebrow: t("core.naStartEyebrow"), title: t("core.naStartTitle"),
           sub: t("core.naStartSub"), cta: t("core.naStartCta"), ic: IC.book, onclick: `go('catalog')` };
       } else if ((DB.debateRank?.provisional)) {
-        // Curso al día y sin rating real: el PRD pide empujar al primer debate de práctica.
+        // [FIX activación] Rating provisional: la acción que de verdad lo mueve es que un COACH
+        // adjudique una ronda. Antes el CTA caía en la pestaña Práctica (vacía); ahora lleva al
+        // marketplace de coaches para reservar la primera sesión.
         na = { eyebrow: t("core.naStepEyebrow"), title: t("core.naDebateTitle"),
-          sub: t("core.naDebateSub"), cta: t("core.naDebateCta"), ic: IC.mic, onclick: `window.__debateTab='practice';go('debate')` };
+          sub: t("core.naDebateSub"), cta: t("core.naDebateCta"), ic: IC.mic, onclick: `go('explore')` };
       } else {
         // Todo al día: reservar sesión con el coach para seguir subiendo.
         na = { eyebrow: t("core.naStepEyebrow"), title: t("core.naBookTitle"),
@@ -289,17 +291,15 @@ function activeItemsFlat() {
          compacto (eyebrow + tier + estado) y UN CTA limpio al Hub; el rating crudo
          vive en el Hub, no se re-muestra. Provisional → empuja a practicar. */
       const dr = DB.debateRank || { rating: 1500, rd: 350, tier: 'Novato', provisional: true };
+      // [FIX dup] Colapsado a tier + CTA al Hub: el hero del Debate Hub ya muestra rating/forma,
+      // así que el Home no re-pinta un mini-dashboard de rank (evita la duplicación señalada).
       const debateCard = `
         <div class="card card-pad">
           <div class="row between vcenter">
             <div><div class="eyebrow" style="margin-bottom:2px">${t("core.debateRankEyebrow")}</div><b style="font-size:15px">${esc(tierLabel(dr.tier))}</b></div>
             <span class="badge ${dr.provisional?'':'sky--alive'}">${dr.provisional?t("core.debateProvisional"):t("core.debateStable")}</span>
           </div>
-          ${dr.provisional
-            ? `<p class="faint" style="font-size:12.5px;margin:10px 0 12px">${t("core.debateProvisionalBody")}</p>
-               <button class="btn btn-primary btn-sm" style="width:100%" onclick="window.__debateTab='practice';go('debate')">${IC.mic} ${t("core.debatePlayFirst")}</button>`
-            : `<p class="faint" style="font-size:12.5px;margin:10px 0 12px">${t("core.debateStableBody")}</p>
-               <button class="btn btn-soft btn-sm" style="width:100%" onclick="go('debate')">${t("core.debateHubCta")} ${IC.arrowR}</button>`}
+          <button class="btn btn-soft btn-sm" style="width:100%;margin-top:12px" onclick="go('debate')">${t("core.debateHubCta")} ${IC.arrowR}</button>
         </div>`;
 
       /* ---- ⑥ ACHIEVEMENTS (badges recientes + "X para el siguiente") ---- */

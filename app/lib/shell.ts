@@ -150,6 +150,7 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
 
   return `
   <div class="app">
+    <a href="#content" class="skip-link">${lang==='en'?'Skip to content':'Saltar al contenido'}</a>
     <aside class="sidebar">
       <div class="sb-head">
         <a class="sb-logo" href="#dashboard" data-go="dashboard">
@@ -186,7 +187,7 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
         ${(() => { const u = (DB.notifications || []).filter(n => n.unread).length; return `<button class="icon-btn" id="bell" aria-label="${t('top.notifications', lang)}">${IC.bell}${u>0?`<span class="bell-count">${u}</span>`:''}</button>`; })()}
       </header>
 
-      <div class="content" id="content"><div class="page rise">${content}</div></div>
+      <div class="content" id="content" role="main" tabindex="-1" aria-label="${lang==='en'?'Main content':'Contenido principal'}"><div class="page rise">${content}</div></div>
 
       <nav class="tabbar mobile-only">${tabbar}</nav>
     </div>

@@ -10,12 +10,6 @@ export const dict = {
     "debate.tabPractice": "Práctica",
     "debate.tabLeaderboard": "Leaderboard",
 
-    // status badges de torneo
-    "debate.statusOpen": "Inscripciones abiertas",
-    "debate.statusSoon": "Próximamente",
-    "debate.statusClosed": "Cerrado",
-    "debate.statusLive": "En vivo",
-
     // upsell a Pro
     "debate.seeOtrPro": "Ver OTR Pro",
 
@@ -132,12 +126,6 @@ export const dict = {
     "debate.tabHistory": "My debates",
     "debate.tabPractice": "Practice",
     "debate.tabLeaderboard": "Leaderboard",
-
-    // tournament status badges
-    "debate.statusOpen": "Registration open",
-    "debate.statusSoon": "Coming soon",
-    "debate.statusClosed": "Closed",
-    "debate.statusLive": "Live",
 
     // Pro upsell
     "debate.seeOtrPro": "See OTR Pro",

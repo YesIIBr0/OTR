@@ -49,6 +49,23 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     }
 
     const ROLE_HOME: any = { admin: "admin", teacher: "teacher", parent: "parent", student: "dashboard" };
+
+    // [A11Y] El SPA inyecta innerHTML sin recargar el documento → teclado y lector de pantalla
+    // no detectan el cambio de pantalla. Región aria-live persistente para anunciar la ruta.
+    let routeAnnouncer: HTMLElement | null = null;
+    function announceRoute(name: string) {
+      if (!routeAnnouncer) {
+        routeAnnouncer = document.createElement("div");
+        routeAnnouncer.className = "sr-only";
+        routeAnnouncer.setAttribute("aria-live", "polite");
+        routeAnnouncer.setAttribute("aria-atomic", "true");
+        document.body.appendChild(routeAnnouncer);
+      }
+      routeAnnouncer.textContent = name;
+    }
+    // El idioma activo (cookie otr_lang) debe reflejarse en <html lang> para el lector de pantalla.
+    try { const m = document.cookie.match(/(?:^|;\s*)otr_lang=([^;]+)/); document.documentElement.lang = m && m[1] === "en" ? "en" : "es"; } catch {}
+
     function renderApp(r: string, opts?: { keepScroll?: boolean }) {
       let def = (ROUTES as any)[r];
       if (!def) return;
@@ -70,6 +87,15 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       (SCREENS as any)[def.screen].mount?.(content, state);
       if (content) content.scrollTop = keep ? prevScroll : 0;
       if (keep && activeId) { const el = document.getElementById(activeId); if (el && typeof (el as any).focus === "function") (el as any).focus(); }
+      else {
+        // [A11Y] Navegación real: fija el document.title, anuncia la pantalla por la región
+        // aria-live y mueve el foco al contenido — así teclado y lector de pantalla detectan
+        // el cambio (el innerHTML silencioso no lo notan solos).
+        const heading = root.querySelector<HTMLElement>("h1, .page-title");
+        const pageName = (heading?.textContent || "").trim();
+        if (pageName) { document.title = `${pageName} · OTR Aula`; announceRoute(pageName); }
+        if (content && typeof content.focus === "function") { try { content.focus({ preventScroll: true } as any); } catch { content.focus(); } }
+      }
     }
     (window as any).go = (r: string) => renderApp(r);
 

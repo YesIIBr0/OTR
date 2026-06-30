@@ -15,7 +15,9 @@ export const C = {
   levelBadge(lvl) {
     const map = { "OTR Initiate":'lvl-novato', "OTR Apprentice":'lvl-jv', "OTR Competitor":'lvl-varsity', "OTR Strategist":'lvl-strategist', "OTR Laureate":'lvl-elite' };
     const v = map[lvl] || 'lvl-novato';
-    return `<span class="badge" style="background:color-mix(in srgb, var(--${v}) 16%, white);color:var(--${v})"><span class="dot" style="background:var(--${v})"></span>${lvl}</span>`;
+    // [A11Y AA] El texto va en ink (no en el color del nivel sobre fondo casi-blanco, que
+    // daba ~2.3–3.0:1 y fallaba AA); el color del nivel se conserva en el punto. Pasa 4.5:1.
+    return `<span class="badge" style="background:color-mix(in srgb, var(--${v}) 18%, white);color:var(--text)"><span class="dot" style="background:var(--${v})"></span>${lvl}</span>`;
   },
   bar(pct, opts = {}) {
     const cls = opts.cls ? `bar ${opts.cls}` : 'bar';

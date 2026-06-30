@@ -104,7 +104,7 @@ export async function POST(req: Request) {
             // [MINORS-CONSENT-01 §11.3] PENDING: lo afirma el menor, lo confirma el tutor.
             // consentLevel "standard" = aprobar CADA reserva (default seguro); "full"
             // (confianza total) es opt-in explícito del padre desde el Portal de familia.
-            data: { parentId: parent.id, studentId: user.id, status: "PENDING", consentLevel: "standard" },
+            data: { parentId: parent.id, studentId: user.id, status: "PENDING", consentLevel: "standard", initiatedBy: "student" },
           });
           // Ledger universal (cara del parent): toda acción escribe en ActivityEvent.
           await db.activityEvent.create({

@@ -219,7 +219,10 @@ function viewOverview(d) {
              ${nextEvent.region ? `<span class="dot-sep"></span><span>${esc(nextEvent.region)}</span>` : ""}
              ${nextEvent.modality ? `<span class="dot-sep"></span><span>${esc(nextEvent.modality)}</span>` : ""}
            </div>
-           ${nextEvent.startsLabel ? `<div class="row vcenter" style="gap:6px;margin-top:10px;font-size:13px;color:var(--text)">${IC.calendar} ${esc(nextEvent.startsLabel)}</div>` : ""}`
+           ${nextEvent.startsLabel ? `<div class="row vcenter" style="gap:6px;margin-top:10px;font-size:13px;color:var(--text)">${IC.calendar} ${esc(nextEvent.startsLabel)}</div>` : ""}
+           ${nextEvent.registered
+             ? `<div style="margin-top:12px"><span class="badge ok"><span class="dot"></span>${t("debate.registered")}</span></div>`
+             : `<button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-tn-register="${esc(nextEvent.id)}">${t("debate.register")}</button>`}`
         : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>${t("debate.noEventsTitle")}</h4><p>${t("debate.noEventsBody")}</p></div>`}
     </div>`;
 
@@ -374,6 +377,23 @@ S.debateHub = {
         e.preventDefault();
         (window as any).__debateTab = el.getAttribute("data-dtab");
         repaint();
+      })
+    );
+
+    // [FIX conversión] Inscripción al torneo desde el Hub (donde nace la intención): POST
+    // /api/tournaments (idempotente) + sello "Inscrito" optimista, sin saltar a otra pantalla.
+    root.querySelectorAll("[data-tn-register]").forEach((el) =>
+      el.addEventListener("click", async () => {
+        const id = el.getAttribute("data-tn-register");
+        (el as any).disabled = true;
+        try {
+          await (window as any).api("/api/tournaments", { tournamentId: id });
+          (window as any).toast?.(t("debate.registerSent"), "ok");
+          (el as any).outerHTML = `<div style="margin-top:12px"><span class="badge ok"><span class="dot"></span>${t("debate.registered")}</span></div>`;
+        } catch (e) {
+          (el as any).disabled = false;
+          (window as any).toast?.((e && (e as any).message) || t("debate.registerError"), "warn");
+        }
       })
     );
 

@@ -30,30 +30,35 @@ export async function POST(req: Request) {
     data.consentLevel === "progress_only" ? "progress_only" :
     "standard";
 
-  // Un menor queda ACTIVE de inmediato (el tutor tiene custodia); un adulto requiere
-  // su consentimiento → PENDING hasta que lo apruebe.
-  const status = student.ageBand === "adult" ? "PENDING" : "ACTIVE";
+  const isMinor = student.ageBand !== "adult";
 
   const existing = await db.guardianship.findUnique({
     where: { parentId_studentId: { parentId: user.id, studentId: student.id } },
   });
   if (existing) {
-    // [MINORS-CONSENT-01 §11.3] El PARENT confirma el vínculo: si no estaba activo
-    // (REVOKED, o PENDING que el menor creó al registrarse) y ahora corresponde
-    // ACTIVE (menor con su tutor presente), actívalo. Para un estudiante ADULTO el
-    // status calculado es PENDING → el vínculo permanece idempotente (espera al alumno).
-    if (existing.status !== "ACTIVE" && status === "ACTIVE") {
+    // [SEGURIDAD §11.3] El PARENT confirma el vínculo → ACTIVE SOLO si lo DECLARÓ el alumno
+    // (initiatedBy="student", creado en su registro con guardianEmail) y es un menor. Un
+    // vínculo que el propio padre reclamó (initiatedBy="parent") NO se auto-activa con un
+    // segundo POST: requiere el consentimiento del lado del menor. Un alumno ADULTO consiente
+    // por su cuenta (el vínculo queda PENDING hasta que él lo apruebe).
+    if (existing.status !== "ACTIVE" && existing.initiatedBy === "student" && isMinor) {
       const updated = await db.guardianship.update({
         where: { id: existing.id },
-        data: { status, consentLevel },
+        data: { status: "ACTIVE", consentLevel },
       });
       return ok({ guardianship: updated, already: false });
     }
     return ok({ guardianship: existing, already: true });
   }
 
+  // [SEGURIDAD §11.3] Vínculo NUEVO reclamado por el PADRE → SIEMPRE PENDING (incluido un
+  // menor). Antes un menor quedaba ACTIVE por la sola palabra del padre, lo que permitía a
+  // cualquier cuenta "padre" reclamar a cualquier menor por email y leer su PII/grabaciones.
+  // Para llegar a ACTIVE, el menor debe haber declarado a este padre en su registro (eso crea
+  // el vínculo PENDING student-initiated que el padre confirma en la rama de arriba).
+  const status = "PENDING";
   const guardianship = await db.guardianship.create({
-    data: { parentId: user.id, studentId: student.id, status, consentLevel },
+    data: { parentId: user.id, studentId: student.id, status, consentLevel, initiatedBy: "parent" },
   });
 
   // Ledger universal: toda acción escribe en ActivityEvent (cara del parent).

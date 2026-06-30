@@ -555,6 +555,10 @@ model Guardianship {
   student      User     @relation("GuardianStudent", fields: [studentId], references: [id], onDelete: Restrict)
   status       String   @default("ACTIVE") // PENDING | ACTIVE | REVOKED
   consentLevel String   @default("standard") // [MINORS-CONSENT-02 §11.3] default seguro: aprobar cada reserva. full | standard | progress_only
+  // [SEGURIDAD §11.3] Quién originó el vínculo: "student" (el menor declaró a su tutor al
+  // registrarse) | "parent" (el padre lo reclamó). Sobre un MENOR el vínculo solo pasa a
+  // ACTIVE si lo declaró el alumno y el padre lo confirma — nunca por la sola palabra del padre.
+  initiatedBy  String   @default("student")
   // PRD §11.3: umbral de aprobación per-booking configurable. null = aprobar cada
   // reserva; N = auto-aprueba reservas de hasta N centavos (sobre N requiere OK).
   approveUnderCents Int?

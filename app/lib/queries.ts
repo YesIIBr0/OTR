@@ -103,15 +103,10 @@ function eventDateLabel(d?: Date | null): string {
   if (!d) return "";
   const date = d instanceof Date ? d : new Date(d);
   if (Number.isNaN(date.getTime())) return "";
-  const day = date.getDate();
-  const mon = MONTHS_ES[date.getMonth()];
-  let h = date.getHours();
-  const min = date.getMinutes();
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12;
-  if (h === 0) h = 12;
-  const mm = min.toString().padStart(2, "0");
-  return `${day} ${mon} · ${h}:${mm} ${ampm}`;
+  // [FIX glitch "12:23 AM"] Usar las etiquetas con zona horaria FIJA (America/Santo_Domingo,
+  // vía consultations.ts) en vez de la hora del SERVIDOR (UTC): antes un torneo a medianoche
+  // local se renderizaba "12:23 AM" en un server UTC. Misma fuente TZ que las reservas.
+  return `${dateLabel(date)} · ${timeLabel(date)}`;
 }
 
 // Las 6 dimensiones del radar OTR, en el orden fijo del contrato.
