@@ -80,6 +80,15 @@ export const dict = {
     "extra.searchEmptySuffix": "\". Prueba con otra búsqueda.",
     "extra.coursesSection": "Cursos",
     "extra.peopleSection": "Personas",
+    // Plantilla de error: causa + acción + reintento (Blueprint §11). El mensaje del
+    // servidor (d.error), cuando existe, es la causa más específica y tiene prioridad.
+    "err.network": "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
+    "err.server": "Algo falló de nuestro lado. Espera un momento y reintenta.",
+    "err.notFound": "No encontramos lo que buscabas; quizá se movió o ya no existe.",
+    "err.forbidden": "No tienes permiso para esta acción.",
+    "err.generic": "No se pudo completar la acción. Inténtalo de nuevo.",
+    "err.retry": "Reintentar",
+    "err.requiredSuffix": "es obligatorio.",
   },
   en: {
     // Builder save chip
@@ -162,5 +171,14 @@ export const dict = {
     "extra.searchEmptySuffix": "\". Try another search.",
     "extra.coursesSection": "Courses",
     "extra.peopleSection": "People",
+    // Error template: cause + action + retry (Blueprint §11). The server message
+    // (d.error), when present, is the most specific cause and takes priority.
+    "err.network": "No connection. Check your internet and try again.",
+    "err.server": "Something failed on our side. Wait a moment and retry.",
+    "err.notFound": "We couldn't find what you were after; it may have moved or no longer exists.",
+    "err.forbidden": "You don't have permission for this action.",
+    "err.generic": "We couldn't complete the action. Please try again.",
+    "err.retry": "Retry",
+    "err.requiredSuffix": "is required.",
   },
 };

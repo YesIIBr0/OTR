@@ -701,7 +701,10 @@ S.marketplace = {
 
     // Confirmar → POST /api/bookings (escrow + safety gate del lado del servidor).
     const confirm = root.querySelector("#mk-confirm");
-    confirm?.addEventListener("click", async () => {
+    // Reserva → POST /api/bookings. En fn nombrada para poder reintentar desde el toast
+    // de error (plantilla causa+acción+reintento): el fallo no es un callejón sin salida.
+    async function doConfirm() {
+      if (!confirm) return;
       const id = w.__mkCoachId;
       const sel = selState();
       if (!id || !sel.slotIso) return;
@@ -723,10 +726,11 @@ S.marketplace = {
         w.toast?.(status === "PENDING" ? t("mkt.bookingPendingToast") : t("mkt.bookingConfirmedToast"), "ok");
         repaint();
       } catch (e) {
-        w.toast?.((e && e.message) || t("mkt.bookingFailToast"), "danger");
+        w.toast?.((e && e.message) || t("mkt.bookingFailToast"), "danger", { onClick: doConfirm });
         confirm.disabled = false;
         confirm.textContent = isMinor() ? t("mkt.confirmRequestApproval") : t("mkt.confirmBooking");
       }
-    });
+    }
+    confirm?.addEventListener("click", doConfirm);
   },
 };

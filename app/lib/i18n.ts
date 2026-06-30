@@ -200,7 +200,7 @@ export function setLang(lang) {
 
 /* t(key, lang?) — traduce una llave. Fallback en cascada:
    idioma activo -> 'es' -> la propia llave (nunca devuelve undefined). */
-export function t(key, lang) {
+export function t(key, lang?) {
   const l = lang && LANGS.includes(lang) ? lang : getLang();
   const table = DICT[l] || DICT[DEFAULT_LANG];
   if (table && key in table) return table[key];

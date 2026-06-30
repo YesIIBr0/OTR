@@ -5,6 +5,8 @@ import { SCREENS, ROUTES } from "../lib/screens";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
+// Alias 'tr' para no chocar con los muchos `const t = e.target` locales de este archivo.
+import { t as tr } from "../lib/i18n";
 import { COURSE_TEMPLATES } from "../lib/course-templates";
 
 export default function Aula({ data, user }: { data: any; user: any }) {
@@ -100,15 +102,21 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     (window as any).go = (r: string) => renderApp(r);
 
     let toastWrap: HTMLElement | null = null;
-    function toast(msg: string, tone?: string) {
+    function toast(msg: string, tone?: string, action?: { label?: string; onClick: () => void }) {
       // [A11Y-02] El contenedor de toasts es una región viva: los lectores de pantalla
       // anuncian cada toast. Los de error (danger) usan role="alert" (asertivo).
       if (!toastWrap) { toastWrap = document.createElement("div"); toastWrap.className = "toast-wrap"; toastWrap.setAttribute("aria-live", "polite"); toastWrap.setAttribute("aria-atomic", "false"); document.body.appendChild(toastWrap); }
       const ic = tone === "ok" ? IC.checkCircle : tone === "warn" ? IC.clock : tone === "danger" ? IC.flag : IC.bell;
-      const t = document.createElement("div"); t.className = "toast " + (tone || ""); t.setAttribute("role", tone === "danger" ? "alert" : "status");
-      t.innerHTML = `<span class="ti">${ic}</span>${msg}`;
-      toastWrap.appendChild(t);
-      setTimeout(() => { t.style.opacity = "0"; t.style.transform = "translateY(8px) scale(.98)"; t.style.transition = "opacity .3s var(--ease), transform .3s var(--ease)"; setTimeout(() => t.remove(), 300); }, 2600);
+      const el = document.createElement("div"); el.className = "toast " + (tone || ""); el.setAttribute("role", tone === "danger" ? "alert" : "status");
+      // [Blueprint §11] El error no es un callejón sin salida: si la acción se puede reintentar,
+      // el toast trae su botón de "Reintentar" y vive más tiempo para dar margen a actuar.
+      const retry = !!(action && typeof action.onClick === "function");
+      el.innerHTML = `<span class="ti">${ic}</span><span class="tmsg">${msg}</span>${retry ? `<button type="button" class="toast-retry" data-retry>${esc(action!.label || tr("err.retry"))}</button>` : ""}`;
+      toastWrap.appendChild(el);
+      let gone = false;
+      const dismiss = () => { if (gone) return; gone = true; el.style.opacity = "0"; el.style.transform = "translateY(8px) scale(.98)"; el.style.transition = "opacity .3s var(--ease), transform .3s var(--ease)"; setTimeout(() => el.remove(), 300); };
+      if (retry) el.querySelector("[data-retry]")?.addEventListener("click", () => { dismiss(); try { action!.onClick(); } catch { /* el reintento no debe romper la UI */ } });
+      setTimeout(dismiss, retry ? 8000 : 2600);
     }
     (window as any).toast = toast;
 
@@ -134,10 +142,25 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       scrim.querySelector("[data-ok]")?.addEventListener("click", () => { close(); toast("Cambios guardados", "ok"); });
     };
 
+    // [Blueprint §11] Plantilla de error causa+acción. En vez de un "Error" pelado, el mensaje
+    // dice qué pasó y qué hacer: la causa del servidor (d.error) manda por ser la más específica;
+    // si no, se mapea por status; el fallo de red (fetch que rechaza) tiene su propio mensaje.
+    function apiErrorMsg(status: number, serverErr?: string) {
+      if (serverErr) return serverErr;
+      if (status === 404) return tr("err.notFound");
+      if (status === 401 || status === 403) return tr("err.forbidden");
+      if (status >= 500) return tr("err.server");
+      return tr("err.generic");
+    }
     async function api(url: string, body?: any, method = "POST") {
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+      let res: Response;
+      try {
+        res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+      } catch {
+        throw new Error(tr("err.network"));
+      }
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || "Error");
+      if (!res.ok) throw new Error(apiErrorMsg(res.status, d.error));
       return d;
     }
     (window as any).api = api;
@@ -260,13 +283,13 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           if (!raw) {
             el.classList.add("err"); el.setAttribute("aria-invalid", "true");
             const h = el.parentElement?.querySelector(".fm-fieldhint") as HTMLElement | null;
-            if (h) { h.textContent = `${f.label} es obligatorio.`; h.style.display = "block"; }
+            if (h) { h.textContent = `${f.label} ${tr("err.requiredSuffix")}`; h.style.display = "block"; }
             if (!firstBad) firstBad = el;
           }
         });
         if (firstBad) { (firstBad as HTMLElement).focus(); return; }
         const okBtn = scrim.querySelector("[data-ok]") as HTMLElement; okBtn.textContent = "Guardando…";
-        try { await onSubmit(values); close(); } catch (err: any) { const e = scrim.querySelector(".fm-err") as HTMLElement; e.textContent = err.message || "Error"; e.style.display = "block"; okBtn.textContent = "Guardar"; }
+        try { await onSubmit(values); close(); } catch (err: any) { const e = scrim.querySelector(".fm-err") as HTMLElement; e.textContent = err.message || tr("err.generic"); e.style.display = "block"; okBtn.textContent = "Guardar"; }
       });
       // [PRD-01] Enter envía desde un input de texto simple (no en textarea, editor rico ni select,
       // donde Enter tiene su propio significado). Acelera los formularios cortos sin soltar el teclado.
@@ -548,7 +571,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         // y el alumno se quedaba ahí sin un siguiente paso claro). __course indexa por code.
         const enrolled = ((DB as any).coursesContent || []).find((c: any) => c.dbId === courseId || c.id === courseId);
         if (enrolled) { (window as any).__course = enrolled.code; renderApp("course"); }
-      } catch (e: any) { toast(e.message || "Error", "danger"); }
+      } catch (e: any) { toast(e.message || tr("err.generic"), "danger"); }
     }
     // [LEARN-1] Reclamar el diploma al completar un programa al 100%. El endpoint ya existía
     // (POST /api/certificates recalcula el progreso REAL y hace upsert), pero ninguna pantalla
@@ -572,7 +595,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         await api(`/api/courses/${encodeURIComponent(id)}`, { published: publish }, "PATCH");
         toast(publish ? "Curso publicado — visible en el catálogo" : "Curso pasado a borrador", "ok");
         await refresh();
-      } catch (e: any) { toast(e.message || "Error", "danger"); }
+      } catch (e: any) { toast(e.message || tr("err.generic"), "danger"); }
     }
     function openNewThread() {
       formModal("Nueva discusión", [
@@ -692,7 +715,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           const feedback = row.querySelector(".gsub-feedback")?.value || "";
           save.textContent = "…";
           try { await api(`/api/submissions/${id}`, { grade, feedback }, "PATCH"); save.innerHTML = `<span style="display:inline-flex;width:16px;height:16px">${IC.check}</span>`; gdirty = true; toast("Calificación guardada", "ok"); }
-          catch (err: any) { save.textContent = "Guardar"; toast(err.message || "Error", "danger"); }
+          catch (err: any) { save.textContent = "Guardar"; toast(err.message || tr("err.generic"), "danger"); }
         }
       });
     }
@@ -811,7 +834,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         await api("/api/reviews", { courseId, rating, body });
         toast("¡Reseña publicada!", "ok");
         await refresh();
-      } catch (e: any) { toast(e.message || "Error", "danger"); }
+      } catch (e: any) { toast(e.message || tr("err.generic"), "danger"); }
     }
 
     let notifOpen = false;
@@ -833,7 +856,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             toggleNotif(false);
             renderApp(currentRoute, { keepScroll: true });
           })
-          .catch((err: any) => toast(err.message || "Error", "danger"));
+          .catch((err: any) => toast(err.message || tr("err.generic"), "danger"));
       });
     }
 
@@ -882,7 +905,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             toast(done ? "Lección marcada como completada" : "Lección desmarcada", "ok");
             renderApp(currentRoute, { keepScroll: true });
           })
-          .catch((err: any) => toast(err.message || "Error", "danger"));
+          .catch((err: any) => toast(err.message || tr("err.generic"), "danger"));
         return;
       }
       const evalEl = t.closest('[data-action="eval-skills"]') as HTMLElement | null;
@@ -976,7 +999,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           else { for (const m of c.modules) { const l = m.lessons.find((x: any) => x.id === hid); if (l) { cur = !!l.hidden; break; } } }
         }
         const url = kind === "module" ? `/api/modules/${hid}` : `/api/lessons/${hid}`;
-        api(url, { hidden: !cur }, "PATCH").then(() => { toast(!cur ? "Oculto al alumno" : "Visible para el alumno", "ok"); return refresh(); }).catch((err: any) => toast(err.message || "Error", "danger"));
+        api(url, { hidden: !cur }, "PATCH").then(() => { toast(!cur ? "Oculto al alumno" : "Visible para el alumno", "ok"); return refresh(); }).catch((err: any) => toast(err.message || tr("err.generic"), "danger"));
         return;
       }
       if (t.closest('[data-action="edit-profile"]')) { e.preventDefault(); openEditProfile(); return; }
