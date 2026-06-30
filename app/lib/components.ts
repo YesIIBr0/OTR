@@ -39,7 +39,8 @@ export const C = {
   kpi(label, val, opts = {}) {
     const delta = opts.delta ? `<span class="k-delta ${opts.dir||'up'}">${opts.dir==='down'?'▾':'▴'} ${opts.delta}</span>` : '';
     const unit = opts.unit ? `<span class="u">${opts.unit}</span>` : '';
-    const ic = opts.ic ? IC[opts.ic] : '';
+    // [UI] opts.accent colorea el icono del KPI por semántica (XP=oro, progreso=verde, etc.)
+    const ic = opts.ic ? `<span class="k-ic"${opts.accent ? ` style="color:${opts.accent}"` : ''}>${IC[opts.ic]}</span>` : '';
     return `<div class="kpi">
       <span class="k-label">${ic}${label}</span>
       <span class="k-val">${val}${unit}</span>

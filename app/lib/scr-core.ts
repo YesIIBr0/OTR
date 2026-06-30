@@ -149,9 +149,9 @@ function activeItemsFlat() {
       const kpis = `
       <div class="grid g-4 fade-up" style="--d:1;margin-bottom:20px">
         <div class="tile">${C.kpi(t("core.kpiActiveCourses"),String(courses.length),{ic:'book'})}</div>
-        <div class="tile">${C.kpi(t("core.kpiAvgProgress"),String(avg),{unit:'%',ic:'chart'})}</div>
-        <div class="tile">${C.kpi(t("core.kpiTotalXp"),(DB.xp||0).toLocaleString('es'),{ic:'flame'})}</div>
-        <div class="tile">${C.kpi(t("core.kpiPendingSubmissions"),String(pending),{ic:'clock'})}</div>
+        <div class="tile">${C.kpi(t("core.kpiAvgProgress"),String(avg),{unit:'%',ic:'chart',accent:'var(--otr-green)'})}</div>
+        <div class="tile">${C.kpi(t("core.kpiTotalXp"),(DB.xp||0).toLocaleString('es'),{ic:'flame',accent:'var(--otr-gold)'})}</div>
+        <div class="tile">${C.kpi(t("core.kpiPendingSubmissions"),String(pending),{ic:'clock',accent:pending>0?'var(--warn)':'var(--text-3)'})}</div>
       </div>`;
 
       /* ---- ② SKILL SNAPSHOT (radar, reusa DB.skills) ---- */
