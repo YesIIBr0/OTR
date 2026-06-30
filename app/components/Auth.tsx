@@ -4,7 +4,9 @@ import { otrCrest } from "../lib/icons";
 
 const WAVE = Array.from({ length: 60 }, (_, i) => {
   const env = Math.sin((i / 59) * Math.PI);
-  const h = Math.min(96, 8 + env * 70 * Math.abs(Math.sin(i * 0.9)) + 6);
+  // Redondeamos a 2 decimales: así `${h}%` serializa idéntico en SSR y cliente y no
+  // dispara el aviso de hydration-mismatch (el float crudo daba 16 decimales vs 4).
+  const h = Math.round((Math.min(96, 8 + env * 70 * Math.abs(Math.sin(i * 0.9)) + 6)) * 100) / 100;
   return { h, d: (i * 0.03).toFixed(2) };
 });
 
