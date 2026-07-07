@@ -328,10 +328,10 @@ function viewLeaderboard() {
     return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>${t("debate.lbEmptyTitle")}</h4><p>${t("debate.lbEmptyBody")}</p></div></div>`;
   }
   const meRow = lb.me
-    ? `<div class="alert info fade-up" style="margin-bottom:16px"><span class="ai">${IC.target}</span><div><div class="at">${t("debate.yourPosition")}</div>#${lb.me.rank} · ${lb.me.rating} ${t("debate.ofRating")} · ${esc(tierLabel(lb.me.tier || ""))}</div></div>`
+    ? `<div class="alert info fade-up otr-shine" style="margin-bottom:16px"><span class="ai">${IC.target}</span><div><div class="at">${t("debate.yourPosition")}</div>#${lb.me.rank} · ${lb.me.rating} ${t("debate.ofRating")} · ${esc(tierLabel(lb.me.tier || ""))}</div></div>`
     : "";
   const rows = lb.rows.map((r) => `
-    <tr ${r.you ? 'style="background:var(--action-soft)"' : ""}>
+    <tr ${r.you ? 'style="background:var(--action-soft);box-shadow:inset 3px 0 0 var(--otr-green)"' : ""}>
       <td><span class="badge ${r.rank <= 3 ? "gold" : ""}" style="min-width:30px;justify-content:center">${r.rank}</span></td>
       ${/* [auditoría] name/initials ya vienen esc() de queries (leaderboardRowsOut) → render crudo, sin doble-escape */""}
       <td><div class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: r.you ? "var(--otr-sky-lo)" : "var(--otr-navy)" })}<b style="font-weight:600">${r.name || ""}${r.you ? ` <span class="badge sky" style="font-size:10px;margin-left:4px">${t("debate.youBadge")}</span>` : ""}</b></div></td>
