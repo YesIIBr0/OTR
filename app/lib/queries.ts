@@ -285,14 +285,18 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // reales (fuente canónica), no del agregado ALMACENADO en CoachProfile (que podía estar
   // desfasado del seed o en 0 para coaches nuevos). Una sola agregación por teacher para todo
   // el payload (marketplace + workspace). Así el valor mostrado siempre coincide con las reseñas.
-  const reviewAgg = await db.review.groupBy({ by: ["teacherId"], _avg: { rating: true }, _count: { _all: true } });
+  // [PERF] Las dos agregaciones de Review son independientes → en paralelo (antes eran dos
+  // round-trips EN SERIE en la ruta crítica de app-data). Misma técnica: una sola pasada por
+  // agregado, en vivo desde las Review reales (fuente canónica).
+  const [reviewAgg, reviewByCourseAgg] = await Promise.all([
+    db.review.groupBy({ by: ["teacherId"], _avg: { rating: true }, _count: { _all: true } }),
+    // [EPIC-5] Rating POR CURSO (reseñas de programa: Review.courseId != null) — valoración
+    // del programa en la cabecera del curso del alumno.
+    db.review.groupBy({ by: ["courseId"], _avg: { rating: true }, _count: { _all: true } }),
+  ]);
   const reviewByTeacher = new Map<string, { avg: number; count: number }>(
     reviewAgg.map((r: any) => [r.teacherId, { avg: Math.round((r._avg.rating || 0) * 10) / 10, count: r._count._all || 0 }]),
   );
-  // [EPIC-5] Rating POR CURSO (reseñas de programa: Review.courseId != null) — para mostrar
-  // la valoración del programa en la cabecera del curso del alumno. Misma técnica que el
-  // agregado por teacher: una sola pasada, en vivo desde las Review reales.
-  const reviewByCourseAgg = await db.review.groupBy({ by: ["courseId"], _avg: { rating: true }, _count: { _all: true } });
   const reviewByCourse = new Map<string, { avg: number; count: number }>(
     reviewByCourseAgg
       .filter((r: any) => r.courseId)

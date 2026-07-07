@@ -73,6 +73,10 @@ model User {
   activityEvents     ActivityEvent[] @relation("UserActivity")
   guardiansAsParent  Guardianship[]  @relation("GuardianParent")
   guardiansAsStudent Guardianship[]  @relation("GuardianStudent")
+
+  // [PERF] El leaderboard (findMany where leaderboardOptIn orderBy debateRating desc) y el
+  // rank (count where debateRating gt me) escaneaban toda la tabla en cada carga de app-data.
+  @@index([leaderboardOptIn, debateRating])
 }
 
 model Level {
@@ -134,6 +138,9 @@ model Review {
 
   @@unique([courseId, studentId]) // un review por programa por alumno
   @@index([teacherId])
+  // [PERF] canReview/myReviewedCoachIds filtra por studentId solo; el unique compuesto
+  // (courseId líder) no lo cubre → sin este índice era scan de toda la tabla Review.
+  @@index([studentId])
 }
 
 model Resource {

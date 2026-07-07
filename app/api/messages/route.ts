@@ -15,14 +15,14 @@ export async function GET() {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
 
-  const all = await db.conversation.findMany({
+  // [P0-4 + PERF] Solo conversaciones donde el usuario es participante registrado, filtrado
+  // EN DB (aprovecha ConversationParticipant.@@index([userId])). Antes traía TODAS las
+  // conversaciones de la plataforma con sus mensajes y filtraba en memoria (scan total).
+  const visible = await db.conversation.findMany({
+    where: { participants: { some: { userId: user.id } } },
     orderBy: { position: "asc" },
     include: { participants: true, messages: { orderBy: { position: "asc" } } },
   });
-
-  // [P0-4] Solo conversaciones donde el usuario es participante registrado.
-  // (Eliminado el fallback legacy "sin participantes → visible", que filtraba chats ajenos.)
-  const visible = all.filter((c) => c.participants.some((p) => p.userId === user.id));
 
   // Mantiene el shape que espera la pantalla de mensajes (scr-community: ini/name/
   // when/last/unread/online/navy en la lista; me/body/when en las burbujas).
