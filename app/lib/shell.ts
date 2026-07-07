@@ -21,13 +21,17 @@ const NAV = {
     { gk:'group.main', group:'Principal', items:[
       { r:'dashboard', ic:'home', k:'nav.dashboard', l:'Inicio' },
       { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
-      { r:'events', ic:'calendar', l:'Eventos' },
+      { r:'events', ic:'calendar', k:'nav.events', l:'Eventos' },
     ]},
-    // [EPIC-2] "Cursos" unificado: un solo item enruta a S.course, que internamente
-    // alterna entre "Mis cursos" (cursos activos) y "Catálogo" (buscar nuevos) vía
-    // sub-tabs (window.__coursesTab). Antes eran dos items separados (catalog + course).
+    // [IA-CONSOLIDACIÓN · llamada Isaac] "Aprender" y "Marketplace" eran lo mismo para el
+    // alumno ("ver tus programas"): Cursos (S.course = activos + catálogo), Coaches y Mis
+    // reservas. Se fusionan en UN solo grupo "Aprender". Membresía queda en su propio grupo
+    // (fuera de aquí). Mensajes se conserva como el canal coach↔alumno.
     { gk:'group.learn', group:'Aprender', items:[
       { r:'course', ic:'book', k:'nav.course', l:'Cursos' },
+      { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
+      { r:'my-bookings', ic:'calendar', k:'nav.mybookings', l:'Mis reservas' },
+      { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes', badge:'2' },
     ]},
     // [EPIC-2] Membresía elevada a item de primer nivel (propio grupo), fuera de
     // Marketplace y de Cursos: es la palanca de ingreso free→Pro y merece visibilidad.
@@ -39,13 +43,6 @@ const NAV = {
       { r:'progress', ic:'levels', k:'nav.progress', l:'Niveles' },
       { r:'grades', ic:'doc', k:'nav.grades', l:'Mis calificaciones' },
       { r:'badges', ic:'medal', k:'nav.badges', l:'Logros' },
-    ]},
-    { gk:'group.marketplace', group:'Marketplace', items:[
-      { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
-      { r:'my-bookings', ic:'calendar', k:'nav.mybookings', l:'Mis reservas' },
-      // [EPIC-2] Membresía MOVIDA a su propio grupo de primer nivel (ver arriba).
-      // 'messages' se conserva SOLO como canal coach↔alumno (permitido en marketplace).
-      { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes', badge:'2' },
     ]},
   ],
   // PROFESOR / COACH — Coach Workspace reusa 'teacher'/'manage'/'gradebook'.
@@ -139,7 +136,7 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
       </a>`).join('')}
   `).join('') + `
     <div class="sb-group">${t('group.system', lang)}</div>
-    <a class="sb-item ${activeNav==='settings'?'active':''}" href="#settings" data-go="settings">${IC.settings}<span class="lbl">Ajustes</span></a>
+    <a class="sb-item ${activeNav==='settings'?'active':''}" href="#settings" data-go="settings">${IC.settings}<span class="lbl">${t('nav.settings', lang)}</span></a>
     <a class="sb-item" href="#" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></a>`;
 
   const tabbar = (TABBAR[role]||TABBAR.student).map(it =>
