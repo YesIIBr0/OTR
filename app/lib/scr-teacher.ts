@@ -7,7 +7,6 @@ import { matches } from "./text";
 import { t } from "./i18n";
 export const S = {};
   const spark = (vals,color='var(--otr-sky)') => `<div class="spark">${vals.map(v=>`<i style="height:${v}%;background:${color}"></i>`).join('')}</div>`;
-  const trendIc = t => t==='up'?`<span class="trend-up">${IC.chevD}</span>`.replace('chevD','') && `<span class="trend-up">▴</span>` : t==='down'?'<span class="trend-down">▾</span>':'<span class="trend-flat">→</span>';
 
   /* ============================================================
      Helpers comunes del panel del profesor (gestión real)

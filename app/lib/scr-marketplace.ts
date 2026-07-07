@@ -23,6 +23,7 @@ import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
 import { t } from "./i18n";
+import { money } from "./money";
 
 export const S = {};
 
@@ -34,10 +35,6 @@ const stars = (n, size = 13) => {
     s += `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${fill}" style="flex:none"><path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 17l-5.3 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>`;
   }
   return `<span style="display:inline-flex;gap:2px;align-items:center">${s}</span>`;
-};
-const money = (cents) => {
-  const v = (Number(cents) || 0) / 100;
-  return `$${v % 1 ? v.toFixed(2) : v.toFixed(0)}`;
 };
 const ini = (name) => (String(name || "C").replace(/Coach /i, "").split(" ").map((w) => w[0]).join("") || "C").slice(0, 2).toUpperCase();
 // Solo deja pasar URLs http(s) o rutas locales (nunca javascript: u otros esquemas).

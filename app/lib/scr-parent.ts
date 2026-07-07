@@ -20,16 +20,13 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { t } from "./i18n";
+import { money } from "./money";
 // alias estable de t() para las funciones donde una variable local `t` lo sombrea
 const tr = t;
 
 export const S = {};
 
 /* ---------------- helpers ---------------- */
-const money = (cents) => {
-  const v = (Number(cents) || 0) / 100;
-  return `$${v % 1 ? v.toFixed(2) : v.toFixed(0)}`;
-};
 const ini = (name) => (String(name || "?").split(" ").map((w) => w[0]).join("") || "?").slice(0, 2).toUpperCase();
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 

@@ -30,6 +30,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { t } from "./i18n";
+import { money } from "./money";
 
 export const S = {};
 
@@ -51,10 +52,6 @@ function subTabs(active) {
 }
 
 /* ---------------- helpers ---------------- */
-const money = (cents) => {
-  const v = (Number(cents) || 0) / 100;
-  return `$${v % 1 ? v.toFixed(2) : v.toFixed(0)}`;
-};
 const ini = (name) => (String(name || "A").split(" ").map((w) => w[0]).join("") || "A").slice(0, 2).toUpperCase();
 const DIAS = t("cw.weekdays").split(", ");
 const DIAS_CORTO = t("cw.weekdaysShort").split(", ");
