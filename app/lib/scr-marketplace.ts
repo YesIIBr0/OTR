@@ -647,15 +647,23 @@ S.marketplace = {
     root.querySelector("[data-mk-clear]")?.addEventListener("click", () => {
       const f = filtersState(); f.lang = "all"; f.spec = "Todos"; f.price = "all"; f.sort = "top"; f.q = ""; repaint();
     });
-    // [ENT-03] Búsqueda libre: repinta y restaura foco + caret (no perder el cursor al teclear).
+    // [ENT-03 + PERF] Búsqueda libre con DEBOUNCE: el input nativo sigue respondiendo al
+    // instante; el repaint del grid (que re-renderiza y re-bindea toda la pantalla) se colapsa
+    // a uno solo ~180ms tras dejar de teclear. Antes se re-renderizaba TODO en cada tecla.
     const qbox = root.querySelector("[data-mk-q]");
-    if (qbox) qbox.addEventListener("input", () => {
-      filtersState().q = qbox.value;
-      const pos = qbox.selectionStart;
-      repaint();
-      const nq = root.querySelector("[data-mk-q]");
-      if (nq) { nq.focus(); try { nq.setSelectionRange(pos, pos); } catch (e) {} }
-    });
+    if (qbox) {
+      let searchTimer = null;
+      qbox.addEventListener("input", () => {
+        filtersState().q = qbox.value; // estado siempre al día (lo lee el repaint)
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          const pos = qbox.selectionStart;
+          repaint();
+          const nq = root.querySelector("[data-mk-q]");
+          if (nq) { nq.focus(); try { nq.setSelectionRange(pos, pos); } catch (e) {} }
+        }, 180);
+      });
+    }
     const bindSel = (attr, key) => {
       const sel = root.querySelector(`[${attr}]`);
       sel?.addEventListener("change", () => { filtersState()[key] = sel.value; repaint(); });

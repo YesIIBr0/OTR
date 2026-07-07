@@ -79,25 +79,38 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       // repintaba toda la pantalla y mandaba el scroll arriba — se sentía roto y lento. La
       // navegación real (go) sigue arrancando arriba (keepScroll=false).
       const keep = !!(opts && opts.keepScroll);
-      const prevContent = keep ? root.querySelector<HTMLElement>("#content") : null;
-      const prevScroll = prevContent ? prevContent.scrollTop : 0;
-      const activeId = keep && document.activeElement instanceof HTMLElement ? document.activeElement.id : "";
       teardownRecorder();
       currentRoute = r;
+
+      // [PERF] Refresh suave (MISMA ruta: marcar lección, calificar, reordenar, toggle de
+      // edición, refresh de datos): repinta SOLO el contenido dentro de #content, conservando
+      // sidebar+topbar (byte-idénticos en la misma ruta) y el propio <div.page> (así NO se
+      // re-dispara la animación .rise en cada mutación). Antes se reconstruía todo el shell —
+      // trabajo inútil en cada rol y en cada acción. Aplica a los 4 caminos keepScroll.
+      const keepContent = keep ? root.querySelector<HTMLElement>("#content") : null;
+      const keepPage = keepContent ? keepContent.querySelector<HTMLElement>(".page") : null;
+      if (keep && keepContent && keepPage) {
+        const prevScroll = keepContent.scrollTop;
+        const activeId = document.activeElement instanceof HTMLElement ? document.activeElement.id : "";
+        keepPage.innerHTML = (SCREENS as any)[def.screen].render(state);
+        (SCREENS as any)[def.screen].mount?.(keepContent, state);
+        keepContent.scrollTop = prevScroll;
+        if (activeId) { const el = document.getElementById(activeId); if (el && typeof (el as any).focus === "function") (el as any).focus(); }
+        return;
+      }
+
+      // Render COMPLETO: primer paint o navegación real (go). Reconstruye el shell entero.
       root.innerHTML = renderShell(def.nav, def.crumbs, (SCREENS as any)[def.screen].render(state), state.role);
       const content = root.querySelector<HTMLElement>("#content");
       (SCREENS as any)[def.screen].mount?.(content, state);
-      if (content) content.scrollTop = keep ? prevScroll : 0;
-      if (keep && activeId) { const el = document.getElementById(activeId); if (el && typeof (el as any).focus === "function") (el as any).focus(); }
-      else {
-        // [A11Y] Navegación real: fija el document.title, anuncia la pantalla por la región
-        // aria-live y mueve el foco al contenido — así teclado y lector de pantalla detectan
-        // el cambio (el innerHTML silencioso no lo notan solos).
-        const heading = root.querySelector<HTMLElement>("h1, .page-title");
-        const pageName = (heading?.textContent || "").trim();
-        if (pageName) { document.title = `${pageName} · OTR Aula`; announceRoute(pageName); }
-        if (content && typeof content.focus === "function") { try { content.focus({ preventScroll: true } as any); } catch { content.focus(); } }
-      }
+      if (content) content.scrollTop = 0;
+      // [A11Y] Navegación real: fija el document.title, anuncia la pantalla por la región
+      // aria-live y mueve el foco al contenido — así teclado y lector de pantalla detectan
+      // el cambio (el innerHTML silencioso no lo notan solos).
+      const heading = root.querySelector<HTMLElement>("h1, .page-title");
+      const pageName = (heading?.textContent || "").trim();
+      if (pageName) { document.title = `${pageName} · OTR Aula`; announceRoute(pageName); }
+      if (content && typeof content.focus === "function") { try { content.focus({ preventScroll: true } as any); } catch { content.focus(); } }
     }
     (window as any).go = (r: string) => renderApp(r);
 
