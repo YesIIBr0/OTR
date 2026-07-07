@@ -16,7 +16,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       <div style="text-align:center">
         ${/* Escudo OTR del brand book (pantalla de carga, fondo negro) — markup canónico en lib/icons (otrCrest) */""}
         ${otrCrest({ id: "load", attrs: 'style="width:48px;height:54px;margin:0 auto;display:block"' })}
-        <p style="margin-top:14px;color:rgba(234,242,251,.6)">Cargando tu aula…</p>
+        <p style="margin-top:14px;color:rgba(234,242,251,.6)">${tr("aula.loading")}</p>
       </div>
     </div>`;
 
@@ -145,14 +145,14 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       requestAnimationFrame(() => requestAnimationFrame(() => { el.style.opacity = "1"; el.style.transform = "none"; }));
     }
 
-    (window as any).modal = function ({ title = "", body = "", ok = "Confirmar", cancel = "Cancelar", tone = "primary" } = {}) {
+    (window as any).modal = function ({ title = "", body = "", ok = tr("aula.confirm"), cancel = tr("aula.cancel"), tone = "primary" } = {}) {
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
       scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body">${body}</div><div class="modal-foot"><button class="btn btn-ghost" data-x>${cancel}</button><button class="btn btn-${tone}" data-ok>${ok}</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       const close = () => scrim.remove();
       scrim.addEventListener("click", (e: any) => { if (e.target === scrim || e.target.closest("[data-x]")) close(); });
-      scrim.querySelector("[data-ok]")?.addEventListener("click", () => { close(); toast("Cambios guardados", "ok"); });
+      scrim.querySelector("[data-ok]")?.addEventListener("click", () => { close(); toast(tr("aula.changesSaved"), "ok"); });
     };
 
     // [Blueprint §11] Plantilla de error causa+acción. En vez de un "Error" pelado, el mensaje
@@ -182,16 +182,16 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // NO se fija Content-Type manualmente: el navegador añade el boundary del multipart.
     async function otrUpload(file: File, kind: string) {
       try {
-        if (!file) throw new Error("No hay archivo");
+        if (!file) throw new Error(tr("aula.noFile"));
         const fd = new FormData();
         fd.append("file", file);
         fd.append("kind", kind || "file");
         const r = await fetch("/api/uploads", { method: "POST", body: fd });
         const j = await r.json().catch(() => ({}));
-        if (!r.ok || !j.ok) throw new Error(j.error || "Error al subir el archivo");
+        if (!r.ok || !j.ok) throw new Error(j.error || tr("aula.uploadError"));
         return j;
       } catch (e: any) {
-        toast(e?.message || "Error al subir el archivo", "danger");
+        toast(e?.message || tr("aula.uploadError"), "danger");
         throw e;
       }
     }
@@ -226,12 +226,12 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         return f.type === "select"
           ? wrap(`<select class="select" id="${fid}" data-f="${f.name}" aria-describedby="${hintId}"${req}>${(f.options || []).map((o: any) => `<option value="${o.value}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("")}</select>`)
           : f.type === "richtext"
-            ? wrap(`<div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", "Negrita"], ["italic", "<i>I</i>", "Cursiva"], ["formatBlock:h3", "H", "Subtítulo"], ["insertUnorderedList", "• Lista", "Lista"], ["createLink", '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11.5 6.5l1-1a4 4 0 0 1 6 6l-1 1"/><path d="M12.5 17.5l-1 1a4 4 0 0 1-6-6l1-1"/></svg>', "Enlace"], ["removeFormat", "⨯", "Quitar formato"]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" id="${fid}" data-f="${f.name}" data-rich="1" contenteditable="true" aria-describedby="${hintId}"${req} style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div>`)
+            ? wrap(`<div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", tr("aula.rtBold")], ["italic", "<i>I</i>", tr("aula.rtItalic")], ["formatBlock:h3", "H", tr("aula.rtHeading")], ["insertUnorderedList", `• ${tr("aula.rtList")}`, tr("aula.rtList")], ["createLink", '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11.5 6.5l1-1a4 4 0 0 1 6 6l-1 1"/><path d="M12.5 17.5l-1 1a4 4 0 0 1-6-6l1-1"/></svg>', tr("aula.rtLink")], ["removeFormat", "⨯", tr("aula.rtClearFormat")]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" id="${fid}" data-f="${f.name}" data-rich="1" contenteditable="true" aria-describedby="${hintId}"${req} style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div>`)
             : f.type === "textarea"
               ? wrap(`<textarea class="input" id="${fid}" data-f="${f.name}" rows="6" placeholder="${f.ph || ""}" aria-describedby="${hintId}"${req} style="resize:vertical;min-height:96px;font-family:inherit;line-height:1.5">${f.value || ""}</textarea>`)
               : wrap(`<input class="input" id="${fid}" data-f="${f.name}"${f.type === "number" ? ` type="number" min="0" max="1000"` : f.type === "date" ? ` type="date"` : f.type === "password" ? ` type="password" autocomplete="new-password"` : ""} placeholder="${f.ph || ""}" value="${f.value != null ? f.value : ""}" aria-describedby="${hintId}"${req}/>`);
       }).join("");
-      scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body">${inner}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:4px 0 0"></p></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button><button class="btn btn-primary" data-ok>Guardar</button></div></div>`;
+      scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body">${inner}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:4px 0 0"></p></div><div class="modal-foot"><button class="btn btn-ghost" data-x>${tr("aula.cancel")}</button><button class="btn btn-primary" data-ok>${tr("aula.save")}</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       // [P1] Editor rico: la barra aplica comandos al contenteditable. mousedown+preventDefault preserva la selección.
@@ -242,7 +242,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         editor?.focus();
         if (cmd.startsWith("formatBlock:")) document.execCommand("formatBlock", false, cmd.split(":")[1]);
         else if (cmd === "createLink") {
-          const raw = window.prompt("URL del enlace:");
+          const raw = window.prompt(tr("aula.linkUrlPrompt"));
           const url = (raw || "").trim();
           // Solo permitimos http/https; rechazamos javascript:, data:, etc.
           if (url && /^https?:\/\//i.test(url)) {
@@ -264,7 +264,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
               sel.removeAllRanges();
             }
           } else if (url) {
-            toast("Solo se permiten enlaces http o https", "warn");
+            toast(tr("aula.onlyHttpLinks"), "warn");
           }
         }
         else document.execCommand(cmd, false);
@@ -301,8 +301,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           }
         });
         if (firstBad) { (firstBad as HTMLElement).focus(); return; }
-        const okBtn = scrim.querySelector("[data-ok]") as HTMLElement; okBtn.textContent = "Guardando…";
-        try { await onSubmit(values); close(); } catch (err: any) { const e = scrim.querySelector(".fm-err") as HTMLElement; e.textContent = err.message || tr("err.generic"); e.style.display = "block"; okBtn.textContent = "Guardar"; }
+        const okBtn = scrim.querySelector("[data-ok]") as HTMLElement; okBtn.textContent = tr("aula.saving");
+        try { await onSubmit(values); close(); } catch (err: any) { const e = scrim.querySelector(".fm-err") as HTMLElement; e.textContent = err.message || tr("err.generic"); e.style.display = "block"; okBtn.textContent = tr("aula.save"); }
       });
       // [PRD-01] Enter envía desde un input de texto simple (no en textarea, editor rico ni select,
       // donde Enter tiene su propio significado). Acelera los formularios cortos sin soltar el teclado.
@@ -323,13 +323,13 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // Modal de progreso para tareas largas (aplicar plantilla / duplicar).
     function progressModal(title: string) {
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
-      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:400px"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body"><p class="muted" data-prog style="font-size:13.5px">Preparando…</p><div style="height:8px;background:var(--n-150,#e8edf3);border-radius:100px;overflow:hidden;margin-top:10px"><div data-progbar style="height:100%;width:0;background:var(--otr-sky);transition:width .25s"></div></div></div></div>`;
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:400px"><div class="modal-head"><h3>${title}</h3></div><div class="modal-body"><p class="muted" data-prog style="font-size:13.5px">${tr("aula.preparing")}</p><div style="height:8px;background:var(--n-150,#e8edf3);border-radius:100px;overflow:hidden;margin-top:10px"><div data-progbar style="height:100%;width:0;background:var(--otr-sky);transition:width .25s"></div></div></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       return {
         update: (d: number, total: number) => {
           const p = scrim.querySelector("[data-prog]"); const b = scrim.querySelector("[data-progbar]") as HTMLElement;
-          if (p) p.textContent = `Creando contenido… (${d}/${total})`;
+          if (p) p.textContent = tr("aula.creatingContent").replace("{done}", String(d)).replace("{total}", String(total));
           if (b) b.style.width = Math.round((d / Math.max(1, total)) * 100) + "%";
         },
         close: () => scrim.remove(),
@@ -340,7 +340,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const sections = tpl.sections || [];
       let total = 0; sections.forEach((s: any) => { total += 1 + (s.lessons?.length || 0); });
       let done = 0;
-      const prog = progressModal(`Creando "${tpl.name}"…`);
+      const prog = progressModal(tr("aula.creatingTemplate").replace("{name}", tpl.name));
       try {
         for (const s of sections) {
           const md = await api("/api/modules", { courseId, title: s.title });
@@ -355,14 +355,14 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             }
           }
         }
-        prog.close(); toast("Curso creado desde plantilla", "ok");
-      } catch (e: any) { prog.close(); toast("Se creó el curso, pero falló parte de la plantilla: " + (e?.message || ""), "warn"); }
+        prog.close(); toast(tr("aula.courseFromTemplate"), "ok");
+      } catch (e: any) { prog.close(); toast(tr("aula.templatePartialFail") + (e?.message || ""), "warn"); }
     }
     // Paso 0: galería "¿Cómo quieres empezar?" — en blanco o desde una plantilla OTR.
     function openCourseStart() {
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
       const blank = `<button class="tile click" data-tpl="" style="text-align:left;padding:14px;cursor:pointer;border:1.5px dashed var(--border);background:var(--surface)">
-        <b style="font-size:13.5px;display:block">${IC.plus} En blanco</b><span class="faint" style="font-size:12px;display:block;margin-top:3px">Empieza un curso vacío y constrúyelo tú.</span></button>`;
+        <b style="font-size:13.5px;display:block">${IC.plus} ${tr("aula.startBlank")}</b><span class="faint" style="font-size:12px;display:block;margin-top:3px">${tr("aula.startBlankDesc")}</span></button>`;
       // [FLW-08] La tarjeta ya no es un botón opaco: muestra un preview expandible de las
       // secciones/lecciones reales (<details>, sin JS) para no elegir a ciegas; "Usar esta
       // plantilla" (data-tpl) confirma. El toggle del preview no dispara la selección.
@@ -374,12 +374,12 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         return `<div class="tile" style="text-align:left;padding:14px;border:1px solid var(--border);background:var(--surface)">
           <div class="row vcenter" style="gap:7px"><b style="font-size:13.5px">${esc(tp.name)}</b><span class="badge sky" style="flex:none">${esc(tp.level)}</span></div>
           <span class="faint" style="font-size:12px;line-height:1.4;display:block;margin-top:4px">${esc(tp.desc)}</span>
-          <span class="faint" style="font-size:11px;display:block;margin-top:6px">${secs} secciones · ${acts} actividades · ${esc(tp.format)}</span>
-          <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--otr-green-text);font-weight:600">Ver contenido</summary><div style="margin-top:8px">${preview}</div></details>
-          <button class="btn btn-soft btn-sm" data-tpl="${esc(tp.id)}" style="margin-top:10px;width:100%">Usar esta plantilla</button>
+          <span class="faint" style="font-size:11px;display:block;margin-top:6px">${tr("aula.tplSections").replace("{secs}", String(secs)).replace("{acts}", String(acts)).replace("{format}", esc(tp.format))}</span>
+          <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--otr-green-text);font-weight:600">${tr("aula.tplViewContent")}</summary><div style="margin-top:8px">${preview}</div></details>
+          <button class="btn btn-soft btn-sm" data-tpl="${esc(tp.id)}" style="margin-top:10px;width:100%">${tr("aula.tplUse")}</button>
         </div>`;
       }).join("");
-      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:680px"><div class="modal-head"><h3>¿Cómo quieres empezar tu curso?</h3></div><div class="modal-body"><div class="grid g-2" style="gap:10px;align-items:start">${blank}${cards}</div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button></div></div>`;
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:680px"><div class="modal-head"><h3>${tr("aula.startTitle")}</h3></div><div class="modal-body"><div class="grid g-2" style="gap:10px;align-items:start">${blank}${cards}</div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>${tr("aula.cancel")}</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       const close = () => scrim.remove();
@@ -394,27 +394,27 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       });
     }
     function openCreateCourse(tpl?: any) {
-      formModal(tpl ? `Nuevo curso · ${tpl.name}` : "Nuevo curso", [
-        { name: "name", label: "Nombre completo del curso", value: tpl ? tpl.name : "", ph: "Public Forum II", req: true },
-        { name: "code", label: "Código corto (único)", ph: "PF-201", req: true },
-        { name: "format", label: "Formato / categoría", type: "select", value: tpl ? tpl.format : "Public Forum", options: [
-          { value: "Public Forum", label: "Public Forum" }, { value: "Lincoln-Douglas", label: "Lincoln-Douglas" }, { value: "Parlamentario", label: "Parlamentario" }, { value: "Policy", label: "Policy" }, { value: "Oratoria", label: "Oratoria" }, { value: "Otro", label: "Otro" }] },
-        { name: "modality", label: "Modalidad", type: "select", value: "online", options: [
-          { value: "online", label: "Online" }, { value: "presencial", label: "Presencial" }, { value: "híbrido", label: "Híbrido" }] },
-        { name: "capacity", label: "Cupo (capacidad, opcional)", ph: "20" },
-        { name: "color", label: "Color del curso", type: "select", value: "#2E8BD0", options: [
-          { value: "#2E8BD0", label: "Azul cielo" }, { value: "#0C2340", label: "Navy" }, { value: "#4FA9E8", label: "Azul claro" }, { value: "#2CAA20", label: "Verde" }, { value: "#64748B", label: "Gris" }] },
-        { name: "next", label: "Próximo tema (opcional)", ph: "Introducción al formato" },
-        { name: "summary", label: "Resumen del programa", type: "textarea", value: tpl ? tpl.summary : "", ph: "Describe de qué trata este programa…" },
-        { name: "published", label: "Estado", type: "select", value: "false", options: [
-          { value: "false", label: "Borrador (oculto del catálogo)" }, { value: "true", label: "Publicado (visible en el catálogo)" }] },
+      formModal(tpl ? tr("aula.newCourseTpl").replace("{name}", tpl.name) : tr("aula.newCourse"), [
+        { name: "name", label: tr("aula.courseFullName"), value: tpl ? tpl.name : "", ph: "Public Forum II", req: true },
+        { name: "code", label: tr("aula.courseCode"), ph: "PF-201", req: true },
+        { name: "format", label: tr("aula.courseFormat"), type: "select", value: tpl ? tpl.format : "Public Forum", options: [
+          { value: "Public Forum", label: "Public Forum" }, { value: "Lincoln-Douglas", label: "Lincoln-Douglas" }, { value: "Parlamentario", label: "Parlamentario" }, { value: "Policy", label: "Policy" }, { value: "Oratoria", label: "Oratoria" }, { value: "Otro", label: tr("aula.formatOther") }] },
+        { name: "modality", label: tr("aula.modality"), type: "select", value: "online", options: [
+          { value: "online", label: tr("aula.modalityOnline") }, { value: "presencial", label: tr("aula.modalityPresential") }, { value: "híbrido", label: tr("aula.modalityHybrid") }] },
+        { name: "capacity", label: tr("aula.capacityOpt"), ph: "20" },
+        { name: "color", label: tr("aula.courseColor"), type: "select", value: "#2E8BD0", options: [
+          { value: "#2E8BD0", label: tr("aula.colorSky") }, { value: "#0C2340", label: tr("aula.colorNavy") }, { value: "#4FA9E8", label: tr("aula.colorLightBlue") }, { value: "#2CAA20", label: tr("aula.colorGreen") }, { value: "#64748B", label: tr("aula.colorGray") }] },
+        { name: "next", label: tr("aula.nextTopicOpt"), ph: tr("aula.nextTopicPh") },
+        { name: "summary", label: tr("aula.programSummary"), type: "textarea", value: tpl ? tpl.summary : "", ph: tr("aula.programSummaryPh") },
+        { name: "published", label: tr("aula.status"), type: "select", value: "false", options: [
+          { value: "false", label: tr("aula.statusDraft") }, { value: "true", label: tr("aula.statusPublished") }] },
       ], async (v) => {
         v.published = v.published === "true";
         if (v.capacity === "") delete v.capacity;
         const d = await api("/api/courses", v);
         const newId = d?.course?.id;
         if (tpl && newId) await applyTemplate(newId, tpl);
-        else toast("Curso creado — añade sus secciones", "ok");
+        else toast(tr("aula.courseCreated"), "ok");
         await refresh();
         // Flujo Moodle: entrar directo al constructor del curso recién creado.
         if (newId) { (window as any).__builderCourseId = newId; try { sessionStorage.setItem("otr_builder_course", newId); } catch {} renderApp("course-builder"); }
@@ -424,7 +424,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     async function duplicateEntity(kind: string, id: string) {
       const tcs = (DB as any).teacherCourses || [];
       const dupLesson = async (moduleId: string, l: any) => {
-        const ld = await api("/api/lessons", { moduleId, title: l.title + " (copia)", type: l.type, dur: l.dur, contentHtml: l.contentHtml, videoKind: l.videoKind, videoSrc: l.videoSrc, dueAt: l.dueAt, submitKinds: l.submitKinds, maxPoints: l.maxPoints });
+        const ld = await api("/api/lessons", { moduleId, title: l.title + tr("aula.copySuffix"), type: l.type, dur: l.dur, contentHtml: l.contentHtml, videoKind: l.videoKind, videoSrc: l.videoSrc, dueAt: l.dueAt, submitKinds: l.submitKinds, maxPoints: l.maxPoints });
         const newId = ld?.lesson?.id;
         const q = (DB as any).quizByLesson?.[l.id];
         if (newId && l.type === "quiz" && q?.questions?.length) {
@@ -436,65 +436,65 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           let moduleId: any = null, found: any = null;
           for (const c of tcs) for (const m of c.modules) for (const l of m.lessons) if (l.id === id) { moduleId = m.id; found = l; }
           if (!found) return;
-          await dupLesson(moduleId, found); toast("Actividad duplicada", "ok");
+          await dupLesson(moduleId, found); toast(tr("aula.lessonDuplicated"), "ok");
         } else if (kind === "module") {
           let courseId: any = null, mod: any = null;
           for (const c of tcs) for (const m of c.modules) if (m.id === id) { courseId = c.id; mod = m; }
           if (!mod) return;
-          const md = await api("/api/modules", { courseId, title: mod.title + " (copia)" });
+          const md = await api("/api/modules", { courseId, title: mod.title + tr("aula.copySuffix") });
           const newMod = md?.module?.id;
           if (newMod) for (const l of (mod.lessons || [])) await dupLesson(newMod, l);
-          toast("Sección duplicada", "ok");
+          toast(tr("aula.moduleDuplicated"), "ok");
         }
         await refresh();
-      } catch (err: any) { toast(err?.message || "No se pudo duplicar", "danger"); }
+      } catch (err: any) { toast(err?.message || tr("aula.cantDuplicate"), "danger"); }
     }
     function openCreateModule(courseId?: string) {
       const courses = DB.manage?.courses || [];
-      if (!courses.length) { toast("Primero crea un curso", "warn"); return; }
-      formModal("Nuevo módulo", [
-        { name: "courseId", label: "Curso", type: "select", value: courseId || courses[0]?.id, options: courses.map((c: any) => ({ value: c.id, label: `${c.code} · ${c.name}` })) },
-        { name: "title", label: "Título del módulo", ph: "Unidad 4 · Estrategia", req: true },
-      ], async (v) => { await api("/api/modules", v); toast("Módulo creado", "ok"); await refresh(); });
+      if (!courses.length) { toast(tr("aula.createCourseFirst"), "warn"); return; }
+      formModal(tr("aula.newModule"), [
+        { name: "courseId", label: tr("aula.course"), type: "select", value: courseId || courses[0]?.id, options: courses.map((c: any) => ({ value: c.id, label: `${c.code} · ${c.name}` })) },
+        { name: "title", label: tr("aula.moduleTitle"), ph: tr("aula.moduleTitlePh"), req: true },
+      ], async (v) => { await api("/api/modules", v); toast(tr("aula.moduleCreated"), "ok"); await refresh(); });
     }
     const LESSON_TYPES = [
-      { value: "lesson", label: "Lección" }, { value: "video", label: "Video" }, { value: "quiz", label: "Examen" },
-      { value: "assign", label: "Tarea" }, { value: "mic", label: "Grabación" }, { value: "file", label: "Archivo" }];
+      { value: "lesson", label: tr("aula.typeLesson") }, { value: "video", label: tr("aula.typeVideo") }, { value: "quiz", label: tr("aula.typeQuiz") },
+      { value: "assign", label: tr("aula.typeAssign") }, { value: "mic", label: tr("aula.typeMic") }, { value: "file", label: tr("aula.typeFile") }];
     // Presets de tipos de entrega permitidos para tareas (apartado de entrega).
     const SUBMIT_KIND_OPTS = [
-      { value: "", label: "Todos (audio, video, archivo, texto)" },
-      { value: "file", label: "Solo archivo" },
-      { value: "text", label: "Solo texto" },
-      { value: "audio", label: "Solo audio (grabación)" },
-      { value: "video", label: "Solo video" },
-      { value: "file,text", label: "Archivo o texto" },
+      { value: "", label: tr("aula.submitAll") },
+      { value: "file", label: tr("aula.submitFile") },
+      { value: "text", label: tr("aula.submitText") },
+      { value: "audio", label: tr("aula.submitAudio") },
+      { value: "video", label: tr("aula.submitVideo") },
+      { value: "file,text", label: tr("aula.submitFileText") },
     ];
     // presetType: cuando viene del Activity Chooser, el tipo ya está elegido → se oculta
     // el select de tipo y se envía ese type. Sin preset, el formulario lo deja elegir.
     function openCreateLesson(moduleId?: string, presetType?: string) {
       const courses = DB.manage?.courses || [];
       const modules = DB.manage?.modules || [];
-      if (!modules.length) { toast("Primero crea una sección dentro del curso", "warn"); return; }
+      if (!modules.length) { toast(tr("aula.createSectionFirst"), "warn"); return; }
       const cmap: any = Object.fromEntries(courses.map((c: any) => [c.id, c.code]));
-      const typeLabel = (LESSON_TYPES.find((t) => t.value === presetType)?.label) || "Actividad";
+      const typeLabel = (LESSON_TYPES.find((t) => t.value === presetType)?.label) || tr("aula.typeActivity");
       const fields: any[] = [
-        { name: "moduleId", label: "Sección (módulo)", type: "select", value: moduleId || modules[0]?.id, options: modules.map((m: any) => ({ value: m.id, label: `${cmap[m.courseId] || ""} · ${m.title}` })) },
+        { name: "moduleId", label: tr("aula.section"), type: "select", value: moduleId || modules[0]?.id, options: modules.map((m: any) => ({ value: m.id, label: `${cmap[m.courseId] || ""} · ${m.title}` })) },
       ];
-      if (!presetType) fields.push({ name: "type", label: "Tipo", type: "select", options: LESSON_TYPES });
-      fields.push({ name: "title", label: "Título", ph: "Claim · Warrant · Impact", req: true });
-      fields.push({ name: "dur", label: "Duración (opcional)", ph: "15 min" });
-      fields.push({ name: "videoKind", label: "Video", type: "select", value: "none", options: [
-        { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Video alojado en OTR (ID)" }] });
-      fields.push({ name: "videoSrc", label: "Enlace de YouTube o ID del video", ph: "https://youtu.be/… o el ID del video" });
-      fields.push({ name: "contentHtml", label: presetType === "assign" || presetType === "mic" ? "Instrucciones para el alumno" : "Contenido de la actividad", type: "richtext", ph: "Escribe el contenido…" });
+      if (!presetType) fields.push({ name: "type", label: tr("aula.type"), type: "select", options: LESSON_TYPES });
+      fields.push({ name: "title", label: tr("aula.title"), ph: tr("aula.titlePh"), req: true });
+      fields.push({ name: "dur", label: tr("aula.durationOpt"), ph: tr("aula.durationPh") });
+      fields.push({ name: "videoKind", label: tr("aula.video"), type: "select", value: "none", options: [
+        { value: "none", label: tr("aula.videoNone") }, { value: "youtube", label: tr("aula.videoYoutube") }, { value: "cloudflare", label: tr("aula.videoCloudflare") }] });
+      fields.push({ name: "videoSrc", label: tr("aula.videoSrc"), ph: tr("aula.videoSrcPh") });
+      fields.push({ name: "contentHtml", label: presetType === "assign" || presetType === "mic" ? tr("aula.instructionsForStudent") : tr("aula.activityContent"), type: "richtext", ph: tr("aula.contentPh") });
       if (presetType === "assign" || presetType === "mic") {
-        fields.push({ name: "dueAt", label: "Fecha límite (opcional)", type: "date" });
-        fields.push({ name: "submitKinds", label: "Tipos de entrega permitidos", type: "select", value: "", options: SUBMIT_KIND_OPTS });
-        fields.push({ name: "maxPoints", label: "Puntos (máximo, opcional)", type: "number", ph: "100" });
+        fields.push({ name: "dueAt", label: tr("aula.dueDateOpt"), type: "date" });
+        fields.push({ name: "submitKinds", label: tr("aula.allowedSubmitKinds"), type: "select", value: "", options: SUBMIT_KIND_OPTS });
+        fields.push({ name: "maxPoints", label: tr("aula.maxPointsOpt"), type: "number", ph: "100" });
       }
-      formModal(presetType ? `Nueva actividad · ${typeLabel}` : "Nueva lección / contenido", fields, async (v) => {
+      formModal(presetType ? tr("aula.newActivityType").replace("{type}", typeLabel) : tr("aula.newLessonContent"), fields, async (v) => {
         const d = await api("/api/lessons", { ...v, type: presetType || v.type });
-        toast("Actividad creada", "ok");
+        toast(tr("aula.activityCreated"), "ok");
         await refresh();
         // Si es un examen, abrir el constructor de preguntas directo (flujo redondo estilo Moodle).
         const created = d?.lesson;
@@ -504,12 +504,12 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // Activity chooser estilo Moodle: grid de tipos con icono + descripción.
     function openActivityChooser(moduleId: string) {
       const ITEMS = [
-        { type: "lesson", label: "Lección (página)", desc: "Página de contenido enriquecido (texto, imágenes, listas).", ic: IC.book },
-        { type: "video", label: "Video", desc: "Clase en video desde YouTube o subida a OTR.", ic: IC.play },
-        { type: "quiz", label: "Examen", desc: "Cuestionario de opción múltiple autocalificable.", ic: IC.doc },
-        { type: "assign", label: "Tarea", desc: "El alumno entrega un trabajo (archivo, texto o audio) para calificar.", ic: IC.pencil },
-        { type: "mic", label: "Grabación", desc: "El alumno graba y entrega un audio de práctica de oratoria.", ic: IC.mic },
-        { type: "file", label: "Archivo / recurso", desc: "Material descargable (PDF, plantilla) o enlace adjunto.", ic: IC.file },
+        { type: "lesson", label: tr("aula.chooserLesson"), desc: tr("aula.chooserLessonDesc"), ic: IC.book },
+        { type: "video", label: tr("aula.chooserVideo"), desc: tr("aula.chooserVideoDesc"), ic: IC.play },
+        { type: "quiz", label: tr("aula.chooserQuiz"), desc: tr("aula.chooserQuizDesc"), ic: IC.doc },
+        { type: "assign", label: tr("aula.chooserAssign"), desc: tr("aula.chooserAssignDesc"), ic: IC.pencil },
+        { type: "mic", label: tr("aula.chooserMic"), desc: tr("aula.chooserMicDesc"), ic: IC.mic },
+        { type: "file", label: tr("aula.chooserFile"), desc: tr("aula.chooserFileDesc"), ic: IC.file },
       ];
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
       const cards = ITEMS.map((it) => `
@@ -517,7 +517,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           <span style="display:flex;width:22px;height:22px;color:var(--otr-sky-lo);flex:none;margin-top:1px">${it.ic}</span>
           <span style="min-width:0"><b style="font-size:13.5px;display:block">${it.label}</b><span class="faint" style="font-size:12px;line-height:1.4;display:block;margin-top:2px">${it.desc}</span></span>
         </button>`).join("");
-      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>Añadir actividad o recurso</h3></div><div class="modal-body"><div class="grid g-2" style="gap:10px">${cards}</div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cancelar</button></div></div>`;
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>${tr("aula.addActivityOrResource")}</h3></div><div class="modal-body"><div class="grid g-2" style="gap:10px">${cards}</div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>${tr("aula.cancel")}</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       const close = () => scrim.remove();
@@ -534,36 +534,36 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const lessons = tc.modules.flatMap((m: any) => m.lessons);
         if (lessons.some((x: any) => x.id === id)) courseLessons = lessons;
       }
-      const prereqOptions = [{ value: "", label: "— Sin prerrequisito —" }, ...courseLessons.filter((x: any) => x.id !== id).map((x: any) => ({ value: x.id, label: x.title }))];
+      const prereqOptions = [{ value: "", label: tr("aula.prereqNone") }, ...courseLessons.filter((x: any) => x.id !== id).map((x: any) => ({ value: x.id, label: x.title }))];
       const efields: any[] = [
-        { name: "title", label: "Título", value: l.title },
-        { name: "type", label: "Tipo", type: "select", value: l.type || "lesson", options: LESSON_TYPES },
-        { name: "dur", label: "Duración (opcional)", value: l.dur || "", ph: "15 min" },
-        { name: "releaseAfterId", label: "Prerrequisito (completar antes de desbloquear)", type: "select", value: l.releaseAfterId || "", options: prereqOptions },
-        { name: "videoKind", label: "Video", type: "select", value: l.videoKind || "none", options: [
-          { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube (pegar URL)" }, { value: "cloudflare", label: "Video alojado en OTR (ID)" }] },
-        { name: "videoSrc", label: "Enlace de YouTube o ID del video", value: l.videoSrc || "" },
-        { name: "contentHtml", label: "Contenido de la actividad", type: "richtext", value: l.contentHtml || "" },
+        { name: "title", label: tr("aula.title"), value: l.title },
+        { name: "type", label: tr("aula.type"), type: "select", value: l.type || "lesson", options: LESSON_TYPES },
+        { name: "dur", label: tr("aula.durationOpt"), value: l.dur || "", ph: tr("aula.durationPh") },
+        { name: "releaseAfterId", label: tr("aula.prereq"), type: "select", value: l.releaseAfterId || "", options: prereqOptions },
+        { name: "videoKind", label: tr("aula.video"), type: "select", value: l.videoKind || "none", options: [
+          { value: "none", label: tr("aula.videoNone") }, { value: "youtube", label: tr("aula.videoYoutube") }, { value: "cloudflare", label: tr("aula.videoCloudflare") }] },
+        { name: "videoSrc", label: tr("aula.videoSrc"), value: l.videoSrc || "" },
+        { name: "contentHtml", label: tr("aula.activityContent"), type: "richtext", value: l.contentHtml || "" },
       ];
       if (l.type === "assign" || l.type === "mic") {
-        efields.push({ name: "dueAt", label: "Fecha límite (opcional)", type: "date", value: l.dueAt ? String(l.dueAt).slice(0, 10) : "" });
-        efields.push({ name: "submitKinds", label: "Tipos de entrega permitidos", type: "select", value: l.submitKinds || "", options: SUBMIT_KIND_OPTS });
-        efields.push({ name: "maxPoints", label: "Puntos (máximo, opcional)", type: "number", value: l.maxPoints != null ? l.maxPoints : "" });
+        efields.push({ name: "dueAt", label: tr("aula.dueDateOpt"), type: "date", value: l.dueAt ? String(l.dueAt).slice(0, 10) : "" });
+        efields.push({ name: "submitKinds", label: tr("aula.allowedSubmitKinds"), type: "select", value: l.submitKinds || "", options: SUBMIT_KIND_OPTS });
+        efields.push({ name: "maxPoints", label: tr("aula.maxPointsOpt"), type: "number", value: l.maxPoints != null ? l.maxPoints : "" });
       }
-      formModal("Editar actividad", efields, async (v) => { await api(`/api/lessons/${id}`, v, "PATCH"); toast("Actividad actualizada", "ok"); await refresh(); });
+      formModal(tr("aula.editActivity"), efields, async (v) => { await api(`/api/lessons/${id}`, v, "PATCH"); toast(tr("aula.activityUpdated"), "ok"); await refresh(); });
     }
     function openEditModule(id: string, title: string) {
-      formModal("Editar módulo", [
-        { name: "title", label: "Título del módulo", value: title },
-      ], async (v) => { await api(`/api/modules/${id}`, v, "PATCH"); toast("Módulo actualizado", "ok"); await refresh(); });
+      formModal(tr("aula.editModule"), [
+        { name: "title", label: tr("aula.moduleTitle"), value: title },
+      ], async (v) => { await api(`/api/modules/${id}`, v, "PATCH"); toast(tr("aula.moduleUpdated"), "ok"); await refresh(); });
     }
     function openCreateMenu() {
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
-      scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>Crear</h3></div><div class="modal-body"><div class="stack" style="gap:8px">
-        <button class="btn btn-ghost btn-block" data-c="course">${IC.book} Nuevo curso</button>
-        <button class="btn btn-ghost btn-block" data-c="module">${IC.grid} Nuevo módulo</button>
-        <button class="btn btn-ghost btn-block" data-c="lesson">${IC.doc} Nueva lección / contenido</button>
-      </div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cerrar</button></div></div>`;
+      scrim.innerHTML = `<div class="modal" role="dialog"><div class="modal-head"><h3>${tr("aula.create")}</h3></div><div class="modal-body"><div class="stack" style="gap:8px">
+        <button class="btn btn-ghost btn-block" data-c="course">${IC.book} ${tr("aula.newCourse")}</button>
+        <button class="btn btn-ghost btn-block" data-c="module">${IC.grid} ${tr("aula.newModule")}</button>
+        <button class="btn btn-ghost btn-block" data-c="lesson">${IC.doc} ${tr("aula.newLessonContent")}</button>
+      </div></div><div class="modal-foot"><button class="btn btn-ghost" data-x>${tr("aula.close")}</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       const close = () => scrim.remove();
@@ -578,7 +578,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       try {
         const d = await api("/api/checkout", { courseId });
         if (d.url) { location.href = d.url; return; }
-        toast("¡Inscrito!", "ok");
+        toast(tr("aula.enrolled"), "ok");
         await refresh();
         // [LEARN-2] Entrar directo al curso recién inscrito (antes solo refrescaba el catálogo
         // y el alumno se quedaba ahí sin un siguiente paso claro). __course indexa por code.
@@ -595,10 +595,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       try {
         const d = await api("/api/certificates", { courseId });
         (window as any).__cert = d?.certificate?.id || null;
-        toast("¡Certificado emitido!", "ok");
+        toast(tr("aula.certIssued"), "ok");
         await refresh();
         renderApp("certificate");
-      } catch (e: any) { toast(e.message || "Programa no completado", "danger"); }
+      } catch (e: any) { toast(e.message || tr("aula.programNotCompleted"), "danger"); }
     }
     // [COACH-05] Publicar / pasar a borrador un curso sin abrir el modal de Configuración.
     // PATCH /api/courses/[id] {published} (allowlisted + teacherOwnsCourse). Publicar lo hace
@@ -606,32 +606,32 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     async function doPublishCourse(id: string, publish: boolean) {
       try {
         await api(`/api/courses/${encodeURIComponent(id)}`, { published: publish }, "PATCH");
-        toast(publish ? "Curso publicado — visible en el catálogo" : "Curso pasado a borrador", "ok");
+        toast(publish ? tr("aula.coursePublished") : tr("aula.courseToDraft"), "ok");
         await refresh();
       } catch (e: any) { toast(e.message || tr("err.generic"), "danger"); }
     }
     function openNewThread() {
-      formModal("Nueva discusión", [
-        { name: "title", label: "Título", ph: "¿Cómo estructurar un rebuttal?" },
-        { name: "tag", label: "Etiqueta", ph: "Refutación" },
-        { name: "excerpt", label: "Mensaje", ph: "Cuéntanos tu duda o aporte…" },
-      ], async (v) => { await api("/api/forum/threads", v); toast("Discusión creada", "ok"); await refresh(); });
+      formModal(tr("aula.newThread"), [
+        { name: "title", label: tr("aula.title"), ph: tr("aula.threadTitlePh") },
+        { name: "tag", label: tr("aula.tag"), ph: tr("aula.tagPh") },
+        { name: "excerpt", label: tr("aula.message"), ph: tr("aula.messagePh") },
+      ], async (v) => { await api("/api/forum/threads", v); toast(tr("aula.threadCreated"), "ok"); await refresh(); });
     }
     function openNewResource() {
-      formModal("Nuevo recurso", [
-        { name: "title", label: "Título", ph: "Plantilla de caso · Public Forum" },
-        { name: "kind", label: "Tipo", type: "select", value: "brief", options: [
-          { value: "brief", label: "Brief" }, { value: "template", label: "Plantilla" }, { value: "drill", label: "Drill" },
-          { value: "recording", label: "Grabación" }, { value: "link", label: "Enlace" }] },
-        { name: "tag", label: "Etiqueta", ph: "Refutación" },
-        { name: "format", label: "Formato", ph: "Public Forum" },
-        { name: "url", label: "URL (opcional)", ph: "https://…" },
-        { name: "contentHtml", label: "Contenido", type: "textarea", ph: "Escribe el contenido (admite <b>, <h2>, <ul>, <li>…)" },
-        { name: "gated", label: "Acceso", type: "select", value: "no", options: [
-          { value: "no", label: "Público" }, { value: "yes", label: "Solo inscritos" }] },
+      formModal(tr("aula.newResource"), [
+        { name: "title", label: tr("aula.title"), ph: tr("aula.resourceTitlePh") },
+        { name: "kind", label: tr("aula.type"), type: "select", value: "brief", options: [
+          { value: "brief", label: tr("aula.resourceKindBrief") }, { value: "template", label: tr("aula.resourceKindTemplate") }, { value: "drill", label: tr("aula.resourceKindDrill") },
+          { value: "recording", label: tr("aula.resourceKindRecording") }, { value: "link", label: tr("aula.resourceKindLink") }] },
+        { name: "tag", label: tr("aula.tag"), ph: tr("aula.tagPh") },
+        { name: "format", label: tr("aula.format"), ph: tr("aula.formatPfPh") },
+        { name: "url", label: tr("aula.urlOpt"), ph: "https://…" },
+        { name: "contentHtml", label: tr("aula.content"), type: "textarea", ph: tr("aula.resourceContentPh") },
+        { name: "gated", label: tr("aula.access"), type: "select", value: "no", options: [
+          { value: "no", label: tr("aula.accessPublic") }, { value: "yes", label: tr("aula.accessEnrolledOnly") }] },
       ], async (v) => {
         await api("/api/resources", { ...v, gated: v.gated === "yes" });
-        toast("Recurso creado", "ok"); await refresh();
+        toast(tr("aula.resourceCreated"), "ok"); await refresh();
       });
     }
     async function openGradeSubs() {
@@ -647,42 +647,42 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           return `<div style="margin:8px 0"><${tag} controls preload="none" src="${esc(s.fileUrl)}" style="width:100%;max-height:200px;border-radius:8px"></${tag}>${s.fileName ? `<div class="faint" style="font-size:11.5px;margin-top:4px">${esc(s.fileName)}</div>` : ""}</div>`;
         }
         if (s.fileUrl) {
-          return `<div style="margin:8px 0"><a class="btn btn-ghost btn-sm" href="${esc(s.fileUrl)}" target="_blank" rel="noopener" download>${IC.doc} Descargar ${esc(s.fileName || "archivo")}</a></div>`;
+          return `<div style="margin:8px 0"><a class="btn btn-ghost btn-sm" href="${esc(s.fileUrl)}" target="_blank" rel="noopener" download>${IC.doc} ${tr("aula.download")} ${esc(s.fileName || tr("aula.file"))}</a></div>`;
         }
         if (s.textBody) {
           return `<div style="margin:8px 0;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);font-size:13px;line-height:1.55;white-space:pre-wrap;max-height:220px;overflow:auto">${esc(s.textBody)}</div>`;
         }
-        return `<div class="faint" style="font-size:12px;margin:6px 0">Sin contenido adjunto.</div>`;
+        return `<div class="faint" style="font-size:12px;margin:6px 0">${tr("aula.noContentAttached")}</div>`;
       };
       const rows = subs.length ? subs.map((s: any) => `
         <div class="card card-pad" data-sub="${s.id}" style="margin-bottom:12px">
           <div class="row between vcenter" style="gap:10px">
-            <label class="row vcenter" style="gap:10px;min-width:0;cursor:pointer"><input type="checkbox" class="gsub-check" style="flex:none;width:16px;height:16px"/><span style="min-width:0"><span style="display:block;font-weight:600;font-size:13.5px">${esc(s.userName)}</span><span class="faint" style="display:block;font-size:12px">${esc(s.activity)} · ${s.status === "GRADED" ? "Calificado: " + (s.grade ?? "—") : "Pendiente"}</span></span></label>
-            <span class="badge" style="height:18px;font-size:10px;flex:none">${esc(s.kind || "entrega")}</span>
+            <label class="row vcenter" style="gap:10px;min-width:0;cursor:pointer"><input type="checkbox" class="gsub-check" style="flex:none;width:16px;height:16px"/><span style="min-width:0"><span style="display:block;font-weight:600;font-size:13.5px">${esc(s.userName)}</span><span class="faint" style="display:block;font-size:12px">${esc(s.activity)} · ${s.status === "GRADED" ? tr("aula.graded") + (s.grade ?? "—") : tr("aula.pending")}</span></span></label>
+            <span class="badge" style="height:18px;font-size:10px;flex:none">${esc(s.kind || tr("aula.submissionDefault"))}</span>
           </div>
           ${subContent(s)}
           <div class="field" style="margin:8px 0 0">
-            <label class="label">Feedback</label>
-            <textarea class="input gsub-feedback" rows="3" placeholder="Comentarios para el alumno…" style="resize:vertical;min-height:64px;font-family:inherit;line-height:1.5">${s.feedback ? esc(s.feedback) : ""}</textarea>
+            <label class="label">${tr("aula.feedback")}</label>
+            <textarea class="input gsub-feedback" rows="3" placeholder="${tr("aula.feedbackPh")}" style="resize:vertical;min-height:64px;font-family:inherit;line-height:1.5">${s.feedback ? esc(s.feedback) : ""}</textarea>
           </div>
           <div class="row between vcenter" style="gap:10px;margin-top:8px">
-            <div class="field" style="margin:0"><label class="label">Nota (0-100)</label><input class="input gsub-grade" type="number" min="0" max="100" style="width:96px" placeholder="0-100" value="${s.grade ?? ""}"/></div>
-            <button class="btn btn-primary btn-sm gsub-save" style="align-self:flex-end">Guardar</button>
+            <div class="field" style="margin:0"><label class="label">${tr("aula.grade0100")}</label><input class="input gsub-grade" type="number" min="0" max="100" style="width:96px" placeholder="0-100" value="${s.grade ?? ""}"/></div>
+            <button class="btn btn-primary btn-sm gsub-save" style="align-self:flex-end">${tr("aula.save")}</button>
           </div>
-        </div>`).join("") : `<div class="empty" style="padding:20px"><b>Sin entregas todavía</b><p>Cuando un alumno entregue una tarea, aparecerá aquí.</p></div>`;
+        </div>`).join("") : `<div class="empty" style="padding:20px"><b>${tr("aula.noSubmissionsTitle")}</b><p>${tr("aula.noSubmissionsBody")}</p></div>`;
       // [PRD-02] Calificación en lote: selección múltiple + nota/feedback comunes aplicados
       // a las seleccionadas (calificar 25 grabaciones del mismo drill deja de ser 25 ciclos).
       const batchBar = subs.length > 1 ? `
         <div class="card card-pad" style="margin-bottom:14px;background:var(--bg-sunken)">
           <div class="row vcenter" style="gap:8px;flex-wrap:wrap">
-            <label class="row vcenter" style="gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="gsub-all" style="width:16px;height:16px"/> Seleccionar todas</label>
+            <label class="row vcenter" style="gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="gsub-all" style="width:16px;height:16px"/> ${tr("aula.selectAll")}</label>
             <span style="flex:1"></span>
-            <input class="input" id="gsub-bgrade" type="number" min="0" max="100" placeholder="Nota" style="width:84px"/>
-            <input class="input" id="gsub-bfeedback" placeholder="Feedback común (opcional)" style="flex:1;min-width:150px"/>
-            <button class="btn btn-primary btn-sm" id="gsub-bapply">Aplicar a seleccionadas</button>
+            <input class="input" id="gsub-bgrade" type="number" min="0" max="100" placeholder="${tr("aula.gradeShort")}" style="width:84px"/>
+            <input class="input" id="gsub-bfeedback" placeholder="${tr("aula.commonFeedbackPh")}" style="flex:1;min-width:150px"/>
+            <button class="btn btn-primary btn-sm" id="gsub-bapply">${tr("aula.applyToSelected")}</button>
           </div>
         </div>` : "";
-      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>Calificar entregas</h3></div><div class="modal-body">${batchBar}${rows}</div><div class="modal-foot"><button class="btn btn-ghost" data-x>Cerrar</button></div></div>`;
+      scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px"><div class="modal-head"><h3>${tr("aula.gradeSubmissions")}</h3></div><div class="modal-body">${batchBar}${rows}</div><div class="modal-foot"><button class="btn btn-ghost" data-x>${tr("aula.close")}</button></div></div>`;
       document.body.appendChild(scrim);
       enter(scrim.querySelector(".modal") as HTMLElement);
       let gdirty = false;
@@ -701,9 +701,9 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           const bgrade = String((scrim.querySelector("#gsub-bgrade") as any)?.value || "").trim();
           const bfeedback = String((scrim.querySelector("#gsub-bfeedback") as any)?.value || "").trim();
           const checked = Array.from(scrim.querySelectorAll(".gsub-check")).filter((c: any) => c.checked);
-          if (!checked.length) { toast("Selecciona al menos una entrega", "warn"); return; }
-          if (!bgrade && !bfeedback) { toast("Pon una nota o un feedback para aplicar", "warn"); return; }
-          (bapply as any).disabled = true; bapply.textContent = "Aplicando…";
+          if (!checked.length) { toast(tr("aula.selectAtLeastOne"), "warn"); return; }
+          if (!bgrade && !bfeedback) { toast(tr("aula.putGradeOrFeedback"), "warn"); return; }
+          (bapply as any).disabled = true; bapply.textContent = tr("aula.applying");
           let okN = 0;
           for (const chk of checked) {
             const row = (chk as any).closest("[data-sub]"); const id = row?.getAttribute("data-sub");
@@ -717,8 +717,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             } catch {}
           }
           gdirty = true;
-          (bapply as any).disabled = false; bapply.textContent = "Aplicar a seleccionadas";
-          toast(`${okN} entrega${okN === 1 ? "" : "s"} calificada${okN === 1 ? "" : "s"}`, okN ? "ok" : "danger");
+          (bapply as any).disabled = false; bapply.textContent = tr("aula.applyToSelected");
+          toast((okN === 1 ? tr("aula.gradedCountOne") : tr("aula.gradedCountMany")).replace("{n}", String(okN)), okN ? "ok" : "danger");
           return;
         }
         const save = e.target.closest(".gsub-save");
@@ -727,8 +727,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           const grade = row.querySelector(".gsub-grade").value;
           const feedback = row.querySelector(".gsub-feedback")?.value || "";
           save.textContent = "…";
-          try { await api(`/api/submissions/${id}`, { grade, feedback }, "PATCH"); save.innerHTML = `<span style="display:inline-flex;width:16px;height:16px">${IC.check}</span>`; gdirty = true; toast("Calificación guardada", "ok"); }
-          catch (err: any) { save.textContent = "Guardar"; toast(err.message || tr("err.generic"), "danger"); }
+          try { await api(`/api/submissions/${id}`, { grade, feedback }, "PATCH"); save.innerHTML = `<span style="display:inline-flex;width:16px;height:16px">${IC.check}</span>`; gdirty = true; toast(tr("aula.gradeSaved"), "ok"); }
+          catch (err: any) { save.textContent = tr("aula.save"); toast(err.message || tr("err.generic"), "danger"); }
         }
       });
     }
@@ -736,40 +736,40 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     function openEditCourse(id: string, name: string) {
       let c: any = null;
       for (const tc of ((DB as any).teacherCourses || [])) if (tc.id === id) c = tc;
-      formModal("Editar curso", [
-        { name: "name", label: "Nombre del curso", value: name },
-        { name: "format", label: "Formato", value: c?.format || "", ph: "Public Forum" },
-        { name: "modality", label: "Modalidad", type: "select", value: c?.modality || "online", options: [
-          { value: "online", label: "Online" }, { value: "presencial", label: "Presencial" }, { value: "híbrido", label: "Híbrido" }] },
-        { name: "capacity", label: "Cupo (capacidad)", value: c?.capacity || "", ph: "20" },
-        { name: "summary", label: "Resumen del programa", type: "textarea", value: c?.summary || "", ph: "Describe de qué trata este programa…" },
+      formModal(tr("aula.editCourse"), [
+        { name: "name", label: tr("aula.courseName"), value: name },
+        { name: "format", label: tr("aula.format"), value: c?.format || "", ph: tr("aula.formatPfPh") },
+        { name: "modality", label: tr("aula.modality"), type: "select", value: c?.modality || "online", options: [
+          { value: "online", label: tr("aula.modalityOnline") }, { value: "presencial", label: tr("aula.modalityPresential") }, { value: "híbrido", label: tr("aula.modalityHybrid") }] },
+        { name: "capacity", label: tr("aula.capacity"), value: c?.capacity || "", ph: "20" },
+        { name: "summary", label: tr("aula.programSummary"), type: "textarea", value: c?.summary || "", ph: tr("aula.programSummaryPh") },
         // [EPIC-5] Video de bienvenida del curso (lo ve el alumno en la cabecera del programa).
         // Mismo patrón que el video de lección: proveedor + fuente (ID/URL).
-        { name: "welcomeVideoKind", label: "Video de bienvenida", type: "select", value: c?.welcomeVideoKind || "none", options: [
-          { value: "none", label: "Sin video" }, { value: "youtube", label: "YouTube" }, { value: "cloudflare", label: "Cloudflare Stream" }] },
-        { name: "welcomeVideoSrc", label: "URL de YouTube o UID de Cloudflare", value: c?.welcomeVideoSrc || "", ph: "https://youtu.be/… o el UID de Cloudflare" },
-        { name: "layout", label: "Layout (cómo lo ve el alumno)", type: "select", value: c?.layout || "modules", options: [
-          { value: "modules", label: "Módulos (acordeón) — lista de secciones" }, { value: "grid", label: "Cuadrícula — tarjeta por sección" }, { value: "single", label: "Una sección por página" }] },
-        { name: "published", label: "Estado", type: "select", value: (c?.published === false ? "false" : "true"), options: [
-          { value: "true", label: "Publicado (visible en el catálogo)" }, { value: "false", label: "Borrador (oculto del catálogo)" }] },
-      ], async (v) => { if (v.published !== undefined) v.published = v.published === "true"; await api(`/api/courses/${id}`, v, "PATCH"); toast("Curso actualizado", "ok"); await refresh(); });
+        { name: "welcomeVideoKind", label: tr("aula.welcomeVideo"), type: "select", value: c?.welcomeVideoKind || "none", options: [
+          { value: "none", label: tr("aula.videoNone") }, { value: "youtube", label: "YouTube" }, { value: "cloudflare", label: tr("aula.videoCloudflareStream") }] },
+        { name: "welcomeVideoSrc", label: tr("aula.welcomeVideoSrc"), value: c?.welcomeVideoSrc || "", ph: tr("aula.welcomeVideoSrcPh") },
+        { name: "layout", label: tr("aula.layout"), type: "select", value: c?.layout || "modules", options: [
+          { value: "modules", label: tr("aula.layoutModules") }, { value: "grid", label: tr("aula.layoutGrid") }, { value: "single", label: tr("aula.layoutSingle") }] },
+        { name: "published", label: tr("aula.status"), type: "select", value: (c?.published === false ? "false" : "true"), options: [
+          { value: "true", label: tr("aula.statusPublished") }, { value: "false", label: tr("aula.statusDraft") }] },
+      ], async (v) => { if (v.published !== undefined) v.published = v.published === "true"; await api(`/api/courses/${id}`, v, "PATCH"); toast(tr("aula.courseUpdated"), "ok"); await refresh(); });
     }
 
     function openEditProfile() {
       const m: any = (DB as any).me || {};
       const fields: any[] = [
-        { name: "name", label: "Nombre completo", value: user.name },
-        { name: "headline", label: "Titular", value: m.headline || "", ph: "ej: Coach · Public Forum" },
-        { name: "location", label: "Ubicación", value: m.location || "", ph: "Santo Domingo, RD" },
-        { name: "bio", label: "Sobre mí", type: "textarea", value: m.bio || "", ph: "Cuéntale al Hub quién eres…" },
+        { name: "name", label: tr("aula.fullName"), value: user.name },
+        { name: "headline", label: tr("aula.headline"), value: m.headline || "", ph: tr("aula.headlinePh") },
+        { name: "location", label: tr("aula.location"), value: m.location || "", ph: tr("aula.locationPh") },
+        { name: "bio", label: tr("aula.aboutMe"), type: "textarea", value: m.bio || "", ph: tr("aula.aboutMePh") },
       ];
       if (isTeacher) {
-        fields.push({ name: "teachingStyle", label: "Cómo trabajo (estilo de enseñanza)", type: "textarea", value: m.teachingStyle || "", ph: "Drills intensivos, foco en delivery, repetición deliberada…" });
-        fields.push({ name: "formats", label: "Qué enseño (formatos, separados por coma)", value: m.formats || "", ph: "Public Forum, Lincoln-Douglas, Oratoria" });
+        fields.push({ name: "teachingStyle", label: tr("aula.teachingStyle"), type: "textarea", value: m.teachingStyle || "", ph: tr("aula.teachingStylePh") });
+        fields.push({ name: "formats", label: tr("aula.formats"), value: m.formats || "", ph: tr("aula.formatsPh") });
       }
-      fields.push({ name: "currentPassword", label: "Contraseña actual (solo si la cambias)", ph: "opcional" });
-      fields.push({ name: "newPassword", label: "Nueva contraseña", ph: "opcional" });
-      formModal("Editar perfil", fields, async (v) => { await api("/api/profile", v, "PATCH"); toast("Perfil actualizado", "ok"); await refresh(); });
+      fields.push({ name: "currentPassword", label: tr("aula.currentPassword"), ph: tr("aula.optional") });
+      fields.push({ name: "newPassword", label: tr("aula.newPassword"), ph: tr("aula.optional") });
+      formModal(tr("aula.editProfile"), fields, async (v) => { await api("/api/profile", v, "PATCH"); toast(tr("aula.profileUpdated"), "ok"); await refresh(); });
     }
 
     // Editor del perfil de MARKETPLACE del coach (lo que ve un alumno/padre al reservar):
@@ -783,19 +783,19 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const p = (cp.packages || []).find((x: any) => Number(x.sessions) === sessions);
         return p ? String(Math.round(Number(p.priceCents)) / 100) : "";
       };
-      formModal("Perfil de coach · marketplace", [
-        { name: "active", label: "Visibilidad en el marketplace", type: "select", value: cp.active === false ? "off" : "on", options: [
-          { value: "on", label: "Visible — los alumnos pueden reservar" }, { value: "off", label: "Oculto — no aparece en el marketplace" }] },
-        { name: "hourlyUsd", label: "Tarifa por hora (USD)", value: centsToUsd(cp.hourlyCents), ph: "45" },
-        { name: "languages", label: "Idiomas (separados por coma)", value: cp.languages || "", ph: "es,en" },
-        { name: "specialties", label: "Especialidades", value: cp.specialties || "", ph: "Public Forum, Lincoln-Douglas, Oratoria" },
-        { name: "responseTime", label: "Tiempo de respuesta", value: cp.responseTime || "", ph: "Responde en ~2 h" },
-        { name: "introVideoUrl", label: "Video de presentación (URL de YouTube)", value: cp.introVideoUrl || "", ph: "https://youtu.be/…" },
-        { name: "credentials", label: "Credenciales", type: "textarea", value: cp.credentials || "", ph: "Head Coach · 15+ torneos internacionales · ex-seleccionado nacional" },
-        { name: "cancelPolicy", label: "Política de cancelación", type: "textarea", value: cp.cancelPolicy || "", ph: "Cancelación gratis hasta 24 h antes de la sesión." },
-        { name: "pkgSingle", label: "Precio · 1 sesión (USD)", value: pkgUsd(1), ph: "45" },
-        { name: "pkg5", label: "Precio · paquete de 5 (USD)", value: pkgUsd(5), ph: "200" },
-        { name: "pkg10", label: "Precio · paquete de 10 (USD)", value: pkgUsd(10), ph: "380" },
+      formModal(tr("aula.coachMarketProfile"), [
+        { name: "active", label: tr("aula.marketVisibility"), type: "select", value: cp.active === false ? "off" : "on", options: [
+          { value: "on", label: tr("aula.marketVisibleOn") }, { value: "off", label: tr("aula.marketVisibleOff") }] },
+        { name: "hourlyUsd", label: tr("aula.hourlyRate"), value: centsToUsd(cp.hourlyCents), ph: "45" },
+        { name: "languages", label: tr("aula.languages"), value: cp.languages || "", ph: "es,en" },
+        { name: "specialties", label: tr("aula.specialties"), value: cp.specialties || "", ph: tr("aula.specialtiesPh") },
+        { name: "responseTime", label: tr("aula.responseTime"), value: cp.responseTime || "", ph: tr("aula.responseTimePh") },
+        { name: "introVideoUrl", label: tr("aula.introVideo"), value: cp.introVideoUrl || "", ph: "https://youtu.be/…" },
+        { name: "credentials", label: tr("aula.credentials"), type: "textarea", value: cp.credentials || "", ph: tr("aula.credentialsPh") },
+        { name: "cancelPolicy", label: tr("aula.cancelPolicy"), type: "textarea", value: cp.cancelPolicy || "", ph: tr("aula.cancelPolicyPh") },
+        { name: "pkgSingle", label: tr("aula.priceSingle"), value: pkgUsd(1), ph: "45" },
+        { name: "pkg5", label: tr("aula.price5"), value: pkgUsd(5), ph: "200" },
+        { name: "pkg10", label: tr("aula.price10"), value: pkgUsd(10), ph: "380" },
       ], async (v) => {
         const usdToCents = (s: any) => { const n = parseFloat(String(s ?? "").replace(/[^0-9.]/g, "")); return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null; };
         const pk: any[] = [];
@@ -814,25 +814,27 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         };
         const hc = usdToCents(v.hourlyUsd); if (hc) body.hourlyCents = hc;
         await api("/api/coach-profile", body, "PATCH");
-        toast("Perfil de coach actualizado", "ok");
+        toast(tr("aula.coachProfileUpdated"), "ok");
         await refresh();
       });
     }
 
     const SKILLS = ["Confianza", "Estructura", "Evidencia", "Refutación", "Cross-ex", "Delivery"];
+    // El VALOR de cada skill es dato del backend (clave de scores) y NO se traduce; solo su etiqueta visible.
+    const SKILL_LABELS: any = { "Confianza": "aula.skillConfidence", "Estructura": "aula.skillStructure", "Evidencia": "aula.skillEvidence", "Refutación": "aula.skillRebuttal", "Cross-ex": "aula.skillCrossex", "Delivery": "aula.skillDelivery" };
     async function openEvalSkills(userId: string, name: string) {
       let prefill: any = {};
       try {
         const d = await api("/api/skills?userId=" + encodeURIComponent(userId), null, "GET");
         for (const s of (d.skills || [])) prefill[s.skill] = s.score;
       } catch {}
-      formModal(`Evaluar a ${esc(name)}`, SKILLS.map((sk) => ({
-        name: sk, label: sk, type: "number", value: prefill[sk] != null ? prefill[sk] : 0,
+      formModal(tr("aula.evaluateName").replace("{name}", esc(name)), SKILLS.map((sk) => ({
+        name: sk, label: tr(SKILL_LABELS[sk] || sk), type: "number", value: prefill[sk] != null ? prefill[sk] : 0,
       })), async (v) => {
         const scores: any = {};
         for (const sk of SKILLS) scores[sk] = Math.max(0, Math.min(100, Number(v[sk]) || 0));
         await api("/api/skills", { userId, scores });
-        toast("Habilidades guardadas", "ok");
+        toast(tr("aula.skillsSaved"), "ok");
         await refresh();
       });
     }
@@ -842,10 +844,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const rating = sel ? Number(sel.getAttribute("data-rating")) : 0;
       const bodyEl = root.querySelector("#review-body") as HTMLTextAreaElement | null;
       const body = bodyEl ? bodyEl.value : "";
-      if (!rating) { toast("Selecciona una calificación", "warn"); return; }
+      if (!rating) { toast(tr("aula.selectRating"), "warn"); return; }
       try {
         await api("/api/reviews", { courseId, rating, body });
-        toast("¡Reseña publicada!", "ok");
+        toast(tr("aula.reviewPublished"), "ok");
         await refresh();
       } catch (e: any) { toast(e.message || tr("err.generic"), "danger"); }
     }
@@ -856,7 +858,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       document.getElementById("notif-panel")?.remove();
       if (!notifOpen) return;
       const panel = document.createElement("div"); panel.id = "notif-panel"; panel.className = "notif-panel";
-      panel.innerHTML = `<div class="notif-head"><b>Notificaciones</b><button class="btn btn-quiet btn-sm" id="notif-read">Marcar leídas</button></div><div id="notif-list">${(DB.notifications || []).map((n: any) => `<div class="notif-item ${n.unread ? "unread" : ""}"><div class="notif-ic ${n.tone}">${IC[n.ic]}</div><div class="nt-main"><div class="nt-t">${n.t}</div><div class="nt-d">${n.d}</div><div class="nt-w">${n.when}</div></div></div>`).join("")}</div><div class="notif-foot"><a href="#" onclick="return false">Ver todas</a></div>`;
+      panel.innerHTML = `<div class="notif-head"><b>${tr("aula.notifications")}</b><button class="btn btn-quiet btn-sm" id="notif-read">${tr("aula.markRead")}</button></div><div id="notif-list">${(DB.notifications || []).map((n: any) => `<div class="notif-item ${n.unread ? "unread" : ""}"><div class="notif-ic ${n.tone}">${IC[n.ic]}</div><div class="nt-main"><div class="nt-t">${n.t}</div><div class="nt-d">${n.d}</div><div class="nt-w">${n.when}</div></div></div>`).join("")}</div><div class="notif-foot"><a href="#" onclick="return false">${tr("aula.viewAll")}</a></div>`;
       root.querySelector(".main")?.appendChild(panel);
       enter(panel, 6);
       panel.querySelector("#notif-read")?.addEventListener("click", () => {
@@ -865,7 +867,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
             // Actualización local (sin re-fetch de /api/app-data): marca todo como leído,
             // cierra el panel y repinta la ruta actual con el render existente.
             (DB.notifications || []).forEach((n: any) => { n.unread = false; });
-            toast("Notificaciones marcadas como leídas", "ok");
+            toast(tr("aula.notifsMarkedRead"), "ok");
             toggleNotif(false);
             renderApp(currentRoute, { keepScroll: true });
           })
@@ -915,7 +917,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
               if (cl) cl.progress = d.progress;
               else if (DB.courses && DB.courses[0]) DB.courses[0].progress = d.progress;
             }
-            toast(done ? "Lección marcada como completada" : "Lección desmarcada", "ok");
+            toast(done ? tr("aula.lessonMarkedDone") : tr("aula.lessonUnmarked"), "ok");
             renderApp(currentRoute, { keepScroll: true });
           })
           .catch((err: any) => toast(err.message || tr("err.generic"), "danger"));
@@ -928,13 +930,13 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         e.preventDefault();
         const [kind, id] = delEl.getAttribute("data-del")!.split(":");
         const msg = kind === "course"
-          ? "¿Eliminar el curso completo? Se borran sus módulos, lecciones y exámenes. No se puede deshacer."
+          ? tr("aula.confirmDeleteCourse")
           : kind === "module"
-          ? "¿Eliminar el módulo y TODAS sus lecciones? No se puede deshacer."
-          : "¿Eliminar esta lección? No se puede deshacer.";
+          ? tr("aula.confirmDeleteModule")
+          : tr("aula.confirmDeleteLesson");
         if (!window.confirm(msg)) return;
         const url = kind === "course" ? `/api/courses/${id}` : kind === "module" ? `/api/modules/${id}` : `/api/lessons/${id}`;
-        api(url, null, "DELETE").then(() => { toast("Eliminado", "ok"); refresh(); }).catch((err: any) => toast(err.message, "danger"));
+        api(url, null, "DELETE").then(() => { toast(tr("aula.deleted"), "ok"); refresh(); }).catch((err: any) => toast(err.message, "danger"));
         return;
       }
       // [P1] Editar módulo (lápiz en la gestión de contenido)
@@ -1012,7 +1014,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           else { for (const m of c.modules) { const l = m.lessons.find((x: any) => x.id === hid); if (l) { cur = !!l.hidden; break; } } }
         }
         const url = kind === "module" ? `/api/modules/${hid}` : `/api/lessons/${hid}`;
-        api(url, { hidden: !cur }, "PATCH").then(() => { toast(!cur ? "Oculto al alumno" : "Visible para el alumno", "ok"); return refresh(); }).catch((err: any) => toast(err.message || tr("err.generic"), "danger"));
+        api(url, { hidden: !cur }, "PATCH").then(() => { toast(!cur ? tr("aula.hiddenFromStudent") : tr("aula.visibleToStudent"), "ok"); return refresh(); }).catch((err: any) => toast(err.message || tr("err.generic"), "danger"));
         return;
       }
       if (t.closest('[data-action="edit-profile"]')) { e.preventDefault(); openEditProfile(); return; }
