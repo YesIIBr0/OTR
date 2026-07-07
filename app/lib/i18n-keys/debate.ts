@@ -24,6 +24,7 @@ export const dict = {
     "debate.tier.grandmaster": "Gran Maestro",
 
     // panel HERO
+    "debate.heroSrTitle": "Debate Hub",
     "debate.heroEyebrow": "Tu rating Glicko-2",
     "debate.rdProvisional": "provisional",
     "debate.rdStable": "estable",
@@ -87,6 +88,12 @@ export const dict = {
     "debate.colDebater": "Debatiente",
     "debate.colTier": "Tier",
     "debate.colRating": "Rating",
+    "debate.lbPageTitle": "Leaderboard",
+
+    // fallbacks de datos vacíos
+    "debate.fallbackOpponent": "Rival",
+    "debate.fallbackEvent": "Práctica",
+    "debate.fallbackDebater": "Debatiente",
 
     // torneos
     "debate.registered": "Inscrito",
@@ -141,6 +148,7 @@ export const dict = {
     "debate.tier.grandmaster": "Grandmaster",
 
     // HERO panel
+    "debate.heroSrTitle": "Debate Hub",
     "debate.heroEyebrow": "Your Glicko-2 rating",
     "debate.rdProvisional": "provisional",
     "debate.rdStable": "stable",
@@ -204,6 +212,12 @@ export const dict = {
     "debate.colDebater": "Debater",
     "debate.colTier": "Tier",
     "debate.colRating": "Rating",
+    "debate.lbPageTitle": "Leaderboard",
+
+    // empty-data fallbacks
+    "debate.fallbackOpponent": "Opponent",
+    "debate.fallbackEvent": "Practice",
+    "debate.fallbackDebater": "Debater",
 
     // tournaments
     "debate.registered": "Registered",

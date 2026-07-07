@@ -7,6 +7,7 @@ export const dict = {
     // ① Hero de identidad
     "lifetime.heroEyebrow": "Tu historia en OTR",
     "lifetime.minorProtected": "Menor — cuenta protegida",
+    "lifetime.studentFallback": "Estudiante OTR",
 
     // ② Skill Graph
     "lifetime.radarAria": "Radar de habilidades",
@@ -41,6 +42,7 @@ export const dict = {
     "lifetime.credEyebrow": "Credenciales",
     "lifetime.credTitle": "Certificaciones verificables",
     "lifetime.issued": "Emitido",
+    "lifetime.certificateFallback": "Certificado",
     "lifetime.credEmpty": "Cuando completes un programa, tu certificación aparecerá aquí — prueba verificable de lo que sabes hacer.",
 
     // ⑥ Journey
@@ -58,6 +60,7 @@ export const dict = {
     "lifetime.publicProfileTitle": "Perfil público",
     "lifetime.publicProfileBody": "Tu Skill Graph, credenciales y journey en una sola página — la prueba pública de tu nivel.",
     "lifetime.requiresConsent": "Requiere consentimiento",
+    "lifetime.minorConsentFallback": "Por tu seguridad, tu familia debe habilitar el perfil público desde su portal.",
     "lifetime.visibleWithLink": "Visible con el enlace",
     "lifetime.disabledPrivate": "Desactivado (privado)",
     "lifetime.copyLink": "Copiar enlace",
@@ -112,6 +115,7 @@ export const dict = {
 
     // Membresía · confirmación + acciones
     "lifetime.cancel": "Cancelar",
+    "lifetime.confirmFallback": "Confirmar",
     "lifetime.memConfirmFreeTitle": "¿Cambiar a Free?",
     "lifetime.memConfirmFreeBody": "Perderás el sello OTR Pro, tu perfil destacado y la protección de tu racha. Tu progreso y tu historia se conservan intactos.",
     "lifetime.memConfirmFreeOk": "Sí, cambiar a Free",
@@ -124,6 +128,7 @@ export const dict = {
     // ① Identity hero
     "lifetime.heroEyebrow": "Your story at OTR",
     "lifetime.minorProtected": "Minor — protected account",
+    "lifetime.studentFallback": "OTR Student",
 
     // ② Skill Graph
     "lifetime.radarAria": "Skills radar",
@@ -158,6 +163,7 @@ export const dict = {
     "lifetime.credEyebrow": "Credentials",
     "lifetime.credTitle": "Verifiable certifications",
     "lifetime.issued": "Issued",
+    "lifetime.certificateFallback": "Certificate",
     "lifetime.credEmpty": "When you complete a program, your certification will appear here — verifiable proof of what you can do.",
 
     // ⑥ Journey
@@ -175,6 +181,7 @@ export const dict = {
     "lifetime.publicProfileTitle": "Public profile",
     "lifetime.publicProfileBody": "Your Skill Graph, credentials and journey on a single page — public proof of your level.",
     "lifetime.requiresConsent": "Requires consent",
+    "lifetime.minorConsentFallback": "For your safety, your family must enable the public profile from their portal.",
     "lifetime.visibleWithLink": "Visible with the link",
     "lifetime.disabledPrivate": "Disabled (private)",
     "lifetime.copyLink": "Copy link",
@@ -229,6 +236,7 @@ export const dict = {
 
     // Membership · confirmation + actions
     "lifetime.cancel": "Cancel",
+    "lifetime.confirmFallback": "Confirm",
     "lifetime.memConfirmFreeTitle": "Switch to Free?",
     "lifetime.memConfirmFreeBody": "You'll lose your OTR Pro badge, your featured profile and your streak protection. Your progress and your story stay intact.",
     "lifetime.memConfirmFreeOk": "Yes, switch to Free",

@@ -27,12 +27,17 @@ export const dict = {
     // consent row buttons
     "parent.approve": "Aprobar",
     "parent.reject": "Rechazar",
+    "parent.wantsToBookWith": "{child} quiere reservar con {coach}",
+    "parent.aCoach": "un coach",
 
     // pending guardianship links block
     "parent.pendingLinksTitle": "Solicitudes de vínculo pendientes",
     "parent.pendingLinksBody": "Estos estudiantes te declararon como su tutor al registrarse. Confirma el vínculo para ver su progreso y aprobar sus reservas.",
     "parent.protectedMinor": "menor protegido",
     "parent.confirmLink": "Confirmar vínculo",
+    "parent.waitingForAccept": "Esperando que {name} acepte",
+    "parent.theStudent": "el alumno",
+    "parent.studentFallback": "Estudiante",
 
     // child card
     "parent.minorProtected": "Menor — protegido",
@@ -41,8 +46,10 @@ export const dict = {
     "parent.skills": "Habilidades",
     "parent.skillsEmpty": "Las evaluaciones del coach aparecerán aquí tras las primeras sesiones.",
     "parent.attendance": "Asistencia",
+    "parent.attendedOfScheduled": "{attended} de {scheduled} sesiones asistidas",
     "parent.achievements": "Logros y certificaciones",
     "parent.upcomingSessions": "Próximas sesiones",
+    "parent.oneOnOneSession": "Sesión 1:1",
     "parent.cancel": "Cancelar",
     "parent.upcomingEmpty": "Sin sesiones agendadas — explora coaches con tu hijo/a desde el marketplace.",
 
@@ -57,6 +64,8 @@ export const dict = {
     "parent.monthlyReportEmpty": "Cuando tu hijo/a tenga sesiones registradas, aquí podrás abrir su resumen del mes — asistencia, habilidades, logros y gasto — listo para imprimir.",
     "parent.monthlyReportBody": "Resumen del mes con asistencia, habilidades, logros y gasto — disponible aquí cuando quieras, listo para imprimir.",
     "parent.childLabel": "Hijo/a",
+    "parent.viewReportOf": "Ver reporte de {month}",
+    "parent.monthsList": "enero, febrero, marzo, abril, mayo, junio, julio, agosto, septiembre, octubre, noviembre, diciembre",
 
     // membership & billing card
     "parent.currentPlan": "Plan actual",
@@ -64,6 +73,7 @@ export const dict = {
     "parent.membershipBilling": "Membresía y facturación",
     "parent.approvalThresholdTitle": "Umbral de aprobación por hijo/a",
     "parent.approvalThresholdBody": "Decide cuánto se puede reservar sin pedirte aprobación cada vez. El resto siempre pasa por ti.",
+    "parent.thresholdAriaFor": "Umbral de aprobación para {name}",
 
     // approval threshold options
     "parent.threshold_each": "Aprobar cada reserva",
@@ -94,6 +104,7 @@ export const dict = {
     "parent.publicProfileBody": "El perfil compartible de tu hijo/a está apagado por defecto. Tú decides si se publica.",
     "parent.unpublish": "Despublicar",
     "parent.enable": "Habilitar",
+    "parent.viewLink": "ver",
 
     // coach messages card
     "parent.coachMessagesTitle": "Mensajes de coaches",
@@ -171,12 +182,17 @@ export const dict = {
     // consent row buttons
     "parent.approve": "Approve",
     "parent.reject": "Reject",
+    "parent.wantsToBookWith": "{child} wants to book with {coach}",
+    "parent.aCoach": "a coach",
 
     // pending guardianship links block
     "parent.pendingLinksTitle": "Pending link requests",
     "parent.pendingLinksBody": "These students named you as their guardian when they signed up. Confirm the link to see their progress and approve their bookings.",
     "parent.protectedMinor": "protected minor",
     "parent.confirmLink": "Confirm link",
+    "parent.waitingForAccept": "Waiting for {name} to accept",
+    "parent.theStudent": "the student",
+    "parent.studentFallback": "Student",
 
     // child card
     "parent.minorProtected": "Minor — protected",
@@ -185,8 +201,10 @@ export const dict = {
     "parent.skills": "Skills",
     "parent.skillsEmpty": "Coach assessments will appear here after the first sessions.",
     "parent.attendance": "Attendance",
+    "parent.attendedOfScheduled": "{attended} of {scheduled} sessions attended",
     "parent.achievements": "Achievements and certifications",
     "parent.upcomingSessions": "Upcoming sessions",
+    "parent.oneOnOneSession": "1:1 session",
     "parent.cancel": "Cancel",
     "parent.upcomingEmpty": "No sessions scheduled — explore coaches with your child from the marketplace.",
 
@@ -201,6 +219,8 @@ export const dict = {
     "parent.monthlyReportEmpty": "Once your child has recorded sessions, you'll be able to open their month-in-review here — attendance, skills, achievements and spend — ready to print.",
     "parent.monthlyReportBody": "A month-in-review with attendance, skills, achievements and spend — available here whenever you want, ready to print.",
     "parent.childLabel": "Child",
+    "parent.viewReportOf": "View {month} report",
+    "parent.monthsList": "January, February, March, April, May, June, July, August, September, October, November, December",
 
     // membership & billing card
     "parent.currentPlan": "Current plan",
@@ -208,6 +228,7 @@ export const dict = {
     "parent.membershipBilling": "Membership and billing",
     "parent.approvalThresholdTitle": "Approval threshold per child",
     "parent.approvalThresholdBody": "Decide how much can be booked without asking your approval each time. Everything else always goes through you.",
+    "parent.thresholdAriaFor": "Approval threshold for {name}",
 
     // approval threshold options
     "parent.threshold_each": "Approve every booking",
@@ -238,6 +259,7 @@ export const dict = {
     "parent.publicProfileBody": "Your child's shareable profile is off by default. You decide whether it's published.",
     "parent.unpublish": "Unpublish",
     "parent.enable": "Enable",
+    "parent.viewLink": "view",
 
     // coach messages card
     "parent.coachMessagesTitle": "Coach messages",

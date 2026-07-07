@@ -31,15 +31,20 @@ export const dict = {
     "au.roleParent": "Familia",
     "au.roleTeacher": "Profesor / Coach",
     "au.roleAdmin": "Administrador",
+    "au.roleCoach": "Coach",
 
     // user card
     "au.roleLabel": "Rol",
+    "au.minorSuffix": "menor",
     "au.verifiedBadge": "Verificado",
     "au.suspendedBadge": "Suspendido",
     "au.verifyCoach": "Verificar coach",
     "au.unverify": "Quitar verificación",
     "au.suspend": "Suspender",
     "au.reactivate": "Reactivar",
+
+    // pagination
+    "au.loadMore": "Cargar más · {loaded} de {total}",
 
     // loading / empty states
     "au.loadingTitle": "Cargando usuarios…",
@@ -87,15 +92,20 @@ export const dict = {
     "au.roleParent": "Family",
     "au.roleTeacher": "Teacher / Coach",
     "au.roleAdmin": "Administrator",
+    "au.roleCoach": "Coach",
 
     // user card
     "au.roleLabel": "Role",
+    "au.minorSuffix": "minor",
     "au.verifiedBadge": "Verified",
     "au.suspendedBadge": "Suspended",
     "au.verifyCoach": "Verify coach",
     "au.unverify": "Remove verification",
     "au.suspend": "Suspend",
     "au.reactivate": "Reactivate",
+
+    // pagination
+    "au.loadMore": "Load more · {loaded} of {total}",
 
     // loading / empty states
     "au.loadingTitle": "Loading users…",

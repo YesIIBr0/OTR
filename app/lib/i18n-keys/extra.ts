@@ -5,6 +5,9 @@ export const dict = {
     "extra.saved": "Guardado",
     // Lesson / section badges and controls
     "extra.noQuestions": "Sin preguntas",
+    "extra.questionsAbbrev": "preg.",
+    "extra.pointsAbbrev": "pts",
+    "extra.dueBadge": "Entrega {date}",
     "extra.hidden": "Oculta",
     "extra.dragToReorder": "Arrastra para reordenar",
     "extra.dblClickRename": "Doble-clic para renombrar",
@@ -74,7 +77,8 @@ export const dict = {
     // Search
     "extra.searchEyebrow": "Búsqueda",
     "extra.searchResultsFor": "Resultados para",
-    "extra.result": "resultado",
+    "extra.resultSingular": "resultado",
+    "extra.resultPlural": "resultados",
     "extra.noResults": "Sin resultados",
     "extra.searchEmptyPrefix": "No encontramos nada para ",
     "extra.searchEmptySuffix": "\". Prueba con otra búsqueda.",
@@ -96,6 +100,9 @@ export const dict = {
     "extra.saved": "Saved",
     // Lesson / section badges and controls
     "extra.noQuestions": "No questions",
+    "extra.questionsAbbrev": "q.",
+    "extra.pointsAbbrev": "pts",
+    "extra.dueBadge": "Due {date}",
     "extra.hidden": "Hidden",
     "extra.dragToReorder": "Drag to reorder",
     "extra.dblClickRename": "Double-click to rename",
@@ -165,7 +172,8 @@ export const dict = {
     // Search
     "extra.searchEyebrow": "Search",
     "extra.searchResultsFor": "Results for",
-    "extra.result": "result",
+    "extra.resultSingular": "result",
+    "extra.resultPlural": "results",
     "extra.noResults": "No results",
     "extra.searchEmptyPrefix": "We couldn't find anything for ",
     "extra.searchEmptySuffix": "\". Try another search.",

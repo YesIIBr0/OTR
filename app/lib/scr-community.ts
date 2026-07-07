@@ -9,17 +9,20 @@ export const S = {};
   /* ---------------- FORO ---------------- */
   S.forum = {
     render() {
+      const byAuthorLabel = t("comm.forum.byAuthor");
+      const repliesLabel = t("comm.forum.replies");
+      const viewsLabel = t("comm.forum.views");
       const row = (t)=>`
         <div class="forum-row" onclick="go('forum-thread')">
           ${C.avatar(t.ini,{size:'sm'})}
           <div class="fr-main">
             <div class="fr-title">${t.pinned?`<span class="pin">${IC.flag}</span>`:''}${esc(t.title)}</div>
             <div class="fr-sub">${esc(t.excerpt)}</div>
-            <div class="fr-meta"><span class="tag-soft">${esc(t.tag)}</span><span class="dot-sep"></span>por ${esc(t.author)}<span class="dot-sep"></span>${esc(t.last)}</div>
+            <div class="fr-meta"><span class="tag-soft">${esc(t.tag)}</span><span class="dot-sep"></span>${byAuthorLabel.replace("{author}", esc(t.author))}<span class="dot-sep"></span>${esc(t.last)}</div>
           </div>
           <div class="fr-stats">
-            <div><b>${t.replies}</b><span>respuestas</span></div>
-            <div class="hide-m"><b>${t.views}</b><span>vistas</span></div>
+            <div><b>${t.replies}</b><span>${repliesLabel}</span></div>
+            <div class="hide-m"><b>${t.views}</b><span>${viewsLabel}</span></div>
           </div>
         </div>`;
       return `
@@ -52,7 +55,7 @@ export const S = {};
             <div class="post-head"><b>${esc(p.author)}</b>${p.role==='Coach'?C.badge(t("comm.thread.coachBadge"),'navy'):''}${p.op?C.badge(t("comm.thread.authorBadge"),'sky'):''}<span class="faint" style="font-size:12px">${esc(p.when)}</span></div>
             <p>${esc(p.body)}</p>
             <div class="post-actions">
-              <button class="btn btn-quiet btn-sm" data-toast="Marcado como útil">${IC.star} ${t("comm.thread.useful")}</button>
+              <button class="btn btn-quiet btn-sm" data-toast="${t("comm.thread.markedUseful")}">${IC.star} ${t("comm.thread.useful")}</button>
               <button class="btn btn-quiet btn-sm">${t("comm.thread.reply")}</button>
             </div>
           </div>

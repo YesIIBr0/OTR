@@ -12,13 +12,15 @@ import { t } from "./i18n";
 export const S = {};
 
 // Las 6 dimensiones canónicas, con una descripción corta de qué mide cada una.
+// El key es identificador canónico (data-skill, matching con el Skill Graph): NO se
+// traduce. La descripción sale del idioma activo vía t(descKey) al renderizar.
 const DIMS = [
-  { key: "Confianza",  desc: "Qué tan firme te plantas al hablar frente al público o al juez." },
-  { key: "Estructura", desc: "Tu capacidad de ordenar ideas: claim, warrant e impacto claros." },
-  { key: "Evidencia",  desc: "Cómo respaldas tus argumentos con datos, ejemplos y fuentes." },
-  { key: "Refutación", desc: "Tu habilidad para responder y desmontar los argumentos del rival." },
-  { key: "Cross-ex",   desc: "Cómo preguntas con intención y respondes sin ceder terreno en el cruzado." },
-  { key: "Delivery",   desc: "Voz, ritmo y presencia: cómo llega tu discurso a la sala." },
+  { key: "Confianza",  descKey: "placement.descConfianza" },
+  { key: "Estructura", descKey: "placement.descEstructura" },
+  { key: "Evidencia",  descKey: "placement.descEvidencia" },
+  { key: "Refutación", descKey: "placement.descRefutacion" },
+  { key: "Cross-ex",   descKey: "placement.descCrossEx" },
+  { key: "Delivery",   descKey: "placement.descDelivery" },
 ];
 
 S.placement = {
@@ -44,7 +46,7 @@ S.placement = {
         <div class="row between vcenter" style="gap:12px">
           <div style="flex:1;min-width:0">
             <label for="pl-${esc(d.key)}" style="display:block"><b style="font-size:14.5px">${esc(d.key)}</b></label>
-            <p class="faint" style="font-size:12.5px;margin-top:3px;line-height:1.45">${esc(d.desc)}</p>
+            <p class="faint" style="font-size:12.5px;margin-top:3px;line-height:1.45">${t(d.descKey)}</p>
           </div>
           <output class="badge pl-out" data-out="${esc(d.key)}" style="min-width:46px;text-align:center;font-variant-numeric:tabular-nums">—</output>
         </div>
@@ -54,7 +56,7 @@ S.placement = {
           type="range"
           min="0" max="100" step="1" value="50"
           data-skill="${esc(d.key)}"
-          aria-label="${esc(d.key)} — del 0 al 100"
+          aria-label="${t("placement.sliderAria").replace("{skill}", esc(d.key))}"
           aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"
           style="width:100%;margin-top:14px;accent-color:var(--otr-sky)"
         />
@@ -66,7 +68,7 @@ S.placement = {
         ${sliders}
         <div class="fade-up" style="--d:7;margin:10px 0 2px">
           <div class="row between vcenter" style="font-size:12.5px;color:var(--text-2);margin-bottom:6px">
-            <span>Has ubicado <b id="pl-count" style="color:var(--text)">0</b> de ${DIMS.length} habilidades</span>
+            <span>${t("placement.placed").replace("{count}", '<b id="pl-count" style="color:var(--text)">0</b>').replace("{total}", String(DIMS.length))}</span>
             <span class="faint">${t("placement.moveBars")}</span>
           </div>
           <div style="height:8px;background:var(--n-150);border-radius:100px;overflow:hidden" role="progressbar" aria-valuemin="0" aria-valuemax="${DIMS.length}" aria-label="${t("placement.progressAria")}">
@@ -104,7 +106,7 @@ S.placement = {
       const out = root.querySelector(`[data-out="${CSS && CSS.escape ? CSS.escape(skill) : skill}"]`);
       if (out) { out.textContent = String(range.value); out.classList.add("sky"); }
       range.setAttribute("aria-valuenow", String(range.value));
-      range.setAttribute("aria-label", `${skill} — del 0 al 100, ubicado en ${range.value}`);
+      range.setAttribute("aria-label", t("placement.sliderAriaSet").replace("{skill}", skill).replace("{value}", String(range.value)));
       range.style.opacity = "1";
     };
     ranges.forEach((r) => {
@@ -117,7 +119,7 @@ S.placement = {
 
     btn?.addEventListener("click", async () => {
       // Anti-inercia: solo se envía cuando las 6 barras fueron ubicadas a mano.
-      if (touchedCount() < total) { window.toast?.(`Aún te faltan ${total - touchedCount()} habilidades por ubicar`, "warn"); return; }
+      if (touchedCount() < total) { window.toast?.(t("placement.missing").replace("{n}", String(total - touchedCount())), "warn"); return; }
       const scores = {};
       ranges.forEach((r) => {
         const skill = r.getAttribute("data-skill");

@@ -125,6 +125,27 @@ export const dict = {
     "cw.adding": "Añadiendo…",
     "cw.slotAdded": "Franja añadida",
     "cw.slotAddError": "No se pudo añadir la franja",
+
+    // fallbacks de datos (booking normalizado)
+    "cw.studentFallback": "Alumno OTR",
+    "cw.singleSession": "Sesión individual",
+
+    // días de la semana (arrays, separados por comas)
+    "cw.weekdays": "Domingo, Lunes, Martes, Miércoles, Jueves, Viernes, Sábado",
+    "cw.weekdaysShort": "Dom, Lun, Mar, Mié, Jue, Vie, Sáb",
+
+    // unidades (pluralización)
+    "cw.reviewSingular": "reseña",
+    "cw.reviewPlural": "reseñas",
+    "cw.sessionSingular": "sesión",
+    "cw.sessionPlural": "sesiones",
+    "cw.sessionDuration": "60 min",
+
+    // interpolaciones
+    "cw.earnPayoutSub": "después del take rate {rate}%",
+    "cw.transparencyBody": "OTR retiene {rate}% por sesión; el resto se libera vía escrow cuando marcas la sesión como completada.",
+    "cw.packageOf": "Paquete de {n}",
+    "cw.completedToast": "Sesión completada — payout {payout}",
   },
   en: {
     // internal tabs
@@ -248,5 +269,26 @@ export const dict = {
     "cw.adding": "Adding…",
     "cw.slotAdded": "Slot added",
     "cw.slotAddError": "Could not add the slot",
+
+    // data fallbacks (normalized booking)
+    "cw.studentFallback": "OTR student",
+    "cw.singleSession": "Single session",
+
+    // weekdays (arrays, comma-separated)
+    "cw.weekdays": "Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday",
+    "cw.weekdaysShort": "Sun, Mon, Tue, Wed, Thu, Fri, Sat",
+
+    // units (pluralization)
+    "cw.reviewSingular": "review",
+    "cw.reviewPlural": "reviews",
+    "cw.sessionSingular": "session",
+    "cw.sessionPlural": "sessions",
+    "cw.sessionDuration": "60 min",
+
+    // interpolations
+    "cw.earnPayoutSub": "after the {rate}% take rate",
+    "cw.transparencyBody": "OTR keeps {rate}% per session; the rest is released via escrow when you mark the session as completed.",
+    "cw.packageOf": "Pack of {n}",
+    "cw.completedToast": "Session completed — payout {payout}",
   },
 };

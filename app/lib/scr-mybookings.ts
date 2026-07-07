@@ -34,16 +34,16 @@ const list = () => (Array.isArray(DB.myBookings) ? DB.myBookings : []);
 // la diferencia se calcula en ms absolutos). "" si no hay fecha o ya pasó.
 function countdown(iso) {
   if (!iso) return "";
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return "";
-  const ms = t - Date.now();
+  const ts = Date.parse(iso);
+  if (Number.isNaN(ts)) return "";
+  const ms = ts - Date.now();
   if (ms <= 0) return "";
   const min = Math.round(ms / 60000);
-  if (min < 60) return `en ${min} min`;
+  if (min < 60) return `${t("core.countdownInPrefix")} ${min} ${t("core.countdownMin")}`;
   const hours = Math.round(min / 60);
-  if (hours < 24) return `en ${hours} h`;
+  if (hours < 24) return `${t("core.countdownInPrefix")} ${hours} ${t("core.countdownHour")}`;
   const days = Math.round(hours / 24);
-  return `en ${days} día${days === 1 ? "" : "s"}`;
+  return `${t("core.countdownInPrefix")} ${days} ${days === 1 ? t("core.countdownDaySingular") : t("core.countdownDayPlural")}`;
 }
 
 function statusBadge(status) {
@@ -80,7 +80,7 @@ function upcomingRow(b) {
   <div class="row vcenter wrap" style="gap:12px;padding:14px 0;border-bottom:1px solid var(--border)">
     ${C.avatar(esc(b.coachInitials || "C"), { size: "sm", bg: "var(--otr-navy)" })}
     <div style="flex:1;min-width:200px">
-      <b style="font-size:13.5px">${esc(b.coachName || "Coach OTR")}</b>
+      <b style="font-size:13.5px">${esc(b.coachName || t("mb.coachFallback"))}</b>
       <div class="faint" style="font-size:12px;margin-top:2px">${meta || t("mb.coachingSession")}</div>
     </div>
     <div class="row vcenter" style="gap:8px;flex:none">
@@ -98,7 +98,7 @@ function historyRow(b) {
   <div class="row vcenter wrap" style="gap:12px;padding:13px 0;border-bottom:1px solid var(--border)">
     ${C.avatar(esc(b.coachInitials || "C"), { size: "sm" })}
     <div style="flex:1;min-width:200px">
-      <b style="font-size:13.5px">${esc(b.coachName || "Coach OTR")}</b>
+      <b style="font-size:13.5px">${esc(b.coachName || t("mb.coachFallback"))}</b>
       <div class="faint" style="font-size:12px;margin-top:2px">${meta || t("mb.coachingSession")}</div>
     </div>
     ${statusBadge(b.status)}
@@ -217,9 +217,9 @@ S.myBookings = {
     root.querySelectorAll("[data-mb-review]").forEach((btn) =>
       btn.addEventListener("click", () => {
         const coachId = btn.getAttribute("data-coach") || "";
-        const coachName = btn.getAttribute("data-coach-name") || "tu coach";
+        const coachName = btn.getAttribute("data-coach-name") || t("mb.reviewCoachFallback");
         if (!coachId || !w.otrFormModal) return;
-        w.otrFormModal(`Reseñar a ${coachName}`, [
+        w.otrFormModal(t("mb.reviewModalTitle").replace("{name}", coachName), [
           { name: "rating", label: t("mb.reviewRatingLabel"), type: "select", value: "5", options: [
             { value: "5", label: t("mb.reviewRating5") },
             { value: "4", label: t("mb.reviewRating4") },

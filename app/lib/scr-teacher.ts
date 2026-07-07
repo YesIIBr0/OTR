@@ -57,7 +57,7 @@ export const S = {};
       <div class="page-head">
         <div><p class="eyebrow">${t("teacher.eyebrow")}</p>
         <h1 class="page-title">${t("teacher.title")}</h1>
-        <div class="page-sub">Tracking total · ${DB.students.length} estudiante${DB.students.length===1?'':'s'} en ${courseCount} curso${courseCount===1?'':'s'}</div></div>
+        <div class="page-sub">${t("teacher.trackingSub").replace("{students}", `${DB.students.length} ${DB.students.length===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural")}`).replace("{courses}", `${courseCount} ${courseCount===1?t("teacher.courseUnitSingular"):t("teacher.courseUnitPlural")}`)}</div></div>
         <div class="row" style="gap:8px">
           <button class="btn btn-ghost btn-sm" data-action="grade-subs">${IC.chart} ${t("teacher.gradeBtn")}</button>
         </div>
@@ -116,7 +116,7 @@ export const S = {};
             <div class="row between vcenter" style="margin-bottom:12px"><b style="font-size:13.5px">${t("teacher.pendingGradingTitle")}</b><span class="badge sky">${DB.pendingSubs ?? 0}</span></div>
             ${(DB.pendingSubs ?? 0) > 0
               ? `<div class="lrow" style="padding:10px 0"><span style="display:flex;width:18px;color:var(--text-2)">${IC.mic}</span>
-                <div style="flex:1"><div style="font-weight:600;font-size:13px">${DB.pendingSubs} entrega${DB.pendingSubs === 1 ? '' : 's'} por revisar</div><div class="faint" style="font-size:12px">${t("teacher.pendingGradingHint")}</div></div></div>
+                <div style="flex:1"><div style="font-weight:600;font-size:13px">${t("teacher.pendingSubsToReview").replace("{n}", `${DB.pendingSubs} ${DB.pendingSubs === 1 ? t("teacher.submissionUnitSingular") : t("teacher.submissionUnitPlural")}`)}</div><div class="faint" style="font-size:12px">${t("teacher.pendingGradingHint")}</div></div></div>
                 <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="grade-subs">${t("teacher.gradeSubmissions")}</button>`
               : `<div class="empty" style="padding:20px 16px"><div class="ill">${IC.checkCircle}</div><h4>${t("teacher.allCaughtUpTitle")}</h4><p>${t("teacher.allCaughtUpBody")}</p></div>`}
           </div>
@@ -142,7 +142,7 @@ export const S = {};
           <div class="row vcenter" style="gap:10px;min-width:0">${C.courseDot(c.color)}
             <div style="min-width:0">
               <b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${esc(c.name)}</b>
-              <div class="faint" style="font-size:12px;margin-top:2px">${pluralize(mods.length,'módulo','módulos')} · ${pluralize(lessons,'lección','lecciones')} · ${pluralize(quizzes,'examen','exámenes')}</div>
+              <div class="faint" style="font-size:12px;margin-top:2px">${pluralize(mods.length,t("teacher.moduleUnitSingular"),t("teacher.moduleUnitPlural"))} · ${pluralize(lessons,t("teacher.lessonUnitSingular"),t("teacher.lessonUnitPlural"))} · ${pluralize(quizzes,t("teacher.quizUnitSingular"),t("teacher.quizUnitPlural"))}</div>
             </div>
           </div>
           <button class="btn btn-soft btn-sm" onclick="go('manage')" style="flex:none">${IC.sliders} ${t("teacher.editContentBtn")}</button>
@@ -284,7 +284,7 @@ export const S = {};
       </div>
       <div id="qz-questions" class="stack" style="gap:14px"></div>`;
 
-    const m = buildModal({ title: `Examen · ${esc(lessonTitle || t("teacher.lessonFallback"))}`, bodyHtml: head, okLabel: t("teacher.quizSaveBtn"), wide: true });
+    const m = buildModal({ title: t("teacher.quizModalTitle").replace("{lesson}", esc(lessonTitle || t("teacher.lessonFallback"))), bodyHtml: head, okLabel: t("teacher.quizSaveBtn"), wide: true });
     const qWrap = m.body.querySelector("#qz-questions");
     let qSeq = 0; // identificador local para agrupar radios por pregunta
 
@@ -365,8 +365,8 @@ export const S = {};
           if (text) opts.push({ text, correct });
         });
         if (!prompt) { invalid = invalid || t("teacher.errQuestionNoPrompt"); return; }
-        if (opts.length < 2) { invalid = invalid || `La pregunta "${prompt.slice(0, 30)}…" necesita al menos 2 opciones con texto.`; return; }
-        if (!opts.some((o) => o.correct)) { invalid = invalid || `Marca la opción correcta de "${prompt.slice(0, 30)}…".`; return; }
+        if (opts.length < 2) { invalid = invalid || t("teacher.errQuestionMinOptions").replace("{prompt}", prompt.slice(0, 30)); return; }
+        if (!opts.some((o) => o.correct)) { invalid = invalid || t("teacher.errQuestionNoCorrect").replace("{prompt}", prompt.slice(0, 30)); return; }
         questions.push({ prompt, options: opts });
       });
 
@@ -375,7 +375,7 @@ export const S = {};
 
       m.okBtn.textContent = t("teacher.saving"); m.okBtn.disabled = true;
       try {
-        await window.api("/api/quizzes", { lessonId, title: title || "Examen de unidad", passScore, questions });
+        await window.api("/api/quizzes", { lessonId, title: title || t("teacher.quizTitlePh"), passScore, questions });
         window.toast && window.toast(t("teacher.quizSaved"), "ok");
         m.close();
         await softRefresh("teacher");
@@ -416,7 +416,7 @@ export const S = {};
         <input class="input" id="lv-src" placeholder="${t("teacher.videoLinkPh")}" value="${(curKind==='youtube'||curKind==='cloudflare')?esc(l.videoSrc||''):''}"/>
       </div>`;
 
-    const m = buildModal({ title: `Video · ${esc(lessonTitle || t("teacher.lessonFallback"))}`, bodyHtml: body, okLabel: t("teacher.videoSaveBtn") });
+    const m = buildModal({ title: t("teacher.videoModalTitle").replace("{lesson}", esc(lessonTitle || t("teacher.lessonFallback"))), bodyHtml: body, okLabel: t("teacher.videoSaveBtn") });
     const kindSel = m.body.querySelector("#lv-kind");
     const fileInput = m.body.querySelector("#lv-file");
     const upState = m.body.querySelector("#lv-up-state");
@@ -510,7 +510,7 @@ export const S = {};
       </div>
       <div class="row" style="gap:12px;margin-bottom:12px">
         <div class="field" style="flex:1"><label class="label">${t("teacher.resTagLabel")}</label><input class="input" id="rs-tag" placeholder="${t("teacher.resTagPh")}"/></div>
-        <div class="field" style="flex:1"><label class="label">${t("teacher.resFormatLabel")}</label><input class="input" id="rs-format" placeholder="Public Forum"/></div>
+        <div class="field" style="flex:1"><label class="label">${t("teacher.resFormatLabel")}</label><input class="input" id="rs-format" placeholder="${t("teacher.resFormatPh")}"/></div>
       </div>
       <div class="field" style="margin-bottom:12px">
         <label class="label">${t("teacher.resFileLabel")}</label>
@@ -583,7 +583,7 @@ export const S = {};
       const total = studentCount + coachCount;
       const coach = DB.teacher || {};
       // DB.teacher ya viene escapado desde queries.ts; no re-escapar (evita &amp;amp;).
-      const coachName = coach.name || "Coach";
+      const coachName = coach.name || t("teacher.coachNameFallback");
       const coachInit = coach.initials || "C";
 
       // Fila de un estudiante. data-name/data-role permiten el filtrado local en mount().
@@ -603,15 +603,15 @@ export const S = {};
 
       return `
       <div class="page-head"><div><p class="eyebrow">${t("teacher.ptEyebrow")}</p>
-      <h1 class="page-title">${t("teacher.ptTitle")}</h1><div class="page-sub">${studentCount} estudiante${studentCount===1?'':'s'} · ${coachCount} coach</div></div></div>
+      <h1 class="page-title">${t("teacher.ptTitle")}</h1><div class="page-sub">${t("teacher.ptCountsSub").replace("{students}", `${studentCount} ${studentCount===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural")}`).replace("{coaches}", `${coachCount} ${t("teacher.coachUnit")}`)}</div></div></div>
 
       <div class="row between vcenter" style="margin-bottom:16px;flex-wrap:wrap;gap:12px">
         <div class="searchbox" style="width:280px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="pt-search" aria-label="${t("teacher.ptSearchAria")}" placeholder="${t("teacher.ptSearchPh")}"/></div>
         <div class="row wrap" style="gap:8px" id="pt-filters">
-          <button type="button" class="chip active" data-filter="all">Todos · ${total}</button>
-          <button type="button" class="chip" data-filter="student">Estudiantes · ${studentCount}</button>
-          <button type="button" class="chip" data-filter="coach">Coaches · ${coachCount}</button>
-          <button type="button" class="chip" data-filter="risk">En riesgo · ${(DB.students||[]).filter(s=>s.risk).length}</button>
+          <button type="button" class="chip active" data-filter="all">${t("teacher.ptFilterAll")} · ${total}</button>
+          <button type="button" class="chip" data-filter="student">${t("teacher.ptFilterStudents")} · ${studentCount}</button>
+          <button type="button" class="chip" data-filter="coach">${t("teacher.ptFilterCoaches")} · ${coachCount}</button>
+          <button type="button" class="chip" data-filter="risk">${t("teacher.ptFilterRisk")} · ${(DB.students||[]).filter(s=>s.risk).length}</button>
         </div>
       </div>
 
@@ -676,7 +676,7 @@ export const S = {};
       body.querySelectorAll("[data-adjudicate]").forEach((btn) =>
         btn.addEventListener("click", () => {
           const uid = btn.getAttribute("data-adjudicate");
-          const name = btn.getAttribute("data-name") || "alumno";
+          const name = btn.getAttribute("data-name") || t("teacher.studentFallbackName");
           const rubric = CRIT.map(([k, es]) =>
             `<div class="row vcenter between" style="gap:10px;margin-bottom:8px"><span style="font-size:13px">${es}</span><input class="input bl-score" data-c="${k}" type="number" min="0" max="10" step="1" value="7" style="width:80px"/></div>`).join("");
           // [RATING-1 §6.2] PF/Policy/Parli son 2v2: el coach puede nombrar al compañero
@@ -690,7 +690,7 @@ export const S = {};
             (partnerOpts ? fld(t("teacher.adjPartnerLabel"), `<select class="select" id="bl-partner"><option value="">${t("teacher.adjPartnerNone")}</option>${partnerOpts}</select>`) : "") +
             fld(t("teacher.adjRubricLabel"), rubric) +
             fld(t("teacher.adjCommentsLabel"), `<textarea class="input" id="bl-comments" rows="3" placeholder="${t("teacher.adjCommentsPh")}" style="resize:vertical;min-height:72px"></textarea>`);
-          const m = buildModal({ title: `Adjudicar ronda · ${name}`, bodyHtml, okLabel: t("teacher.adjPublishBtn") });
+          const m = buildModal({ title: t("teacher.adjModalTitle").replace("{name}", name), bodyHtml, okLabel: t("teacher.adjPublishBtn") });
           m.okBtn.addEventListener("click", async () => {
             const result = m.body.querySelector("#bl-result").value;
             const format = m.body.querySelector("#bl-format").value;
@@ -706,8 +706,8 @@ export const S = {};
               const before = d?.ratingBefore, after = d?.ratingAfter;
               const delta = (typeof after === "number" && typeof before === "number") ? after - before : 0;
               const mv = delta ? ` · ${before}→${after} (${delta > 0 ? "+" : ""}${delta})` : "";
-              const partnerNote = partnerUserId ? " · compañero también actualizado" : "";
-              window.toast?.(`Ronda adjudicada para ${name}${mv}${d?.promoted ? ` · ¡ascendió a ${d.tierAfter}!` : ""}${partnerNote}`, "ok");
+              const partnerNote = partnerUserId ? t("teacher.adjPartnerUpdated") : "";
+              window.toast?.(`${t("teacher.adjToastBase").replace("{name}", name)}${mv}${d?.promoted ? t("teacher.adjToastPromoted").replace("{tier}", d.tierAfter) : ""}${partnerNote}`, "ok");
             } catch (e) {
               m.okBtn.disabled = false; m.okBtn.textContent = t("teacher.adjPublishBtn");
               m.showErr((e && e.message) || t("teacher.adjError"));

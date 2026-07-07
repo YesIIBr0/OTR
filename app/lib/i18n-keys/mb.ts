@@ -20,6 +20,7 @@ export const dict = {
     "mb.joinSession": "Unirse a la sesión",
     "mb.tutorMustApprove": "Un tutor debe aprobar",
     "mb.coachingSession": "Sesión de coaching",
+    "mb.coachFallback": "Coach OTR",
     "mb.cancel": "Cancelar",
     "mb.recording": "Grabación",
     "mb.leaveReview": "Dejar reseña",
@@ -52,6 +53,8 @@ export const dict = {
     "mb.cancelError": "No se pudo cancelar la reserva",
 
     // modal de reseña (mount)
+    "mb.reviewCoachFallback": "tu coach",
+    "mb.reviewModalTitle": "Reseñar a {name}",
     "mb.reviewRatingLabel": "Tu valoración",
     "mb.reviewRating5": "★★★★★ Excelente",
     "mb.reviewRating4": "★★★★ Muy bueno",
@@ -79,6 +82,7 @@ export const dict = {
     "mb.joinSession": "Join session",
     "mb.tutorMustApprove": "A guardian must approve",
     "mb.coachingSession": "Coaching session",
+    "mb.coachFallback": "OTR Coach",
     "mb.cancel": "Cancel",
     "mb.recording": "Recording",
     "mb.leaveReview": "Leave a review",
@@ -111,6 +115,8 @@ export const dict = {
     "mb.cancelError": "Could not cancel the booking",
 
     // review modal (mount)
+    "mb.reviewCoachFallback": "your coach",
+    "mb.reviewModalTitle": "Review {name}",
     "mb.reviewRatingLabel": "Your rating",
     "mb.reviewRating5": "★★★★★ Excellent",
     "mb.reviewRating4": "★★★★ Very good",

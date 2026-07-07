@@ -4,6 +4,33 @@
    profesional natural. Consumido por el helper t() de ./i18n. */
 export const dict = {
   es: {
+    // fechas relativas (whenAgo)
+    "mkt.agoToday": "hoy",
+    "mkt.agoYesterday": "ayer",
+    "mkt.agoDays": "hace {n} días",
+    "mkt.agoMonthSingular": "hace {n} mes",
+    "mkt.agoMonthsPlural": "hace {n} meses",
+    "mkt.agoYearSingular": "hace {n} año",
+    "mkt.agoYearsPlural": "hace {n} años",
+
+    // fallbacks de datos
+    "mkt.coachFallbackName": "Coach OTR",
+    "mkt.sessionFallback": "Sesión",
+
+    // días y meses abreviados (calendario de reserva)
+    "mkt.weekdaysShort": "dom, lun, mar, mié, jue, vie, sáb",
+    "mkt.monthsShort": "ene, feb, mar, abr, may, jun, jul, ago, sep, oct, nov, dic",
+
+    // unidades / pluralización
+    "mkt.reviewUnitSingular": "reseña",
+    "mkt.reviewUnitPlural": "reseñas",
+    "mkt.coachUnitSingular": "coach",
+    "mkt.coachUnitPlural": "coaches",
+    "mkt.sessionUnitSingular": "sesión",
+    "mkt.sessionUnitPlural": "sesiones",
+    "mkt.packageOfN": "Paquete de {n}",
+    "mkt.sessionsBooked": "{n} sesiones reservadas",
+
     // grid: tarjeta de coach
     "mkt.verified": "Verificado",
     "mkt.from": "desde",
@@ -11,6 +38,7 @@ export const dict = {
     "mkt.priceOnRequest": "Precio a consultar",
     "mkt.viewProfile": "Ver perfil",
     "mkt.viewProfileOf": "Ver perfil de",
+    "mkt.specAll": "Todos",
 
     // grid: encabezado
     "mkt.eyebrow": "Marketplace",
@@ -122,6 +150,33 @@ export const dict = {
     "mkt.bookingFailToast": "No se pudo crear la reserva",
   },
   en: {
+    // relative dates (whenAgo)
+    "mkt.agoToday": "today",
+    "mkt.agoYesterday": "yesterday",
+    "mkt.agoDays": "{n} days ago",
+    "mkt.agoMonthSingular": "{n} month ago",
+    "mkt.agoMonthsPlural": "{n} months ago",
+    "mkt.agoYearSingular": "{n} year ago",
+    "mkt.agoYearsPlural": "{n} years ago",
+
+    // data fallbacks
+    "mkt.coachFallbackName": "OTR Coach",
+    "mkt.sessionFallback": "Session",
+
+    // short weekdays and months (booking calendar)
+    "mkt.weekdaysShort": "Sun, Mon, Tue, Wed, Thu, Fri, Sat",
+    "mkt.monthsShort": "Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec",
+
+    // units / pluralization
+    "mkt.reviewUnitSingular": "review",
+    "mkt.reviewUnitPlural": "reviews",
+    "mkt.coachUnitSingular": "coach",
+    "mkt.coachUnitPlural": "coaches",
+    "mkt.sessionUnitSingular": "session",
+    "mkt.sessionUnitPlural": "sessions",
+    "mkt.packageOfN": "Package of {n}",
+    "mkt.sessionsBooked": "{n} sessions booked",
+
     // grid: coach card
     "mkt.verified": "Verified",
     "mkt.from": "from",
@@ -129,6 +184,7 @@ export const dict = {
     "mkt.priceOnRequest": "Price on request",
     "mkt.viewProfile": "View profile",
     "mkt.viewProfileOf": "View profile of",
+    "mkt.specAll": "All",
 
     // grid: header
     "mkt.eyebrow": "Marketplace",

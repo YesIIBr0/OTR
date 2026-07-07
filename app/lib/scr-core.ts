@@ -170,7 +170,7 @@ function activeItemsFlat() {
           </div>
           ${courses.length
             ? `<div style="margin-top:14px;display:flex;flex-direction:column;gap:15px">${courses.map(c=>`
-                <div role="button" tabindex="0" aria-label="Abrir ${c.name}" style="cursor:pointer" onclick="window.__course='${esc(c.code)}';go('course')">
+                <div role="button" tabindex="0" aria-label="${t("core.openCourseAria").replace("{name}", esc(c.name))}" style="cursor:pointer" onclick="window.__course='${esc(c.code)}';go('course')">
                   <div class="row between vcenter" style="margin-bottom:5px">
                     <span class="row vcenter" style="gap:9px;min-width:0">${C.courseDot(c.color||'var(--otr-sky)')}<b style="font-size:13.5px">${c.name}</b></span>
                     <span class="faint tnum" style="font-size:12.5px">${c.progress||0}%</span>
@@ -190,10 +190,10 @@ function activeItemsFlat() {
       // se enmarca como el siguiente paso para su nivel (señal real, no genérica).
       const myFmts = new Set(courses.map(c=>String(c.format||'').toLowerCase()).filter(Boolean));
       const recoWhy = (c)=> (c.format && myFmts.has(String(c.format).toLowerCase()))
-        ? `Refuerza tu ${c.format}`
+        ? t("core.recoWhyReinforce").replace("{format}", String(c.format))
         : c.format
-        ? `Suma ${c.format} a tu repertorio`
-        : `Siguiente paso para ${esc(DB.me?.level || 'tu nivel')}`;
+        ? t("core.recoWhyAdd").replace("{format}", String(c.format))
+        : t("core.recoWhyNextStep").replace("{level}", esc(DB.me?.level || t("core.yourLevelFallback")));
       const recoCards = recos.map(c=>`
         <div class="tile course-card click" role="button" tabindex="0" onclick="go('catalog')">
           <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C0C0C))">
@@ -638,21 +638,12 @@ function activeItemsFlat() {
       const lid = (window as any).__lesson;
       const { lesson: L, course: Lcourse } = lid ? findLesson(lid) : { lesson: null, course: null };
       const hasL = !!L;
-      const title = hasL ? esc(L.t) : "Claim · Warrant · Impact";
+      const title = hasL ? esc(L.t) : t("core.lessonDemoTitle");
       const embed = hasL ? videoEmbedHtml(L.videoKind, L.videoSrc) : "";
 
       // Prosa demo SOLO cuando no hay ninguna lección seleccionada (entrada legacy
       // sin window.__lesson). NUNCA se inyecta como relleno de una lección real.
-      const defaultProse = `
-            <p>Un argumento sólido no es una opinión más fuerte: es una <b>estructura</b>. En OTR entrenamos cada contención sobre tres piezas que el juez puede seguir sin esfuerzo.</p>
-            <h2 id="s1">1. Claim — la afirmación</h2>
-            <p>Es la oración que quieres que el juez crea. Debe ser específica, defendible y relevante para la resolución. Si no puedes escribirla en una sola línea, todavía no la tienes.</p>
-            <div class="callout"><b>Regla OTR:</b> si tu claim necesita "y además…", probablemente son dos claims. Sepáralos.</div>
-            <h2 id="s2">2. Warrant — el porqué</h2>
-            <p>El warrant es la lógica o evidencia que conecta tu claim con la realidad. Aquí vive el 80% del trabajo. Un buen warrant responde: <i>¿por qué es esto cierto?</i></p>
-            <ul><li>Evidencia empírica (datos, estudios, ejemplos).</li><li>Razonamiento causal (A provoca B).</li><li>Principios y analogías.</li></ul>
-            <h2 id="s3">3. Impact — el porqué importa</h2>
-            <p>El impacto traduce tu argumento al lenguaje del juez: ¿qué cambia en el mundo si tienes razón? Magnitud, probabilidad y tiempo. Sin impacto, ganaste la lógica pero perdiste la ronda.</p>`;
+      const defaultProse = t("core.lessonDemoProse");
 
       // Cuerpo: (1) lección real con notas → su HTML; (2) lección real sin notas
       // pero con video → nota neutra (no la prosa demo); (3) lección real sin nada
@@ -697,9 +688,9 @@ function activeItemsFlat() {
           <div class="ol-t">${t("core.inThisLesson")}</div>
           ${hasL
             ? `<a href="#" onclick="return false" class="active">${title}</a>`
-            : `<a href="#s1" class="active">Claim — la afirmación</a>
-          <a href="#s2">Warrant — el porqué</a>
-          <a href="#s3">Impact — por qué importa</a>`}
+            : `<a href="#s1" class="active">${t("core.lessonDemoOutline1")}</a>
+          <a href="#s2">${t("core.lessonDemoOutline2")}</a>
+          <a href="#s3">${t("core.lessonDemoOutline3")}</a>`}
           <div class="divider"></div>
           ${hasL && L.id
             ? (L.doneByMe

@@ -104,7 +104,7 @@ function identityHero(lt) {
       <div style="flex:1;min-width:220px">
         <p class="eyebrow">${t("lifetime.heroEyebrow")}</p>
         <div class="row vcenter wrap" style="gap:10px;margin-top:3px">
-          <h1 class="brand-font" style="font-size:24px;font-weight:800;margin:0">${esc(id.name || "Estudiante OTR")}</h1>
+          <h1 class="brand-font" style="font-size:24px;font-weight:800;margin:0">${esc(id.name || t("lifetime.studentFallback"))}</h1>
           ${C.levelBadge(esc(id.level))}
         </div>
         ${meta.length ? `<p class="muted" style="font-size:13px;margin-top:6px">${meta.join(' <span class="dot-sep"></span> ')}</p>` : ""}
@@ -297,7 +297,7 @@ function credentialsCard(lt) {
           <div class="row vcenter" style="gap:12px;border:1px solid var(--border);border-radius:var(--r-md);padding:11px 13px;background:linear-gradient(120deg,var(--otr-offwhite),#fff)">
             <span style="flex:none;width:38px;height:38px;border-radius:50%;background:var(--otr-navy);color:#fff;display:inline-flex;align-items:center;justify-content:center"><span style="display:inline-flex;width:18px;height:18px">${IC.award}</span></span>
             <div style="flex:1;min-width:0">
-              <b style="font-size:13px;line-height:1.3;display:block">${esc(c.title || "Certificado")}</b>
+              <b style="font-size:13px;line-height:1.3;display:block">${esc(c.title || t("lifetime.certificateFallback"))}</b>
               ${c.issuedLabel ? `<span class="faint" style="font-size:11.5px">${t("lifetime.issued")} ${esc(c.issuedLabel)}</span>` : ""}
             </div>
           </div>`).join("")
@@ -379,7 +379,7 @@ function publicProfileCard(lt) {
     <b style="font-size:15px">${t("lifetime.publicProfileTitle")}</b>
     <p class="muted" style="font-size:12.5px;margin-top:6px">${t("lifetime.publicProfileBody")}</p>
     ${!pp.canToggle
-      ? `<div class="alert info" style="margin-top:12px"><span class="ai">${IC.lock}</span><div><div class="at">${t("lifetime.requiresConsent")}</div>${esc(pp.minorNote || "Por tu seguridad, tu familia debe habilitar el perfil público desde su portal.")}</div></div>`
+      ? `<div class="alert info" style="margin-top:12px"><span class="ai">${IC.lock}</span><div><div class="at">${t("lifetime.requiresConsent")}</div>${esc(pp.minorNote || t("lifetime.minorConsentFallback"))}</div></div>`
       : `
       <div class="row between vcenter" style="gap:12px;margin-top:14px">
         <span style="font-size:13px;font-weight:600">${pp.enabled ? t("lifetime.visibleWithLink") : t("lifetime.disabledPrivate")}</span>
@@ -567,7 +567,7 @@ function confirmModal(title, body, okLabel) {
     scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:440px">
       <div class="modal-head"><h3>${esc(title)}</h3></div>
       <div class="modal-body"><p style="font-size:13.5px;line-height:1.55">${esc(body)}</p></div>
-      <div class="modal-foot"><button class="btn btn-ghost" data-x>${t("lifetime.cancel")}</button><button class="btn btn-primary" data-ok>${esc(okLabel || "Confirmar")}</button></div>
+      <div class="modal-foot"><button class="btn btn-ghost" data-x>${t("lifetime.cancel")}</button><button class="btn btn-primary" data-ok>${esc(okLabel || t("lifetime.confirmFallback"))}</button></div>
     </div>`;
     document.body.appendChild(scrim);
     const done = (v) => { scrim.remove(); resolve(v); };

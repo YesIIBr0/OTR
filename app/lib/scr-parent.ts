@@ -20,6 +20,8 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { t } from "./i18n";
+// alias estable de t() para las funciones donde una variable local `t` lo sombrea
+const tr = t;
 
 export const S = {};
 
@@ -40,7 +42,7 @@ function normChild(k = {}) {
     // el reporte y el perfil publico se indexan por studentId; antes tomaba k.id (guardianship)
     // y esas tres funciones apuntaban al objetivo equivocado.
     id: (k.student && k.student.id) || k.childId || k.id || "",
-    name: k.name || (k.student && k.student.name) || "Estudiante",
+    name: k.name || (k.student && k.student.name) || t("parent.studentFallback"),
     initials: k.initials || (k.student && k.student.initials) || ini(k.name || (k.student && k.student.name)),
     level: k.level || (k.student && k.student.level) || "OTR Initiate",
     ageBand: k.ageBand || (k.student && k.student.ageBand) || "",
@@ -103,7 +105,7 @@ function achLabel(a) {
 }
 function upcomingLabel(u) {
   if (typeof u === "string") return { t: u, d: "" };
-  const t = (u && (u.title || u.coachName || u.coach)) || "Sesión 1:1";
+  const t = (u && (u.title || u.coachName || u.coach)) || tr("parent.oneOnOneSession");
   const d = (u && (u.slotLabel || u.when || u.label)) || "";
   return { t, d };
 }
@@ -114,7 +116,7 @@ function consentRow(child, pc, i) {
   <div class="lrow fade-up" style="padding:12px 0;gap:12px;border-bottom:1px solid var(--border);--d:${i}">
     <div class="notif-ic warn" style="width:38px;height:38px;border-radius:10px;flex:none">${IC.lock}</div>
     <div style="flex:1;min-width:0">
-      <b style="font-size:13.5px">${esc(child.name)} quiere reservar con ${esc(pc.coachName || "un coach")}</b>
+      <b style="font-size:13.5px">${t("parent.wantsToBookWith").replace("{child}", esc(child.name)).replace("{coach}", esc(pc.coachName || t("parent.aCoach")))}</b>
       <div class="faint" style="font-size:12px;margin-top:2px">${esc(pc.slotLabel || "")}${pc.priceLabel ? ` · ${esc(pc.priceLabel)}` : ""}</div>
     </div>
     <div class="row" style="gap:6px;flex:none">
@@ -141,12 +143,12 @@ function pendingLinksBlock(pending) {
       <div class="lrow fade-up" style="padding:12px 0;gap:12px;border-bottom:1px solid var(--border);--d:${i}">
         ${C.avatar(esc(pl.initials || "?"), { size: "sm", bg: "var(--otr-sky-lo)" })}
         <div style="flex:1;min-width:0">
-          <b style="font-size:13.5px">${esc(pl.name || "Estudiante")}</b>
+          <b style="font-size:13.5px">${esc(pl.name || t("parent.studentFallback"))}</b>
           <div class="faint" style="font-size:12px;margin-top:2px">${esc(pl.email || "")}${pl.ageBand === "minor" ? ` · ${t("parent.protectedMinor")}` : ""}</div>
         </div>
         <div class="row" style="gap:6px;flex:none">
           ${pl.ageBand === "adult"
-            ? `<span class="faint" style="font-size:11.5px">Esperando que ${esc((pl.name || "el alumno").split(" ")[0])} acepte</span>`
+            ? `<span class="faint" style="font-size:11.5px">${t("parent.waitingForAccept").replace("{name}", esc((pl.name || t("parent.theStudent")).split(" ")[0]))}</span>`
             : `<button class="btn btn-primary btn-sm" data-glink-confirm="${esc(pl.email)}">${IC.check} ${t("parent.confirmLink")}</button>`}
         </div>
       </div>`).join("")}
@@ -192,7 +194,7 @@ function childCard(k, i) {
     <div class="divider"></div>
 
     <div class="row between vcenter"><b style="font-size:13px">${t("parent.attendance")}</b>
-      <span class="faint" style="font-size:12px">${att.attended} de ${att.scheduled} sesiones asistidas</span></div>
+      <span class="faint" style="font-size:12px">${t("parent.attendedOfScheduled").replace("{attended}", String(att.attended)).replace("{scheduled}", String(att.scheduled))}</span></div>
     <div style="margin-top:8px">${C.bar(pct)}</div>
 
     ${k.achievements.length ? `
@@ -239,7 +241,7 @@ function rstate() {
 // Tarjeta lateral: selector de hijo (si hay varios) + botón "Ver reporte de {mes}".
 function reportCard(kids) {
   const withId = kids.filter((k) => k.id);
-  const months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const months = t("parent.monthsList").split(", ");
   const monthLabel = months[new Date().getMonth()];
   if (!withId.length) {
     return `
@@ -261,7 +263,7 @@ function reportCard(kids) {
         ${withId.map((k) => `<option value="${esc(k.id)}"${k.id === st.sel ? " selected" : ""}>${esc(k.name)}</option>`).join("")}
       </select>
     </div>` : ""}
-    <button class="btn btn-primary btn-sm btn-block" style="margin-top:10px" id="pr-open">${IC.chart} Ver reporte de ${esc(monthLabel)}</button>
+    <button class="btn btn-primary btn-sm btn-block" style="margin-top:10px" id="pr-open">${IC.chart} ${t("parent.viewReportOf").replace("{month}", esc(monthLabel))}</button>
   </div>`;
 }
 
@@ -368,7 +370,7 @@ function membershipCard(kids) {
     return `
     <div class="row between vcenter" style="gap:10px">
       <span style="font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.name)}</span>
-      <select class="select" data-threshold-child="${esc(k.id)}" aria-label="Umbral de aprobación para ${esc(k.name)}" style="flex:none;width:auto;font-size:12.5px;padding:5px 26px 5px 10px">${opts}</select>
+      <select class="select" data-threshold-child="${esc(k.id)}" aria-label="${t("parent.thresholdAriaFor").replace("{name}", esc(k.name))}" style="flex:none;width:auto;font-size:12.5px;padding:5px 26px 5px 10px">${opts}</select>
     </div>`;
   }).join("");
   return `
@@ -476,7 +478,7 @@ S.parentPortal = {
           <div class="stack" style="gap:8px;margin-top:8px">
             ${kids.filter((k) => k.id).map((k) => `
             <div class="row between vcenter" style="gap:10px">
-              <span style="font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.name)}${k.publicProfile.enabled && k.publicProfile.slug ? ` · <a href="/p/${esc(k.publicProfile.slug)}" target="_blank" rel="noopener" style="color:var(--otr-sky-lo)">ver</a>` : ""}</span>
+              <span style="font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.name)}${k.publicProfile.enabled && k.publicProfile.slug ? ` · <a href="/p/${esc(k.publicProfile.slug)}" target="_blank" rel="noopener" style="color:var(--otr-sky-lo)">${t("parent.viewLink")}</a>` : ""}</span>
               <button class="btn btn-sm ${k.publicProfile.enabled ? "btn-soft" : "btn-primary"}" data-pp-child="${esc(k.id)}" data-pp-next="${k.publicProfile.enabled ? "off" : "on"}" style="flex:none">
                 ${k.publicProfile.enabled ? t("parent.unpublish") : t("parent.enable")}
               </button>

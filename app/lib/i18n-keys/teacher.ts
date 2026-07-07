@@ -10,6 +10,11 @@ export const dict = {
     "teacher.eyebrow": "Panel del profesor",
     "teacher.title": "Seguimiento del grupo",
     "teacher.gradeBtn": "Calificar",
+    "teacher.trackingSub": "Tracking total · {students} en {courses}",
+    "teacher.studentUnitSingular": "estudiante",
+    "teacher.studentUnitPlural": "estudiantes",
+    "teacher.courseUnitSingular": "curso",
+    "teacher.courseUnitPlural": "cursos",
 
     // Pestañas Grupo / Contenido
     "teacher.tabGroup": "Grupo",
@@ -47,6 +52,9 @@ export const dict = {
 
     // Pendientes de calificar
     "teacher.pendingGradingTitle": "Pendientes de calificar",
+    "teacher.pendingSubsToReview": "{n} por revisar",
+    "teacher.submissionUnitSingular": "entrega",
+    "teacher.submissionUnitPlural": "entregas",
     "teacher.pendingGradingHint": "Ábrelas para calificar con nota y feedback",
     "teacher.gradeSubmissions": "Calificar entregas",
     "teacher.allCaughtUpTitle": "Todo al día",
@@ -63,6 +71,12 @@ export const dict = {
     "teacher.kpiLessons": "Lecciones",
     "teacher.kpiQuizzes": "Exámenes",
     "teacher.editContentBtn": "Editar contenido",
+    "teacher.moduleUnitSingular": "módulo",
+    "teacher.moduleUnitPlural": "módulos",
+    "teacher.lessonUnitSingular": "lección",
+    "teacher.lessonUnitPlural": "lecciones",
+    "teacher.quizUnitSingular": "examen",
+    "teacher.quizUnitPlural": "exámenes",
     "teacher.noCoursesTitle": "Aún no tienes cursos",
     "teacher.noCoursesBody": "Crea tu primer curso con el botón <b>+ Crear</b> de la barra superior, y luego añade módulos, lecciones y exámenes.",
 
@@ -73,6 +87,7 @@ export const dict = {
     "teacher.lessonFallback": "Lección",
 
     // Constructor de examen (quiz)
+    "teacher.quizModalTitle": "Examen · {lesson}",
     "teacher.quizTitleLabel": "Título del examen",
     "teacher.quizTitlePh": "Examen de unidad",
     "teacher.quizPassLabel": "Puntaje para aprobar (%)",
@@ -90,11 +105,14 @@ export const dict = {
     "teacher.addOption": "Añadir opción",
     "teacher.minOneQuestion": "El examen necesita al menos una pregunta",
     "teacher.errQuestionNoPrompt": "Hay una pregunta sin enunciado.",
+    "teacher.errQuestionMinOptions": "La pregunta \"{prompt}…\" necesita al menos 2 opciones con texto.",
+    "teacher.errQuestionNoCorrect": "Marca la opción correcta de \"{prompt}…\".",
     "teacher.errNoValidQuestion": "Añade al menos una pregunta válida.",
     "teacher.quizSaved": "Examen guardado",
     "teacher.quizSaveError": "No se pudo guardar el examen",
 
     // Constructor de video de lección
+    "teacher.videoModalTitle": "Video · {lesson}",
     "teacher.videoSourceLabel": "Origen del video",
     "teacher.videoOptNone": "Sin video",
     "teacher.videoOptUpload": "Subir archivo (MP4)",
@@ -131,6 +149,7 @@ export const dict = {
     "teacher.resTagLabel": "Etiqueta",
     "teacher.resTagPh": "Refutación",
     "teacher.resFormatLabel": "Formato",
+    "teacher.resFormatPh": "Public Forum",
     "teacher.resFileLabel": "Archivo del recurso (PDF, audio, doc…)",
     "teacher.resExternalUrlLabel": "o URL externa (opcional)",
     "teacher.resModalTitle": "Nuevo recurso (archivo real)",
@@ -144,6 +163,14 @@ export const dict = {
     // Participantes
     "teacher.ptEyebrow": "Profesor",
     "teacher.ptTitle": "Participantes",
+    "teacher.coachNameFallback": "Coach",
+    "teacher.ptCountsSub": "{students} · {coaches}",
+    "teacher.coachUnit": "coach",
+    "teacher.ptFilterAll": "Todos",
+    "teacher.ptFilterStudents": "Estudiantes",
+    "teacher.ptFilterCoaches": "Coaches",
+    "teacher.ptFilterRisk": "En riesgo",
+    "teacher.studentFallbackName": "alumno",
     "teacher.ptSearchAria": "Buscar participante",
     "teacher.ptSearchPh": "Buscar participante…",
     "teacher.ptThName": "Nombre",
@@ -165,6 +192,7 @@ export const dict = {
     "teacher.critCrossfire": "Cross-ex",
 
     // Modal de adjudicación de ronda
+    "teacher.adjModalTitle": "Adjudicar ronda · {name}",
     "teacher.adjResultLabel": "Resultado",
     "teacher.adjResultWin": "Victoria",
     "teacher.adjResultLoss": "Derrota",
@@ -180,12 +208,20 @@ export const dict = {
     "teacher.adjPublishBtn": "Adjudicar y publicar",
     "teacher.adjudicating": "Adjudicando…",
     "teacher.adjError": "No se pudo adjudicar la ronda",
+    "teacher.adjToastBase": "Ronda adjudicada para {name}",
+    "teacher.adjToastPromoted": " · ¡ascendió a {tier}!",
+    "teacher.adjPartnerUpdated": " · compañero también actualizado",
   },
   en: {
     // Teacher dashboard · header
     "teacher.eyebrow": "Teacher dashboard",
     "teacher.title": "Group tracking",
     "teacher.gradeBtn": "Grade",
+    "teacher.trackingSub": "Full tracking · {students} in {courses}",
+    "teacher.studentUnitSingular": "student",
+    "teacher.studentUnitPlural": "students",
+    "teacher.courseUnitSingular": "course",
+    "teacher.courseUnitPlural": "courses",
 
     // Group / Content tabs
     "teacher.tabGroup": "Group",
@@ -223,6 +259,9 @@ export const dict = {
 
     // Pending grading
     "teacher.pendingGradingTitle": "Pending grading",
+    "teacher.pendingSubsToReview": "{n} to review",
+    "teacher.submissionUnitSingular": "submission",
+    "teacher.submissionUnitPlural": "submissions",
     "teacher.pendingGradingHint": "Open them to grade with a score and feedback",
     "teacher.gradeSubmissions": "Grade submissions",
     "teacher.allCaughtUpTitle": "All caught up",
@@ -239,6 +278,12 @@ export const dict = {
     "teacher.kpiLessons": "Lessons",
     "teacher.kpiQuizzes": "Quizzes",
     "teacher.editContentBtn": "Edit content",
+    "teacher.moduleUnitSingular": "module",
+    "teacher.moduleUnitPlural": "modules",
+    "teacher.lessonUnitSingular": "lesson",
+    "teacher.lessonUnitPlural": "lessons",
+    "teacher.quizUnitSingular": "quiz",
+    "teacher.quizUnitPlural": "quizzes",
     "teacher.noCoursesTitle": "You don't have any courses yet",
     "teacher.noCoursesBody": "Create your first course with the <b>+ Create</b> button in the top bar, then add modules, lessons, and quizzes.",
 
@@ -249,6 +294,7 @@ export const dict = {
     "teacher.lessonFallback": "Lesson",
 
     // Quiz builder
+    "teacher.quizModalTitle": "Quiz · {lesson}",
     "teacher.quizTitleLabel": "Quiz title",
     "teacher.quizTitlePh": "Unit quiz",
     "teacher.quizPassLabel": "Passing score (%)",
@@ -266,11 +312,14 @@ export const dict = {
     "teacher.addOption": "Add option",
     "teacher.minOneQuestion": "The quiz needs at least one question",
     "teacher.errQuestionNoPrompt": "There's a question without a prompt.",
+    "teacher.errQuestionMinOptions": "The question \"{prompt}…\" needs at least 2 options with text.",
+    "teacher.errQuestionNoCorrect": "Mark the correct option for \"{prompt}…\".",
     "teacher.errNoValidQuestion": "Add at least one valid question.",
     "teacher.quizSaved": "Quiz saved",
     "teacher.quizSaveError": "Could not save the quiz",
 
     // Lesson video builder
+    "teacher.videoModalTitle": "Video · {lesson}",
     "teacher.videoSourceLabel": "Video source",
     "teacher.videoOptNone": "No video",
     "teacher.videoOptUpload": "Upload file (MP4)",
@@ -307,6 +356,7 @@ export const dict = {
     "teacher.resTagLabel": "Tag",
     "teacher.resTagPh": "Rebuttal",
     "teacher.resFormatLabel": "Format",
+    "teacher.resFormatPh": "Public Forum",
     "teacher.resFileLabel": "Resource file (PDF, audio, doc…)",
     "teacher.resExternalUrlLabel": "or external URL (optional)",
     "teacher.resModalTitle": "New resource (real file)",
@@ -320,6 +370,14 @@ export const dict = {
     // Participants
     "teacher.ptEyebrow": "Teacher",
     "teacher.ptTitle": "Participants",
+    "teacher.coachNameFallback": "Coach",
+    "teacher.ptCountsSub": "{students} · {coaches}",
+    "teacher.coachUnit": "coach",
+    "teacher.ptFilterAll": "All",
+    "teacher.ptFilterStudents": "Students",
+    "teacher.ptFilterCoaches": "Coaches",
+    "teacher.ptFilterRisk": "At risk",
+    "teacher.studentFallbackName": "student",
     "teacher.ptSearchAria": "Search participants",
     "teacher.ptSearchPh": "Search participants…",
     "teacher.ptThName": "Name",
@@ -341,6 +399,7 @@ export const dict = {
     "teacher.critCrossfire": "Crossfire",
 
     // Round adjudication modal
+    "teacher.adjModalTitle": "Adjudicate round · {name}",
     "teacher.adjResultLabel": "Result",
     "teacher.adjResultWin": "Win",
     "teacher.adjResultLoss": "Loss",
@@ -356,5 +415,8 @@ export const dict = {
     "teacher.adjPublishBtn": "Adjudicate and publish",
     "teacher.adjudicating": "Adjudicating…",
     "teacher.adjError": "Could not adjudicate the round",
+    "teacher.adjToastBase": "Round adjudicated for {name}",
+    "teacher.adjToastPromoted": " · promoted to {tier}!",
+    "teacher.adjPartnerUpdated": " · teammate also updated",
   },
 };

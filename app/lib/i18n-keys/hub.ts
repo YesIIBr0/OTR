@@ -4,6 +4,13 @@
    en la pantalla; en = traducción profesional natural. Consumido por t() de ./i18n. */
 export const dict = {
   es: {
+    // fallbacks compartidos (coach/equipo/nombre)
+    "hub.coachFallbackTagline": "Coach OTR",
+    "hub.programTeamFallback": "Equipo OTR",
+    "hub.fallbackName": "campeón",
+    "hub.reviewUnitSingular": "reseña",
+    "hub.reviewUnitPlural": "reseñas",
+
     // tarjeta de programa (programCard)
     "hub.programFree": "Gratis",
     "hub.programInRoute": "En tu ruta",
@@ -11,6 +18,7 @@ export const dict = {
 
     // hub home — bienvenida
     "hub.homeEyebrow": "El hub de la academia",
+    "hub.homeWelcome": "Bienvenido al Hub OTR, {name}",
     "hub.homeSubtitle": "Eventos, programas, materiales y tu comunidad — todo en un lugar.",
     "hub.homeExploreBtn": "Explorar programas",
     "hub.homeArsenalBtn": "Arsenal",
@@ -38,8 +46,10 @@ export const dict = {
     // explorar
     "hub.exploreTitle": "Explorar",
     "hub.exploreSub": "Coaches y programas de la academia — elige con quién y cómo entrenar",
+    "hub.exploreFilterAll": "Todos",
     "hub.exploreCoachesLabel": "Coaches",
     "hub.exploreProgramsLabel": "Programas",
+    "hub.exploreViewProfile": "Ver perfil",
 
     // mi experiencia
     "hub.xpTitle": "Mi experiencia",
@@ -92,6 +102,7 @@ export const dict = {
     "hub.obStyleLabel": "Cómo trabajas (tu método)",
     "hub.obStylePlaceholder": "Diagnóstico primero, drills bajo presión, feedback después de cada ronda…",
     "hub.obStudentEyebrow": "Tu experiencia",
+    "hub.obStudentTitle": "Arma tu ruta, {name}.",
     "hub.obStudentBody": "Elige cómo quieres entrenar — puedes cambiarlo cuando quieras en \"Mi experiencia\".",
     "hub.obGoalsQuestion": "¿Qué quieres lograr?",
     "hub.obPaceLabel": "Tu ritmo",
@@ -100,6 +111,13 @@ export const dict = {
     "hub.obSaveAndEnter": "Guardar y entrar al hub",
   },
   en: {
+    // shared fallbacks (coach/team/name)
+    "hub.coachFallbackTagline": "OTR Coach",
+    "hub.programTeamFallback": "OTR Team",
+    "hub.fallbackName": "champion",
+    "hub.reviewUnitSingular": "review",
+    "hub.reviewUnitPlural": "reviews",
+
     // program card (programCard)
     "hub.programFree": "Free",
     "hub.programInRoute": "On your path",
@@ -107,6 +125,7 @@ export const dict = {
 
     // hub home — welcome
     "hub.homeEyebrow": "The academy hub",
+    "hub.homeWelcome": "Welcome to the OTR Hub, {name}",
     "hub.homeSubtitle": "Events, programs, materials and your community — all in one place.",
     "hub.homeExploreBtn": "Explore programs",
     "hub.homeArsenalBtn": "Arsenal",
@@ -134,8 +153,10 @@ export const dict = {
     // explore
     "hub.exploreTitle": "Explore",
     "hub.exploreSub": "Academy coaches and programs — choose who you train with and how",
+    "hub.exploreFilterAll": "All",
     "hub.exploreCoachesLabel": "Coaches",
     "hub.exploreProgramsLabel": "Programs",
+    "hub.exploreViewProfile": "View profile",
 
     // my experience
     "hub.xpTitle": "My experience",
@@ -188,6 +209,7 @@ export const dict = {
     "hub.obStyleLabel": "How you work (your method)",
     "hub.obStylePlaceholder": "Diagnosis first, drills under pressure, feedback after every round…",
     "hub.obStudentEyebrow": "Your experience",
+    "hub.obStudentTitle": "Build your path, {name}.",
     "hub.obStudentBody": "Choose how you want to train — you can change it anytime under \"My experience\".",
     "hub.obGoalsQuestion": "What do you want to achieve?",
     "hub.obPaceLabel": "Your pace",

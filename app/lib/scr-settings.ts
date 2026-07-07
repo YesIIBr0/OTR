@@ -181,7 +181,7 @@ S.settings = {
         lb.setAttribute("aria-checked", String(!next));
         lb.style.background = !next ? "var(--otr-green)" : "var(--n-200)";
         if (knob) knob.style.left = !next ? "22px" : "3px";
-        w.toast?.("No se pudo guardar el cambio", "error");
+        w.toast?.(t("settings.saveFailed"), "error");
       }
     });
     // [UIC-03] Cambiar contraseña: modal dedicado (actual + nueva + confirmar) → PATCH /api/profile.

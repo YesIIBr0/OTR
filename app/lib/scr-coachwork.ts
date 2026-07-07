@@ -56,8 +56,8 @@ const money = (cents) => {
   return `$${v % 1 ? v.toFixed(2) : v.toFixed(0)}`;
 };
 const ini = (name) => (String(name || "A").split(" ").map((w) => w[0]).join("") || "A").slice(0, 2).toUpperCase();
-const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const DIAS_CORTO = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const DIAS = t("cw.weekdays").split(", ");
+const DIAS_CORTO = t("cw.weekdaysShort").split(", ");
 function fmtMin(min) {
   const t = Math.max(0, Number(min) || 0);
   const h = Math.floor(t / 60), m = t % 60;
@@ -69,14 +69,14 @@ function fmtMin(min) {
 /* ---------------- normalización defensiva (contrato C1) ---------------- */
 const cw = () => DB.coachwork || {};
 function normBooking(b = {}) {
-  const student = b.studentName || b.student || b.name || "Alumno OTR";
+  const student = b.studentName || b.student || b.name || t("cw.studentFallback");
   const amountCents = Number(b.amountCents != null ? b.amountCents : b.priceCents) || 0;
   return {
     id: b.id || b.bookingId || "",
     student,
     initials: b.studentInitials || b.initials || ini(student),
     slotLabel: b.slotLabel || b.when || "",
-    pkgName: b.packageName || b.pkgName || (b.package && b.package.name) || "Sesión individual",
+    pkgName: b.packageName || b.pkgName || (b.package && b.package.name) || t("cw.singleSession"),
     amountCents,
     amountLabel: b.amountLabel || b.priceLabel || (amountCents ? money(amountCents) : ""),
     status: String(b.status || "").toUpperCase(),
@@ -225,7 +225,7 @@ function viewAgenda() {
 
   return `
   <div class="grid g-4" style="margin-bottom:18px">
-    <div class="tile fade-up" style="--d:0">${C.kpi(t("cw.kpiRating"), m.rating ? m.rating.toFixed(1) : "—", { ic: "star", unit: m.reviews ? ` · ${m.reviews} reseña${m.reviews === 1 ? "" : "s"}` : "" })}</div>
+    <div class="tile fade-up" style="--d:0">${C.kpi(t("cw.kpiRating"), m.rating ? m.rating.toFixed(1) : "—", { ic: "star", unit: m.reviews ? ` · ${m.reviews} ${m.reviews === 1 ? t("cw.reviewSingular") : t("cw.reviewPlural")}` : "" })}</div>
     <div class="tile fade-up" style="--d:1">${C.kpi(t("cw.kpiTotalBookings"), String(m.total), { ic: "calendar" })}</div>
     <div class="tile fade-up" style="--d:2">${C.kpi(t("cw.kpiCompleted"), String(m.completed), { ic: "checkCircle" })}</div>
     <div class="tile fade-up" style="--d:3">${C.kpi(t("cw.kpiRepeatStudents"), String(m.repeat), { ic: "users" })}</div>
@@ -266,12 +266,12 @@ function viewEarnings() {
   <div class="grid g-4" style="margin-bottom:18px">
     ${tile(t("cw.earnEscrow"), e.heldLabel, t("cw.earnEscrowSub"), "lock", 0)}
     ${tile(t("cw.earnReleased"), e.releasedLabel, t("cw.earnReleasedSub"), "checkCircle", 1)}
-    ${tile(t("cw.earnPayout"), e.payoutLabel, `después del take rate ${e.takeRate}%`, "award", 2)}
+    ${tile(t("cw.earnPayout"), e.payoutLabel, t("cw.earnPayoutSub").replace("{rate}", String(e.takeRate)), "award", 2)}
     ${tile(t("cw.earnThisMonth"), e.monthPayoutLabel, t("cw.earnThisMonthSub"), "calendar", 3)}
   </div>
 
   <div class="alert info fade-up" style="--d:1;margin-bottom:18px"><span class="ai">${IC.lock}</span>
-    <div><div class="at">${t("cw.transparencyTitle")}</div>OTR retiene ${e.takeRate}% por sesión; el resto se libera vía escrow cuando marcas la sesión como completada.</div>
+    <div><div class="at">${t("cw.transparencyTitle")}</div>${t("cw.transparencyBody").replace("{rate}", String(e.takeRate))}</div>
   </div>
 
   <div class="table-wrap fade-up" style="--d:2">
@@ -377,8 +377,8 @@ function viewAvailability() {
           ? `<div class="stack" style="gap:8px;margin-top:10px">${pkgs.map((k) => `
             <div class="tile" style="padding:11px 13px;display:flex;align-items:center;gap:10px">
               <span style="flex:1;min-width:0">
-                <b style="font-size:13px;display:block">${esc(k.name || (Number(k.sessions) > 1 ? `Paquete de ${k.sessions}` : "Sesión individual"))}</b>
-                <span class="faint" style="font-size:11.5px">${Number(k.sessions) || 1} sesión${Number(k.sessions) === 1 ? "" : "es"} · 60 min</span>
+                <b style="font-size:13px;display:block">${esc(k.name || (Number(k.sessions) > 1 ? t("cw.packageOf").replace("{n}", String(k.sessions)) : t("cw.singleSession")))}</b>
+                <span class="faint" style="font-size:11.5px">${Number(k.sessions) || 1} ${Number(k.sessions) === 1 ? t("cw.sessionSingular") : t("cw.sessionPlural")} · ${t("cw.sessionDuration")}</span>
               </span>
               ${Number(k.discountPct) > 0 ? `<span class="badge ok" style="flex:none">-${Number(k.discountPct)}%</span>` : ""}
               <b class="cc-pct" style="font-size:14px;font-weight:800;flex:none">${money(k.priceCents)}</b>
@@ -467,7 +467,7 @@ S.coachwork = {
           const d = await w.api(`/api/bookings/${encodeURIComponent(id)}`, { action: "complete" }, "PATCH");
           const payout = (d && d.escrow && Number(d.escrow.payoutCents)) || 0;
           moveToPast(id, "COMPLETED", "RELEASED", payout);
-          w.toast?.(`Sesión completada — payout ${money(payout)}`, "ok");
+          w.toast?.(t("cw.completedToast").replace("{payout}", money(payout)), "ok");
           repaint();
         } catch (e) {
           w.toast?.((e && e.message) || t("cw.completeError"), "danger");

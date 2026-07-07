@@ -50,21 +50,21 @@ const langBadges = (languages) =>
     .map((l) => `<span class="badge">${esc(l.toUpperCase())}</span>`).join("");
 // Etiqueta relativa simple desde un ISO ("hoy", "hace 3 días", "hace 2 meses").
 const whenAgo = (iso) => {
-  const t = Date.parse(iso || "");
-  if (Number.isNaN(t)) return "";
-  const days = Math.floor((Date.now() - t) / 86400000);
-  if (days <= 0) return "hoy";
-  if (days === 1) return "ayer";
-  if (days < 30) return `hace ${days} días`;
+  const ts = Date.parse(iso || "");
+  if (Number.isNaN(ts)) return "";
+  const days = Math.floor((Date.now() - ts) / 86400000);
+  if (days <= 0) return t("mkt.agoToday");
+  if (days === 1) return t("mkt.agoYesterday");
+  if (days < 30) return t("mkt.agoDays").replace("{n}", String(days));
   const months = Math.floor(days / 30);
-  if (months < 12) return `hace ${months} ${months === 1 ? "mes" : "meses"}`;
+  if (months < 12) return (months === 1 ? t("mkt.agoMonthSingular") : t("mkt.agoMonthsPlural")).replace("{n}", String(months));
   const years = Math.floor(months / 12);
-  return `hace ${years} ${years === 1 ? "año" : "años"}`;
+  return (years === 1 ? t("mkt.agoYearSingular") : t("mkt.agoYearsPlural")).replace("{n}", String(years));
 };
 // Normaliza una reseña de la API ({studentName,studentInitials,createdAt,verifiedBooking})
 // o legacy ({author,initials,when}) a la forma única que consume el renderer.
 const normReview = (r) => ({
-  author: r.author || r.name || r.studentName || "Alumno OTR",
+  author: r.author || r.name || r.studentName || t("mkt.studentFallback"),
   initials: r.initials || r.studentInitials || ini(r.author || r.name || r.studentName),
   rating: Number(r.rating) || 0,
   body: r.body || "",
@@ -74,7 +74,7 @@ const normReview = (r) => ({
 
 /* ---------------- normalización de datos (defensiva) ---------------- */
 function normCoach(c = {}) {
-  const name = c.name || "Coach OTR";
+  const name = c.name || t("mkt.coachFallbackName");
   const packages = Array.isArray(c.packages) ? c.packages : [];
   const hourly = Number(c.hourlyCents) || 0;
   // [auditoría] "desde $X" = fuente canónica del contrato (queries: fromPriceCents = paquete
@@ -91,7 +91,7 @@ function normCoach(c = {}) {
     profileId: c.profileId || c.id || "",
     name,
     initials: c.initials || ini(name),
-    headline: c.headline || "Coach OTR",
+    headline: c.headline || t("mkt.coachFallbackName"),
     verified: !!(c.verified != null ? c.verified : c.coachVerified),
     rating: Number(c.ratingAvg != null ? c.ratingAvg : c.rating) || 0,
     reviews: Number(c.reviewCount != null ? c.reviewCount : c.reviews) || 0,
@@ -136,8 +136,8 @@ const selState = () => {
 const resetSel = () => { (window).__mkSel = { pkg: null, dayKey: null, slotIso: null, slotLabel: "", dayLabel: "" }; };
 
 /* ---------------- disponibilidad → días + slots (patrón del flujo /consulta) ---------------- */
-const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
-const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const DIAS = () => t("mkt.weekdaysShort").split(", ");
+const MESES = () => t("mkt.monthsShort").split(", ");
 const SLOT_MIN = 60; // sesiones de 60 min
 const LEAD_MS = 12 * 3600 * 1000; // no reservar dentro de las próximas 12h
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -159,7 +159,7 @@ function nextDays(rows, n = 14) {
     if (!rows.some((r) => Number(r.weekday) === d.getDay())) continue;
     out.push({
       key: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`,
-      label: `${DIAS[d.getDay()]} ${d.getDate()} ${MESES[d.getMonth()]}`,
+      label: `${DIAS()[d.getDay()]} ${d.getDate()} ${MESES()[d.getMonth()]}`,
       date: d,
     });
   }
@@ -191,7 +191,7 @@ function coachPackages(c) {
       .map((p, i) => ({
         key: p.id || `pkg-${i}`,
         id: p.id || "",
-        name: p.name || (Number(p.sessions) > 1 ? `Paquete de ${p.sessions}` : "Sesión individual"),
+        name: p.name || (Number(p.sessions) > 1 ? t("mkt.packageOfN").replace("{n}", String(p.sessions)) : t("mkt.singleSessionName")),
         sessions: Number(p.sessions) || 1,
         priceCents: Number(p.priceCents) || 0,
         discountPct: Number(p.discountPct) || 0,
@@ -203,7 +203,7 @@ function coachPackages(c) {
   // nunca enviaba packageId y el server cobraba 1 hora, así que el total mostrado (con descuento)
   // no coincidía con lo cobrado. Los multi-sesión con descuento deben venir de CoachPackage (DB).
   if (c.hourlyCents > 0) {
-    return [{ key: "derived-1", id: "", name: "Sesión individual", sessions: 1, priceCents: c.hourlyCents, discountPct: 0 }];
+    return [{ key: "derived-1", id: "", name: t("mkt.singleSessionName"), sessions: 1, priceCents: c.hourlyCents, discountPct: 0 }];
   }
   return [];
 }
@@ -225,7 +225,7 @@ function coachCard(c, i) {
         <div class="muted" style="font-size:12px;margin-top:3px">${c.headline}</div>
         <div class="row vcenter" style="gap:6px;margin-top:6px">
           ${stars(c.rating, 12)}<b style="font-size:12.5px">${c.rating ? c.rating.toFixed(1) : "—"}</b>
-          <span class="faint" style="font-size:12px">(${c.reviews} reseña${c.reviews === 1 ? "" : "s"})</span>
+          <span class="faint" style="font-size:12px">(${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")})</span>
         </div>
       </div>
     </div>
@@ -274,14 +274,14 @@ function renderGrid() {
     <h1 class="page-title">${t("mkt.title")}</h1>
     <div class="page-sub">${t("mkt.subtitle")}</div>
   </div>
-  <span class="badge sky">${list.length} coach${list.length === 1 ? "" : "es"}</span></div>
+  <span class="badge sky">${list.length} ${list.length === 1 ? t("mkt.coachUnitSingular") : t("mkt.coachUnitPlural")}</span></div>
 
   <div class="searchbox" style="width:100%;max-width:440px;margin-bottom:12px">
     <span style="display:flex;width:16px;height:16px">${IC.search}</span>
     <input data-mk-q placeholder="${t("mkt.searchPlaceholder")}" value="${esc(f.q || "")}" aria-label="${t("mkt.searchAria")}" style="flex:1"/>
   </div>
   <div class="row wrap vcenter" style="gap:8px;margin-bottom:12px" id="mk-specs">
-    ${specs.map((s) => `<button class="chip ${f.spec === s ? "active" : ""}" data-mk-spec="${esc(s)}">${s}</button>`).join("")}
+    ${specs.map((s) => `<button class="chip ${f.spec === s ? "active" : ""}" data-mk-spec="${esc(s)}">${s === "Todos" ? t("mkt.specAll") : s}</button>`).join("")}
   </div>
   <div class="row wrap vcenter" style="gap:10px;margin-bottom:22px">
     <select class="select" data-mk-lang style="width:auto;min-width:130px">
@@ -358,7 +358,7 @@ function bookedPanel(b) {
       <div class="notif-ic ${pending ? "warn" : "ok"}" style="width:40px;height:40px;border-radius:11px">${pending ? IC.clock : IC.checkCircle}</div>
       <div>
         <b style="font-size:14px">${pending ? t("mkt.bookedPendingTitle") : t("mkt.bookedConfirmedTitle")}</b>
-        <div class="muted" style="font-size:12.5px;margin-top:2px">${esc(b.pkgName || "Sesión")} · ${esc(b.dayLabel || "")} ${esc(b.slotLabel || "")}</div>
+        <div class="muted" style="font-size:12.5px;margin-top:2px">${esc(b.pkgName) || t("mkt.sessionFallback")} · ${esc(b.dayLabel || "")} ${esc(b.slotLabel || "")}</div>
       </div>
     </div>
     <div class="divider"></div>
@@ -428,12 +428,12 @@ function bookingCard(c, canBook, role) {
     ${pkgs.length ? `<div class="stack" style="gap:8px">
       ${pkgs.map((p) => {
         const on = pkg && p.key === pkg.key;
-        const per = p.sessions > 1 ? `<span class="faint" style="font-size:11.5px">${money(Math.round(p.priceCents / p.sessions))}/sesión</span>` : "";
+        const per = p.sessions > 1 ? `<span class="faint" style="font-size:11.5px">${money(Math.round(p.priceCents / p.sessions))}${t("mkt.perSessionShort")}</span>` : "";
         return `
         <button class="tile" data-mk-pkg="${esc(p.key)}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;padding:11px 13px;${on ? "border-color:var(--otr-sky);box-shadow:var(--ring)" : ""}">
           <span style="flex:1;min-width:0">
             <b style="font-size:13px;display:block">${esc(p.name)}</b>
-            <span class="faint" style="font-size:11.5px">${p.sessions} sesión${p.sessions === 1 ? "" : "es"} · 60 min</span>
+            <span class="faint" style="font-size:11.5px">${p.sessions} ${p.sessions === 1 ? t("mkt.sessionUnitSingular") : t("mkt.sessionUnitPlural")} · 60 min</span>
           </span>
           ${p.discountPct > 0 ? `<span class="badge ok" style="flex:none">-${p.discountPct}%</span>` : ""}
           <span style="flex:none;text-align:right"><b class="cc-pct" style="font-size:14px;font-weight:800">${money(p.priceCents)}</b>${per ? `<span style="display:block">${per}</span>` : ""}</span>
@@ -502,8 +502,8 @@ function renderProfile(state) {
           <div class="muted" style="font-size:13px;margin-top:4px">${c.headline}</div>
           <div class="row vcenter wrap" style="gap:8px;margin-top:8px;font-size:12.5px">
             ${stars(c.rating, 13)}<b>${c.rating ? c.rating.toFixed(1) : "—"}</b>
-            <span class="faint">${c.reviews} reseña${c.reviews === 1 ? "" : "s"}</span>
-            ${c.bookingCount ? `<span class="dot-sep"></span><span class="faint">${c.bookingCount} sesiones reservadas</span>` : ""}
+            <span class="faint">${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")}</span>
+            ${c.bookingCount ? `<span class="dot-sep"></span><span class="faint">${t("mkt.sessionsBooked").replace("{n}", String(c.bookingCount))}</span>` : ""}
             ${c.responseTime ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${esc(c.responseTime)}</span>` : ""}
           </div>
         </div>

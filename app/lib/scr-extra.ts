@@ -28,15 +28,15 @@ function lessonRow(l, mid, edit) {
   const quizInDb = (DB.quizByLesson || {})[l.id];
   const quizBadge = isQuiz
     ? (quizInDb
-        ? `<span class="badge ok" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.check} ${quizInDb.questions?.length || 0} preg.</span>`
+        ? `<span class="badge ok" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.check} ${quizInDb.questions?.length || 0} ${t("extra.questionsAbbrev")}</span>`
         : `<span class="badge warn" style="height:18px;font-size:10px;flex:none">${t("extra.noQuestions")}</span>`)
     : "";
   const videoBadge = l.videoKind && l.videoKind !== "none"
     ? `<span class="badge sky" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.video} ${l.videoKind === "youtube" ? "YouTube" : "Stream"}</span>`
     : "";
   const isAssign = l.type === "assign" || l.type === "mic";
-  const dueBadge = isAssign && l.dueAt ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${IC.calendar || ""} Entrega ${fmtDue(l.dueAt)}</span>` : "";
-  const ptsBadge = isAssign && l.maxPoints != null ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${l.maxPoints} pts</span>` : "";
+  const dueBadge = isAssign && l.dueAt ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${IC.calendar || ""} ${t("extra.dueBadge").replace("{date}", fmtDue(l.dueAt))}</span>` : "";
+  const ptsBadge = isAssign && l.maxPoints != null ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${l.maxPoints} ${t("extra.pointsAbbrev")}</span>` : "";
   const hiddenBadge = l.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">${t("extra.hidden")}</span>` : "";
   const grip = edit ? `<span class="drag-grip" title="${t("extra.dragToReorder")}">${IC.grip}</span>` : "";
   const titleSpan = `<span class="lrow-title" ${edit ? `data-inline-rename="lesson:${l.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}" ${edit ? `title="${t("extra.dblClickRename")}"` : ""}>${esc(l.title)}</span>`;
@@ -261,7 +261,7 @@ export const S = {
       const edit = typeof window !== "undefined" ? window.__editMode !== false : true;
       const mods = c.modules || [];
       const lessons = mods.reduce((n, m) => n + ((m.lessons || []).length), 0);
-      const pub = c.published === false ? `<span class="badge warn" style="flex:none">Borrador</span>` : `<span class="badge ok" style="flex:none">Publicado</span>`;
+      const pub = c.published === false ? `<span class="badge warn" style="flex:none">${t("extra.draft")}</span>` : `<span class="badge ok" style="flex:none">${t("extra.published")}</span>`;
       const head = `<div class="page-head"><div><p class="eyebrow">${t("extra.eyebrowTeacherBuilder")}</p><h1 class="page-title">${esc(c.code)} · ${c.name}</h1>
         <div class="page-sub">${edit ? t("extra.editModeActiveSub") : t("extra.readOnlySub")}</div></div></div>`;
       const hero = `
@@ -306,7 +306,7 @@ export const S = {
       const section = (title, count, body) => body ? `<div class="kit-section fade-up" style="--d:${_sec++}"><h3 class="row between vcenter"><span>${title}</span><span class="badge-count">${count}</span></h3>${body}</div>` : "";
       return `
       <div class="page-head"><div><p class="eyebrow">${t("extra.searchEyebrow")}</p><h1 class="page-title">${t("extra.searchResultsFor")} "${esc(window.__q || "")}"</h1>
-      <div class="page-sub">${total} ${t("extra.result")}${total === 1 ? "" : "s"}</div></div></div>
+      <div class="page-sub">${total} ${total === 1 ? t("extra.resultSingular") : t("extra.resultPlural")}</div></div></div>
       ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("extra.noResults")}</h4><p>${t("extra.searchEmptyPrefix")}"${esc(window.__q || "")}${t("extra.searchEmptySuffix")}</p></div></div>` : ""}
       ${section(t("extra.coursesSection"), courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C0C0C)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div></div></div>`).join("")}</div>` : "")}
       ${section(t("extra.peopleSection"), people.length, people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="gap:11px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1;min-width:0"><b style="font-weight:600">${esc(s.n)}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}`;

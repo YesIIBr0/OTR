@@ -26,17 +26,17 @@ export const S = {};
 /* Cuenta atrás textual desde el ISO del slot ("" si no hay fecha). */
 function countdown(iso) {
   if (!iso) return "";
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return "";
-  const ms = t - Date.now();
-  if (ms <= -90 * 60000) return "finalizada";
-  if (ms <= 0) return "en curso";
+  const ts = Date.parse(iso);
+  if (Number.isNaN(ts)) return "";
+  const ms = ts - Date.now();
+  if (ms <= -90 * 60000) return t("room.countdownFinished");
+  if (ms <= 0) return t("room.countdownInProgress");
   const min = Math.round(ms / 60000);
-  if (min < 60) return `comienza en ${min} min`;
+  if (min < 60) return `${t("room.countdownStartsPrefix")} ${min} ${t("core.countdownMin")}`;
   const h = Math.round(min / 60);
-  if (h < 24) return `comienza en ${h} h`;
+  if (h < 24) return `${t("room.countdownStartsPrefix")} ${h} ${t("core.countdownHour")}`;
   const d = Math.round(h / 24);
-  return `comienza en ${d} día${d === 1 ? "" : "s"}`;
+  return `${t("room.countdownStartsPrefix")} ${d} ${d === 1 ? t("core.countdownDaySingular") : t("core.countdownDayPlural")}`;
 }
 
 /* Resuelve la reserva por id desde el lado que corresponde al rol. */

@@ -15,11 +15,15 @@ export const dict = {
     "comm.forum.filterMyThreads": "Mis hilos",
     "comm.forum.pinned": "Fijados",
     "comm.forum.recent": "Recientes",
+    "comm.forum.byAuthor": "por {author}",
+    "comm.forum.replies": "respuestas",
+    "comm.forum.views": "vistas",
 
     // hilo · posts y respuesta
     "comm.thread.coachBadge": "Coach",
     "comm.thread.authorBadge": "Autor",
     "comm.thread.useful": "Útil",
+    "comm.thread.markedUseful": "Marcado como útil",
     "comm.thread.reply": "Responder",
     "comm.thread.backToForum": "Volver al foro",
     "comm.thread.yourReply": "Tu respuesta",
@@ -63,11 +67,15 @@ export const dict = {
     "comm.forum.filterMyThreads": "My threads",
     "comm.forum.pinned": "Pinned",
     "comm.forum.recent": "Recent",
+    "comm.forum.byAuthor": "by {author}",
+    "comm.forum.replies": "replies",
+    "comm.forum.views": "views",
 
     // thread · posts and reply
     "comm.thread.coachBadge": "Coach",
     "comm.thread.authorBadge": "Author",
     "comm.thread.useful": "Helpful",
+    "comm.thread.markedUseful": "Marked as helpful",
     "comm.thread.reply": "Reply",
     "comm.thread.backToForum": "Back to forum",
     "comm.thread.yourReply": "Your reply",

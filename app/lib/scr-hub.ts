@@ -58,7 +58,7 @@ function coachList() {
       id: c.id || c.userId || "coach",
       name: c.name,
       ini: c.initials || ((c.name || "").split(" ").map((w) => w[0]).join("") || "C").slice(0, 2).toUpperCase(),
-      tagline: c.headline || "Coach OTR",
+      tagline: c.headline || t("hub.coachFallbackTagline"),
       rating: c.ratingAvg != null ? c.ratingAvg : null,
       reviews: c.reviewCount != null ? c.reviewCount : null,
       formats: Array.isArray(c.specialtiesList) ? c.specialtiesList.join(" · ") : (c.specialties || ""),
@@ -69,7 +69,7 @@ function coachList() {
   return names.map((n) => ({
     id: "coach", name: n,
     ini: ((n || "").replace(/Coach /i, "").split(" ").map((w) => w[0]).join("") || "C").slice(0, 2).toUpperCase(),
-    tagline: "Coach OTR", rating: null, reviews: null, formats: "",
+    tagline: t("hub.coachFallbackTagline"), rating: null, reviews: null, formats: "",
     programs: (DB.catalog || []).filter((c) => c.coach === n),
   }));
 }
@@ -82,7 +82,7 @@ function programCard(c, i = 0) {
     <div class="row between vcenter" style="gap:10px"><b style="font-size:15px;line-height:1.3">${esc(c.name)}</b>
       ${c.format ? `<span class="badge sky" style="flex:none">${esc(c.format)}</span>` : ""}</div>
     <div class="row vcenter wrap" style="gap:8px;font-size:12px;color:var(--text-2);margin-top:8px">
-      <span>${esc(c.coach || "Equipo OTR")}</span>${c.modality ? `<span class="dot-sep"></span><span>${esc(c.modality)}</span>` : ""}
+      <span>${esc(c.coach || t("hub.programTeamFallback"))}</span>${c.modality ? `<span class="dot-sep"></span><span>${esc(c.modality)}</span>` : ""}
     </div>
     <div class="divider" style="margin:14px 0"></div>
     <div class="row between vcenter" style="margin-top:auto;gap:10px">
@@ -102,13 +102,13 @@ export const S = {
       const mine = enrolledCourses();
       const feed = (DB.events || []).map((e) => ({ ic: "calendar", tone: e.tone === "warn" ? "warn" : e.tone === "navy" ? "navy" : "sky", t: e.t, d: e.c, when: e.when }))
         .concat((DB.notifications || []).slice(0, 2).map((n) => ({ ic: n.ic || "bell", tone: n.tone || "sky", t: n.t, d: n.d, when: n.when })));
-      const name = (DB.me?.name || "").split(" ")[0] || "campeón";
+      const name = (DB.me?.name || "").split(" ")[0] || t("hub.fallbackName");
       return `
       <div class="hello-card fade-up" style="margin-bottom:18px">
         <div class="h-row">
           <div>
             <p class="eyebrow" style="color:var(--otr-sky-hi)">${t("hub.homeEyebrow")}</p>
-            <h2 class="brand-font">Bienvenido al Hub OTR, ${esc(name)}</h2>
+            <h2 class="brand-font">${t("hub.homeWelcome").replace("{name}", esc(name))}</h2>
             <p style="color:rgba(234,242,251,.72);font-size:13.5px;margin-top:4px">${t("hub.homeSubtitle")}</p>
           </div>
           <div class="row" style="gap:10px">
@@ -135,7 +135,7 @@ export const S = {
         <div class="stack" style="gap:16px">
           ${role !== "teacher" ? `
           <div class="card card-pad fade-up" style="--d:1;border-color:var(--otr-sky)">
-            <div class="row between vcenter"><b style="font-size:13.5px">${t("hub.homeYourRoute")}</b><span class="badge sky">${mine.length} programa${mine.length === 1 ? "" : "s"}</span></div>
+            <div class="row between vcenter"><b style="font-size:13.5px">${t("hub.homeYourRoute")}</b><span class="badge sky">${mine.length} ${mine.length === 1 ? t("hub.xpProgramUnitSingular") : t("hub.xpProgramUnitPlural")}</span></div>
             <div class="row wrap" style="gap:6px;margin-top:10px">${mine.length ? mine.map((c) => `<span class="badge">${esc(c.name)}</span>`).join("") : `<span class="faint" style="font-size:12.5px">${t("hub.homeNoPrograms")}</span>`}</div>
             <button class="btn btn-soft btn-sm btn-block" style="margin-top:12px" data-go="lifetime">${IC.award} ${t("hub.homeViewJourney")}</button>
           </div>` : `
@@ -147,11 +147,11 @@ export const S = {
           <div class="card card-pad fade-up" style="--d:2">
             <b style="font-size:13.5px">${t("hub.homeAcademyCoaches")}</b>
             <div class="stack" style="gap:4px;margin-top:10px">
-              ${coachList().slice(0, 4).map((t) => `
+              ${coachList().slice(0, 4).map((tc) => `
                 <div class="lrow" style="padding:9px 0;cursor:pointer;border-bottom:1px solid var(--border)" data-go="coach">
-                  ${C.avatar(t.ini, { size: "sm", bg: "var(--otr-navy)" })}
-                  <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">${esc(t.name)}</div>
-                  ${t.rating ? `<div class="row vcenter" style="gap:5px">${stars(t.rating, 11)}<span class="faint" style="font-size:11.5px">${esc(String(t.rating))} · ${esc(String(t.reviews || 0))} reseñas</span></div>` : `<div class="faint" style="font-size:11.5px">${esc(t.tagline)}</div>`}</div>
+                  ${C.avatar(tc.ini, { size: "sm", bg: "var(--otr-navy)" })}
+                  <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">${esc(tc.name)}</div>
+                  ${tc.rating ? `<div class="row vcenter" style="gap:5px">${stars(tc.rating, 11)}<span class="faint" style="font-size:11.5px">${esc(String(tc.rating))} · ${esc(String(tc.reviews || 0))} ${Number(tc.reviews) === 1 ? t("hub.reviewUnitSingular") : t("hub.reviewUnitPlural")}</span></div>` : `<div class="faint" style="font-size:11.5px">${esc(tc.tagline)}</div>`}</div>
                   <span style="flex:none;color:var(--text-3)">${IC.chevR}</span>
                 </div>`).join("")}
             </div>
@@ -176,23 +176,23 @@ export const S = {
       <div class="page-sub">${t("hub.exploreSub")}</div></div></div>
 
       <div class="row" style="gap:8px;margin-bottom:22px;flex-wrap:wrap" id="ex-filters">
-        ${["Todos", ...formats].map((f, i) => `<button class="chip ${i === 0 ? "active" : ""}" data-f="${f}">${esc(f)}</button>`).join("")}
+        ${["Todos", ...formats].map((f, i) => `<button class="chip ${i === 0 ? "active" : ""}" data-f="${f}">${i === 0 ? t("hub.exploreFilterAll") : esc(f)}</button>`).join("")}
       </div>
 
       <div class="row between vcenter" style="margin-bottom:14px"><b style="font-size:14px">${t("hub.exploreCoachesLabel")}</b><span class="badge sky">${coaches.length}</span></div>
       <div class="grid g-3" style="margin-bottom:30px">
-        ${coaches.map((t, i) => `
+        ${coaches.map((tc, i) => `
           <div class="tile click teacher-card fade-up" data-go="coach" style="display:flex;flex-direction:column;--d:${i}">
             <div class="row" style="gap:12px">
-              ${C.avatar(t.ini, { size: "lg", bg: "var(--otr-navy)" })}
-              <div style="min-width:0;flex:1"><b style="font-size:14.5px;line-height:1.3">${esc(t.name)}</b>
-                <div class="muted" style="font-size:12px;margin-top:3px">${esc(t.tagline || "Coach OTR")}</div>
-                ${t.rating ? `<div class="row vcenter" style="gap:6px;margin-top:6px">${stars(t.rating, 12)}<b style="font-size:12.5px">${esc(String(t.rating))}</b><span class="faint" style="font-size:12px">(${esc(String(t.reviews || 0))})</span></div>` : ""}
+              ${C.avatar(tc.ini, { size: "lg", bg: "var(--otr-navy)" })}
+              <div style="min-width:0;flex:1"><b style="font-size:14.5px;line-height:1.3">${esc(tc.name)}</b>
+                <div class="muted" style="font-size:12px;margin-top:3px">${esc(tc.tagline || t("hub.coachFallbackTagline"))}</div>
+                ${tc.rating ? `<div class="row vcenter" style="gap:6px;margin-top:6px">${stars(tc.rating, 12)}<b style="font-size:12.5px">${esc(String(tc.rating))}</b><span class="faint" style="font-size:12px">(${esc(String(tc.reviews || 0))})</span></div>` : ""}
               </div>
             </div>
-            ${t.formats ? `<div class="row wrap" style="gap:6px;margin-top:12px">${String(t.formats).split(/[,·]/).slice(0, 3).map((s) => `<span class="badge">${esc(s.trim())}</span>`).join("")}</div>` : ""}
+            ${tc.formats ? `<div class="row wrap" style="gap:6px;margin-top:12px">${String(tc.formats).split(/[,·]/).slice(0, 3).map((s) => `<span class="badge">${esc(s.trim())}</span>`).join("")}</div>` : ""}
             <div class="divider" style="margin:14px 0"></div>
-            <div class="row between vcenter" style="margin-top:auto"><span class="faint" style="font-size:12px">${(t.programs || []).length} programa${(t.programs || []).length === 1 ? "" : "s"}</span><span class="sky row vcenter" style="font-size:12.5px;font-weight:600;gap:4px">Ver perfil <span style="display:inline-flex;width:14px;height:14px">${IC.arrowR}</span></span></div>
+            <div class="row between vcenter" style="margin-top:auto"><span class="faint" style="font-size:12px">${(tc.programs || []).length} ${(tc.programs || []).length === 1 ? t("hub.xpProgramUnitSingular") : t("hub.xpProgramUnitPlural")}</span><span class="sky row vcenter" style="font-size:12.5px;font-weight:600;gap:4px">${t("hub.exploreViewProfile")} <span style="display:inline-flex;width:14px;height:14px">${IC.arrowR}</span></span></div>
           </div>`).join("")}
       </div>
 
@@ -307,7 +307,7 @@ export const S = {
               <div class="field"><label class="label">${t("hub.obStyleLabel")}</label><textarea class="textarea" id="ob-style" placeholder="${t("hub.obStylePlaceholder")}">${esc((DB.coachProfile && DB.coachProfile.teachingStyle) || "")}</textarea></div>
             ` : `
               <p class="eyebrow">${t("hub.obStudentEyebrow")}</p>
-              <h2 class="ob-title">Arma tu ruta, ${esc((DB.me?.name || "").split(" ")[0] || "campeón")}.</h2>
+              <h2 class="ob-title">${t("hub.obStudentTitle").replace("{name}", esc((DB.me?.name || "").split(" ")[0] || t("hub.fallbackName")))}</h2>
               <p class="muted" style="margin-bottom:18px">${t("hub.obStudentBody")}</p>
               <label class="label" style="margin-bottom:8px;display:block">${t("hub.obGoalsQuestion")}</label>
               <div class="ob-chips" data-group="goals">

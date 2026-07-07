@@ -32,7 +32,7 @@ const ROLE_OPTS = [
 ];
 // COACH es un rol legacy (unificado en TEACHER): ya no se ofrece en el selector,
 // pero se conserva su etiqueta para que las filas COACH existentes rendericen bien.
-const ROLE_LABEL = { ...Object.fromEntries(ROLE_OPTS.map((o) => [o.v, o.l])), COACH: "Coach" };
+const ROLE_LABEL = { ...Object.fromEntries(ROLE_OPTS.map((o) => [o.v, o.l])), COACH: t("au.roleCoach") };
 const isCoachRole = (r) => r === "TEACHER" || r === "COACH";
 
 const ini = (name) =>
@@ -75,7 +75,7 @@ function userCard(u, d) {
             ${isCoachRole(role) && verified ? `<span class="badge sky" style="font-size:10.5px">${IC.check} ${t("au.verifiedBadge")}</span>` : ""}
             ${suspended ? `<span class="badge warn" style="font-size:10.5px">${t("au.suspendedBadge")}</span>` : ""}
           </div>
-          <div class="faint" style="font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}${u.ageBand === "minor" ? " · menor" : ""}</div>
+          <div class="faint" style="font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}${u.ageBand === "minor" ? " · " + t("au.minorSuffix") : ""}</div>
         </div>
       </div>
     </div>
@@ -137,7 +137,7 @@ S.adminUsers = {
 
     // [ENT-02] Cargar más mientras la lista cargada sea menor que el total filtrado.
     const more = (st.total || 0) > users.length
-      ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="au-more">Cargar más · ${users.length} de ${st.total}</button></div>`
+      ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="au-more">${t("au.loadMore").replace("{loaded}", String(users.length)).replace("{total}", String(st.total))}</button></div>`
       : "";
 
     return `

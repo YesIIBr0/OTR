@@ -31,6 +31,9 @@ export const dict = {
     "room.subWithCoach": "Sesión con tu coach",
     "room.backToBookingsCoach": "Volver a Reservas",
     "room.backToBookingsStudent": "Volver a Mis reservas",
+    "room.countdownFinished": "finalizada",
+    "room.countdownInProgress": "en curso",
+    "room.countdownStartsPrefix": "comienza en",
   },
   en: {
     "room.eyebrowSession": "Session",
@@ -64,5 +67,8 @@ export const dict = {
     "room.subWithCoach": "Session with your coach",
     "room.backToBookingsCoach": "Back to Bookings",
     "room.backToBookingsStudent": "Back to My bookings",
+    "room.countdownFinished": "ended",
+    "room.countdownInProgress": "in progress",
+    "room.countdownStartsPrefix": "starts in",
   },
 };

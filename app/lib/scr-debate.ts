@@ -136,7 +136,7 @@ function heroPanel(d) {
   <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
     <div class="h-row" style="align-items:center">
       <div style="min-width:240px">
-        <h1 class="sr-only">Debate Hub</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("debate.heroEyebrow")}</p>
+        <h1 class="sr-only">${t("debate.heroSrTitle")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("debate.heroEyebrow")}</p>
         <div class="row vcenter" style="gap:14px;margin-top:6px">
           <span class="brand-font" style="font-size:64px;font-weight:800;line-height:1;color:#fff">${d.rating}</span>
           <div class="stack" style="gap:7px">
@@ -202,7 +202,7 @@ function viewOverview(d) {
           const rs = resultStyle(h.result);
           return `<div class="agenda-item">
             <span class="badge ${rs.tone}" style="min-width:54px;justify-content:center;font-weight:800">${rs.label}</span>
-            <div style="flex:1;min-width:0"><div class="ai-t">${esc(h.opponent || "Rival")} · ${esc(h.format || "")}</div><div class="ai-c">${esc(h.eventName || "Práctica")}${h.roundLabel ? " · " + esc(h.roundLabel) : ""}</div></div>
+            <div style="flex:1;min-width:0"><div class="ai-t">${esc(h.opponent || t("debate.fallbackOpponent"))} · ${esc(h.format || "")}</div><div class="ai-c">${esc(h.eventName || t("debate.fallbackEvent"))}${h.roundLabel ? " · " + esc(h.roundLabel) : ""}</div></div>
             <span class="ai-w tnum" style="color:${deltaColor(h.delta != null ? h.delta : 0)}">${h.ratingAfter != null ? h.ratingAfter : ""}</span>
           </div>`;
         }).join("") : `<div style="padding:14px 0"><p class="faint" style="font-size:13px">${t("debate.historyEmpty")}</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-dtab="practice">${IC.mic} ${t("debate.goToPractice")}</button></div>`}
@@ -248,7 +248,7 @@ function viewHistory(d) {
         <span class="badge ${rs.tone}" style="font-weight:800;min-width:54px;justify-content:center">${rs.label}</span>
         <span class="badge ${src === "OTR" ? "sky" : ""}">${src}</span>
       </div>
-      <div style="margin-top:10px"><b style="font-size:14.5px;line-height:1.3">vs ${esc(h.opponent || "Rival")}</b></div>
+      <div style="margin-top:10px"><b style="font-size:14.5px;line-height:1.3">vs ${esc(h.opponent || t("debate.fallbackOpponent"))}</b></div>
       <div class="row vcenter wrap" style="gap:7px;margin-top:6px;font-size:12px;color:var(--text-2)">
         ${h.format ? `<span class="row vcenter" style="gap:4px">${IC.flag} ${esc(h.format)}</span>` : ""}
         ${h.eventName ? `<span class="dot-sep"></span><span>${esc(h.eventName)}</span>` : ""}
@@ -298,7 +298,7 @@ function viewPractice() {
       <div class="stack" style="gap:2px;margin-top:12px">
         ${near.length ? near.map((r) => `
           <div class="row between vcenter" style="padding:9px 0;border-bottom:1px solid var(--border)">
-            <span class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: "var(--otr-navy)" })}<span><span style="display:block;font-weight:600;font-size:13px">${r.name || "Debatiente"}</span><span class="faint" style="font-size:11.5px">${esc(tierLabel(r.tier || ""))}</span></span></span>
+            <span class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: "var(--otr-navy)" })}<span><span style="display:block;font-weight:600;font-size:13px">${r.name || t("debate.fallbackDebater")}</span><span class="faint" style="font-size:11.5px">${esc(tierLabel(r.tier || ""))}</span></span></span>
             <span class="row vcenter" style="gap:8px"><span class="tnum" style="font-weight:700;font-size:13px">${r.rating}</span><span class="badge ${r.diff <= 50 ? "ok" : "sky"}" style="font-size:10.5px">±${r.diff}</span></span>
           </div>`).join("") : `<p class="faint" style="font-size:13px">${t("debate.cohortEmptyFinder")}</p>`}
       </div>
@@ -328,7 +328,7 @@ function viewLeaderboard() {
       <td class="num tnum"><b>${r.rating}</b></td>
     </tr>`).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.lbEyebrow")}</p><h1 class="page-title" style="font-size:20px">Leaderboard</h1><div class="page-sub">${t("debate.lbSub")}</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.lbEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.lbPageTitle")}</h1><div class="page-sub">${t("debate.lbSub")}</div></div></div>
     ${proStrip(t("debate.lbUpsell"))}
     ${meRow}
     <div class="table-wrap scroll-m fade-up">
@@ -424,7 +424,7 @@ async function openDebateDetail(id) {
     ? `
       <div class="row vcenter" style="gap:10px;margin-bottom:14px">
         <span class="badge ${rs.tone}" style="font-weight:800;min-width:54px;justify-content:center">${rs.label}</span>
-        <b style="font-size:15px">vs ${esc(dbt.opponent || "Rival")}</b>
+        <b style="font-size:15px">vs ${esc(dbt.opponent || t("debate.fallbackOpponent"))}</b>
         ${dbt.format ? `<span class="badge sky">${esc(dbt.format)}</span>` : ""}
       </div>
       <div class="row vcenter wrap" style="gap:8px;font-size:12.5px;color:var(--text-2);margin-bottom:14px">
