@@ -41,6 +41,8 @@ export const dict = {
     "extra.free": "Gratis",
     "extra.enrolled": "Inscrito",
     "extra.enroll": "Inscribirme",
+    "extra.welcomeVideoBtn": "Presentación",
+    "extra.close": "Cerrar",
     // Teacher: My courses
     "extra.eyebrowTeacher": "Profesor",
     "extra.myCoursesTitle": "Mis cursos",
@@ -136,6 +138,8 @@ export const dict = {
     "extra.free": "Free",
     "extra.enrolled": "Enrolled",
     "extra.enroll": "Enroll",
+    "extra.welcomeVideoBtn": "Intro",
+    "extra.close": "Close",
     // Teacher: My courses
     "extra.eyebrowTeacher": "Teacher",
     "extra.myCoursesTitle": "My courses",

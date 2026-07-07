@@ -126,7 +126,7 @@ export const dict = {
     "core.tabContent": "Contenido",
     "core.tabGrades": "Calificaciones",
     // ── Sub-tabs de la sección Cursos (Mis cursos / Catálogo) ──
-    "core.coursesTabMine": "Mis cursos",
+    "core.coursesTabMine": "Cursos activos",
     "core.coursesTabCatalog": "Buscar nuevos",
     "core.findCatalogCta": "Buscar catálogo",
     "core.yourProgress": "Tu progreso",
@@ -299,7 +299,7 @@ export const dict = {
     "core.tabContent": "Content",
     "core.tabGrades": "Grades",
     // ── Courses section sub-tabs (My courses / Catalog) ──
-    "core.coursesTabMine": "My courses",
+    "core.coursesTabMine": "Active courses",
     "core.coursesTabCatalog": "Find new",
     "core.findCatalogCta": "Browse catalog",
     "core.yourProgress": "Your progress",

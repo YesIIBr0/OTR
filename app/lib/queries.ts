@@ -229,7 +229,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           include: { messages: { orderBy: { position: "asc" }, take: 200 } },
         })
       : Promise.resolve([] as any[]),
-    db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true } }),
+    db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true, summary: true, summaryEn: true, welcomeVideoKind: true, welcomeVideoSrc: true } }),
     // Mapa de módulos para gestión de contenido: solo profesor/admin.
     isTeacher ? db.module.findMany({ where: { course: { teacher: { email } } }, orderBy: { position: "asc" }, select: { id: true, courseId: true, title: true } }) : Promise.resolve([]),
     // Cursos impartidos (con reseñas para el perfil del coach): solo profesor/admin.
@@ -1529,7 +1529,15 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // VENTA POR CURSO APAGADA (PRD §13.1): los cursos son valor de la membresía —
     // price 0 → la UI muestra "Gratis"/Inscribirme y /api/checkout inscribe directo.
     catalog: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(pickLang(c.name, c.nameEn)), coach: esc(c.coachName), color: c.color, price: 0, enrolled: enrolledIds.has(c.id),
-      format: esc(c.format), modality: esc(c.modality) })),
+      format: esc(c.format), modality: esc(c.modality),
+      // [CATÁLOGO · llamada Isaac] overview del programa + rating por curso (Review) +
+      // video de bienvenida del profesor (welcomeVideo*), para que el catálogo se sienta un
+      // marketplace: el profe se presenta y el alumno ve estrellas antes de inscribirse.
+      summary: esc(pickLang(c.summary, c.summaryEn)),
+      rating: reviewByCourse.get(c.id)?.avg ?? null,
+      reviewCount: reviewByCourse.get(c.id)?.count ?? 0,
+      welcomeVideoKind: c.welcomeVideoKind || "none",
+      welcomeVideoSrc: c.welcomeVideoSrc || "" })),
     // --- Hub: campos nuevos (visibles para todos los roles) ---
     arsenal,
     skills,

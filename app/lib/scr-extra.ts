@@ -6,6 +6,7 @@ import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
 import { t } from "./i18n";
+import { videoEmbedHtml } from "./video";
 
 /* ---- Helpers de autoría reutilizados por "Mis cursos" y el constructor de curso ---- */
 // Fecha de entrega legible (de un ISO) → "15 nov".
@@ -189,6 +190,15 @@ export const S = {
           <div class="cc-body">
             <div class="cc-name">${c.name}</div>
             <div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div>
+            ${c.rating != null
+              ? `<div class="row vcenter" style="gap:5px;margin-top:6px;font-size:12.5px"><span style="color:var(--otr-gold,#F2B814)">★</span><b>${Number(c.rating).toFixed(1)}</b>${c.reviewCount ? `<span class="faint">· ${c.reviewCount}</span>` : ""}</div>`
+              : ""}
+            ${c.summary
+              ? `<p class="faint" style="font-size:12px;line-height:1.45;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${c.summary}</p>`
+              : ""}
+            ${c.welcomeVideoKind && c.welcomeVideoKind !== "none" && c.welcomeVideoSrc
+              ? `<button class="btn btn-soft btn-sm" style="margin-top:10px" data-welcome-video data-wv-kind="${esc(c.welcomeVideoKind)}" data-wv-src="${esc(c.welcomeVideoSrc)}" data-wv-name="${c.name}">${IC.play} ${t("extra.welcomeVideoBtn")}</button>`
+              : ""}
             <div class="cc-foot" style="margin-top:16px">
               ${c.price > 0 ? `<span class="cc-pct">$${(c.price / 100).toFixed(0)}</span>` : `<span class="badge ok">${t("extra.free")}</span>`}
               ${c.enrolled
@@ -206,6 +216,25 @@ export const S = {
       ${courses.length
         ? `<div class="grid g-3">${courses.map(card).join("")}</div>`
         : `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.catalogEmptyHeading")}</h4><p>${t("extra.catalogEmptyBody")}</p></div></div>`}`;
+    },
+    // [CATÁLOGO · llamada Isaac] Abre el video de bienvenida del profe en un visor ligero.
+    // No usa window.modal (trae botón "Guardar" con toast): aquí solo se ve y se cierra.
+    mount(root) {
+      root.querySelectorAll("[data-welcome-video]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault(); e.stopPropagation();
+          const kind = btn.getAttribute("data-wv-kind");
+          const src = btn.getAttribute("data-wv-src");
+          const name = btn.getAttribute("data-wv-name") || "";
+          const scrim = document.createElement("div");
+          scrim.className = "modal-scrim";
+          scrim.innerHTML = `<div class="modal" role="dialog" aria-label="${esc(name)}" style="max-width:720px"><div class="modal-head"><h3>${esc(name)}</h3></div><div class="modal-body">${videoEmbedHtml(kind, src)}</div><div class="modal-foot"><button class="btn btn-primary" data-wv-close>${t("extra.close")}</button></div></div>`;
+          document.body.appendChild(scrim);
+          const close = () => scrim.remove();
+          scrim.addEventListener("click", (ev) => { const tg = ev.target; if (tg === scrim || (tg.closest && tg.closest("[data-wv-close]"))) close(); });
+          document.addEventListener("keydown", function onEsc(ev) { if (ev.key === "Escape") { close(); document.removeEventListener("keydown", onEsc); } });
+        });
+      });
     },
   },
 
