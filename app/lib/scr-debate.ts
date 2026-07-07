@@ -226,11 +226,22 @@ function viewOverview(d) {
         : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>${t("debate.noEventsTitle")}</h4><p>${t("debate.noEventsBody")}</p></div>`}
     </div>`;
 
+  // [NSDA Fase-1] Torneos del circuito vía la API pública oficial de Tabroom (indexcards).
+  // Placeholder que mount() llena con un fetch al proxy server-side /api/tabroom/tourns
+  // (sin key, sin datos personales de terceros). El récord personal es Fase-2.
+  const nsdaCard = `
+    <div class="card card-pad" data-nsda>
+      <div class="eyebrow" style="margin-bottom:2px">NSDA · Tabroom</div>
+      <b style="font-size:15px;line-height:1.3;display:block">${t("debate.nsdaTitle")}</b>
+      <p class="faint" style="font-size:12px;margin-top:2px">${t("debate.nsdaSub")}</p>
+      <div data-nsda-body style="margin-top:10px"><p class="faint" style="font-size:12.5px">${t("debate.nsdaLoading")}</p></div>
+    </div>`;
+
   return `
     ${kpis}
     <div class="split fade-up" style="--d:0">
       <div class="stack" style="gap:16px">${recentCard}</div>
-      <div class="stack" style="gap:16px">${nextEventCard}</div>
+      <div class="stack" style="gap:16px">${nextEventCard}${nsdaCard}</div>
     </div>`;
 }
 
@@ -379,6 +390,28 @@ S.debateHub = {
         repaint();
       })
     );
+
+    // [NSDA Fase-1] Rellena la tarjeta de torneos con la API pública oficial de Tabroom
+    // (vía el proxy server-side /api/tabroom/tourns). Degrada a mensaje si la API no responde.
+    const nsdaBody = root.querySelector("[data-nsda] [data-nsda-body]");
+    if (nsdaBody) {
+      const fmtD = (iso) => { try { return new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); } catch { return ""; } };
+      fetch("/api/tabroom/tourns")
+        .then((r) => r.json())
+        .then((d0) => {
+          const tourns = (d0 && Array.isArray(d0.tourns) ? d0.tourns : []).slice(0, 5);
+          if (!tourns.length) { (nsdaBody as any).innerHTML = `<p class="faint" style="font-size:12.5px">${t("debate.nsdaEmpty")}</p>`; return; }
+          (nsdaBody as any).innerHTML = tourns.map((tn) => `
+            <a href="${esc(tn.resultsUrl)}" target="_blank" rel="noopener" class="agenda-item" style="text-decoration:none;color:inherit">
+              <div style="flex:1;min-width:0">
+                <div class="ai-t">${esc(tn.name)}</div>
+                <div class="ai-c">${esc([tn.city, tn.state].filter(Boolean).join(", "))}${tn.start ? " · " + esc(fmtD(tn.start)) : ""}</div>
+              </div>
+              <span class="sky" style="font-size:11.5px;white-space:nowrap">${t("debate.nsdaViewResults")} ${IC.arrowR}</span>
+            </a>`).join("") + `<p class="faint" style="font-size:11px;margin-top:8px;line-height:1.4">${t("debate.nsdaPhase2")}</p>`;
+        })
+        .catch(() => { (nsdaBody as any).innerHTML = `<p class="faint" style="font-size:12.5px">${t("debate.nsdaEmpty")}</p>`; });
+    }
 
     // [FIX conversión] Inscripción al torneo desde el Hub (donde nace la intención): POST
     // /api/tournaments (idempotente) + sello "Inscrito" optimista, sin saltar a otra pantalla.

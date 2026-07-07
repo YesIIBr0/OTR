@@ -99,6 +99,14 @@ export const dict = {
     "debate.registered": "Inscrito",
     "debate.register": "Registrarme",
 
+    // NSDA · Tabroom (Fase-1: torneos vía API pública oficial)
+    "debate.nsdaTitle": "Torneos del circuito",
+    "debate.nsdaSub": "Resultados oficiales de la NSDA vía Tabroom.",
+    "debate.nsdaLoading": "Cargando torneos…",
+    "debate.nsdaEmpty": "No pudimos cargar los torneos ahora. Inténtalo más tarde.",
+    "debate.nsdaViewResults": "Ver resultados",
+    "debate.nsdaPhase2": "Pronto: sincroniza tu récord personal de la NSDA.",
+
     // analytics
 
     // detalle del debate (modal)
@@ -222,6 +230,14 @@ export const dict = {
     // tournaments
     "debate.registered": "Registered",
     "debate.register": "Register",
+
+    // NSDA · Tabroom (Phase 1: tournaments via the official public API)
+    "debate.nsdaTitle": "Circuit tournaments",
+    "debate.nsdaSub": "Official NSDA results via Tabroom.",
+    "debate.nsdaLoading": "Loading tournaments…",
+    "debate.nsdaEmpty": "Couldn't load tournaments right now. Try again later.",
+    "debate.nsdaViewResults": "View results",
+    "debate.nsdaPhase2": "Coming soon: sync your personal NSDA record.",
 
     // analytics
 
