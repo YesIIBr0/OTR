@@ -40,7 +40,7 @@ const NAV = {
       // de ingreso más desaprovechada y antes quedaba como último ítem del grupo.
       { r:'membership', ic:'star', k:'nav.membership', l:'Membresía' },
       // 'messages' se conserva SOLO como canal coach↔alumno (permitido en marketplace).
-      { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes', badge:'2' },
+      { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes' },
     ]},
   ],
   // PROFESOR / COACH — Coach Workspace reusa 'teacher'/'manage'/'gradebook'.
