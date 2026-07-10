@@ -24,6 +24,7 @@ export const dict = {
     // unidades / pluralización
     "mkt.reviewUnitSingular": "reseña",
     "mkt.reviewUnitPlural": "reseñas",
+    "mkt.newCoach": "Nuevo en OTR",
     "mkt.coachUnitSingular": "coach",
     "mkt.coachUnitPlural": "coaches",
     "mkt.sessionUnitSingular": "sesión",
@@ -170,6 +171,7 @@ export const dict = {
     // units / pluralization
     "mkt.reviewUnitSingular": "review",
     "mkt.reviewUnitPlural": "reviews",
+    "mkt.newCoach": "New to OTR",
     "mkt.coachUnitSingular": "coach",
     "mkt.coachUnitPlural": "coaches",
     "mkt.sessionUnitSingular": "session",

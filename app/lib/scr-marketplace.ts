@@ -221,8 +221,9 @@ function coachCard(c, i) {
         </div>
         <div class="muted" style="font-size:12px;margin-top:3px">${c.headline}</div>
         <div class="row vcenter" style="gap:6px;margin-top:6px">
-          ${stars(c.rating, 12)}<b style="font-size:12.5px">${c.rating ? c.rating.toFixed(1) : "—"}</b>
-          <span class="faint" style="font-size:12px">(${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")})</span>
+          ${c.reviews > 0
+            ? `${stars(c.rating, 12)}<b style="font-size:12.5px">${c.rating.toFixed(1)}</b><span class="faint" style="font-size:12px">(${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")})</span>`
+            : `<span class="badge" style="font-weight:600">${t("mkt.newCoach")}</span>`}
         </div>
       </div>
     </div>
@@ -498,8 +499,9 @@ function renderProfile(state) {
           </div>
           <div class="muted" style="font-size:13px;margin-top:4px">${c.headline}</div>
           <div class="row vcenter wrap" style="gap:8px;margin-top:8px;font-size:12.5px">
-            ${stars(c.rating, 13)}<b>${c.rating ? c.rating.toFixed(1) : "—"}</b>
-            <span class="faint">${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")}</span>
+            ${c.reviews > 0
+              ? `${stars(c.rating, 13)}<b>${c.rating.toFixed(1)}</b><span class="faint">${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")}</span>`
+              : `<span class="badge" style="font-weight:600">${t("mkt.newCoach")}</span>`}
             ${c.bookingCount ? `<span class="dot-sep"></span><span class="faint">${t("mkt.sessionsBooked").replace("{n}", String(c.bookingCount))}</span>` : ""}
             ${c.responseTime ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${esc(c.responseTime)}</span>` : ""}
           </div>
