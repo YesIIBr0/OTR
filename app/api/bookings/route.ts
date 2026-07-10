@@ -35,13 +35,35 @@ const HORIZON_MS = 60 * 24 * MS_HOUR; // hasta 60 días adelante
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "STUDENT") return bad("Solo estudiantes pueden reservar sesiones de coaching", 403);
-
-  const body = await readJson<{ coachId?: string; packageId?: string; slotAt?: string }>(req);
+  const body = await readJson<{ coachId?: string; packageId?: string; slotAt?: string; studentId?: string }>(req);
   const coachKey = clean(body.coachId, 64);
   const packageId = clean(body.packageId, 64);
   const slotRaw = clean(body.slotAt, 40);
   if (!coachKey) return bad("Falta coachId");
+
+  // [PARENT-BOOKING §11.3] Resuelve el ALUMNO de la reserva:
+  //  · STUDENT reserva para sí mismo.
+  //  · PARENT reserva a nombre de un hijo VINCULADO (guardianship ACTIVE) → confirmada
+  //    directo: el padre ES la autoridad de consentimiento (reservar = aprobar).
+  let bStudent: { id: string; ageBand: string | null };
+  let parentBooking = false;
+  if (user.role === "STUDENT") {
+    bStudent = { id: user.id, ageBand: user.ageBand };
+  } else if (user.role === "PARENT") {
+    const childId = clean(body.studentId, 64);
+    if (!childId) return bad("Falta el estudiante de la reserva", 400);
+    const link = await db.guardianship.findFirst({
+      where: { parentId: user.id, studentId: childId, status: "ACTIVE" },
+      select: { studentId: true },
+    });
+    if (!link) return bad("No tienes un vínculo activo con ese estudiante", 403);
+    const child = await db.user.findUnique({ where: { id: childId }, select: { id: true, ageBand: true, role: true } });
+    if (!child || child.role !== "STUDENT") return bad("Estudiante no encontrado", 404);
+    bStudent = { id: child.id, ageBand: child.ageBand };
+    parentBooking = true;
+  } else {
+    return bad("Solo estudiantes o su tutor pueden reservar sesiones de coaching", 403);
+  }
 
   // coachId acepta CoachProfile.id o User.id del coach.
   const include = { availability: true } as const;
@@ -49,7 +71,7 @@ export async function POST(req: Request) {
     (await db.coachProfile.findUnique({ where: { id: coachKey }, include })) ??
     (await db.coachProfile.findUnique({ where: { userId: coachKey }, include }));
   if (!profile || !profile.active) return bad("Coach no encontrado", 404);
-  if (profile.userId === user.id) return bad("No puedes reservar una sesión contigo mismo", 400);
+  if (profile.userId === bStudent.id) return bad("No puedes reservar una sesión contigo mismo", 400);
   // [P0-5] Solo coaches VERIFICADOS reciben reservas (PRD §7.4/§7.6 — sirven a menores;
   // sin verificación de identidad/credenciales no se permite reservar con ellos).
   const coachVerifiedRow = await db.user.findUnique({ where: { id: profile.userId }, select: { coachVerified: true } });
@@ -88,9 +110,13 @@ export async function POST(req: Request) {
   // --- SAFETY GATE: menores requieren consentimiento parental ---
   let status = "CONFIRMED";
   let consentBy: string | null = null;
-  if (user.ageBand === "minor") {
+  if (parentBooking) {
+    // [PARENT-BOOKING] El propio tutor reserva a nombre del hijo → confirmada directa, con él
+    // como consentBy (autoridad de consentimiento). No pasa por PENDING: reservar = aprobar.
+    consentBy = user.id;
+  } else if (bStudent.ageBand === "minor") {
     const links = await db.guardianship.findMany({
-      where: { studentId: user.id, status: "ACTIVE" },
+      where: { studentId: bStudent.id, status: "ACTIVE" },
       orderBy: { createdAt: "asc" },
     });
     if (!links.length) return bad("Se requiere consentimiento parental: vincula a tu familia", 403);
@@ -141,7 +167,7 @@ export async function POST(req: Request) {
 
       let b = await tx.booking.create({
         data: {
-          studentId: user.id,
+          studentId: bStudent.id,
           coachId: profile.userId,
           packageId: pkg ? pkg.id : null,
           slotAt,
@@ -191,7 +217,8 @@ export async function POST(req: Request) {
 
   // Ledger universal (best-effort, nunca tumba la reserva).
   await logActivitySafe({
-    userId: user.id,
+    // [PARENT-BOOKING] La sesión pertenece al journey del ALUMNO (aunque la reserve el tutor).
+    userId: bStudent.id,
     type: "booking_made",
     source: "marketplace",
     refId: booking.id,

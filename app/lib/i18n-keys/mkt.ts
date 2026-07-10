@@ -65,6 +65,7 @@ export const dict = {
 
     // perfil: flujo de reserva
     "mkt.bookSessionTitle": "Reserva tu sesión",
+    "mkt.forChild": "¿Para quién reservas?",
     "mkt.step1ChoosePackage": "1 · Elige tu paquete",
     "mkt.noPackagesNote": "Este coach aún no publicó paquetes — puedes reservar una sesión individual y acordar el precio dentro de OTR.",
     "mkt.step2ChooseDay": "2 · Elige el día",
@@ -182,6 +183,7 @@ export const dict = {
 
     // profile: booking flow
     "mkt.bookSessionTitle": "Book your session",
+    "mkt.forChild": "Who are you booking for?",
     "mkt.step1ChoosePackage": "1 · Choose your package",
     "mkt.noPackagesNote": "This coach hasn't published packages yet — you can book a single session and agree on the price inside OTR.",
     "mkt.step2ChooseDay": "2 · Choose the day",
