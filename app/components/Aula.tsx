@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { renderShell } from "../lib/shell";
-import { SCREENS, ROUTES } from "../lib/screens";
+import { SCREENS, ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
@@ -68,41 +68,46 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // El idioma activo (cookie otr_lang) debe reflejarse en <html lang> para el lector de pantalla.
     try { const m = document.cookie.match(/(?:^|;\s*)otr_lang=([^;]+)/); document.documentElement.lang = m && m[1] === "en" ? "en" : "es"; } catch {}
 
-    function renderApp(r: string, opts?: { keepScroll?: boolean }) {
+    async function renderApp(r: string, opts?: { keepScroll?: boolean }) {
       let def = (ROUTES as any)[r];
       if (!def) return;
       // Guard de rol en el cliente: si la ruta exige un rol distinto al actual, redirige al
       // home del rol (el backend ya rechaza los datos, pero esto evita pintar UI ajena).
       if (def.role && def.role !== state.role) { r = ROLE_HOME[state.role] || "dashboard"; def = (ROUTES as any)[r]; if (!def) return; }
-      // [FE-01] Refresh suave (marcar lección, calificar, reordenar, toggle de edición):
-      // preserva el scroll y el foco del usuario en vez de saltar al tope. Antes cada mutación
-      // repintaba toda la pantalla y mandaba el scroll arriba — se sentía roto y lento. La
-      // navegación real (go) sigue arrancando arriba (keepScroll=false).
       const keep = !!(opts && opts.keepScroll);
-      teardownRecorder();
-      currentRoute = r;
+      currentRoute = r; // se fija ANTES del await para el guard "la última navegación gana"
 
-      // [PERF] Refresh suave (MISMA ruta: marcar lección, calificar, reordenar, toggle de
-      // edición, refresh de datos): repinta SOLO el contenido dentro de #content, conservando
-      // sidebar+topbar (byte-idénticos en la misma ruta) y el propio <div.page> (así NO se
-      // re-dispara la animación .rise en cada mutación). Antes se reconstruía todo el shell —
-      // trabajo inútil en cada rol y en cada acción. Aplica a los 4 caminos keepScroll.
+      // [PERF · code-splitting] Asegura que el chunk del módulo de la pantalla esté cargado
+      // antes de pintar. Instantáneo si ya se cargó (microtask); en el primer acceso baja su
+      // chunk. ensureScreen tiene fallback load-all, así que un mapeo incompleto nunca rompe.
+      const screen: any = await ensureScreen(def.screen);
+      if (currentRoute !== r) return;      // otra navegación ocurrió mientras cargaba el chunk
+      if (!screen) return;                 // defensivo (el fallback debería evitarlo siempre)
+
+      // [FE-01] Refresh suave (marcar lección, calificar, reordenar, toggle de edición):
+      // preserva el scroll y el foco del usuario en vez de saltar al tope. La navegación real
+      // (go) sigue arrancando arriba (keepScroll=false).
+      teardownRecorder();
+
+      // [PERF] Refresh suave (MISMA ruta): repinta SOLO el contenido dentro de #content,
+      // conservando sidebar+topbar (idénticos en la misma ruta) y el propio <div.page> (así NO
+      // se re-dispara la animación .rise). Antes se reconstruía todo el shell en cada mutación.
       const keepContent = keep ? root.querySelector<HTMLElement>("#content") : null;
       const keepPage = keepContent ? keepContent.querySelector<HTMLElement>(".page") : null;
       if (keep && keepContent && keepPage) {
         const prevScroll = keepContent.scrollTop;
         const activeId = document.activeElement instanceof HTMLElement ? document.activeElement.id : "";
-        keepPage.innerHTML = (SCREENS as any)[def.screen].render(state);
-        (SCREENS as any)[def.screen].mount?.(keepContent, state);
+        keepPage.innerHTML = screen.render(state);
+        screen.mount?.(keepContent, state);
         keepContent.scrollTop = prevScroll;
         if (activeId) { const el = document.getElementById(activeId); if (el && typeof (el as any).focus === "function") (el as any).focus(); }
         return;
       }
 
       // Render COMPLETO: primer paint o navegación real (go). Reconstruye el shell entero.
-      root.innerHTML = renderShell(def.nav, def.crumbs, (SCREENS as any)[def.screen].render(state), state.role);
+      root.innerHTML = renderShell(def.nav, def.crumbs, screen.render(state), state.role);
       const content = root.querySelector<HTMLElement>("#content");
-      (SCREENS as any)[def.screen].mount?.(content, state);
+      screen.mount?.(content, state);
       if (content) content.scrollTop = 0;
       // [A11Y] Navegación real: fija el document.title, anuncia la pantalla por la región
       // aria-live y mueve el foco al contenido — así teclado y lector de pantalla detectan
@@ -111,8 +116,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const pageName = (heading?.textContent || "").trim();
       if (pageName) { document.title = `${pageName} · OTR Aula`; announceRoute(pageName); }
       if (content && typeof content.focus === "function") { try { content.focus({ preventScroll: true } as any); } catch { content.focus(); } }
+      // [PERF] Tras el primer paint, prefetch (idle, fire-and-forget) de las pantallas probables
+      // del rol → navegación instantánea sin inflar el bundle inicial.
+      prefetchForRole(state.role);
     }
-    (window as any).go = (r: string) => renderApp(r);
+    (window as any).go = (r: string) => { void renderApp(r); };
 
     let toastWrap: HTMLElement | null = null;
     function toast(msg: string, tone?: string, action?: { label?: string; onClick: () => void }) {

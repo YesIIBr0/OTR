@@ -1,28 +1,103 @@
 // @ts-nocheck
-/* OTR LMS · registro de pantallas + rutas */
-import { S as core } from "./scr-core";
-import { S as learn } from "./scr-learn";
-import { S as teacher } from "./scr-teacher";
-import { S as profile } from "./scr-profile";
-import { S as community } from "./scr-community";
-import { S as extra } from "./scr-extra";
-import { S as arsenal } from "./scr-arsenal";
-import { S as hub } from "./scr-hub";
-import { S as certificate } from "./scr-certificate";
-import { S as debate } from "./scr-debate";
-import { S as marketplace } from "./scr-marketplace";
-import { S as parent } from "./scr-parent";
-import { S as lifetime } from "./scr-lifetime";
-import { S as coachwork } from "./scr-coachwork";
-import { S as admin } from "./scr-admin";
-import { S as adminUsers } from "./scr-admin-users";
-import { S as mybookings } from "./scr-mybookings";
-import { S as placement } from "./scr-placement";
-import { S as settings } from "./scr-settings";
-import { S as events } from "./scr-events";
-import { S as room } from "./scr-room";
+/* OTR LMS · registro de pantallas + rutas.
+   [PERF · code-splitting] Antes se importaban los 21 builders scr-* de golpe → TODO el JS de
+   las 35 pantallas (incluidas las de otros roles: teacher/coachwork/parent/admin) viajaba en el
+   chunk inicial del cliente. Ahora cada módulo se carga BAJO DEMANDA con import() (webpack crea
+   un chunk por módulo). El despacho ya era dinámico por string en Aula.tsx, así que renderApp
+   solo tiene que await ensureScreen() antes de pintar. Un alumno ya no descarga el código del
+   panel del coach ni del admin. */
 
-export const SCREENS = { ...core, ...learn, ...teacher, ...profile, ...community, ...extra, ...arsenal, ...hub, ...certificate, ...debate, ...marketplace, ...parent, ...lifetime, ...coachwork, ...admin, ...adminUsers, ...mybookings, ...placement, ...settings, ...events, ...room };
+// Un loader por módulo → un chunk por módulo. NOTA: scr-core importa scr-extra internamente
+// (S.course usa extraScreens.catalog), así que webpack los agrupa/encadena solo — correcto.
+const LOADERS = {
+  core:        () => import("./scr-core"),
+  learn:       () => import("./scr-learn"),
+  teacher:     () => import("./scr-teacher"),
+  profile:     () => import("./scr-profile"),
+  community:   () => import("./scr-community"),
+  extra:       () => import("./scr-extra"),
+  arsenal:     () => import("./scr-arsenal"),
+  hub:         () => import("./scr-hub"),
+  certificate: () => import("./scr-certificate"),
+  debate:      () => import("./scr-debate"),
+  marketplace: () => import("./scr-marketplace"),
+  parent:      () => import("./scr-parent"),
+  lifetime:    () => import("./scr-lifetime"),
+  coachwork:   () => import("./scr-coachwork"),
+  admin:       () => import("./scr-admin"),
+  adminUsers:  () => import("./scr-admin-users"),
+  mybookings:  () => import("./scr-mybookings"),
+  placement:   () => import("./scr-placement"),
+  settings:    () => import("./scr-settings"),
+  events:      () => import("./scr-events"),
+  room:        () => import("./scr-room"),
+};
+
+// Nombre de pantalla → módulo que la exporta. Best-effort: ensureScreen tiene fallback
+// load-all si alguna llave no está aquí, así que un mapeo incompleto NUNCA rompe la nav.
+const SCREEN_MODULE = {
+  dashboard:'core', course:'core', courseIndex:'core', coursesCatalog:'core', coursesMine:'core', lesson:'core',
+  assignment:'learn', grades:'learn', player:'learn', quiz:'learn', quizResults:'learn',
+  teacher:'teacher', participants:'teacher',
+  badges:'profile', coach:'profile', profile:'profile', progress:'profile',
+  forum:'community', forumThread:'community', messages:'community',
+  catalog:'extra', manage:'extra', courseBuilder:'extra', search:'extra',
+  arsenal:'arsenal', hub:'hub', onboarding:'hub', certificate:'certificate',
+  debateHub:'debate', marketplace:'marketplace', parentPortal:'parent',
+  lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
+  adminConsole:'admin', adminUsers:'adminUsers', myBookings:'mybookings',
+  placement:'placement', settings:'settings', events:'events', room:'room',
+};
+
+// Cache de runtime: se va llenando con la S de cada módulo cargado.
+export const SCREENS = {};
+const loadedMods = new Set();
+let allLoaded = false;
+
+async function loadMod(mod) {
+  if (!mod || loadedMods.has(mod) || !LOADERS[mod]) return;
+  loadedMods.add(mod); // marca ANTES del await para no relanzar el mismo import en paralelo
+  try {
+    const m = await LOADERS[mod]();
+    if (m && m.S) Object.assign(SCREENS, m.S);
+  } catch (e) {
+    loadedMods.delete(mod); // permite reintentar si el chunk falló
+    throw e;
+  }
+}
+async function loadAllMods() {
+  if (allLoaded) return;
+  await Promise.all(Object.keys(LOADERS).map((m) => loadMod(m).catch(() => {})));
+  allLoaded = true;
+}
+
+// Garantiza que la pantalla esté disponible antes de renderizar. Instantáneo si su módulo ya
+// se cargó; en el primer acceso baja el chunk. Si el mapa no la tiene, carga todo (seguro).
+export async function ensureScreen(name) {
+  if (SCREENS[name]) return SCREENS[name];
+  try { await loadMod(SCREEN_MODULE[name]); } catch {}
+  if (SCREENS[name]) return SCREENS[name];
+  await loadAllMods();
+  return SCREENS[name];
+}
+
+// Prefetch en segundo plano (fire-and-forget) de las pantallas probables de un rol, para que
+// la navegación se sienta instantánea sin inflar el primer paint.
+const ROLE_PREFETCH = {
+  student: ['debateHub','marketplace','lifetimeProfile','events','myBookings','grades','settings','profile','placement'],
+  teacher: ['teacher','participants','manage','coachwork','marketplace','messages','profile','settings'],
+  parent:  ['parentPortal','marketplace','messages','membership','profile','settings'],
+  admin:   ['adminConsole','adminUsers','marketplace','debateHub','profile','settings'],
+};
+let didPrefetch = false;
+export function prefetchForRole(role) {
+  if (didPrefetch) return;
+  didPrefetch = true;
+  const names = ROLE_PREFETCH[role] || ROLE_PREFETCH.student;
+  // en el próximo idle, para no competir con el primer render
+  const kick = () => names.forEach((n) => { const mod = SCREEN_MODULE[n]; if (mod && !loadedMods.has(mod)) loadMod(mod).catch(() => {}); });
+  if (typeof requestIdleCallback === "function") requestIdleCallback(kick); else setTimeout(kick, 400);
+}
 
 export const ROUTES = {
   dashboard:      { screen:'dashboard',    nav:'dashboard',    crumbs:['Inicio'] },

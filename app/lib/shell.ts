@@ -31,7 +31,7 @@ const NAV = {
       { r:'course', ic:'book', k:'nav.course', l:'Cursos' },
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
       { r:'my-bookings', ic:'calendar', k:'nav.mybookings', l:'Mis reservas' },
-      { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes', badge:'2' },
+      { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes' },
     ]},
     // [EPIC-2] Membresía elevada a item de primer nivel (propio grupo), fuera de
     // Marketplace y de Cursos: es la palanca de ingreso free→Pro y merece visibilidad.

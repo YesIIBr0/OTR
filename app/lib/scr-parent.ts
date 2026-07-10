@@ -613,6 +613,15 @@ S.parentPortal = {
         const studentId = sel.getAttribute("data-threshold-child");
         const opt = THRESHOLD_OPTIONS.find((o) => o.v === sel.value) || THRESHOLD_OPTIONS[0];
         if (!studentId) return;
+        // [audit · seguridad] "Confianza total" autoriza reservas automáticas del menor SIN tu
+        // aprobación previa: confirmación explícita antes de activarlo. Si se cancela, el
+        // selector vuelve al valor guardado del hijo (no se aplica nada).
+        if (opt.full && !window.confirm(t("parent.confirmFullConsent"))) {
+          const cur = [...((DB.parent && DB.parent.children) || []), ...((w.__parentFallback) || [])]
+            .find((k) => k && (k.id === studentId || k.childId === studentId));
+          if (cur) sel.value = thresholdValueFor(cur);
+          return;
+        }
         sel.disabled = true;
         try {
           // [MINORS-CONSENT-02 §11.3 · fix seguridad] SIEMPRE enviar consentLevel: 'full' solo

@@ -77,7 +77,10 @@ S.placement = {
         </div>
         <div class="row between vcenter fade-up" style="--d:8;margin-top:6px;gap:12px;flex-wrap:wrap">
           <p class="faint" style="font-size:12.5px;margin:0">${t("placement.coachNote")}</p>
-          <button class="btn btn-primary" id="pl-submit">${t("placement.submit")} ${IC.arrowR}</button>
+          <div class="row vcenter" style="gap:8px;flex:none">
+            <button class="btn btn-quiet btn-sm" id="pl-skip">${t("placement.skip")}</button>
+            <button class="btn btn-primary" id="pl-submit">${t("placement.submit")} ${IC.arrowR}</button>
+          </div>
         </div>
       </div>`;
   },
@@ -117,29 +120,40 @@ S.placement = {
     });
     syncProgress();
 
-    btn?.addEventListener("click", async () => {
-      // Anti-inercia: solo se envía cuando las 6 barras fueron ubicadas a mano.
-      if (touchedCount() < total) { window.toast?.(t("placement.missing").replace("{n}", String(total - touchedCount())), "warn"); return; }
+    // Lee los valores actuales de las 6 barras (default 50 = neutral en las no tocadas).
+    const readScores = () => {
       const scores = {};
       ranges.forEach((r) => {
         const skill = r.getAttribute("data-skill");
         scores[skill] = Math.max(0, Math.min(100, Number(r.value) || 0));
       });
-      btn.disabled = true;
-      const prev = btn.innerHTML;
-      btn.textContent = t("placement.saving");
+      return scores;
+    };
+    // Envío compartido por el CTA principal y por "Saltar por ahora".
+    const send = async (triggerBtn) => {
+      const scores = readScores();
+      if (triggerBtn) { triggerBtn.dataset.prev = triggerBtn.innerHTML; triggerBtn.disabled = true; triggerBtn.textContent = t("placement.saving"); }
+      if (btn) btn.disabled = true;
       try {
         await window.api("/api/placement", { scores });
         window.toast?.(t("placement.savedOk"), "ok");
-        // Recarga real (no go): el placement acaba de escribir StudentSkill +
-        // placedAt; el dashboard debe cargar FRESCO para mostrar el resultado
-        // (un go() repintaría con el DB cacheado de antes del placement).
+        // Recarga real (no go): el placement acaba de escribir StudentSkill + placedAt;
+        // el dashboard debe cargar FRESCO (un go() repintaría con el DB cacheado de antes).
         setTimeout(() => { window.location.href = "/aula"; }, 400);
       } catch (e) {
         window.toast?.(e?.message || t("placement.saveError"), "danger");
-        btn.disabled = false;
-        btn.innerHTML = prev;
+        if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = triggerBtn.dataset.prev || triggerBtn.innerHTML; }
+        if (btn) btn.disabled = touchedCount() < total;
       }
+    };
+    btn?.addEventListener("click", () => {
+      // Anti-inercia: el CTA PRINCIPAL sí exige ubicar las 6 barras (auto-evaluación real).
+      if (touchedCount() < total) { window.toast?.(t("placement.missing").replace("{n}", String(total - touchedCount())), "warn"); return; }
+      send(btn);
     });
+    // [ONBOARDING · audit] "Saltar por ahora": envía los valores por defecto (50 = neutral
+    // válido) y entra al aula SIN muro. El placement deja de ser una pared en el pico de
+    // abandono (primer contacto); el alumno puede refinar sus skills después.
+    root.querySelector("#pl-skip")?.addEventListener("click", (e) => send(e.currentTarget));
   },
 };

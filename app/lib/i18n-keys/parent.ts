@@ -81,6 +81,7 @@ export const dict = {
     "parent.threshold_50": "Auto hasta $50",
     "parent.threshold_full": "Confianza total",
     "parent.thresholdUpdated": "Umbral actualizado",
+    "parent.confirmFullConsent": "\"Confianza total\" autoriza reservas automáticas de tu hijo/a SIN tu aprobación previa (hasta US$9,999 por sesión). ¿Seguro que quieres activarlo?",
 
     // empty state
     "parent.emptyHeading": "Vincula a tu hijo/a para empezar",
@@ -236,6 +237,7 @@ export const dict = {
     "parent.threshold_50": "Auto up to $50",
     "parent.threshold_full": "Full trust",
     "parent.thresholdUpdated": "Threshold updated",
+    "parent.confirmFullConsent": "\"Full trust\" authorizes automatic bookings for your child WITHOUT your prior approval (up to US$9,999 per session). Are you sure you want to enable it?",
 
     // empty state
     "parent.emptyHeading": "Link your child to get started",

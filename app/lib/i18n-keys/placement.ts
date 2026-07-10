@@ -30,6 +30,7 @@ export const dict = {
     "placement.progressAria": "Progreso del placement",
     "placement.coachNote": "Podrás afinar todo esto más adelante con tu coach.",
     "placement.submit": "Fijar mi punto de partida",
+    "placement.skip": "Saltar por ahora",
 
     // estados del envío (toasts / botón)
     "placement.missing": "Aún te faltan {n} habilidades por ubicar",
@@ -64,6 +65,7 @@ export const dict = {
     "placement.progressAria": "Placement progress",
     "placement.coachNote": "You'll be able to fine-tune all of this later with your coach.",
     "placement.submit": "Set my starting point",
+    "placement.skip": "Skip for now",
 
     // submission states (toasts / button)
     "placement.missing": "You still have {n} skills left to place",
