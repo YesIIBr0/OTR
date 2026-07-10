@@ -350,7 +350,7 @@ function consentGate() {
   return "";
 }
 
-function bookedPanel(b) {
+function bookedPanel(b, coachId) {
   const pending = String(b.status || "").toUpperCase() === "PENDING";
   return `
   <div class="card card-pad fade-up" style="border-color:${pending ? "var(--warn)" : "var(--ok)"}">
@@ -367,7 +367,7 @@ function bookedPanel(b) {
       : t("mkt.bookedConfirmedBody")}</p>
     <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn btn-primary btn-sm" data-go="my-bookings">${IC.calendar} ${t("mkt.viewMyBookings")}</button>
-      <button class="btn btn-soft btn-sm" data-mk-message="${esc(c.id)}">${IC.msg} ${t("mkt.sendMessage")}</button>
+      ${coachId ? `<button class="btn btn-soft btn-sm" data-mk-message="${esc(coachId)}">${IC.msg} ${t("mkt.sendMessage")}</button>` : ""}
       <button class="btn btn-ghost btn-sm" data-mk-back>${t("mkt.viewMoreCoaches")}</button>
     </div>
   </div>`;
@@ -376,7 +376,7 @@ function bookedPanel(b) {
 function bookingCard(c, canBook, role) {
   const w = window;
   const booked = (w.__mkBooked || {})[c.id];
-  if (booked) return bookedPanel(booked);
+  if (booked) return bookedPanel(booked, c.id);
   if (!canBook) {
     // [PARENT-2] Solo el alumno puede reservar (POST /api/bookings exige STUDENT). El padre
     // veía el panel de reserva completo y al confirmar recibía un 403. Copy-guía por rol.

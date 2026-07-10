@@ -70,6 +70,12 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       (SCREENS as any)[def.screen].mount?.(content, state);
       if (content) content.scrollTop = keep ? prevScroll : 0;
       if (keep && activeId) { const el = document.getElementById(activeId); if (el && typeof (el as any).focus === "function") (el as any).focus(); }
+      // [A11Y] Navegación real (no soft-repaint): innerHTML se reemplaza entero y el foco de
+      // teclado/lector de pantalla se perdía (caía al <body>). Lo movemos al <main id="content">
+      // para que el usuario aterrice en la pantalla nueva. Se salta si hay un modal abierto
+      // (p.ej. crear curso navega al constructor antes de cerrar su modal) para no robarle el
+      // foco a un diálogo todavía visible.
+      else if (!keep && content && !document.querySelector(".modal-scrim")) content.focus();
     }
     (window as any).go = (r: string) => renderApp(r);
 
