@@ -55,7 +55,10 @@ export async function POST(req: Request) {
     // [COPPA §11] Menores de 13: el consentimiento parental VERIFICABLE debe existir ANTES
     // de recolectar cualquier dato del niño — crear la cuenta ya es recolectar. Hasta tener
     // ese flujo (verificable, no solo un email declarado), el registro directo se bloquea.
-    if (age < 13) {
+    // Corte en <14: solo recolectamos el AÑO, y currentYear-birthYear SOBREESTIMA la edad
+    // (nacido en dic de hace 13 años tiene 12 casi todo el año). <14 nunca deja pasar a un
+    // menor de 13 real; el costo es sobre-bloquear a parte de los de 13 — preferible bajo COPPA.
+    if (age < 14) {
       return bad("El registro de menores de 13 años requiere el consentimiento verificable de su padre, madre o tutor. Pídele a tu tutor que nos contacte para crear tu cuenta.", 403);
     }
     ageBand = age < 18 ? "minor" : "adult";

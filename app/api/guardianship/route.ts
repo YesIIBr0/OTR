@@ -45,15 +45,14 @@ export async function POST(req: Request) {
     // segundo POST: requiere el consentimiento del lado del menor. Un alumno ADULTO consiente
     // por su cuenta (el vínculo queda PENDING hasta que él lo apruebe).
     if (existing.status !== "ACTIVE" && existing.initiatedBy === "student" && isMinor) {
-      const updated = await db.guardianship.update({
-        where: { id: existing.id },
-        data: { status: "ACTIVE", consentLevel },
-      });
-      // [COPPA §11] Evidencia auditable: el padre consintió sobre este menor, con la versión
-      // de política vigente. Fila inmutable (nunca update/delete).
-      await db.consentRecord.create({
-        data: { studentId: existing.studentId, grantedById: user.id, kind: "guardianship", policyVersion: POLICY_VERSION },
-      });
+      // [COPPA §11] Activación + evidencia auditable en UNA transacción: si el create del
+      // ConsentRecord falla, el vínculo NO queda ACTIVE (el reintento vuelve a activar).
+      // Sin la tx, un fallo tras el update dejaba ACTIVE sin evidencia para siempre
+      // (el retry caía en already:true y nunca reescribía la fila).
+      const [updated] = await db.$transaction([
+        db.guardianship.update({ where: { id: existing.id }, data: { status: "ACTIVE", consentLevel } }),
+        db.consentRecord.create({ data: { studentId: existing.studentId, grantedById: user.id, kind: "guardianship", policyVersion: POLICY_VERSION } }),
+      ]);
       return ok({ guardianship: updated, already: false });
     }
     return ok({ guardianship: existing, already: true });

@@ -222,7 +222,7 @@ function viewAgenda() {
 
   return `
   <div class="grid g-4" style="margin-bottom:18px">
-    <div class="tile tile--hero otr-shine fade-up" style="--d:0">${C.kpi(t("cw.kpiRating"), m.rating ? m.rating.toFixed(1) : "—", { ic: "star", unit: m.reviews ? ` · ${m.reviews} ${m.reviews === 1 ? t("cw.reviewSingular") : t("cw.reviewPlural")}` : "", accent: "var(--otr-gold)" })}</div>
+    <div class="tile tile--hero otr-shine fade-up" style="--d:0">${C.kpi(t("cw.kpiRating"), m.rating ? m.rating.toFixed(1) : "—", { ic: "star", unit: m.reviews ? ` · ${m.reviews} ${m.reviews === 1 ? t("cw.reviewSingular") : t("cw.reviewPlural")}` : "", accent: "var(--otr-gold-text)" })}</div>
     <div class="tile fade-up" style="--d:1">${C.kpi(t("cw.kpiTotalBookings"), String(m.total), { ic: "calendar" })}</div>
     <div class="tile fade-up" style="--d:2">${C.kpi(t("cw.kpiCompleted"), String(m.completed), { ic: "checkCircle" })}</div>
     <div class="tile fade-up" style="--d:3">${C.kpi(t("cw.kpiRepeatStudents"), String(m.repeat), { ic: "users" })}</div>

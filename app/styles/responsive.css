@@ -51,6 +51,8 @@
   .tabbar a.active .ic{color:var(--action)}
 
   .g-2,.g-3,.g-4{grid-template-columns:1fr}
+  /* el hero del Home vuelve a 1 columna cuando la grid colapsa (evita el track implícito) */
+  .kpi-hero-span{grid-column:auto}
   .grid.keep-2{grid-template-columns:repeat(2,1fr)}
   .row.stack-m{flex-direction:column}
   .table-wrap.scroll-m{overflow-x:auto}
