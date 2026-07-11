@@ -9,24 +9,25 @@ const TEACHER_EMAIL = "saul@otr.do";
 const MAIN_COURSE = "PF-101";
 
 // Etiqueta de fecha relativa en español (texto generado por nosotros, no de usuario).
-function whenLabel(d?: Date | null): string {
+function whenLabel(d?: Date | null, lang: string = "es"): string {
   if (!d) return "";
   const date = d instanceof Date ? d : new Date(d);
   const ms = Date.now() - date.getTime();
   if (Number.isNaN(ms)) return "";
+  const en = lang === "en";
   const min = Math.floor(ms / 60000);
-  if (min < 1) return "ahora";
-  if (min < 60) return `hace ${min} min`;
+  if (min < 1) return en ? "now" : "ahora";
+  if (min < 60) return en ? `${min} min ago` : `hace ${min} min`;
   const h = Math.floor(min / 60);
-  if (h < 24) return `hace ${h} h`;
+  if (h < 24) return en ? `${h} h ago` : `hace ${h} h`;
   const days = Math.floor(h / 24);
-  if (days < 7) return `hace ${days} ${days === 1 ? "día" : "días"}`;
+  if (days < 7) return en ? `${days} ${days === 1 ? "day" : "days"} ago` : `hace ${days} ${days === 1 ? "día" : "días"}`;
   const weeks = Math.floor(days / 7);
-  if (weeks < 5) return `hace ${weeks} sem`;
+  if (weeks < 5) return en ? `${weeks} wk ago` : `hace ${weeks} sem`;
   const months = Math.floor(days / 30);
-  if (months < 12) return `hace ${months} ${months === 1 ? "mes" : "meses"}`;
+  if (months < 12) return en ? `${months} ${months === 1 ? "month" : "months"} ago` : `hace ${months} ${months === 1 ? "mes" : "meses"}`;
   const years = Math.floor(days / 365);
-  return `hace ${years} ${years === 1 ? "año" : "años"}`;
+  return en ? `${years} ${years === 1 ? "year" : "years"} ago` : `hace ${years} ${years === 1 ? "año" : "años"}`;
 }
 
 // Día calendario en hora RD (UTC-4) como entero, para comparar actividad por día.
@@ -561,10 +562,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // — el alumno DEBE poder leer los comentarios, no solo la nota numérica).
   (mySubsGraded || []).forEach((s: any) => {
     if (s.grade == null) {
-      gradeRows.push({ activity: esc(s.activity), score: "En revisión", letter: "—", kind: "Entrega", status: s.status, feedback: esc(s.feedback || "") });
+      gradeRows.push({ activity: esc(s.activity), score: lang === "en" ? "In review" : "En revisión", letter: "—", kind: lang === "en" ? "Submission" : "Entrega", status: s.status, feedback: esc(s.feedback || "") });
     } else {
       const sc = s.grade;
-      gradeRows.push({ activity: esc(s.activity), score: sc, letter: letterFor(sc), kind: "Entrega", status: "GRADED", feedback: esc(s.feedback || "") });
+      gradeRows.push({ activity: esc(s.activity), score: sc, letter: letterFor(sc), kind: lang === "en" ? "Submission" : "Entrega", status: "GRADED", feedback: esc(s.feedback || "") });
     }
   });
   (myQuizzes || []).forEach((q: any) => {
@@ -626,7 +627,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       ini: esc(r.student?.initials),
       rating: r.rating,
       body: esc(r.body),
-      when: whenLabel(r.createdAt),
+      when: whenLabel(r.createdAt, lang),
     }));
     return {
       id: coach?.id || "",
@@ -688,7 +689,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           ini: esc(r.student?.initials),
           rating: r.rating,
           body: esc(r.body),
-          when: whenLabel(r.createdAt),
+          when: whenLabel(r.createdAt, lang),
           programName: esc(c.name),
         })),
       )
@@ -750,7 +751,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // [REQ-1] estado visible de la solicitud: el alumno distingue pendiente/rechazada/aprobada.
     status: r.rejectedAt ? "rejected" : (r.adjudicated || r.rating) ? "approved" : "pending",
     rejectionReason: esc(r.rejectionReason || ""),
-    when: whenLabel(r.recordedAt),
+    when: whenLabel(r.recordedAt, lang),
   }));
 
   // analytics.byFormat / bySide: conteo W-L-D por formato y por lado (PRO/CON).
@@ -1035,7 +1036,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     }
 
     // Día de la semana (0=Dom..6=Sáb) y minutos desde medianoche → "9:00 AM".
-    const WEEKDAYS_ES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    const WEEKDAYS_ES = lang === "en"
+      ? ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+      : ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
     const minToTime = (min: number): string => {
       const total = Number(min) || 0;
       const h24 = Math.floor(total / 60);
@@ -1384,7 +1387,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           slug: me.publicSlug ? esc(me.publicSlug) : null,
           url: me.publicSlug ? `/p/${esc(me.publicSlug)}` : null,
           canToggle: me.ageBand !== "minor",
-          minorNote: "Tu padre/madre puede habilitar tu perfil público desde el Portal de familia.",
+          minorNote: lang === "en"
+            ? "Your parent or guardian can enable your public profile from the Family Portal."
+            : "Tu padre/madre puede habilitar tu perfil público desde el Portal de familia.",
         },
       }
     : null;
@@ -1510,7 +1515,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // los últimos 15 de la consulta compartida con journey). esc() en texto de usuario.
     activity: (activityEvents || []).slice(0, 15).map((a) => ({
       type: a.type, title: esc(a.title), detail: esc(a.detail || ""),
-      xp: a.xp || 0, when: whenLabel(a.createdAt),
+      xp: a.xp || 0, when: whenLabel(a.createdAt, lang),
     })),
     notifications: notifications.filter((n) => !n.userId || n.userId === me?.id).map((n) => ({ ic: n.icon, tone: n.tone, t: esc(n.title), d: esc(n.detail), when: n.whenLabel, unread: n.unread })),
     forum: threads.map((t) => ({ id: t.id, title: esc(t.title), author: esc(t.author), ini: esc(t.initials), tag: esc(t.tag), replies: t.replies, views: t.views, pinned: t.pinned, last: t.lastLabel, excerpt: esc(t.excerpt) })),

@@ -168,7 +168,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // [Blueprint §11] Plantilla de error causa+acción. En vez de un "Error" pelado, el mensaje
     // dice qué pasó y qué hacer: la causa del servidor (d.error) manda por ser la más específica;
     // si no, se mapea por status; el fallo de red (fetch que rechaza) tiene su propio mensaje.
-    function apiErrorMsg(status: number, serverErr?: string) {
+    function apiErrorMsg(status: number, serverErr?: string, code?: string) {
+      // [I18N-API] Si el servidor mandó un `code` estable (app/lib/api.ts bad()), el toast
+      // sale en el idioma activo vía apierr.*; si la llave no existe, cae al mensaje ES.
+      if (code) { const k = "apierr." + code; const v = tr(k); if (v && v !== k) return v; }
       if (serverErr) return serverErr;
       if (status === 404) return tr("err.notFound");
       if (status === 401 || status === 403) return tr("err.forbidden");
@@ -183,7 +186,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         throw new Error(tr("err.network"));
       }
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(apiErrorMsg(res.status, d.error));
+      if (!res.ok) throw new Error(apiErrorMsg(res.status, d.error, d.code));
       return d;
     }
     (window as any).api = api;
