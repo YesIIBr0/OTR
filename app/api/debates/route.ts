@@ -282,7 +282,10 @@ export async function POST(req: Request) {
   // {skill, before, after} real tras el blend, para la atribución exacta (§8.2).
   const skillBumps: Record<string, number> = {};
   const skillBumpLedger: Array<{ skill: string; before: number; after: number }> = [];
-  if (body.ballot && Array.isArray(body.ballot.scores) && body.ballot.scores.length) {
+  // [REQ-1] El ballot (nota del juez → skills del alumno) SOLO se aplica en rondas
+  // adjudicadas por un coach. Una SOLICITUD de alumno (adjudicated=false) no mueve skills
+  // hasta que el coach la aprueba — igual que el rating W/L.
+  if (adjudicated && body.ballot && Array.isArray(body.ballot.scores) && body.ballot.scores.length) {
     const judge = clean(body.ballot.judge, 120) || (subject.id !== user.id ? (user.name || "Coach OTR") : null);
     const comments = clean(body.ballot.comments, 4000) || null;
     const recordingUrl = safeVideoUrl(body.ballot.recordingUrl, 400);
@@ -358,33 +361,48 @@ export async function POST(req: Request) {
   }
 
   // --- ActivityEvent (spine): victoria/derrota con delta de rating en meta. ---
+  // [REQ-1] Una SOLICITUD de alumno (adjudicated=false) aún no es una victoria/derrota:
+  // registra un evento NEUTRAL "solicitud enviada" (sin delta ni skills). El evento de
+  // resultado real se escribe cuando el coach aprueba (PATCH /api/debates/[id]).
   const delta = Math.round(ratingAfter - ratingBefore);
-  const type = result === "WIN" ? "debate_win" : result === "LOSS" ? "debate_loss" : "debate_win";
-  const verb = result === "WIN" ? "Ganó" : "Perdió";
   const vs = opponent ? ` vs ${opponent}` : "";
   const where = eventName ? ` · ${eventName}` : "";
-  await logActivitySafe({
-    userId: subject.id,
-    type,
-    title: `${verb} ronda ${format}${vs}${where}`,
-    detail: roundLabel || null,
-    source: "debate",
-    refId: record.id,
-    meta: {
-      result,
-      format,
-      adjudicated,
-      ratingBefore: Math.round(ratingBefore),
-      ratingAfter: Math.round(ratingAfter),
-      delta,
-      tierBefore,
-      tierAfter,
-      promoted,
-      // §8.2: atribución exacta del evento a las skills movidas (en vez de heurística
-      // por texto). Vacío si no hubo ballot / nudge. Forma: [{skill, before, after}].
-      skillBumps: skillBumpLedger,
-    },
-  });
+  if (!adjudicated) {
+    await logActivitySafe({
+      userId: subject.id,
+      type: "debate_requested",
+      title: `Solicitud de debate ${format}${vs}${where}`,
+      detail: roundLabel || null,
+      source: "debate",
+      refId: record.id,
+      meta: { result, format, adjudicated: false, pending: true },
+    });
+  } else {
+    const type = result === "WIN" ? "debate_win" : result === "LOSS" ? "debate_loss" : "debate_win";
+    const verb = result === "WIN" ? "Ganó" : "Perdió";
+    await logActivitySafe({
+      userId: subject.id,
+      type,
+      title: `${verb} ronda ${format}${vs}${where}`,
+      detail: roundLabel || null,
+      source: "debate",
+      refId: record.id,
+      meta: {
+        result,
+        format,
+        adjudicated,
+        ratingBefore: Math.round(ratingBefore),
+        ratingAfter: Math.round(ratingAfter),
+        delta,
+        tierBefore,
+        tierAfter,
+        promoted,
+        // §8.2: atribución exacta del evento a las skills movidas (en vez de heurística
+        // por texto). Vacío si no hubo ballot / nudge. Forma: [{skill, before, after}].
+        skillBumps: skillBumpLedger,
+      },
+    });
+  }
 
   return ok({
     debateId: record.id,

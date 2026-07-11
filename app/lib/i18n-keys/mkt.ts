@@ -87,7 +87,7 @@ export const dict = {
     "mkt.viewMoreCoaches": "Ver más coaches",
 
     // perfil: copy-guía por rol (no estudiante)
-    "mkt.roleMsgParent": "Pídele a tu hijo/a que reserve desde su cuenta. Aquí tú apruebas la sesión y autorizas el pago — cada reserva pasa por ti.",
+    "mkt.roleMsgParent": "Vincula a tu hijo/a desde el Portal de familia y podrás reservar sesiones a su nombre desde aquí — tú apruebas la sesión y autorizas el pago.",
     "mkt.roleMsgAdmin": "Vista de administración: las reservas las inician los estudiantes desde su propia cuenta.",
     "mkt.roleMsgCoach": "Los estudiantes pueden reservar sesiones desde este perfil. Como coach, gestiona tu perfil y tu disponibilidad desde tu espacio de coach.",
     "mkt.bookingsLabel": "Reservas",
@@ -235,7 +235,7 @@ export const dict = {
     "mkt.viewMoreCoaches": "View more coaches",
 
     // profile: role-based guidance (non-student)
-    "mkt.roleMsgParent": "Ask your child to book from their own account. Here you approve the session and authorize payment — every booking goes through you.",
+    "mkt.roleMsgParent": "Link your child from the Family Portal and you'll be able to book sessions on their behalf right here — you approve the session and authorize payment.",
     "mkt.roleMsgAdmin": "Admin view: bookings are started by students from their own account.",
     "mkt.roleMsgCoach": "Students can book sessions from this profile. As a coach, manage your profile and availability from your coach workspace.",
     "mkt.bookingsLabel": "Bookings",

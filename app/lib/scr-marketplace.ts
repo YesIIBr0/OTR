@@ -434,7 +434,7 @@ function bookingCard(c, canBook, role) {
     ${isParent && kids.length ? `
     <p class="label" style="margin:14px 0 8px">${t("mkt.forChild")}</p>
     <select class="select" data-mk-child style="width:100%">
-      ${kids.map((k) => `<option value="${esc(k.id)}" ${k.id === selChildId ? "selected" : ""}>${esc(k.name)}</option>`).join("")}
+      ${kids.map((k) => `<option value="${esc(k.id)}" ${k.id === selChildId ? "selected" : ""}>${k.name}</option>`).join("")}
     </select>` : ""}
 
     <p class="label" style="margin:14px 0 8px">${t("mkt.step1ChoosePackage")}</p>
@@ -476,7 +476,7 @@ function bookingCard(c, canBook, role) {
     </div>
     <p class="faint" style="font-size:11.5px;margin-top:8px">${t("mkt.escrowNote")}</p>` : ""}
 
-    ${consentGate()}
+    ${isParent ? "" : consentGate()}
 
     <button class="btn btn-primary btn-block" id="mk-confirm" style="margin-top:14px" ${ready ? "" : "disabled"}>
       ${isMinor() ? t("mkt.confirmRequestApproval") : t("mkt.confirmBooking")}
@@ -592,7 +592,13 @@ S.marketplace = {
         const d = await w.api(`/api/coaches/${encodeURIComponent(id)}`, null, "GET");
         // [REVIEWS-RENDER] La API devuelve `reviews` como clave HERMANA de `coach`; sin esto
         // se descartaba y el perfil nunca mostraba reseñas. Las fusionamos como reviewsList.
-        w.__mkDetail = { id, data: { ...((d && (d.coach || d)) || {}), reviewsList: (d && d.reviews) || [] } };
+        // [ID-FIX] GET /api/coaches/[id] devuelve coach.id = CoachProfile.id, pero el listado
+        // (grid, deep-link) usa User.id. Sin normalizar, tras cargar el detalle c.id pasaba a
+        // ser el profileId → __mkBooked[c.id] no coincidía con la clave __mkCoachId (panel de
+        // reserva creada no aparecía + 409 al re-confirmar) y data-mk-message enviaba profileId
+        // a /api/conversations → 404. Fijamos id=User.id y guardamos profileId aparte.
+        const coach = (d && (d.coach || d)) || {};
+        w.__mkDetail = { id, data: { ...coach, id: coach.userId || id, profileId: coach.id || coach.profileId, reviewsList: (d && d.reviews) || [] } };
         w.__mkDetailFail = null;
       } catch (e) {
         w.__mkDetailFail = id; // seguimos con los datos del listado

@@ -120,6 +120,7 @@ export const dict = {
     "debate.detailModalTitle": "Detalle del debate",
 
     // form: registrar un debate
+    "debate.recordDebate": "Registrar debate",
     "debate.fieldResult": "Resultado",
     "debate.resultWin": "Victoria",
     "debate.resultLoss": "Derrota",
@@ -279,6 +280,7 @@ export const dict = {
     "debate.detailModalTitle": "Debate detail",
 
     // form: record a debate
+    "debate.recordDebate": "Record debate",
     "debate.fieldResult": "Result",
     "debate.resultWin": "Win",
     "debate.resultLoss": "Loss",

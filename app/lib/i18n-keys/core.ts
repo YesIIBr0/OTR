@@ -60,6 +60,13 @@ export const dict = {
     "core.recoEmptyHeading": "Estás en todos los programas",
     "core.recoEmptyBody": "Una sesión 1:1 con tu coach te lleva más lejos.",
     "core.bookSession": "Reservar sesión",
+    // ── Dashboard · Recommended coach ──
+    "core.coachRecoTitle": "Tu coach recomendado",
+    "core.coachRecoWhySpecialist": "Especialista en {format}",
+    "core.coachRecoWhyTopRated": "Uno de los coaches mejor valorados de OTR",
+    "core.coachRecoWhyLeap": "Da el salto con una sesión 1:1",
+    "core.coachRecoVerified": "Verificado",
+    "core.coachRecoViewProfile": "Ver perfil",
 
     // ── Dashboard · Upcoming sessions ──
     "core.upcomingTitle": "Próximas sesiones",
@@ -233,6 +240,13 @@ export const dict = {
     "core.recoEmptyHeading": "You're in every program",
     "core.recoEmptyBody": "A 1:1 session with your coach takes you further.",
     "core.bookSession": "Book session",
+    // ── Dashboard · Recommended coach ──
+    "core.coachRecoTitle": "Your recommended coach",
+    "core.coachRecoWhySpecialist": "Specialist in {format}",
+    "core.coachRecoWhyTopRated": "One of OTR's top-rated coaches",
+    "core.coachRecoWhyLeap": "Take the leap with a 1:1 session",
+    "core.coachRecoVerified": "Verified",
+    "core.coachRecoViewProfile": "View profile",
 
     // ── Dashboard · Upcoming sessions ──
     "core.upcomingTitle": "Upcoming sessions",

@@ -219,22 +219,24 @@ function activeItemsFlat() {
         const c = byFmt || rated[0];
         if (!c) return null;
         const matched = fmtArr.find((f) => String(c.specialties || '').toLowerCase().includes(f));
-        const why = matched ? `Especialista en ${matched}` : (Number(c.ratingAvg ?? c.rating ?? 0) > 0 ? 'Uno de los coaches mejor valorados de OTR' : 'Da el salto con una sesión 1:1');
+        const why = matched
+          ? t("core.coachRecoWhySpecialist").replace("{format}", matched)
+          : (Number(c.ratingAvg ?? c.rating ?? 0) > 0 ? t("core.coachRecoWhyTopRated") : t("core.coachRecoWhyLeap"));
         return { c, why };
       };
       const rc = pickCoach();
       const coachRecoBlock = rc ? `
         <div class="divider" style="margin:16px 0 14px"></div>
-        <div class="eyebrow" style="margin-bottom:10px">Tu coach recomendado</div>
+        <div class="eyebrow" style="margin-bottom:10px">${t("core.coachRecoTitle")}</div>
         <div class="row vcenter between" style="gap:12px;flex-wrap:wrap">
           <div class="row vcenter" style="gap:11px;min-width:0">
-            ${C.avatar(esc(rc.c.initials || String(rc.c.name || 'C').slice(0, 2)), { size: 'md', bg: 'var(--otr-navy)' })}
+            ${C.avatar(rc.c.initials || String(rc.c.name || 'C').slice(0, 2), { size: 'md', bg: 'var(--otr-navy)' })}
             <div style="min-width:0">
-              <div class="row vcenter" style="gap:6px"><b style="font-size:14px">${esc(rc.c.name || 'Coach OTR')}</b>${(rc.c.coachVerified || rc.c.verified) ? `<span class="badge sky" style="height:18px;font-size:10px;padding:0 6px">Verificado</span>` : ''}</div>
-              <div class="eyebrow" style="color:var(--otr-green-text);font-size:10.5px;margin-top:3px">${esc(rc.why)}</div>
+              <div class="row vcenter" style="gap:6px"><b style="font-size:14px">${rc.c.name || 'Coach OTR'}</b>${(rc.c.coachVerified || rc.c.verified) ? `<span class="badge sky" style="height:18px;font-size:10px;padding:0 6px">${t("core.coachRecoVerified")}</span>` : ''}</div>
+              <div class="eyebrow" style="color:var(--otr-green-text);font-size:10.5px;margin-top:3px">${rc.why}</div>
             </div>
           </div>
-          <button class="btn btn-primary btn-sm" style="flex:none" onclick="window.__mkCoachId='${esc(rc.c.id)}';go('explore')">Ver perfil ${IC.arrowR}</button>
+          <button class="btn btn-primary btn-sm" style="flex:none" onclick="window.__mkCoachId='${esc(rc.c.id)}';go('explore')">${t("core.coachRecoViewProfile")} ${IC.arrowR}</button>
         </div>` : '';
       const recoCard = `
         <div class="card card-pad">
