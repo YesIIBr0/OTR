@@ -67,7 +67,7 @@ export const S = {};
         <button class="tab ${tab==='contenido'?'active':''}" data-teacher-tab="contenido"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.book}</span>${t("teacher.tabContent")}</span></button>
       </div>
       ${tab==='grupo' ? `<div class="grid g-4" style="margin-bottom:18px">
-        <div class="tile fade-up" style="--d:0">${C.kpi(t("teacher.kpiAvg"),String(k.avg),{unit:'%',ic:'chart'})}</div>
+        <div class="tile tile--hero otr-shine fade-up" style="--d:0">${C.kpi(t("teacher.kpiAvg"),String(k.avg),{unit:'%',ic:'chart',accent:'var(--otr-green-text)'})}</div>
         <div class="tile fade-up" style="--d:1">${C.kpi(t("teacher.kpiAttendance"),String(k.attendance),{unit:'%',ic:'users'})}</div>
         ${/* [auditoría] el valor deriva de Enrollment.engagement (Alto/Medio/Bajo→%), no de entregas vs dueAt: se etiqueta como engagement, no como puntualidad medida */""}
         <div class="tile fade-up" style="--d:2">${C.kpi(t("teacher.kpiEngagement"),String(k.onTime),{unit:'%',ic:'chart'})}</div>
@@ -165,7 +165,7 @@ export const S = {};
         </div>
 
         <div class="grid g-4" style="margin-bottom:16px">
-          <div class="tile fade-up" style="--d:0">${C.kpi(t("teacher.kpiCourses"),String(courseCount),{ic:'book'})}</div>
+          <div class="tile tile--hero fade-up" style="--d:0">${C.kpi(t("teacher.kpiCourses"),String(courseCount),{ic:'book',accent:'var(--otr-green-text)'})}</div>
           <div class="tile fade-up" style="--d:1">${C.kpi(t("teacher.kpiModules"),String(moduleCount),{ic:'grid'})}</div>
           <div class="tile fade-up" style="--d:2">${C.kpi(t("teacher.kpiLessons"),String(lessonCount),{ic:'doc'})}</div>
           <div class="tile fade-up" style="--d:3">${C.kpi(t("teacher.kpiQuizzes"),String(quizCount),{ic:'target'})}</div>

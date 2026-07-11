@@ -218,6 +218,11 @@ svg.ic{width:18px;height:18px;flex:none}
 
 /* Stat / KPI */
 .kpi{display:flex;flex-direction:column;gap:6px}
+/* [OLA-3 · vibrancy — llamada Isaac] Tile hero: LA métrica principal de cada pantalla respira
+   marca (gradiente crema→verde pálido, número mayor). AA: label en --otr-green-text (≥4.5:1). */
+.tile--hero{background:linear-gradient(135deg,#fff 0%,var(--action-soft) 100%);border-color:color-mix(in srgb,var(--otr-green) 35%,var(--border))}
+.tile--hero .k-val{font-size:40px}
+.tile--hero .k-label{color:var(--otr-green-text)}
 .kpi .k-label{font-size:12px;color:var(--text-2);font-weight:600;display:flex;align-items:center;gap:7px}
 .kpi .k-val{font-family:var(--font-brand);font-weight:800;font-size:33px;line-height:1;letter-spacing:var(--track-tight);color:var(--text)}
 .kpi .k-val .u{font-size:.5em;color:var(--text-3);font-weight:700}

@@ -651,7 +651,7 @@ function priorQuizAttempt() {
 
       return `${head}
       <div class="grid g-3 fade-up" style="--d:1;margin-bottom:18px">
-        <div class="tile">${C.kpi(t("learn.kpiAvg"), g.avg, {unit:'%', ic:'chart'})}</div>
+        <div class="tile tile--hero">${C.kpi(t("learn.kpiAvg"), g.avg, {unit:'%', ic:'chart', accent:'var(--otr-green-text)'})}</div>
         <div class="tile">${C.kpi(t("learn.kpiSubmitted"), `${g.submitted} / ${g.total}`, {ic:'checkCircle'})}</div>
         <div class="tile">${C.kpi(t("learn.kpiBest"), g.best, {unit:'%', ic:'star'})}</div>
       </div>

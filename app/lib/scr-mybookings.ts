@@ -121,8 +121,8 @@ S.myBookings = {
     );
 
     const head = `
-    <div class="page-head fade-up"><div>
-      <p class="eyebrow">${t("mb.eyebrow")}</p>
+    <div class="page-head fade-up" style="padding:14px 16px;border-radius:var(--r-md,14px);background:linear-gradient(135deg,#fff 0%,var(--action-soft) 100%);border:1px solid color-mix(in srgb,var(--otr-green) 30%,var(--border))"><div>
+      <p class="eyebrow" style="color:var(--otr-green-text)">${t("mb.eyebrow")}</p>
       <h1 class="page-title">${t("mb.title")}</h1>
       <div class="page-sub">${t("mb.subtitle")}</div>
     </div></div>`;
