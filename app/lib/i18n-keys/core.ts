@@ -37,7 +37,7 @@ export const dict = {
     // ── Dashboard · Skill snapshot ──
     "core.skillEyebrow": "Radar OTR",
     "core.skillTitle": "Tus habilidades",
-    "core.coursesEyebrow": "Tu progreso",
+    "core.coursesEyebrow": "Seguimiento",
     "core.coursesTitle": "Programas activos",
     "core.coursesEmptyHeading": "Aún sin programas",
     "core.viewProgress": "Ver progreso",
@@ -109,7 +109,7 @@ export const dict = {
     "core.activityEmpty": "Sin actividad aún. Completa tu primera lección para empezar tu historial.",
 
     // ── Course view ──
-    "core.courseEmptyTitle": "Tu entrenamiento empieza aquí",
+    "core.courseEmptyTitle": "Elige tu primer programa",
     "core.courseEmptySub": "Elige tu primer programa y entra a entrenar.",
     "core.courseEnrollHeading": "Inscríbete en tu primer programa",
     "core.courseEnrollBody": "Entrena con los coaches más dominantes — explora el catálogo.",
@@ -136,7 +136,7 @@ export const dict = {
     "core.coursesTabMine": "Cursos activos",
     "core.coursesTabCatalog": "Buscar nuevos",
     "core.findCatalogCta": "Buscar catálogo",
-    "core.yourProgress": "Tu progreso",
+    "core.yourProgress": "Avance del programa",
     "core.activitiesCountUnit": "actividades",
     "core.claimCertificate": "Reclamar certificado",
     "core.currentAverage": "Promedio actual",
@@ -217,7 +217,7 @@ export const dict = {
     // ── Dashboard · Skill snapshot ──
     "core.skillEyebrow": "OTR Radar",
     "core.skillTitle": "Your skills",
-    "core.coursesEyebrow": "Your progress",
+    "core.coursesEyebrow": "Tracking",
     "core.coursesTitle": "Active programs",
     "core.coursesEmptyHeading": "No programs yet",
     "core.viewProgress": "View progress",
@@ -289,7 +289,7 @@ export const dict = {
     "core.activityEmpty": "No activity yet. Complete your first lesson to start your history.",
 
     // ── Course view ──
-    "core.courseEmptyTitle": "Your training starts here",
+    "core.courseEmptyTitle": "Choose your first program",
     "core.courseEmptySub": "Choose your first program and start training.",
     "core.courseEnrollHeading": "Enroll in your first program",
     "core.courseEnrollBody": "Train with the most dominant coaches — browse the catalog.",
@@ -316,7 +316,7 @@ export const dict = {
     "core.coursesTabMine": "Active courses",
     "core.coursesTabCatalog": "Find new",
     "core.findCatalogCta": "Browse catalog",
-    "core.yourProgress": "Your progress",
+    "core.yourProgress": "Program progress",
     "core.activitiesCountUnit": "activities",
     "core.claimCertificate": "Claim certificate",
     "core.currentAverage": "Current average",

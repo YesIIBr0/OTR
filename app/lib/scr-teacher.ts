@@ -661,7 +661,7 @@ export const S = {};
               try {
                 const d = await window.api("/api/debates/" + id, { action: "approve" }, "PATCH");
                 const mv = (typeof d?.ratingAfter === "number" && typeof d?.ratingBefore === "number") ? ` · ${d.ratingBefore}→${d.ratingAfter}` : "";
-                window.toast?.(`${t("teacher.approved")}${mv}${d?.promoted ? ` · ¡${d.tierAfter}!` : ""}`, "ok");
+                window.toast?.(`${t("teacher.approved")}${mv}${d?.promoted ? t("teacher.promotedTo").replace("{tier}", d.tierAfter) : ""}`, "ok");
                 removeCard(id);
               } catch (e) {
                 btn.disabled = false; btn.textContent = t("teacher.approve");
@@ -700,7 +700,8 @@ export const S = {};
               <div class="card" data-req="${esc(q.id)}" style="padding:12px 14px">
                 <div class="row between vcenter" style="gap:10px;flex-wrap:wrap">
                   <div><div style="font-weight:700">${esc(q.studentName)} · ${resultTag(q.result)}</div>
-                    <div class="faint" style="font-size:12px">${meta(q)}</div></div>
+                    <div class="faint" style="font-size:12px">${meta(q)}</div>
+                    ${q.studentNote ? `<div class="faint" style="font-size:12px;font-style:italic;margin-top:3px">“${esc(q.studentNote)}”</div>` : ""}</div>
                   <div class="row vcenter" style="gap:6px">
                     <button class="btn btn-primary btn-sm" data-approve="${esc(q.id)}">${t("teacher.approve")}</button>
                     <button class="btn btn-ghost btn-sm" data-reject="${esc(q.id)}">${t("teacher.reject")}</button>

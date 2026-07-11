@@ -15,6 +15,8 @@ export const dict = {
 
     // sección Próximos torneos (debate) — datos en DB.tournaments (status UPCOMING/LIVE).
     "events.upcomingTournamentsTitle": "Próximos torneos",
+    "events.nextTournamentEyebrow": "Próximo torneo",
+    "events.moreTournamentsSoon": "Más torneos en camino — mantente atento.",
     "events.tournamentRegister": "Inscribirme",
     "events.tournamentRegistered": "Inscripción confirmada",
     "events.tournamentRegisterError": "No se pudo inscribir — inténtalo de nuevo",
@@ -35,6 +37,8 @@ export const dict = {
 
     // Upcoming tournaments section (debate) — data from DB.tournaments (status UPCOMING/LIVE).
     "events.upcomingTournamentsTitle": "Upcoming tournaments",
+    "events.nextTournamentEyebrow": "Next tournament",
+    "events.moreTournamentsSoon": "More tournaments on the way — stay tuned.",
     "events.tournamentRegister": "Register",
     "events.tournamentRegistered": "Registration confirmed",
     "events.tournamentRegisterError": "Couldn't register — try again",

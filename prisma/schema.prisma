@@ -588,6 +588,7 @@ model DebateRecord {
   source     String        @default("OTR") // OTR | EXTERNAL (NSDA...)
   eventName  String?
   tournamentCode String?   // [REQ-1] código del torneo (obligatorio en el auto-reporte del alumno)
+  studentNote    String?   // [REQ-1] comentario del alumno en su solicitud (visible para el coach)
   roundLabel String?
   recordedAt DateTime      @default(now())
   // PRD §6.2: el rating SOLO se mueve en rondas registradas/adjudicadas por un

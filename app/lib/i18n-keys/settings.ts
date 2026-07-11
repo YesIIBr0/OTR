@@ -32,11 +32,11 @@ export const dict = {
     "settings.notifSessionLabel": "Recordatorios de sesiones",
     "settings.notifSessionDesc": "Avisos antes de cada sesión reservada.",
     "settings.notifWeeklyLabel": "Resumen semanal",
-    "settings.notifWeeklyDesc": "Tu progreso, racha y próximos pasos cada semana.",
+    "settings.notifWeeklyDesc": "Resumen semanal: avance, racha y próximos pasos.",
     "settings.notifDebateLabel": "Resultados de debate",
     "settings.notifDebateDesc": "Cuando tu rating se mueve o asciendes de tier.",
     "settings.notifMarketplaceLabel": "Novedades del marketplace",
-    "settings.notifMarketplaceDesc": "Nuevos coaches y recomendaciones para ti.",
+    "settings.notifMarketplaceDesc": "Nuevos coaches y programas en el catálogo.",
     "settings.toggleAria": "Activar/desactivar",
 
     // membership
@@ -113,11 +113,11 @@ export const dict = {
     "settings.notifSessionLabel": "Session reminders",
     "settings.notifSessionDesc": "Alerts before each booked session.",
     "settings.notifWeeklyLabel": "Weekly digest",
-    "settings.notifWeeklyDesc": "Your progress, streak and next steps every week.",
+    "settings.notifWeeklyDesc": "Weekly summary: progress, streak and next steps.",
     "settings.notifDebateLabel": "Debate results",
     "settings.notifDebateDesc": "When your rating moves or you move up a tier.",
     "settings.notifMarketplaceLabel": "Marketplace updates",
-    "settings.notifMarketplaceDesc": "New coaches and recommendations for you.",
+    "settings.notifMarketplaceDesc": "New coaches and programs in the catalog.",
     "settings.toggleAria": "Turn on/off",
 
     // membership

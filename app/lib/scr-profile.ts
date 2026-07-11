@@ -3,7 +3,7 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { t } from "./i18n";
+import { t, getLang } from "./i18n";
 export const S = {};
 
   /* ---------------- helpers de reseñas ---------------- */
@@ -42,7 +42,7 @@ export const S = {};
         ${p.modality ? C.badge(esc(p.modality), 'navy') : ''}
       </div>
       ${p.price != null ? `<div class="divider" style="margin:12px 0 0"></div><div class="row between vcenter" style="margin-top:12px">
-        <span class="brand-font" style="font-size:19px;font-weight:800;color:var(--text)">${typeof p.price === 'number' ? '$' + (p.price / 100).toLocaleString('es') : esc(p.price)}</span>
+        <span class="brand-font" style="font-size:19px;font-weight:800;color:var(--text)">${typeof p.price === 'number' ? '$' + (p.price / 100).toLocaleString(getLang() === 'en' ? 'en' : 'es') : esc(p.price)}</span>
         <button class="btn btn-ghost btn-sm" onclick="go('catalog')">${t("profile.viewProgram")} ${IC.chevR}</button>
       </div>` : ''}
     </div>`;
@@ -70,6 +70,8 @@ export const S = {};
       const recent = (DB.activity || []).slice(0, 4); // eventos REALES (DB.activity ya viene escapado)
       // Las 6 dimensiones del radar OTR, en orden fijo. Se leen de DB.skills (del estudiante).
       const SKILL_DIMS = ['Confianza','Estructura','Evidencia','Refutación','Cross-ex','Delivery'];
+      // Etiqueta visible según idioma; el key canónico (dato del Skill Graph) no se traduce.
+      const SKILL_LABEL = { 'Confianza': 'aula.skillConfidence', 'Estructura': 'aula.skillStructure', 'Evidencia': 'aula.skillEvidence', 'Refutación': 'aula.skillRebuttal', 'Cross-ex': 'aula.skillCrossex', 'Delivery': 'aula.skillDelivery' };
       const skillMap = {};
       (DB.skills || []).forEach((s) => { skillMap[s.skill] = Math.max(0, Math.min(100, Number(s.score) || 0)); });
       const hasSkills = (DB.skills || []).length > 0;
@@ -94,9 +96,9 @@ export const S = {};
 
       <div class="split fade-up rail-320" style="--d:2">
         <div class="card card-pad">
-          <div class="row between vcenter"><div><div class="eyebrow" style="margin-bottom:2px">${t("profile.yourProgress")}</div><b style="font-size:15px">${nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel")}</b></div><span class="muted tnum" style="font-size:13px">${xp.toLocaleString('es')} / ${xpNext.toLocaleString('es')} XP</span></div>
+          <div class="row between vcenter"><div><div class="eyebrow" style="margin-bottom:2px">${t("profile.yourProgress")}</div><b style="font-size:15px">${nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel")}</b></div><span class="muted tnum" style="font-size:13px">${xp.toLocaleString(getLang() === 'en' ? 'en' : 'es')} / ${xpNext.toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span></div>
           <div style="margin:14px 0 7px">${C.bar(pct,{cls:'thick navy'})}</div>
-          <div class="row between" style="font-size:12px;color:var(--text-2)"><span class="badge sky">${esc(curName)}</span><span class="tnum">${nextLevel ? toNext.toLocaleString('es') + ' ' + t("profile.xpToReach") + ' ' + esc(nextLevel.name) : t("profile.maxLevelReached")}</span></div>
+          <div class="row between" style="font-size:12px;color:var(--text-2)"><span class="badge sky">${esc(curName)}</span><span class="tnum">${nextLevel ? toNext.toLocaleString(getLang() === 'en' ? 'en' : 'es') + ' ' + t("profile.xpToReach") + ' ' + esc(nextLevel.name) : t("profile.maxLevelReached")}</span></div>
 
           <div class="divider"></div>
           <div class="row between vcenter" style="margin-bottom:4px">
@@ -105,7 +107,7 @@ export const S = {};
           </div>
           ${hasSkills
             ? `<div style="margin-top:6px">
-            ${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${c[0]}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
+            ${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${t(SKILL_LABEL[c[0]] || c[0])}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
           </div>`
             : `<div class="empty" style="padding:26px;margin-top:8px"><div class="ill">${IC.award}</div><h4>${t("profile.noEvalHeading")}</h4><p>${t("profile.noEvalBody")}</p></div>`}
         </div>
@@ -113,7 +115,7 @@ export const S = {};
         <div class="stack" style="gap:16px">
           <div class="card card-pad" style="text-align:center">
             <div class="eyebrow" style="margin-bottom:10px">${t("profile.streak")}</div>
-            <span class="streak" style="font-size:14px">${IC.flame} ${streak} días</span>
+            <span class="streak" style="font-size:14px">${IC.flame} ${t("profile.streakDays").replace("{n}", streak)}</span>
             <div style="margin-top:10px;font-size:12.5px" class="muted">${t("profile.dontBreakIt")}</div>
             <div class="row wrap" style="gap:5px;margin-top:14px;justify-content:center">
               ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:4px;background:${i<Math.min(streak,14)?'var(--otr-sky)':'var(--n-150)'}"></span>`).join('')}
@@ -140,7 +142,7 @@ export const S = {};
       const certs = DB.certificates || [];
       return `
       <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">${t("profile.badgesTitle")}</h1>
-      <div class="page-sub">${got} de ${DB.badges.length} insignias · sigue ganando logros de campeón</div></div></div>
+      <div class="page-sub">${t("profile.badgesProgress").replace("{got}", got).replace("{total}", DB.badges.length)}</div></div></div>
 
       <div class="fade-up" style="--d:1;margin-bottom:12px"><div class="eyebrow" style="margin-bottom:2px">${t("profile.achievements")}</div><b style="font-size:15px;display:block">${t("profile.yourCertificates")}</b></div>
       ${certs.length
@@ -322,7 +324,7 @@ export const S = {};
             <div><b style="font-size:15px">${esc(me.level || 'OTR Initiate')}</b><div class="faint" style="font-size:12px;margin-top:1px">${(DB.xpNext - DB.xp)} ${t("profile.xpToNextLevel")}</div></div>
           </div>
           ${C.bar(DB.xpNext > DB.xpLevelStart ? Math.round(((DB.xp - DB.xpLevelStart) / (DB.xpNext - DB.xpLevelStart)) * 100) : 0, { cls: 'navy' })}
-          <div class="row between vcenter" style="font-size:12px;color:var(--text-2);margin-top:10px"><span class="tnum">${(DB.xp || 0).toLocaleString('es')} XP</span><span class="streak">${IC.flame} ${(me.streak || 0)} días</span></div>
+          <div class="row between vcenter" style="font-size:12px;color:var(--text-2);margin-top:10px"><span class="tnum">${(DB.xp || 0).toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span><span class="streak">${IC.flame} ${t("profile.streakDays").replace("{n}", me.streak || 0)}</span></div>
         </div>
         <div class="card card-pad">
           <div class="eyebrow" style="margin-bottom:2px">${t("profile.achievements")}</div>

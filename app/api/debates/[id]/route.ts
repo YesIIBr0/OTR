@@ -93,7 +93,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // --- RECHAZAR: queda en el historial con su motivo (auditoría), sin tocar el rating. ---
   if (action === "reject") {
     const reason = clean(body.reason, 280) || null;
-    await db.debateRecord.update({ where: { id }, data: { rejectedAt: new Date(), rejectionReason: reason, adjudicatedBy: user.id } });
+    // Guard condicional: si otro coach la resolvió entre el check de arriba y aquí, no pisar.
+    const claimed = await db.debateRecord.updateMany({
+      where: { id, adjudicated: false, rejectedAt: null },
+      data: { rejectedAt: new Date(), rejectionReason: reason, adjudicatedBy: user.id },
+    });
+    if (claimed.count === 0) return bad("Esta solicitud ya fue resuelta", 409);
     await logActivitySafe({
       userId: student.id, type: "debate_rejected",
       title: "Solicitud de debate rechazada",
@@ -117,7 +122,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const promoted = tierAfter !== tierBefore && next.rating > ratingBefore;
 
   await db.$transaction(async (tx) => {
-    await tx.debateRecord.update({ where: { id }, data: { adjudicated: true, adjudicatedBy: user.id } });
+    // Reclama el registro con guard condicional: si un reject (u otro approve) ganó la
+    // carrera tras el check inicial, count=0 → aborta la tx sin mover el rating.
+    const claimed = await tx.debateRecord.updateMany({
+      where: { id, adjudicated: false, rejectedAt: null },
+      data: { adjudicated: true, adjudicatedBy: user.id },
+    });
+    if (claimed.count === 0) throw new Error("YA_RESUELTA");
     await tx.user.update({ where: { id: student.id }, data: { debateRating: next.rating, debateRd: next.rd, debateVol: next.vol, debateTier: tierAfter } });
     await tx.ratingUpdate.create({ data: { debateId: id, ratingBefore, ratingAfter: next.rating, rdAfter: next.rd, volAfter: next.vol, tierAfter } });
   });

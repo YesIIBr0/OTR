@@ -374,7 +374,7 @@ function bookedPanel(b, coachId) {
 // [PARENT-BOOKING §11.3] Hijos vinculados del padre (desde DB.parent) para reservar a su nombre.
 function parentChildren() {
   const kids = (DB.parent && Array.isArray(DB.parent.children)) ? DB.parent.children : [];
-  return kids.filter((k) => k && (k.id || k.childId)).map((k) => ({ id: k.id || k.childId, name: k.name || "Hijo/a" }));
+  return kids.filter((k) => k && (k.id || k.childId)).map((k) => ({ id: k.id || k.childId, name: k.name || t("mkt.childFallback") }));
 }
 
 function bookingCard(c, canBook, role) {

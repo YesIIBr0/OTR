@@ -62,6 +62,7 @@ export async function POST(req: Request) {
     eventName?: string;
     tournamentCode?: string;
     roundLabel?: string;
+    comments?: string;
     opponentRating?: unknown;
     adjudicated?: unknown;
     targetUserId?: string;
@@ -183,6 +184,8 @@ export async function POST(req: Request) {
       partner: partnerUser ? partnerUser.name : partner,
       partnerUserId: partnerUser ? partnerUser.id : null,
       result, source, eventName, tournamentCode, roundLabel,
+      // [REQ-1] el comentario del alumno acompaña su solicitud (el coach lo ve en la cola).
+      studentNote: clean(body.comments, 2000) || null,
       adjudicated,
       adjudicatedBy: adjudicated ? user.id : null,
     },
@@ -465,6 +468,7 @@ export async function GET(req: Request) {
         eventName: r.eventName,
         tournamentCode: r.tournamentCode,
         roundLabel: r.roundLabel,
+        studentNote: r.studentNote,
         recordedAt: r.recordedAt,
       }));
 

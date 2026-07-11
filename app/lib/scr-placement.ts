@@ -15,12 +15,12 @@ export const S = {};
 // El key es identificador canónico (data-skill, matching con el Skill Graph): NO se
 // traduce. La descripción sale del idioma activo vía t(descKey) al renderizar.
 const DIMS = [
-  { key: "Confianza",  descKey: "placement.descConfianza" },
-  { key: "Estructura", descKey: "placement.descEstructura" },
-  { key: "Evidencia",  descKey: "placement.descEvidencia" },
-  { key: "Refutación", descKey: "placement.descRefutacion" },
-  { key: "Cross-ex",   descKey: "placement.descCrossEx" },
-  { key: "Delivery",   descKey: "placement.descDelivery" },
+  { key: "Confianza", labelKey: "aula.skillConfidence",  descKey: "placement.descConfianza" },
+  { key: "Estructura", labelKey: "aula.skillStructure", descKey: "placement.descEstructura" },
+  { key: "Evidencia", labelKey: "aula.skillEvidence",  descKey: "placement.descEvidencia" },
+  { key: "Refutación", labelKey: "aula.skillRebuttal", descKey: "placement.descRefutacion" },
+  { key: "Cross-ex", labelKey: "aula.skillCrossex",   descKey: "placement.descCrossEx" },
+  { key: "Delivery", labelKey: "aula.skillDelivery",   descKey: "placement.descDelivery" },
 ];
 
 S.placement = {
@@ -45,7 +45,7 @@ S.placement = {
       <div class="card card-pad fade-up" style="--d:${i + 1};margin-bottom:12px">
         <div class="row between vcenter" style="gap:12px">
           <div style="flex:1;min-width:0">
-            <label for="pl-${esc(d.key)}" style="display:block"><b style="font-size:14.5px">${esc(d.key)}</b></label>
+            <label for="pl-${esc(d.key)}" style="display:block"><b style="font-size:14.5px">${t(d.labelKey)}</b></label>
             <p class="faint" style="font-size:12.5px;margin-top:3px;line-height:1.45">${t(d.descKey)}</p>
           </div>
           <output class="badge pl-out" data-out="${esc(d.key)}" style="min-width:46px;text-align:center;font-variant-numeric:tabular-nums">—</output>

@@ -747,6 +747,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // [§6.2] adjudicada = tiene RatingUpdate 1:1 (el rating solo se mueve en ronda juzgada).
     // El overview separa "rondas adjudicadas" de los auto-reportes de práctica.
     adjudicated: !!r.rating,
+    // [REQ-1] estado visible de la solicitud: el alumno distingue pendiente/rechazada/aprobada.
+    status: r.rejectedAt ? "rejected" : (r.adjudicated || r.rating) ? "approved" : "pending",
+    rejectionReason: esc(r.rejectionReason || ""),
     when: whenLabel(r.recordedAt),
   }));
 

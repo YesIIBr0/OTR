@@ -257,9 +257,13 @@ function viewHistory(d) {
     <div class="tile click fade-up" data-debate="${esc(h.id || "")}" role="button" tabindex="0" aria-label="${t("debate.viewDebateDetail")} ${esc(h.title || "")}" style="--d:${i % 8};border-left:3px solid ${rs.cssVar}">
       <div class="row between vcenter" style="gap:10px">
         <span class="badge ${rs.tone}" style="font-weight:800;min-width:54px;justify-content:center">${rs.label}</span>
-        <span class="badge ${src === "OTR" ? "sky" : ""}">${src}</span>
+        <span class="row vcenter" style="gap:6px">
+          ${h.status === "pending" ? `<span class="badge warn">${t("debate.statusPending")}</span>` : h.status === "rejected" ? `<span class="badge danger">${t("debate.statusRejected")}</span>` : ""}
+          <span class="badge ${src === "OTR" ? "sky" : ""}">${src}</span>
+        </span>
       </div>
       <div style="margin-top:10px"><b style="font-size:14.5px;line-height:1.3">vs ${esc(h.opponent || t("debate.fallbackOpponent"))}</b></div>
+      ${h.status === "rejected" && h.rejectionReason ? `<div class="faint" style="font-size:12px;margin-top:5px;font-style:italic">${t("debate.rejectionPrefix")}: ${h.rejectionReason}</div>` : ""}
       <div class="row vcenter wrap" style="gap:7px;margin-top:6px;font-size:12px;color:var(--text-2)">
         ${h.format ? `<span class="row vcenter" style="gap:4px">${IC.flag} ${esc(h.format)}</span>` : ""}
         ${h.eventName ? `<span class="dot-sep"></span><span>${esc(h.eventName)}</span>` : ""}
@@ -564,6 +568,12 @@ function openRecordDebate(forcedSource, onDone) {
         comments: val("dr-comments"),
       };
       await (window as any).api("/api/debates", payload);
+      // Refetch: la solicitud recién enviada debe aparecer en el historial sin recargar
+      // (DB.debate viene del boot; el POST no lo actualiza solo).
+      try {
+        const res = await fetch("/api/app-data");
+        if (res.ok) { const fresh = await res.json(); if (fresh && fresh.debate) DB.debate = fresh.debate; }
+      } catch { /* silencioso: el toast ya confirmó el envío */ }
       (window as any).toast?.(t("debate.requestSent"), "ok");
       onDone && onDone();
     },
