@@ -184,7 +184,7 @@ export function renderShell(activeNav, crumbs, content, role = 'student') {
         ${(() => { const u = (DB.notifications || []).filter(n => n.unread).length; return `<button class="icon-btn" id="bell" aria-label="${t('top.notifications', lang)}">${IC.bell}${u>0?`<span class="bell-count">${u}</span>`:''}</button>`; })()}
       </header>
 
-      <div class="content" id="content" role="main" tabindex="-1" aria-label="${lang==='en'?'Main content':'Contenido principal'}"><div class="page rise">${content}</div></div>
+      <main class="content" id="content" tabindex="-1" aria-label="${lang==='en'?'Main content':'Contenido principal'}"><div class="page rise">${content}</div></main>
 
       <nav class="tabbar mobile-only">${tabbar}</nav>
     </div>

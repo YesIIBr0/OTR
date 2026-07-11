@@ -111,11 +111,13 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (content) content.scrollTop = 0;
       // [A11Y] Navegación real: fija el document.title, anuncia la pantalla por la región
       // aria-live y mueve el foco al contenido — así teclado y lector de pantalla detectan
-      // el cambio (el innerHTML silencioso no lo notan solos).
+      // el cambio (el innerHTML silencioso no lo notan solos). Se salta si hay un modal
+      // abierto (p.ej. crear curso navega al constructor antes de cerrar su modal) para no
+      // robarle el foco a un diálogo todavía visible.
       const heading = root.querySelector<HTMLElement>("h1, .page-title");
       const pageName = (heading?.textContent || "").trim();
       if (pageName) { document.title = `${pageName} · OTR Aula`; announceRoute(pageName); }
-      if (content && typeof content.focus === "function") { try { content.focus({ preventScroll: true } as any); } catch { content.focus(); } }
+      if (content && typeof content.focus === "function" && !document.querySelector(".modal-scrim")) { try { content.focus({ preventScroll: true } as any); } catch { content.focus(); } }
       // [PERF] Tras el primer paint, prefetch (idle, fire-and-forget) de las pantallas probables
       // del rol → navegación instantánea sin inflar el bundle inicial.
       prefetchForRole(state.role);
