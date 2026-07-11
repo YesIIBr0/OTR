@@ -371,6 +371,12 @@ function bookedPanel(b, coachId) {
   </div>`;
 }
 
+// [PARENT-BOOKING §11.3] Hijos vinculados del padre (desde DB.parent) para reservar a su nombre.
+function parentChildren() {
+  const kids = (DB.parent && Array.isArray(DB.parent.children)) ? DB.parent.children : [];
+  return kids.filter((k) => k && (k.id || k.childId)).map((k) => ({ id: k.id || k.childId, name: k.name || "Hijo/a" }));
+}
+
 function bookingCard(c, canBook, role) {
   const w = window;
   const booked = (w.__mkBooked || {})[c.id];
@@ -417,10 +423,19 @@ function bookingCard(c, canBook, role) {
   // Atajo "próximo hueco": el primer día con disponibilidad y su hora más temprana.
   const soonestDay = days.find((d) => slotsFor(rows, d).length);
   const soonest = soonestDay ? { day: soonestDay, slot: slotsFor(rows, soonestDay)[0] } : null;
+  // [PARENT-BOOKING] Si el que reserva es un PADRE, primero elige a qué hijo (studentId al POST).
+  const isParent = role === "parent";
+  const kids = isParent ? parentChildren() : [];
+  const selChildId = sel.childId || (kids[0] && kids[0].id) || "";
 
   return `
   <div class="card card-pad">
     <b style="font-size:14px">${t("mkt.bookSessionTitle")}</b>
+    ${isParent && kids.length ? `
+    <p class="label" style="margin:14px 0 8px">${t("mkt.forChild")}</p>
+    <select class="select" data-mk-child style="width:100%">
+      ${kids.map((k) => `<option value="${esc(k.id)}" ${k.id === selChildId ? "selected" : ""}>${esc(k.name)}</option>`).join("")}
+    </select>` : ""}
 
     <p class="label" style="margin:14px 0 8px">${t("mkt.step1ChoosePackage")}</p>
     ${pkgs.length ? `<div class="stack" style="gap:8px">
@@ -480,7 +495,8 @@ function renderProfile(state) {
   // [PARENT-2] Solo el alumno puede reservar (el backend exige STUDENT). El rol se pasa a
   // bookingCard para mostrar copy-guía a padre/coach/admin en vez de un CTA imposible.
   const role = (state && state.role) || "";
-  const canBook = role === "student";
+  // [PARENT-BOOKING] El alumno reserva para sí; el PADRE reserva a nombre de un hijo vinculado.
+  const canBook = role === "student" || (role === "parent" && parentChildren().length > 0);
   const specs = String(c.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean);
   const reviews = c.reviewsList;
 
@@ -568,29 +584,38 @@ S.marketplace = {
       S.marketplace.mount(root, state);
     };
 
-    // Abrir perfil de coach → carga el detalle real bajo demanda (GET /api/coaches/[id]).
+    // Carga el detalle real de un coach bajo demanda (GET /api/coaches/[id]). Idempotente:
+    // no re-pide si ya está cargado o si ya falló para ese id.
+    const loadDetail = async (id) => {
+      if (!id || (w.__mkDetail && w.__mkDetail.id === id) || w.__mkDetailFail === id) return;
+      try {
+        const d = await w.api(`/api/coaches/${encodeURIComponent(id)}`, null, "GET");
+        // [REVIEWS-RENDER] La API devuelve `reviews` como clave HERMANA de `coach`; sin esto
+        // se descartaba y el perfil nunca mostraba reseñas. Las fusionamos como reviewsList.
+        w.__mkDetail = { id, data: { ...((d && (d.coach || d)) || {}), reviewsList: (d && d.reviews) || [] } };
+        w.__mkDetailFail = null;
+      } catch (e) {
+        w.__mkDetailFail = id; // seguimos con los datos del listado
+      }
+      if (w.__mkCoachId === id) repaint();
+    };
+
+    // Abrir perfil de coach → carga el detalle real bajo demanda.
     root.querySelectorAll("[data-coach]").forEach((el) =>
-      el.addEventListener("click", async () => {
+      el.addEventListener("click", () => {
         const id = el.getAttribute("data-coach");
         w.__mkCoachId = id;
         resetSel();
         repaint();
         const content = root.closest("#content") || root;
         content.scrollTop = 0;
-        if (!(w.__mkDetail && w.__mkDetail.id === id)) {
-          try {
-            const d = await w.api(`/api/coaches/${encodeURIComponent(id)}`, null, "GET");
-            // [REVIEWS-RENDER] La API devuelve `reviews` como clave HERMANA de `coach`; sin esto
-            // se descartaba y el perfil nunca mostraba reseñas. Las fusionamos como reviewsList.
-            w.__mkDetail = { id, data: { ...((d && (d.coach || d)) || {}), reviewsList: (d && d.reviews) || [] } };
-            w.__mkDetailFail = null;
-          } catch (e) {
-            w.__mkDetailFail = id; // seguimos con los datos del listado
-          }
-          if (w.__mkCoachId === id) repaint();
-        }
+        loadDetail(id);
       })
     );
+
+    // [COACH-RECO deep-link] Si llegamos con un coach YA preseleccionado (p.ej. "Ver perfil" del
+    // dashboard) y aún no tenemos su detalle, cárgalo al montar → el perfil abre completo.
+    if (w.__mkCoachId) loadDetail(w.__mkCoachId);
 
     // Volver al grid.
     root.querySelectorAll("[data-mk-back]").forEach((el) =>
@@ -705,6 +730,8 @@ S.marketplace = {
       s.slotIso = null; s.slotLabel = "";
       repaint();
     });
+    // [PARENT-BOOKING] Selección del hijo para el que se reserva (persiste en selState).
+    root.querySelector("[data-mk-child]")?.addEventListener("change", (e) => { selState().childId = e.target.value; });
 
     // Confirmar → POST /api/bookings (escrow + safety gate del lado del servidor).
     const confirm = root.querySelector("#mk-confirm");
@@ -725,6 +752,11 @@ S.marketplace = {
       try {
         const body = { coachId: id, slotAt: sel.slotIso, durationMin: 60 };
         if (pkg && pkg.id) body.packageId = pkg.id;
+        // [PARENT-BOOKING] Un PADRE reserva a nombre del hijo seleccionado (studentId).
+        if ((state && state.role) === "parent") {
+          const cid = sel.childId || (parentChildren()[0] && parentChildren()[0].id);
+          if (cid) body.studentId = cid;
+        }
         const d = await w.api("/api/bookings", body);
         const bk = (d && (d.booking || d)) || {};
         const status = String(bk.status || (isMinor() ? "PENDING" : "CONFIRMED")).toUpperCase();

@@ -207,6 +207,35 @@ function activeItemsFlat() {
             <button class="btn btn-soft btn-sm" style="margin-top:8px;width:100%">${t("core.viewProgram")} ${IC.arrowR}</button>
           </div>
         </div>`).join('');
+      // [DASHBOARD · coach reco §4] Recomienda UN coach por REGLAS (sin LLM): prioriza a quien
+      // cubre un formato que el alumno ya debate; si no, el mejor valorado. Palanca directa de
+      // la comisión del marketplace. recoWhy inline (mismo patrón que la reco de cursos de arriba).
+      const mkCoaches = (DB.marketplace && Array.isArray(DB.marketplace.coaches)) ? DB.marketplace.coaches : [];
+      const pickCoach = () => {
+        if (!mkCoaches.length) return null;
+        const fmtArr = [...myFmts].filter(Boolean);
+        const rated = [...mkCoaches].sort((a, b) => (Number(b.ratingAvg ?? b.rating ?? 0)) - (Number(a.ratingAvg ?? a.rating ?? 0)));
+        const byFmt = rated.find((c) => fmtArr.some((f) => String(c.specialties || '').toLowerCase().includes(f)));
+        const c = byFmt || rated[0];
+        if (!c) return null;
+        const matched = fmtArr.find((f) => String(c.specialties || '').toLowerCase().includes(f));
+        const why = matched ? `Especialista en ${matched}` : (Number(c.ratingAvg ?? c.rating ?? 0) > 0 ? 'Uno de los coaches mejor valorados de OTR' : 'Da el salto con una sesión 1:1');
+        return { c, why };
+      };
+      const rc = pickCoach();
+      const coachRecoBlock = rc ? `
+        <div class="divider" style="margin:16px 0 14px"></div>
+        <div class="eyebrow" style="margin-bottom:10px">Tu coach recomendado</div>
+        <div class="row vcenter between" style="gap:12px;flex-wrap:wrap">
+          <div class="row vcenter" style="gap:11px;min-width:0">
+            ${C.avatar(esc(rc.c.initials || String(rc.c.name || 'C').slice(0, 2)), { size: 'md', bg: 'var(--otr-navy)' })}
+            <div style="min-width:0">
+              <div class="row vcenter" style="gap:6px"><b style="font-size:14px">${esc(rc.c.name || 'Coach OTR')}</b>${(rc.c.coachVerified || rc.c.verified) ? `<span class="badge sky" style="height:18px;font-size:10px;padding:0 6px">Verificado</span>` : ''}</div>
+              <div class="eyebrow" style="color:var(--otr-green-text);font-size:10.5px;margin-top:3px">${esc(rc.why)}</div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" style="flex:none" onclick="window.__mkCoachId='${esc(rc.c.id)}';go('explore')">Ver perfil ${IC.arrowR}</button>
+        </div>` : '';
       const recoCard = `
         <div class="card card-pad">
           <div class="row between vcenter" style="margin-bottom:14px">
@@ -215,6 +244,7 @@ function activeItemsFlat() {
           ${recos.length
             ? `<div class="grid g-3">${recoCards}</div>`
             : `<div class="empty" style="padding:24px"><div class="ill">${IC.target}</div><h4>${t("core.recoEmptyHeading")}</h4><p>${t("core.recoEmptyBody")}</p><button class="btn btn-soft btn-sm" onclick="go('explore')">${t("core.bookSession")} ${IC.arrowR}</button></div>`}
+          ${coachRecoBlock}
         </div>`;
 
       /* ---- ④ UPCOMING SESSIONS (reservas REALES del usuario, PRD §4.2 ④) ----
