@@ -25,7 +25,7 @@ video en vivo en la sala (requiere credenciales Cloudflare Stream/Daily del fund
 
 ---
 
-## OLA 1 — Quick wins de la llamada (bajo riesgo, ~1 sesión)
+## OLA 1 — Quick wins de la llamada ✅ COMPLETADA (2026-07-11, commit e6affe1, verificada E2E en staging)
 
 ### T1. i18n: hardcodeos ES visibles en EN (los que Isaac vio)
 - `app/lib/scr-profile.ts:116` — `${streak} días` → key `profile.streakDays` con `{n}`.
