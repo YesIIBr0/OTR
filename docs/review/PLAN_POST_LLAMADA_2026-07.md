@@ -87,7 +87,7 @@ Pragmático en dos pasos: (1) inventario de los ~20 endpoints que la UI llama co
 No tocar los 118 de golpe; cubrir el top-20 visible.
 **Aceptación:** en EN, los toasts de error de esos flujos salen en inglés.
 
-## OLA 3 — Vibrancy (llamada 7:31-7:46: "menos sobrio, más dinámico")
+## OLA 3 — Vibrancy ✅ COMPLETADA (2026-07-11, verificada computed: hero 40/44px, AA, móvil 1 col)
 
 ### T7. Extender el tratamiento vivo
 Hoy: `.otr-shine` solo en leaderboard; `sky--alive` y `hello-card` en core/debate/hub/placement/lifetime;
@@ -99,7 +99,7 @@ KPIs planos en teacher(16)/coachwork(9)/admin(12)/learn(6).
 - NO tocar: reduced-motion (el shine ya lo respeta), contraste AA (usar --otr-green-text para texto).
 **Aceptación:** capturas antes/después de teacher/learn/events; sin regresión AA (contrast-check).
 
-## OLA 4 — Dashboard redesign (Isaac: "para el FINAL")
+## OLA 4 — Dashboard redesign ✅ COMPLETADA (2026-07-11: XP hero oro span-2 + 2 KPIs secundarios)
 
 ### T8. Blueprint §6/§8: jerarquía del Home
 - Crear variantes `kpi--hero` / `kpi--default` / `kpi--task` (solo existe propuesta en
@@ -108,7 +108,7 @@ KPIs planos en teacher(16)/coachwork(9)/admin(12)/learn(6).
 - Mantener coach-reco + active-courses (ya entregados).
 **Hacerlo ÚLTIMO** (pedido explícito de Isaac 0:11-0:17). Revisar con captura antes de push.
 
-## OLA 5 — COPPA/legal (requiere 1 decisión de producto)
+## OLA 5 — COPPA/legal ✅ COMPLETADA (2026-07-11: <14 bloqueado [conservador: solo tenemos año], ConsentRecord + tx, default PENDING, purga semanal cron VPS). DECISIÓN TOMADA: bloqueo conservador — relajar cuando exista consentimiento verificable.
 
 ### T9. Cierre de gaps COPPA
 - Banda `<13` en ageBand (register/route.ts:54 hoy solo minor/adult) + flujo de consentimiento
