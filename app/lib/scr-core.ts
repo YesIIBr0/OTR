@@ -4,7 +4,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { videoEmbedHtml } from "./video";
-import { t, tierLabel } from "./i18n";
+import { t, tierLabel, getLang } from "./i18n";
 // [EPIC-2] La sección "Cursos" unifica "Mis cursos" (S.course) + "Catálogo" (S.catalog).
 // Reusamos el render/mount del catálogo (vive en scr-extra) sin duplicar su lógica.
 // scr-extra NO importa scr-core → no hay ciclo.
@@ -145,12 +145,12 @@ function activeItemsFlat() {
         </div>
       </div>`;
 
-      /* ---- KPIs ligeros (XP/nivel sí son Fase 1) ---- */
+      /* ---- KPIs [OLA-4 · blueprint §6/§8]: XP = el trofeo (hero oro, 2 col) + 2 secundarios.
+        "Cursos activos" salió del row: ya vive como card "Programas activos" más abajo. ---- */
       const kpis = `
       <div class="grid g-4 fade-up" style="--d:1;margin-bottom:20px">
-        <div class="tile">${C.kpi(t("core.kpiActiveCourses"),String(courses.length),{ic:'book'})}</div>
+        <div class="tile tile--hero-gold otr-shine kpi-hero-span">${C.kpi(t("core.kpiTotalXp"),(DB.xp||0).toLocaleString(getLang() === 'en' ? 'en' : 'es'),{ic:'flame',accent:'var(--otr-gold-text)'})}</div>
         <div class="tile">${C.kpi(t("core.kpiAvgProgress"),String(avg),{unit:'%',ic:'chart',accent:'var(--otr-green)'})}</div>
-        <div class="tile">${C.kpi(t("core.kpiTotalXp"),(DB.xp||0).toLocaleString('es'),{ic:'flame',accent:'var(--otr-gold)'})}</div>
         <div class="tile">${C.kpi(t("core.kpiPendingSubmissions"),String(pending),{ic:'clock',accent:pending>0?'var(--warn)':'var(--text-3)'})}</div>
       </div>`;
 
