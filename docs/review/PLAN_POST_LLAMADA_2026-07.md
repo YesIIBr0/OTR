@@ -70,7 +70,7 @@ Reescribir en tono directo no-paternalista (ES y EN simétricos):
 **Aceptación:** E2E: solicitar → aparece "Pendiente" sin recargar; rechazar → badge "Rechazada" + motivo;
 comentario del alumno visible para el coach; doble-click en aprobar+rechazar no corrompe estado.
 
-## OLA 2 — i18n capa servidor (el grueso de "se quedó en español")
+## OLA 2 — i18n capa servidor ✅ COMPLETADA (2026-07-11, commit 5572ef2, verificada E2E: "38 min ago", "In review", toast "That time slot was already booked")
 
 ### T5. queries.ts manda ES fijo al cliente
 - `queries.ts:23-29` tiempos relativos "hace X días" → devolver `{n, unit}` o key+params y formatear
