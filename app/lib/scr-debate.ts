@@ -248,7 +248,7 @@ function viewOverview(d) {
 /* ================= SECCIÓN · MIS DEBATES ================= */
 function viewHistory(d) {
   if (!d.history.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>${t("debate.historyEmptyTitle")}</h4><p>${t("debate.historyEmptyBody")}</p><button class="btn btn-soft btn-sm" data-dtab="practice">${IC.mic} ${t("debate.goToPractice")}</button></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>${t("debate.historyEmptyTitle")}</h4><p>${t("debate.historyEmptyBody")}</p><div class="row vcenter" style="gap:8px;justify-content:center"><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} ${t("debate.recordDebate")}</button><button class="btn btn-soft btn-sm" data-dtab="practice">${IC.mic} ${t("debate.goToPractice")}</button></div></div></div>`;
   }
   const cards = d.history.map((h, i) => {
     const rs = resultStyle(h.result);
@@ -276,7 +276,7 @@ function viewHistory(d) {
     </div>`;
   }).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.historyEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.historyTitle")}</h1><div class="page-sub">${d.history.length} ${d.history.length === 1 ? t("debate.roundSingular") : t("debate.roundPlural")} · ${t("debate.historySubTap")}</div></div></div>
+    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.historyEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.historyTitle")}</h1><div class="page-sub">${d.history.length} ${d.history.length === 1 ? t("debate.roundSingular") : t("debate.roundPlural")} · ${t("debate.historySubTap")}</div></div><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} ${t("debate.recordDebate")}</button></div>
     <div class="grid g-3">${cards}</div>`;
 }
 
@@ -391,6 +391,16 @@ S.debateHub = {
       })
     );
 
+    // [REQ-1] "Registrar un debate": el alumno envía una SOLICITUD (evento + código de
+    // torneo + compañero si es formato de equipo) que su coach revisa y aprueba — el
+    // rating solo se mueve al aprobar. Un coach/admin registra directo por su panel.
+    root.querySelectorAll('[data-action="debate-record"]').forEach((btn) =>
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        openRecordDebate(btn.getAttribute("data-source") || "", repaint);
+      })
+    );
+
     // [NSDA Fase-1] Rellena la tarjeta de torneos con la API pública oficial de Tabroom
     // (vía el proxy server-side /api/tabroom/tourns). Degrada a mensaje si la API no responde.
     const nsdaBody = root.querySelector("[data-nsda] [data-nsda-body]");
@@ -478,9 +488,87 @@ async function openDebateDetail(id) {
   openModal(t("debate.detailModalTitle"), body);
 }
 
-/* [REDISEÑO] El formulario de auto-registro del alumno (openRecordDebate) se eliminó:
-   por decisión de producto, el COACH registra y adjudica los debates (panel del coach).
-   El detalle del debate (modal de solo lectura) sigue usando openModal de abajo. */
+/* ---------------- form: registrar un debate (OTR o externo) ---------------- */
+// [REQ-1] Formatos de EQUIPO (exigen compañero). LD es 1v1. Espeja isTeamFormat del backend.
+function drIsTeamFormat(f) {
+  const s = String(f || "").toUpperCase();
+  if (s.includes("LINCOLN") || s === "LD") return false;
+  return /PF|PUBLIC FORUM|POLICY|PARLI|WORLD/.test(s);
+}
+
+function openRecordDebate(forcedSource, onDone) {
+  const isPractice = String(forcedSource || "").toUpperCase() === "OTR";
+  const req = `<span style="color:var(--danger)">*</span>`;
+  const body = `
+    <div class="stack" style="gap:12px">
+      <div class="card" style="background:var(--action-soft);border:none;padding:10px 12px;font-size:12.5px;color:var(--otr-green-text);line-height:1.45">${t("debate.requestIntro")}</div>
+      <div class="field"><label class="label">${t("debate.fieldResult")}</label>
+        <div class="seg" id="dr-result">
+          <button type="button" data-v="WIN" class="on">${t("debate.resultWin")}</button>
+          <button type="button" data-v="LOSS">${t("debate.resultLoss")}</button>
+        </div>
+      </div>
+      <div class="field"><label class="label">${t("debate.fieldFormat")}</label>
+        <select class="select" id="dr-format"><option>Public Forum</option><option>Lincoln-Douglas</option><option>Parliamentary</option><option>World Schools</option><option>Policy</option></select>
+      </div>
+      <div class="field"><label class="label">${t("debate.fieldSide")}</label>
+        <select class="select" id="dr-side"><option value="PRO">Pro</option><option value="CON">Con</option></select>
+      </div>
+      <div class="field"><label class="label">${t("debate.fieldOpponent")}</label><input class="input" id="dr-opponent" placeholder="${t("debate.phOpponent")}"/></div>
+      <div class="field" id="dr-partner-wrap"><label class="label">${t("debate.fieldPartner")} ${req}</label><input class="input" id="dr-partner" placeholder="${t("debate.phPartner")}"/><div class="hint" style="font-size:11.5px;color:var(--text-3);margin-top:4px">${t("debate.partnerRequiredHint")}</div></div>
+      ${!isPractice ? `
+      <div class="field"><label class="label">${t("debate.fieldSource")}</label>
+        <div class="seg" id="dr-source">
+          <button type="button" data-v="OTR" class="on">OTR</button>
+          <button type="button" data-v="EXTERNAL">${t("debate.sourceExternalNsda")}</button>
+        </div>
+      </div>` : ""}
+      <div class="field"><label class="label">${t("debate.fieldEvent")} ${req}</label><input class="input" id="dr-event" placeholder="${t("debate.phEvent")}"/></div>
+      <div class="field"><label class="label">${t("debate.fieldTournamentCode")} ${req}</label><input class="input" id="dr-code" placeholder="${t("debate.phTournamentCode")}"/><div class="hint" style="font-size:11.5px;color:var(--text-3);margin-top:4px">${t("debate.tournamentCodeHint")}</div></div>
+      <div class="field"><label class="label">${t("debate.fieldRound")}</label><input class="input" id="dr-round" placeholder="${t("debate.phRound")}"/></div>
+      <div class="field"><label class="label">${t("debate.fieldJudgeComments")}</label><textarea class="input" id="dr-comments" rows="3" style="resize:vertical;font-family:inherit;line-height:1.5"></textarea></div>
+    </div>`;
+
+  openModal(t("debate.recordDebate"), body, {
+    drawer: true,
+    okLabel: t("debate.submitRequest"),
+    // [REQ-1] el campo Compañero solo aparece (y es obligatorio) en formatos de equipo.
+    afterMount: (scrim) => {
+      const fmt = scrim.querySelector("#dr-format");
+      const wrap = scrim.querySelector("#dr-partner-wrap");
+      const sync = () => { if (wrap) wrap.style.display = drIsTeamFormat(fmt?.value) ? "" : "none"; };
+      fmt && fmt.addEventListener("change", sync);
+      sync();
+    },
+    onOk: async (scrim) => {
+      const seg = (id) => scrim.querySelector(`#${id} button.on`)?.getAttribute("data-v");
+      const val = (id) => (scrim.querySelector(`#${id}`)?.value || "").trim();
+      const format = val("dr-format") || "Public Forum";
+      const eventName = val("dr-event");
+      const tournamentCode = val("dr-code");
+      const partner = val("dr-partner");
+      // Validación en cliente (el backend la repite por seguridad).
+      if (!eventName) throw new Error(t("debate.errEvent"));
+      if (!tournamentCode) throw new Error(t("debate.errCode"));
+      if (drIsTeamFormat(format) && !partner) throw new Error(t("debate.errPartner"));
+      const payload = {
+        result: seg("dr-result") || "WIN",
+        format,
+        side: seg("dr-side") || (scrim.querySelector("#dr-side")?.value) || "PRO",
+        opponent: val("dr-opponent"),
+        partner,
+        source: isPractice ? "OTR" : (seg("dr-source") || "OTR"),
+        eventName,
+        tournamentCode,
+        roundLabel: val("dr-round"),
+        comments: val("dr-comments"),
+      };
+      await (window as any).api("/api/debates", payload);
+      (window as any).toast?.(t("debate.requestSent"), "ok");
+      onDone && onDone();
+    },
+  });
+}
 
 /* ---------------- modal mínimo (reusa estilos .modal del shell) ---------------- */
 function openModal(title, bodyHtml, opts = {}) {

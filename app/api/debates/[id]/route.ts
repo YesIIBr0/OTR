@@ -1,9 +1,17 @@
 // OTR Debate Hub · /api/debates/[id]
-//   GET — detalle de una ronda del DUEÑO: DebateRecord + RatingUpdate +
-//         ballots con sus RubricScore. IDOR: solo el propietario la ve.
+//   GET   — detalle de una ronda del DUEÑO: DebateRecord + RatingUpdate +
+//           ballots con sus RubricScore. IDOR: solo el propietario la ve.
+//   PATCH — [REQ-1] el COACH aprueba o rechaza una solicitud (auto-reporte del alumno):
+//           aprobar = adjudicar la ronda existente (mueve el rating Glicko-2 W/L del
+//           alumno + crea su RatingUpdate); rechazar = marcar rejectedAt + motivo.
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
-import { ok, bad } from "../../../lib/api";
+import { ok, bad, readJson, clean } from "../../../lib/api";
+import { logActivitySafe } from "../../../lib/activity";
+import { updateRating, tierFor } from "../../../lib/glicko2";
+
+// RD por defecto del oponente cuando no conocemos su rating real.
+const DEFAULT_OPP_RD = 350;
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -55,4 +63,77 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   };
 
   return ok({ debate });
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getSessionUser();
+  if (!user) return bad("No autenticado", 401);
+  if (user.role !== "TEACHER" && user.role !== "ADMIN") return bad("Solo un coach puede revisar solicitudes", 403);
+
+  const { id } = await params;
+  const body = await readJson<{ action?: string; reason?: string }>(req);
+  const action = clean(body.action, 12).toLowerCase();
+  if (action !== "approve" && action !== "reject") return bad("action inválida (approve | reject)");
+
+  const record = await db.debateRecord.findUnique({ where: { id } });
+  if (!record) return bad("Solicitud no encontrada", 404);
+  if (record.adjudicated || record.rejectedAt) return bad("Esta solicitud ya fue resuelta", 409);
+
+  const student = await db.user.findUnique({ where: { id: record.userId } });
+  if (!student || student.role !== "STUDENT") return bad("La solicitud no pertenece a un alumno", 400);
+
+  // Vínculo de coaching (T&S §7.4): ADMIN a cualquiera; TEACHER solo a sus alumnos
+  // (con reserva con él o inscritos en su curso). Mismo criterio que la adjudicación.
+  if (user.role === "TEACHER") {
+    const booked = await db.booking.count({ where: { coachId: user.id, studentId: student.id } });
+    const enrolled = booked > 0 ? 1 : await db.enrollment.count({ where: { userId: student.id, course: { teacher: { email: user.email } } } });
+    if (booked === 0 && enrolled === 0) return bad("Solo puedes revisar solicitudes de tus alumnos", 403);
+  }
+
+  // --- RECHAZAR: queda en el historial con su motivo (auditoría), sin tocar el rating. ---
+  if (action === "reject") {
+    const reason = clean(body.reason, 280) || null;
+    await db.debateRecord.update({ where: { id }, data: { rejectedAt: new Date(), rejectionReason: reason, adjudicatedBy: user.id } });
+    await logActivitySafe({
+      userId: student.id, type: "debate_rejected",
+      title: "Solicitud de debate rechazada",
+      detail: reason || "Sin motivo indicado", source: "debate", refId: id,
+      meta: { reviewedBy: user.id },
+    });
+    return ok({ status: "rejected" });
+  }
+
+  // --- APROBAR = adjudicar: mueve el rating Glicko-2 (W/L) del alumno + crea RatingUpdate. ---
+  // Oponente desconocido → anclado al propio rating del alumno (E≈0.5): movimiento modesto
+  // y justo, igual que el resto del flujo de adjudicación.
+  const score = record.result === "WIN" ? 1 : 0;
+  const ratingBefore = student.debateRating;
+  const tierBefore = student.debateTier;
+  const next = updateRating(
+    { rating: student.debateRating, rd: student.debateRd, vol: student.debateVol },
+    [{ rating: student.debateRating, rd: DEFAULT_OPP_RD, score }],
+  );
+  const tierAfter = tierFor(next.rating);
+  const promoted = tierAfter !== tierBefore && next.rating > ratingBefore;
+
+  await db.$transaction(async (tx) => {
+    await tx.debateRecord.update({ where: { id }, data: { adjudicated: true, adjudicatedBy: user.id } });
+    await tx.user.update({ where: { id: student.id }, data: { debateRating: next.rating, debateRd: next.rd, debateVol: next.vol, debateTier: tierAfter } });
+    await tx.ratingUpdate.create({ data: { debateId: id, ratingBefore, ratingAfter: next.rating, rdAfter: next.rd, volAfter: next.vol, tierAfter } });
+  });
+
+  await logActivitySafe({
+    userId: student.id,
+    type: record.result === "LOSS" ? "debate_loss" : "debate_win",
+    title: `${record.result === "WIN" ? "Ganó" : "Perdió"} ronda ${record.format}${record.opponent ? ` vs ${record.opponent}` : ""}${record.eventName ? ` · ${record.eventName}` : ""}`,
+    detail: `Solicitud aprobada por ${user.name || "tu coach"}`,
+    source: "debate", refId: id,
+    meta: {
+      result: record.result, format: record.format, adjudicated: true,
+      ratingBefore: Math.round(ratingBefore), ratingAfter: Math.round(next.rating),
+      delta: Math.round(next.rating - ratingBefore), tierBefore, tierAfter, promoted, reviewedBy: user.id,
+    },
+  });
+
+  return ok({ status: "approved", ratingBefore: Math.round(ratingBefore), ratingAfter: Math.round(next.rating), tierAfter, promoted });
 }

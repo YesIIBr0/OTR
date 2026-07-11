@@ -588,12 +588,17 @@ model DebateRecord {
   result     String        // WIN | LOSS (en debate no hay empates)
   source     String        @default("OTR") // OTR | EXTERNAL (NSDA...)
   eventName  String?
+  tournamentCode String?   // [REQ-1] código del torneo (obligatorio en el auto-reporte del alumno)
   roundLabel String?
   recordedAt DateTime      @default(now())
   // PRD §6.2: el rating SOLO se mueve en rondas registradas/adjudicadas por un
   // coach (panel "Adjudicar"). El alumno no auto-registra debates.
   adjudicated   Boolean  @default(false)
-  adjudicatedBy String?  // userId del coach que registró/adjudicó
+  adjudicatedBy String?  // userId del coach que validó
+  // [REQ-1] una solicitud que el coach RECHAZA queda en el historial con su motivo
+  // (auditoría), sin mover el rating. rejectedAt != null ⇒ solicitud rechazada.
+  rejectedAt      DateTime?
+  rejectionReason String?
   ballots    Ballot[]
   rating     RatingUpdate?
 

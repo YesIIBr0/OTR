@@ -604,6 +604,9 @@ export const S = {};
       <div class="page-head"><div><p class="eyebrow">${t("teacher.ptEyebrow")}</p>
       <h1 class="page-title">${t("teacher.ptTitle")}</h1><div class="page-sub">${t("teacher.ptCountsSub").replace("{students}", `${studentCount} ${studentCount===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural")}`).replace("{coaches}", `${coachCount} ${t("teacher.coachUnit")}`)}</div></div></div>
 
+      ${/* [REQ-1] Cola de solicitudes de debate de los alumnos — se rellena en mount(). */""}
+      <div id="dq-queue" class="stack" style="gap:10px;margin-bottom:18px"></div>
+
       <div class="row between vcenter" style="margin-bottom:16px;flex-wrap:wrap;gap:12px">
         <div class="searchbox" style="width:280px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="pt-search" aria-label="${t("teacher.ptSearchAria")}" placeholder="${t("teacher.ptSearchPh")}"/></div>
         <div class="row wrap" style="gap:8px" id="pt-filters">
@@ -636,6 +639,77 @@ export const S = {};
       const empty = root.querySelector("#pt-empty");
       if (!body) return;
       let activeFilter = "all";
+
+      // [REQ-1] COLA DE SOLICITUDES: auto-reportes de debate pendientes de los alumnos.
+      // El coach Aprueba (adjudica → mueve el rating Glicko) o Rechaza (con motivo).
+      const queueBox = root.querySelector("#dq-queue");
+      if (queueBox) {
+        const resultTag = (r) => r === "WIN"
+          ? `<span style="color:var(--ok);font-weight:700">${t("teacher.win")}</span>`
+          : `<span style="color:var(--danger);font-weight:700">${t("teacher.loss")}</span>`;
+        const meta = (q) => [q.format, q.side, q.opponent ? "vs " + q.opponent : "", q.eventName, q.tournamentCode]
+          .filter(Boolean).map(esc).join(" · ");
+        const removeCard = (id) => {
+          const c = queueBox.querySelector(`[data-req="${id}"]`); c && c.remove();
+          if (!queueBox.querySelector("[data-req]")) queueBox.innerHTML = "";
+        };
+        const wireQueue = () => {
+          queueBox.querySelectorAll("[data-approve]").forEach((btn) =>
+            btn.addEventListener("click", async () => {
+              const id = btn.getAttribute("data-approve");
+              btn.disabled = true; btn.textContent = t("teacher.approving");
+              try {
+                const d = await window.api("/api/debates/" + id, { action: "approve" }, "PATCH");
+                const mv = (typeof d?.ratingAfter === "number" && typeof d?.ratingBefore === "number") ? ` · ${d.ratingBefore}→${d.ratingAfter}` : "";
+                window.toast?.(`${t("teacher.approved")}${mv}${d?.promoted ? ` · ¡${d.tierAfter}!` : ""}`, "ok");
+                removeCard(id);
+              } catch (e) {
+                btn.disabled = false; btn.textContent = t("teacher.approve");
+                window.toast?.((e && e.message) || t("teacher.queueError"), "warn");
+              }
+            }));
+          queueBox.querySelectorAll("[data-reject]").forEach((btn) =>
+            btn.addEventListener("click", () => {
+              const id = btn.getAttribute("data-reject");
+              const m = buildModal({
+                title: t("teacher.rejectTitle"),
+                bodyHtml: `<div class="field"><label class="label">${t("teacher.rejectReasonLabel")}</label><textarea class="input" id="rj-reason" rows="3" placeholder="${t("teacher.rejectReasonPh")}" style="resize:vertical;min-height:72px"></textarea></div>`,
+                okLabel: t("teacher.reject"),
+              });
+              m.okBtn.addEventListener("click", async () => {
+                const reason = (m.body.querySelector("#rj-reason")?.value || "").trim();
+                m.okBtn.disabled = true; m.okBtn.textContent = t("teacher.rejecting");
+                try {
+                  await window.api("/api/debates/" + id, { action: "reject", reason }, "PATCH");
+                  m.close(); window.toast?.(t("teacher.rejected"), "ok"); removeCard(id);
+                } catch (e) {
+                  m.okBtn.disabled = false; m.okBtn.textContent = t("teacher.reject");
+                  m.showErr((e && e.message) || t("teacher.queueError"));
+                }
+              });
+            }));
+        };
+        (async () => {
+          let data; try { data = await window.api("/api/debates?queue=1", undefined, "GET"); } catch { return; }
+          const reqs = (data && data.requests) || [];
+          if (!reqs.length) { queueBox.innerHTML = ""; return; }
+          queueBox.innerHTML =
+            `<div class="row vcenter" style="gap:8px"><h2 style="font-size:15px;font-weight:700;margin:0">${t("teacher.debateQueueTitle")}</h2><span class="chip">${reqs.length}</span></div>` +
+            `<p class="faint" style="font-size:12px;margin:0 0 2px">${t("teacher.debateQueueSub")}</p>` +
+            reqs.map((q) => `
+              <div class="card" data-req="${esc(q.id)}" style="padding:12px 14px">
+                <div class="row between vcenter" style="gap:10px;flex-wrap:wrap">
+                  <div><div style="font-weight:700">${esc(q.studentName)} · ${resultTag(q.result)}</div>
+                    <div class="faint" style="font-size:12px">${meta(q)}</div></div>
+                  <div class="row vcenter" style="gap:6px">
+                    <button class="btn btn-primary btn-sm" data-approve="${esc(q.id)}">${t("teacher.approve")}</button>
+                    <button class="btn btn-ghost btn-sm" data-reject="${esc(q.id)}">${t("teacher.reject")}</button>
+                  </div>
+                </div>
+              </div>`).join("");
+          wireQueue();
+        })();
+      }
 
       function apply() {
         const q = (search?.value || "").trim();
