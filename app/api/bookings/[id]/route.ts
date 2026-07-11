@@ -16,6 +16,8 @@ import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean, safeVideoUrl } from "../../../lib/api";
 import { logActivitySafe } from "../../../lib/activity";
 import { dateLabel, timeLabel } from "../../../lib/consultations";
+import { sendMail, emailShell, emailButton } from "../../../lib/mail";
+import { esc } from "../../../lib/esc";
 
 const ACTIONS = new Set(["approve", "complete", "cancel", "recording"]);
 
@@ -76,6 +78,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       title: "Sesión de coaching aprobada por tu tutor",
       detail: `${dateLabel(booking.slotAt)} · ${timeLabel(booking.slotAt)}`,
     });
+
+    // [TAREA-D] Email al alumno: fuera de la transacción, best-effort (sendMail nunca lanza).
+    const student = await db.user.findUnique({ where: { id: booking.studentId }, select: { email: true } });
+    if (student?.email) {
+      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">Tu tutor aprobó tu sesión de coaching. Quedó confirmada para el ${esc(dateLabel(booking.slotAt))} · ${esc(timeLabel(booking.slotAt))}.</p>
+          ${emailButton("Ver mi reserva", `${process.env.APP_URL || req.headers.get("origin") || ""}/aula`)}`;
+      await sendMail({
+        to: student.email,
+        subject: "Tu sesión fue aprobada · OTR Academy",
+        html: emailShell("Tu sesión fue aprobada", body),
+      });
+    }
+
     return ok({ booking: { id: updated.id, status: updated.status } });
   }
 

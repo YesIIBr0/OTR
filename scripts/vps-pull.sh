@@ -25,13 +25,22 @@ after=$(docker image inspect "$IMG" --format '{{.Id}}' 2>/dev/null || echo none)
 [ "$before" = "$after" ] && exit 0
 
 echo "$(date -u) ▸ nueva imagen detectada — redeploy"
+# Migrar ANTES de swappear (down/up): `run` levanta un contenedor efímero con la imagen
+# NUEVA pero conectado al stack VIEJO (la app y la DB actuales siguen vivas mientras esto
+# corre). Si `migrate deploy` falla, abortamos aquí — nunca llegamos al down/up — así la
+# versión anterior sigue sirviendo tráfico en vez de quedar reemplazada por una app nueva
+# corriendo contra un schema a medio migrar.
+if ! docker compose --env-file .env.production run --rm web npx prisma migrate deploy; then
+  echo "$(date -u) ✗ migrate deploy FALLÓ — se aborta el deploy (la versión anterior sigue corriendo)"
+  exit 1
+fi
+
 # down --remove-orphans limpia TODOS los contenedores del proyecto POR ETIQUETA (incluido un
 # huérfano renombrado <hash>_otr-web-1 que un recreate interrumpido deja en este VPS de 1 CPU
 # y que provoca "container name already in use" + 502). up recrea desde cero. ~10-15s de
 # downtime SOLO cuando hay imagen nueva (push a main), a cambio de deploys deterministas.
 docker compose --env-file .env.production down --remove-orphans
 docker compose --env-file .env.production up -d --remove-orphans
-docker compose exec -T web npx prisma db push --skip-generate >/dev/null 2>&1 || true
 
 for i in $(seq 1 20); do
   code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/aula || echo 000)

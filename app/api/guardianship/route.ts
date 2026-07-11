@@ -5,6 +5,8 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
+import { sendMail, emailShell } from "../../lib/mail";
+import { esc } from "../../lib/esc";
 
 // [COPPA] Versión de la política de privacidad vigente que ampara el consentimiento.
 const POLICY_VERSION = "2026-07";
@@ -53,6 +55,17 @@ export async function POST(req: Request) {
         db.guardianship.update({ where: { id: existing.id }, data: { status: "ACTIVE", consentLevel } }),
         db.consentRecord.create({ data: { studentId: existing.studentId, grantedById: user.id, kind: "guardianship", policyVersion: POLICY_VERSION } }),
       ]);
+
+      // [TAREA-D] Email al alumno, fuera de la tx, best-effort (sendMail nunca lanza).
+      if (student.email) {
+        const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;"><strong>${esc(user.name)}</strong> confirmó el vínculo de tutor/a con tu cuenta de OTR Academy.</p>`;
+        await sendMail({
+          to: student.email,
+          subject: "Tu tutor confirmó el vínculo · OTR Academy",
+          html: emailShell("Tu tutor confirmó el vínculo", emailBody),
+        });
+      }
+
       return ok({ guardianship: updated, already: false });
     }
     return ok({ guardianship: existing, already: true });

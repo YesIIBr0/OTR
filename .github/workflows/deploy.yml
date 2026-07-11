@@ -41,6 +41,10 @@ jobs:
           DATABASE_URL="postgresql://ci:ci@localhost:5432/ci" npx prisma validate --schema prisma/schema.postgres.prisma
       - name: Typecheck (tsc --noEmit)
         run: npx tsc --noEmit
+      - name: Tests (vitest)
+        run: npx vitest run
+        env:
+          DATABASE_URL: "file:./dev.db"
 
   build-and-push:
     needs: ci

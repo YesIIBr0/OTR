@@ -9,6 +9,8 @@ import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean } from "../../../lib/api";
 import { logActivitySafe } from "../../../lib/activity";
 import { updateRating, tierFor } from "../../../lib/glicko2";
+import { sendMail, emailShell } from "../../../lib/mail";
+import { esc } from "../../../lib/esc";
 
 // RD por defecto del oponente cuando no conocemos su rating real.
 const DEFAULT_OPP_RD = 350;
@@ -105,6 +107,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       detail: reason || "Sin motivo indicado", source: "debate", refId: id,
       meta: { reviewedBy: user.id },
     });
+
+    // [TAREA-D] Email al alumno con el motivo, fuera de la tx, best-effort (sendMail nunca lanza).
+    if (student.email) {
+      const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">Tu solicitud de debate${record.opponent ? ` vs ${esc(record.opponent)}` : ""} fue rechazada.${reason ? ` Motivo: ${esc(reason)}.` : ""}</p>`;
+      await sendMail({
+        to: student.email,
+        subject: "Tu debate fue rechazado · OTR Academy",
+        html: emailShell("Tu debate fue rechazado", emailBody),
+      });
+    }
+
     return ok({ status: "rejected" });
   }
 
@@ -145,6 +158,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       delta: Math.round(next.rating - ratingBefore), tierBefore, tierAfter, promoted, reviewedBy: user.id,
     },
   });
+
+  // [TAREA-D] Email al alumno con el delta de rating, fuera de la tx, best-effort.
+  if (student.email) {
+    const delta = Math.round(next.rating - ratingBefore);
+    const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">Tu coach aprobó tu ronda de debate${record.opponent ? ` vs ${esc(record.opponent)}` : ""}. Tu rating pasó de <strong>${Math.round(ratingBefore)}</strong> a <strong>${Math.round(next.rating)}</strong> (${delta >= 0 ? "+" : ""}${delta}).</p>`;
+    await sendMail({
+      to: student.email,
+      subject: "Tu debate fue aprobado · OTR Academy",
+      html: emailShell("Tu debate fue aprobado", emailBody),
+    });
+  }
 
   return ok({ status: "approved", ratingBefore: Math.round(ratingBefore), ratingAfter: Math.round(next.rating), tierAfter, promoted });
 }

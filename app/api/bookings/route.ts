@@ -25,6 +25,8 @@ import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
 import { logActivitySafe } from "../../lib/activity";
 import { TZ_OFFSET, dateLabel, timeLabel } from "../../lib/consultations";
+import { sendMail, emailShell, emailButton } from "../../lib/mail";
+import { esc } from "../../lib/esc";
 
 const DURATION_MIN = 60; // sesión de coaching estándar
 const MS_MIN = 60 * 1000;
@@ -226,6 +228,40 @@ export async function POST(req: Request) {
     detail: `${dateLabel(slotAt)} · ${timeLabel(slotAt)} · ${pkgName}`,
     meta: { amountCents, status: booking.status, packageId: pkg ? pkg.id : null },
   });
+
+  // [TAREA-D] Notificación por email: fuera de la transacción de DB (best-effort,
+  // sendMail nunca lanza) y awaited igual que el resto de la app (serverless: si no
+  // se espera, la función puede terminar antes de que el fetch al SMTP concluya).
+  const origin = process.env.APP_URL || req.headers.get("origin") || "";
+  const dLabel = dateLabel(slotAt);
+  const tLabel = timeLabel(slotAt);
+  if (booking.status === "PENDING" && booking.consentBy) {
+    // Candado parental: el padre resuelto (consentBy) via Guardianship ACTIVE aprueba desde su portal.
+    const [parent, student] = await Promise.all([
+      db.user.findUnique({ where: { id: booking.consentBy }, select: { email: true } }),
+      db.user.findUnique({ where: { id: bStudent.id }, select: { name: true } }),
+    ]);
+    if (parent?.email) {
+      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;"><strong>${esc(student?.name ?? "Tu hijo/a")}</strong> reservó una sesión de coaching con <strong>${esc(coachName)}</strong> para el ${esc(dLabel)} · ${esc(tLabel)}. Necesita tu aprobación para confirmarse.</p>
+          ${emailButton("Revisar en el Aula", `${origin}/aula`)}`;
+      await sendMail({
+        to: parent.email,
+        subject: "Tienes una reserva por aprobar · OTR Academy",
+        html: emailShell("Tienes una reserva por aprobar", body),
+      });
+    }
+  } else if (booking.status === "CONFIRMED") {
+    const student = await db.user.findUnique({ where: { id: bStudent.id }, select: { email: true } });
+    if (student?.email) {
+      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">Tu sesión de coaching con <strong>${esc(coachName)}</strong> quedó confirmada para el ${esc(dLabel)} · ${esc(tLabel)}.</p>
+          ${emailButton("Ver mi reserva", `${origin}/aula`)}`;
+      await sendMail({
+        to: student.email,
+        subject: "Sesión confirmada · OTR Academy",
+        html: emailShell("Sesión confirmada", body),
+      });
+    }
+  }
 
   return ok({ bookingId: booking.id, status: booking.status });
 }
