@@ -36,6 +36,7 @@ const ERROR_CODES: Record<string, string> = {
   "Correo o contraseña incorrectos": "badCredentials",
   "La contraseña debe tener al menos 6 caracteres": "passwordShort",
   "La nueva contraseña debe tener al menos 6 caracteres": "passwordShort",
+  "El registro de menores de 13 años requiere el consentimiento verificable de su padre, madre o tutor. Pídele a tu tutor que nos contacte para crear tu cuenta.": "underThirteen",
 };
 
 export function bad(error: string, status = 400) {

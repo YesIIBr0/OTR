@@ -6,6 +6,9 @@ import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
 
+// [COPPA] Versión de la política de privacidad vigente que ampara el consentimiento.
+const POLICY_VERSION = "2026-07";
+
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export async function POST(req: Request) {
@@ -45,6 +48,11 @@ export async function POST(req: Request) {
       const updated = await db.guardianship.update({
         where: { id: existing.id },
         data: { status: "ACTIVE", consentLevel },
+      });
+      // [COPPA §11] Evidencia auditable: el padre consintió sobre este menor, con la versión
+      // de política vigente. Fila inmutable (nunca update/delete).
+      await db.consentRecord.create({
+        data: { studentId: existing.studentId, grantedById: user.id, kind: "guardianship", policyVersion: POLICY_VERSION },
       });
       return ok({ guardianship: updated, already: false });
     }

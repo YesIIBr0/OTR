@@ -51,7 +51,14 @@ export async function POST(req: Request) {
       return bad("Año de nacimiento inválido", 400);
     }
     birthYear = yr;
-    ageBand = currentYear - yr < 18 ? "minor" : "adult";
+    const age = currentYear - yr;
+    // [COPPA §11] Menores de 13: el consentimiento parental VERIFICABLE debe existir ANTES
+    // de recolectar cualquier dato del niño — crear la cuenta ya es recolectar. Hasta tener
+    // ese flujo (verificable, no solo un email declarado), el registro directo se bloquea.
+    if (age < 13) {
+      return bad("El registro de menores de 13 años requiere el consentimiento verificable de su padre, madre o tutor. Pídele a tu tutor que nos contacte para crear tu cuenta.", 403);
+    }
+    ageBand = age < 18 ? "minor" : "adult";
   }
 
   const existing = await db.user.findUnique({ where: { email } });

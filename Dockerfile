@@ -55,6 +55,7 @@ COPY --from=builder /app/next.config.mjs ./next.config.mjs
 # Fuente + tsconfig: necesarios para `npm run db:seed` (seed.ts importa app/lib/auth-crypto).
 COPY --from=builder /app/app ./app
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/scripts ./scripts
 
 # Directorio de uploads persistente, FUERA de public/ (montar volumen aquí en compose).
 # Se sirve por app/uploads/[...path]/route.ts, no por el estático de Next.

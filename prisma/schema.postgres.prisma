@@ -560,7 +560,7 @@ model Guardianship {
   parent       User     @relation("GuardianParent", fields: [parentId], references: [id], onDelete: Restrict)
   studentId    String   // User(STUDENT)
   student      User     @relation("GuardianStudent", fields: [studentId], references: [id], onDelete: Restrict)
-  status       String   @default("ACTIVE") // PENDING | ACTIVE | REVOKED
+  status       String   @default("PENDING") // PENDING | ACTIVE | REVOKED — [COPPA] default seguro: nace pendiente
   consentLevel String   @default("standard") // [MINORS-CONSENT-02 §11.3] default seguro: aprobar cada reserva. full | standard | progress_only
   // [SEGURIDAD §11.3] Quién originó el vínculo: "student" (el menor declaró a su tutor al
   // registrarse) | "parent" (el padre lo reclamó). Sobre un MENOR el vínculo solo pasa a
@@ -575,6 +575,20 @@ model Guardianship {
   @@index([studentId])
   @@index([parentId])
 }
+// [COPPA §11] Rastro AUDITABLE de consentimiento: quién consintió, sobre qué menor, a qué
+// versión de la política y por qué vía. Se escribe al ACTIVAR un vínculo de tutela (el
+// padre confirma) — la fila es evidencia, nunca se actualiza ni borra.
+model ConsentRecord {
+  id            String   @id @default(cuid())
+  studentId     String   // menor sobre quien se consiente
+  grantedById   String   // quien consiente (padre/madre/tutor)
+  kind          String   @default("guardianship") // guardianship | booking | policy
+  policyVersion String   @default("2026-07")
+  createdAt     DateTime @default(now())
+
+  @@index([studentId])
+}
+
 
 // --- Debate Hub: registro + ballot por rúbrica + update de rating (Glicko-2) ---
 model DebateRecord {
