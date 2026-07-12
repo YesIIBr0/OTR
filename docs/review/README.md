@@ -16,7 +16,7 @@ screen and all four roles (student · coach/teacher · parent · admin).
 
 ## Environment
 - Run: `npm run dev` (port 3000) → `/aula`
-- Demo logins (password `otr1234`):
+- Demo logins (password = `SEED_PASSWORD`, or the random one the seed prints if unset):
   - Student: `analia.reyes@otr.do` (PRO, Varsity)
   - Coach:   `saul@otr.do` (TEACHER, verified)
   - Parent:  `rosa.fermin@otr.do` (guardian of Diego)

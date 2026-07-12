@@ -20,6 +20,16 @@ const SECRET = process.env.AUTH_SECRET;
 if (!SECRET || SECRET.length < 16) {
   throw new Error("AUTH_SECRET no configurado o demasiado corto (mín. 16 caracteres). Define un secreto fuerte en las variables de entorno antes de arrancar.");
 }
+// [CTO-audit MEDIUM] Rechazar los placeholders PÚBLICOS de los .env.example (viven en GitHub):
+// un operador que copie el template sin cambiar el valor arrancaría con un secreto HMAC conocido
+// → cualquiera podría forjar cookies de sesión firmadas (suplantación, incluida la de admin, y
+// acceso a datos de menores). El largo mínimo no los frena porque los placeholders son largos.
+// Convertimos el error de operador en un crash explícito al arranque. NOTA: la regex NO incluye
+// la palabra "placeholder" a propósito, para no rechazar el valor build-only del Dockerfile
+// ("build-time-placeholder-secret-32chars"), que es seguro (solo vive en la etapa builder).
+if (/cambia|changeme|your[-_]?secret|openssl[_-]?rand/i.test(SECRET)) {
+  throw new Error("AUTH_SECRET es un valor placeholder público (de los .env.example). Genera uno real: openssl rand -hex 32");
+}
 
 const MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30; // 30 días
 

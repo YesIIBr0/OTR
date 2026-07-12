@@ -143,6 +143,6 @@ fi
 say "¡Listo! OTR Academy está corriendo."
 echo "  · Sitio:  https://${DOMAIN}    (landing)"
 echo "  · Aula:   https://${DOMAIN}/aula"
-echo "  · Login demo: saul@otr.do / analia.reyes@otr.do — otr1234"
+echo "  · Login demo: saul@otr.do / analia.reyes@otr.do — contraseña = SEED_PASSWORD (o la aleatoria que imprimió el seed arriba)"
 echo "  · Logs:   docker compose logs -f web"
 echo "  · Cambia los secretos/llaves en: ${REPO_DIR}/.env.production  (luego: docker compose up -d)"
