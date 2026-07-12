@@ -27,7 +27,7 @@ export async function GET() {
     const raw = await res.json().catch(() => []);
     const list = Array.isArray(raw) ? raw : [];
     const tourns = list
-      .map((t: any) => ({
+      .map((t: Record<string, unknown>) => ({
         id: Number(t.id) || 0,
         name: String(t.name || "").trim(),
         city: String(t.city || "").trim(),
@@ -38,9 +38,9 @@ export async function GET() {
         // Página pública de resultados del torneo en Tabroom (destino del "Ver resultados").
         resultsUrl: t.id ? `https://www.tabroom.com/index/tourn/results/index.mhtml?tourn_id=${Number(t.id)}` : "",
       }))
-      .filter((t: any) => t.id && t.name)
+      .filter((t) => t.id && t.name)
       // Más recientes primero (resultados = torneos ya ocurridos o en curso).
-      .sort((a: any, b: any) => String(b.start || "").localeCompare(String(a.start || "")))
+      .sort((a, b) => String(b.start || "").localeCompare(String(a.start || "")))
       .slice(0, 10);
     return ok({ tourns });
   } catch {

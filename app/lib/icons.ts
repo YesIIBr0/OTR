@@ -1,7 +1,9 @@
-// @ts-nocheck
-/* OTR LMS · icon set (Lucide-style stroke icons) — portado del prototipo */
-export const IC = (() => {
-  const w = (p) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+/* OTR LMS · icon set (Lucide-style stroke icons) — portado del prototipo.
+   Tipado como Record<string,string> (no un literal de claves fijas): components.ts
+   (C.kpi/C.typeIcon) y varias pantallas scr-*.ts lo indexan con una clave dinámica
+   (IC[opts.ic], IC[m[type]]) resuelta en runtime, no solo por nombre literal. */
+export const IC: Record<string, string> = (() => {
+  const w = (p: string) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
   return {
     home: w('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>'),
     grid: w('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),

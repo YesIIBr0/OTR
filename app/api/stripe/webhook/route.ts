@@ -14,7 +14,9 @@ export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature") || "";
   const raw = await req.text(); // cuerpo crudo, requerido para verificar la firma
 
-  let event: { type: string; data: { object: Record<string, any> } };
+  // Tipo real del evento derivado del propio método (evita depender del nombre exacto
+  // del tipo exportado por el paquete "stripe", que cambia entre versiones).
+  let event: ReturnType<InstanceType<typeof Stripe>["webhooks"]["constructEvent"]>;
   try {
     event = stripe.webhooks.constructEvent(raw, sig, whSecret);
   } catch (err) {
@@ -24,8 +26,8 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    const courseId = session.metadata?.courseId as string | undefined;
-    const userId = session.metadata?.userId as string | undefined;
+    const courseId = session.metadata?.courseId;
+    const userId = session.metadata?.userId;
     if (courseId && userId) {
       const existing = await db.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } });
       if (!existing) {

@@ -43,7 +43,7 @@ const safeSrc = (u) => {
   return /^https?:\/\//i.test(s) || (s.startsWith("/") && !s.startsWith("//")) ? s : "";
 };
 const langBadges = (languages) =>
-  String(languages || "ES").split(/[,·\/]/).map((l) => l.trim()).filter(Boolean).slice(0, 3)
+  String(languages || "ES").split(/[,·/]/).map((l) => l.trim()).filter(Boolean).slice(0, 3)
     .map((l) => `<span class="badge">${esc(l.toUpperCase())}</span>`).join("");
 // Etiqueta relativa simple desde un ISO ("hoy", "hace 3 días", "hace 2 meses").
 const whenAgo = (iso) => {

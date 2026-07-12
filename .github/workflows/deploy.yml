@@ -31,6 +31,8 @@ jobs:
           cache: npm
       - name: Instalar dependencias
         run: npm ci
+      - name: Lint (eslint)
+        run: npx eslint .
       - name: Generar cliente Prisma
         run: npx prisma generate
         env:

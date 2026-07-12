@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* OTR Aula · i18n scaffold (Fase 1)
    Helper LIGERO — NO traduce todas las pantallas (eso es otra ola).
    Solo cubre el CHROME de navegación: labels del nav (sidebar/tabbar),
@@ -40,7 +39,16 @@ import { dict as d_cert } from "./i18n-keys/cert";
 import { dict as d_placement } from "./i18n-keys/placement";
 import { dict as d_room } from "./i18n-keys/room";
 
-const DICT = {
+export type Lang = "es" | "en";
+// Diccionario plano { llave: texto }. Los ~22 módulos de app/lib/i18n-keys/*.ts
+// tienen esta misma forma ({es,en} de strings) y se fusionan abajo en DICT.
+type Dict = Record<string, string>;
+interface LangDict {
+  es: Dict;
+  en: Dict;
+}
+
+const DICT: LangDict = {
   es: {
     // grupos del sidebar
     "group.main": "Principal",
@@ -702,37 +710,45 @@ for (const d of [
   if (d && d.en) Object.assign(DICT.en, d.en);
 }
 
-export const LANGS = ["es", "en"];
-const DEFAULT_LANG = "es";
+export const LANGS: Lang[] = ["es", "en"];
+const DEFAULT_LANG: Lang = "es";
 const COOKIE = "otr_lang";
+
+// Type guard sobre LANGS (en vez de LANGS.includes(v) crudo) para que TS pueda
+// angostar `string` a `Lang` — Array.includes no angosta por sí solo.
+function isLang(v: string): v is Lang {
+  return (LANGS as readonly string[]).includes(v);
+}
 
 /* Lee el idioma activo desde la cookie 'otr_lang'. Default 'es'.
    Seguro en SSR: si no hay document, devuelve el default. */
-export function getLang() {
+export function getLang(): Lang {
   try {
     if (typeof document === "undefined") return DEFAULT_LANG;
     const m = document.cookie.match(/(?:^|;\s*)otr_lang=([^;]+)/);
     const v = m ? decodeURIComponent(m[1]) : "";
-    return LANGS.includes(v) ? v : DEFAULT_LANG;
-  } catch (e) {
+    return isLang(v) ? v : DEFAULT_LANG;
+  } catch {
     return DEFAULT_LANG;
   }
 }
 
 /* Escribe la cookie 'otr_lang' (1 año) y recarga para repintar todo el chrome.
-   Mantiene el patrón del landing (toggle ES/EN) — recarga simple y honesta. */
-export function setLang(lang) {
-  const l = LANGS.includes(lang) ? lang : DEFAULT_LANG;
+   Mantiene el patrón del landing (toggle ES/EN) — recarga simple y honesta.
+   `lang` acepta `string` (no `Lang`) porque quien llama —el toggle ES/EN
+   renderizado como string en shell.ts— pasa el valor crudo del atributo HTML. */
+export function setLang(lang: string): void {
+  const l = isLang(lang) ? lang : DEFAULT_LANG;
   try {
     document.cookie = `${COOKIE}=${l};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
-  } catch (e) {}
-  try { location.reload(); } catch (e) {}
+  } catch {}
+  try { location.reload(); } catch {}
 }
 
 /* t(key, lang?) — traduce una llave. Fallback en cascada:
    idioma activo -> 'es' -> la propia llave (nunca devuelve undefined). */
-export function t(key, lang?) {
-  const l = lang && LANGS.includes(lang) ? lang : getLang();
+export function t(key: string, lang?: string): string {
+  const l = lang && isLang(lang) ? lang : getLang();
   const table = DICT[l] || DICT[DEFAULT_LANG];
   if (table && key in table) return table[key];
   const base = DICT[DEFAULT_LANG];
@@ -741,10 +757,11 @@ export function t(key, lang?) {
 }
 
 /* tierLabel(tier, lang?) — etiqueta visible de un tier de debate (Novato, Bronze, …).
-   El valor de `tier` es un dato de DB y NO se altera; solo se mapea a la clave i18n
-   "debate.tier.<minúsculas>" para mostrarlo traducido. Si el tier no está mapeado,
-   devuelve el valor crudo (nunca rompe ni esconde un tier nuevo del backend). */
-export function tierLabel(tier, lang) {
+   El valor de `tier` es un dato de DB (any/unknown) y NO se altera; solo se mapea a
+   la clave i18n "debate.tier.<minúsculas>" para mostrarlo traducido. Si el tier no
+   está mapeado, devuelve el valor crudo (nunca rompe ni esconde un tier nuevo del
+   backend). */
+export function tierLabel(tier: unknown, lang?: string): string {
   const raw = String(tier ?? "").trim();
   if (!raw) return raw;
   const key = "debate.tier." + raw.toLowerCase();
@@ -755,9 +772,15 @@ export function tierLabel(tier, lang) {
 /* Exponemos setLang en window para que el toggle ES/EN del topbar (renderizado
    como string vía innerHTML en shell.ts) lo invoque por onclick — sin tener que
    tocar la delegación de clics de Aula.tsx. Patrón idéntico a window.go/api/toast. */
+declare global {
+  interface Window {
+    otrSetLang?: typeof setLang;
+    otrGetLang?: typeof getLang;
+  }
+}
 if (typeof window !== "undefined") {
-  (window as any).otrSetLang = setLang;
-  (window as any).otrGetLang = getLang;
+  window.otrSetLang = setLang;
+  window.otrGetLang = getLang;
 }
 
 export const I18N = DICT;

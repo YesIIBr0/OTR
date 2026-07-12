@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* OTR LMS · shell (sidebar + topbar) + login — portado de index.html / app.js
    NAV reorganizado al MAPA TOP-LEVEL del PRD §3.1 (Fase 1 MVP):
    Dashboard · Learn (Cursos: activos + catálogo, sección unificada) · Membresía ·
@@ -13,7 +12,22 @@ import { IC, otrCrest } from "./icons";
 import { DB } from "./data";
 import { t, getLang } from "./i18n";
 
-const NAV = {
+export type Role = "student" | "teacher" | "parent" | "admin";
+
+interface NavItem {
+  r: string;
+  ic: string;
+  k?: string;
+  l: string;
+  badge?: string;
+}
+interface NavGroup {
+  gk?: string;
+  group: string;
+  items: NavItem[];
+}
+
+const NAV: Record<Role, NavGroup[]> = {
   // ESTUDIANTE — mapa PRD. 'hub'/'my-experience' viven bajo Aprender como
   // parte de la experiencia del estudiante; 'debate' y 'parent' apuntan a
   // pantallas placeholder honestas ("En construcción · llega en esta fase").
@@ -96,7 +110,7 @@ const NAV = {
   ],
 };
 
-const TABBAR = {
+const TABBAR: Record<Role, NavItem[]> = {
   student: [ {r:'dashboard',ic:'home',k:'nav.dashboard',l:'Inicio'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'course',ic:'book',k:'nav.course',l:'Aprender'},{r:'lifetime',ic:'award',k:'nav.lifetime',l:'Trayectoria'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   teacher: [ {r:'teacher',ic:'grid',k:'nav.workspace',l:'Panel'},{r:'coachwork',ic:'calendar',k:'nav.coachwork',l:'Reservas'},{r:'participants',ic:'users',k:'nav.participants',l:'Alumnos'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   parent: [ {r:'parent',ic:'users',k:'nav.parent',l:'Familia'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
@@ -108,7 +122,7 @@ const TABBAR = {
 // [NAV-04] Migas navegables: el primer segmento corresponde al `nav` de la pantalla
 // (p.ej. 'Mi aprendizaje'→course), así que los segmentos no-finales enrutan a la raíz
 // de sección (navRoute). role=button+tabindex reusa el activador de teclado global.
-function crumbsHtml(crumbs, navRoute) {
+function crumbsHtml(crumbs: string[], navRoute?: string) {
   return crumbs.map((c,i)=>
     i===crumbs.length-1
       ? `<span class="here">${c}</span>`
@@ -118,13 +132,16 @@ function crumbsHtml(crumbs, navRoute) {
   ).join('');
 }
 
-export function renderShell(activeNav, crumbs, content, role = 'student') {
+export function renderShell(activeNav: string, crumbs: string[], content: string, role: Role = 'student') {
   const nav = NAV[role] || NAV.student;
   const lang = getLang();
-  const L = (it) => (it.k ? t(it.k, lang) : it.l); // label bilingüe con fallback al texto 'l'
-  const unreadMsgs = (DB.messages || []).reduce((s, m) => s + (m.unread || 0), 0);
-  const navBadge = (it) => {
-    if (it.r === 'progress') return DB.me?.level || '';
+  const L = (it: NavItem) => (it.k ? t(it.k, lang) : it.l); // label bilingüe con fallback al texto 'l'
+  // DB.messages es dinámico (fuera de las claves nombradas de DBStore, ver data.ts):
+  // se narrowa a array antes de reducir en vez de asumir su forma.
+  const messages = Array.isArray(DB.messages) ? (DB.messages as Array<Record<string, unknown>>) : [];
+  const unreadMsgs = messages.reduce((s, m) => s + (typeof m.unread === "number" ? m.unread : 0), 0);
+  const navBadge = (it: NavItem): string => {
+    if (it.r === 'progress') return String(DB.me?.level ?? '');
     if (it.r === 'messages') return unreadMsgs > 0 ? String(unreadMsgs) : '';
     return it.badge || '';
   };

@@ -195,10 +195,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const myRole = (me?.role || "STUDENT").toLowerCase(); // rol REAL: student | teacher | admin
 
   const [
-    teacher, levels, meEnrollments, pfModules, pfStudents,
-    gradeCells, competencies, badges, notifications, events, activity,
+    /* teacher (no usado) */, levels, meEnrollments, /* pfModules (no usado) */, /* pfStudents (no usado) */,
+    gradeCells, competencies, badges, notifications, events, /* activity (no usado) */,
     threads, mainThread, convos, allCourses, allModules, taughtCourses,
-    resources, mainCourse, myStudentSkills, myCertificates, coachProfiles,
+    /* resources (no usado) */, /* mainCourse (no usado) */, myStudentSkills, myCertificates, coachProfiles,
   ] = await Promise.all([
     db.user.findUnique({ where: { email: TEACHER_EMAIL }, select: { name: true, email: true, initials: true, headline: true, bio: true, teachingStyle: true, formats: true, location: true } }),
     db.level.findMany({ orderBy: { position: "asc" } }),

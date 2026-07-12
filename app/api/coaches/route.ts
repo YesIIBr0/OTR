@@ -52,7 +52,7 @@ export async function GET(req: Request) {
   const reviewAgg = profiles.length
     ? await db.review.groupBy({ by: ["teacherId"], where: { teacherId: { in: profiles.map((p) => p.userId) } }, _avg: { rating: true }, _count: { _all: true } })
     : [];
-  const ratingByCoach = new Map(reviewAgg.map((r: any) => [r.teacherId, { avg: Math.round((r._avg.rating || 0) * 10) / 10, count: r._count._all || 0 }]));
+  const ratingByCoach = new Map(reviewAgg.map((r) => [r.teacherId, { avg: Math.round((r._avg.rating || 0) * 10) / 10, count: r._count._all || 0 }]));
 
   // Solo perfiles cuyo coach está verificado (byId ya filtró a coachVerified:true).
   let coaches = profiles.filter((p) => byId.has(p.userId)).map((p) => {

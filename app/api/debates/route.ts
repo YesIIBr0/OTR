@@ -8,7 +8,7 @@
 // con su rating real (si se conoce) o el default 1500/RD 350.
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
-import { ok, bad, readJson, clean, safeUrl, safeVideoUrl } from "../../lib/api";
+import { ok, bad, readJson, clean, safeVideoUrl } from "../../lib/api";
 import { logActivitySafe } from "../../lib/activity";
 import { updateRating, tierFor } from "../../lib/glicko2";
 

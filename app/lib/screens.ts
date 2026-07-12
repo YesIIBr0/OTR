@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* OTR LMS · registro de pantallas + rutas.
    [PERF · code-splitting] Antes se importaban los 21 builders scr-* de golpe → TODO el JS de
    las 35 pantallas (incluidas las de otros roles: teacher/coachwork/parent/admin) viajaba en el
@@ -7,9 +6,16 @@
    solo tiene que await ensureScreen() antes de pintar. Un alumno ya no descarga el código del
    panel del coach ni del admin. */
 
+// Cada scr-*.ts (con @ts-nocheck, ver ADR-0004) exporta `S`, un objeto de pantallas que
+// se rellena imperativamente (Object.assign / S.x = fn) sin tipo estático — de ahí S
+// laxo como Record<string, unknown> en vez de intentar tipar cada renderer de pantalla.
+interface ScreenModuleExports {
+  S?: Record<string, unknown>;
+}
+
 // Un loader por módulo → un chunk por módulo. NOTA: scr-core importa scr-extra internamente
 // (S.course usa extraScreens.catalog), así que webpack los agrupa/encadena solo — correcto.
-const LOADERS = {
+const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   core:        () => import("./scr-core"),
   learn:       () => import("./scr-learn"),
   teacher:     () => import("./scr-teacher"),
@@ -36,7 +42,7 @@ const LOADERS = {
 
 // Nombre de pantalla → módulo que la exporta. Best-effort: ensureScreen tiene fallback
 // load-all si alguna llave no está aquí, así que un mapeo incompleto NUNCA rompe la nav.
-const SCREEN_MODULE = {
+const SCREEN_MODULE: Record<string, string> = {
   dashboard:'core', course:'core', courseIndex:'core', coursesCatalog:'core', coursesMine:'core', lesson:'core',
   assignment:'learn', grades:'learn', player:'learn', quiz:'learn', quizResults:'learn',
   teacher:'teacher', participants:'teacher',
@@ -50,12 +56,13 @@ const SCREEN_MODULE = {
   placement:'placement', settings:'settings', events:'events', room:'room',
 };
 
-// Cache de runtime: se va llenando con la S de cada módulo cargado.
-export const SCREENS = {};
-const loadedMods = new Set();
+// Cache de runtime: se va llenando con la S de cada módulo cargado. Laxo por la misma
+// razón que ScreenModuleExports.S — cada pantalla es un renderer distinto sin forma común.
+export const SCREENS: Record<string, unknown> = {};
+const loadedMods = new Set<string>();
 let allLoaded = false;
 
-async function loadMod(mod) {
+async function loadMod(mod: string | undefined): Promise<void> {
   if (!mod || loadedMods.has(mod) || !LOADERS[mod]) return;
   loadedMods.add(mod); // marca ANTES del await para no relanzar el mismo import en paralelo
   try {
@@ -66,7 +73,7 @@ async function loadMod(mod) {
     throw e;
   }
 }
-async function loadAllMods() {
+async function loadAllMods(): Promise<void> {
   if (allLoaded) return;
   await Promise.all(Object.keys(LOADERS).map((m) => loadMod(m).catch(() => {})));
   allLoaded = true;
@@ -74,7 +81,8 @@ async function loadAllMods() {
 
 // Garantiza que la pantalla esté disponible antes de renderizar. Instantáneo si su módulo ya
 // se cargó; en el primer acceso baja el chunk. Si el mapa no la tiene, carga todo (seguro).
-export async function ensureScreen(name) {
+// Devuelve `unknown` (no una firma de renderer): Aula.tsx ya lo consume como `screen: any`.
+export async function ensureScreen(name: string): Promise<unknown> {
   if (SCREENS[name]) return SCREENS[name];
   try { await loadMod(SCREEN_MODULE[name]); } catch {}
   if (SCREENS[name]) return SCREENS[name];
@@ -84,14 +92,16 @@ export async function ensureScreen(name) {
 
 // Prefetch en segundo plano (fire-and-forget) de las pantallas probables de un rol, para que
 // la navegación se sienta instantánea sin inflar el primer paint.
-const ROLE_PREFETCH = {
+const ROLE_PREFETCH: Record<string, string[]> = {
   student: ['debateHub','marketplace','lifetimeProfile','events','myBookings','grades','settings','profile','placement'],
   teacher: ['teacher','participants','manage','coachwork','marketplace','messages','profile','settings'],
   parent:  ['parentPortal','marketplace','messages','membership','profile','settings'],
   admin:   ['adminConsole','adminUsers','adminMetrics','marketplace','debateHub','profile','settings'],
 };
 let didPrefetch = false;
-export function prefetchForRole(role) {
+// `role` acepta string (no un union Role importado de shell.ts): Aula.tsx pasa
+// state.role ("student"|"teacher"|"parent"|"admin"), asignable igual a string.
+export function prefetchForRole(role: string): void {
   if (didPrefetch) return;
   didPrefetch = true;
   const names = ROLE_PREFETCH[role] || ROLE_PREFETCH.student;
@@ -100,7 +110,14 @@ export function prefetchForRole(role) {
   if (typeof requestIdleCallback === "function") requestIdleCallback(kick); else setTimeout(kick, 400);
 }
 
-export const ROUTES = {
+interface RouteDef {
+  screen: string;
+  nav: string;
+  crumbs: string[];
+  role?: string;
+}
+
+export const ROUTES: Record<string, RouteDef> = {
   dashboard:      { screen:'dashboard',    nav:'dashboard',    crumbs:['Inicio'] },
   search:         { screen:'search',       nav:'',             crumbs:['Buscar'] },
   // [EPIC-2] 'catalog' ya no es un item de nav propio: enruta a la sección "Cursos"

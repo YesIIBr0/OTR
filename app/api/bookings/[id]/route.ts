@@ -11,6 +11,7 @@
 //
 // ESCROW SIMULADO (sin Stripe real en esta fase): RELEASED/REFUNDED solo cambian
 // el estado del ledger; al integrar Stripe se mapearán a transfer/refund reales.
+import { Prisma } from "@prisma/client";
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean, safeVideoUrl } from "../../../lib/api";
@@ -56,7 +57,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     // retenidos: la EscrowTxn HELD no existía mientras el booking estaba PENDING.
     // Se crea con el precio snapshot del booking, atómico con la confirmación. Si
     // ya existiera (reserva legada anterior al diferido), no se duplica (bookingId @unique).
-    const ops: any[] = [
+    const ops: Prisma.PrismaPromise<unknown>[] = [
       db.booking.update({
         where: { id },
         data: { status: "CONFIRMED", ...(booking.videoUrl ? {} : { videoUrl: `/aula?room=${id}` }) },
@@ -69,7 +70,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         }),
       );
     }
-    const [updated] = await db.$transaction(ops);
+    // El primer elemento de `ops` siempre es el update del booking (arriba); el resto son
+    // el create() opcional del escrow, cuyo resultado no se usa aquí.
+    const [updated] = (await db.$transaction(ops)) as [{ id: string; status: string }];
     await logActivitySafe({
       userId: booking.studentId,
       type: "booking_confirmed",

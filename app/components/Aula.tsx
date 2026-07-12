@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { renderShell } from "../lib/shell";
-import { SCREENS, ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
+import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
@@ -301,7 +301,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         // marca cada campo requerido vacío con aria-invalid + hint en línea y enfoca el primero,
         // en vez de mostrar una sola frase genérica del backend tras llenar todo el formulario.
         let firstBad: HTMLElement | null = null;
-        fields.forEach((f, i) => {
+        fields.forEach((f) => {
           if (!f.req) return;
           const el = scrim.querySelector(`[data-f="${f.name}"]`) as HTMLElement | null;
           if (!el) return;
@@ -836,7 +836,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // El VALOR de cada skill es dato del backend (clave de scores) y NO se traduce; solo su etiqueta visible.
     const SKILL_LABELS: any = { "Confianza": "aula.skillConfidence", "Estructura": "aula.skillStructure", "Evidencia": "aula.skillEvidence", "Refutación": "aula.skillRebuttal", "Cross-ex": "aula.skillCrossex", "Delivery": "aula.skillDelivery" };
     async function openEvalSkills(userId: string, name: string) {
-      let prefill: any = {};
+      const prefill: any = {};
       try {
         const d = await api("/api/skills?userId=" + encodeURIComponent(userId), null, "GET");
         for (const s of (d.skills || [])) prefill[s.skill] = s.score;

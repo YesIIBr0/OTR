@@ -8,17 +8,19 @@ export async function register() {
 }
 
 export async function onRequestError(
-  err: any,
+  // Next tipa esto como `unknown` (ver InstrumentationOnRequestError): no siempre es un Error.
+  err: unknown,
   request: { path?: string; method?: string },
   context: { routerKind?: string; routeType?: string },
 ) {
+  const error = err instanceof Error ? err : undefined;
   const line = {
     ts: new Date().toISOString(),
     level: "error",
-    msg: err?.message,
+    msg: error?.message,
     // Solo las primeras 6 líneas del stack: suficiente para ubicar el archivo/función
     // sin inundar los logs (docker logs no trunca, y estos errores pueden ser frecuentes).
-    stack: (err?.stack || "").split("\n").slice(0, 6).join(" | "),
+    stack: (error?.stack || "").split("\n").slice(0, 6).join(" | "),
     path: request?.path,
     method: request?.method,
     routerKind: context?.routerKind,

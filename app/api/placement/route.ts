@@ -11,7 +11,6 @@ import { logActivitySafe } from "../../lib/activity";
 
 // Las 6 dimensiones canónicas, en orden de contrato.
 const SKILLS = ["Confianza", "Estructura", "Evidencia", "Refutación", "Cross-ex", "Delivery"] as const;
-const VALID = new Set<string>(SKILLS);
 
 function clampScore(v: unknown): number {
   const n = Math.round(Number(v));

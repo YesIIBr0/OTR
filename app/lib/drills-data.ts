@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* OTR · Banco de contenido para los Drills de Práctica del Debate Hub (Fase 1).
    [Isaac, llamada] "vamos a poner ejercicios que ellos puedan hacer dentro de la
    plataforma" — 100% cliente, no toca DB.debate ni el rating (eso solo se mueve con
