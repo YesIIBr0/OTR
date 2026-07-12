@@ -7,7 +7,7 @@
 # ============================================================
 
 # ---------- 1) deps: instala dependencias (con cache) ----------
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 # libc6-compat: requerido por algunos binarios nativos en alpine.
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
@@ -18,7 +18,7 @@ COPY prisma ./prisma
 RUN npm ci
 
 # ---------- 2) builder: compila Next ----------
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
@@ -34,7 +34,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # ---------- 3) runner: imagen final mínima ----------
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 

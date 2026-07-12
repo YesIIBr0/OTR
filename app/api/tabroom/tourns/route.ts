@@ -19,6 +19,9 @@ export async function GET() {
       headers: { accept: "application/json" },
       // Caché de 30 min: los resultados de torneos no cambian minuto a minuto.
       next: { revalidate: 1800 },
+      // [RESIL] Timeout de 5s: un hang de api.tabroom.com no debe dejar la request
+      // colgada ~300s (default de undici) en un VPS de 1 CPU. El catch degrada a lista vacía.
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return ok({ tourns: [], unavailable: true });
     const raw = await res.json().catch(() => []);

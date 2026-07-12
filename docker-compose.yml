@@ -21,6 +21,13 @@ services:
       dockerfile: Dockerfile
     image: ghcr.io/yesiibr0/otr:latest
     restart: unless-stopped
+    # [OPS] Rotación de logs: sin esto json-file crece sin límite y llena el disco del
+    # único VPS (que también aloja Postgres, uploads y los backups). 3 archivos de 10MB.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     # [ESC-2] Da 30s a la app para drenar requests en curso (quiz/entrega/pago) antes de
     # matar el contenedor en cada redeploy, en vez de cortar en seco.
     stop_grace_period: 30s
@@ -48,7 +55,7 @@ services:
       - "127.0.0.1:3000:3000"
     healthcheck:
       # Recupera el contenedor si la app se cuelga (no solo si el proceso muere).
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/aula',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))\""]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/api/health',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))\""]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -60,6 +67,13 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    # [OPS] Rotación de logs: sin esto json-file crece sin límite y llena el disco del
+    # único VPS (que también aloja Postgres, uploads y los backups). 3 archivos de 10MB.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-otr}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-otr}"

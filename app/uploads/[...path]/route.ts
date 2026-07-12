@@ -55,6 +55,30 @@ export async function GET(req: Request, ctx: { params: Promise<{ path: string[] 
 
   // Tipo/nombre desde la fila Upload (confiable: validado al subir).
   const row = await db.upload.findFirst({ where: { filename: base } });
+
+  // [SEC · IDOR] Autorización POR OBJETO — exigir sesión NO basta. El filename es un
+  // randomUUID no adivinable, pero una URL filtrada (logs, referer, compartir) daría a
+  // cualquier autenticado acceso a material SENSIBLE de un MENOR (submission de tarea,
+  // grabación de sesión). Regla: dueño, admin, coach vinculado (reserva o inscripción)
+  // o tutor con guardianship ACTIVE. Los tipos públicos-en-la-UI (avatar/imagen/recurso
+  // de curso) siguen accesibles a cualquier autenticado. 404 (no 403) para no revelar
+  // la existencia del archivo.
+  if (!row) return notFound(); // archivo sin metadata → no se sirve
+  const PUBLIC_KINDS = new Set(["avatar", "image", "resource"]);
+  if (user.role !== "ADMIN" && row.userId !== user.id && !PUBLIC_KINDS.has(row.kind)) {
+    let allowed = false;
+    if (user.role === "TEACHER") {
+      const [booked, enrolled] = await Promise.all([
+        db.booking.count({ where: { coachId: user.id, studentId: row.userId } }),
+        db.enrollment.count({ where: { userId: row.userId, course: { teacher: { email: user.email } } } }),
+      ]);
+      allowed = booked > 0 || enrolled > 0;
+    } else if (user.role === "PARENT") {
+      allowed = (await db.guardianship.count({ where: { parentId: user.id, studentId: row.userId, status: "ACTIVE" } })) > 0;
+    }
+    if (!allowed) return notFound();
+  }
+
   const mime = row && INLINE_OK.has(row.mime) ? row.mime : "application/octet-stream";
   const disposition = INLINE_OK.has(mime) ? "inline" : "attachment";
   const downloadName = (row?.original || base).replace(/[\r\n"]/g, "");

@@ -43,7 +43,7 @@ docker compose --env-file .env.production down --remove-orphans
 docker compose --env-file .env.production up -d --remove-orphans
 
 for i in $(seq 1 20); do
-  code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/aula || echo 000)
+  code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/health || echo 000)
   if [ "$code" = "200" ]; then
     echo "$(date -u) ✓ deploy OK (HTTP 200)"
     docker image prune -f >/dev/null 2>&1 || true
