@@ -7,6 +7,23 @@
 
 **Totales:** CRITICAL 0 · HIGH 14 · MEDIUM 36 · LOW 43
 
+## Remediación ejecutada (post-audit)
+
+- **2026-07-11** `e82b9bd`: IDOR de uploads cerrado (autorización por objeto), Node 20→22, log
+  rotation Docker, healthcheck real de DB, timeout en fetch a Tabroom.
+- **2026-07-12** `7f0294d`: tests de integración de las 6 rutas con dinero/seguridad (register,
+  bookings POST/PATCH, debates PATCH, guardianship, uploads) — 200→285 tests. Verificado por
+  mutación (romper el gate COPPA hace fallar los tests correctos).
+- **2026-07-12** `9c9defa`: ESLint en CI (flat config, 0 errores/458 warnings, engancha al job
+  `ci`) + 8/8 librerías puras (`data.ts`, `i18n.ts`, `components.ts`, `icons.ts`, `text.ts`,
+  `drills-data.ts`, `shell.ts`, `screens.ts`) sin `@ts-nocheck`, tipando limpio — los 22 builders
+  `scr-*.ts` quedan excepción documentada (ADR-0004). De paso: una query duplicada de
+  `ActivityEvent` en `getAppData` eliminada (verificado que `DB.activity` sigue poblado en vivo).
+
+Pendientes HIGH sin tocar: MFA admin, un solo VPS (SPOF), backup offsite, alerting, IA cero,
+FKs fantasma, CSP unsafe-inline / esc() en onclick — todos bloqueados por llaves externas o
+requieren una decisión de alcance mayor (ver veredicto del informe navegable).
+
 ---
 
 
