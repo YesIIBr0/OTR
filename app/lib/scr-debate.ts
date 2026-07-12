@@ -19,7 +19,8 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { t, tierLabel } from "./i18n";
+import { t, tierLabel, getLang } from "./i18n";
+import { DRILL_ARGS, DRILL_WEIGH } from "./drills-data";
 
 export const S = {};
 
@@ -34,6 +35,168 @@ const TABS = [
 function activeTab() {
   const t = (window as any).__debateTab;
   return TABS.some((x) => x.k === t) ? t : "overview";
+}
+
+/* ---------------- Drills de práctica (Fase 1) ----------------
+   [Isaac, llamada] "ejercicios que ellos puedan hacer dentro de la plataforma". 100%
+   cliente: NO toca DB.debate ni el rating — el rating solo se mueve con rondas
+   adjudicadas por un coach (t("debate.practiceSub") ya lo deja claro en la UI).
+   Estado de fase en variables de módulo (el chunk persiste mientras la sesión viva,
+   igual que window.__debateTab persiste la pestaña activa); el contador y los índices
+   de rotación viven en localStorage. */
+const DRILL_TIME = 60; // segundos del countdown de refutación relámpago
+let refuteState = { phase: "idle", argText: "", text: "", secs: DRILL_TIME }; // idle|active|review
+let weighState = { pair: null, chosen: null };
+
+function pickText(item) {
+  return getLang() === "en" ? item.en : item.es;
+}
+function drillsDone() {
+  try { return parseInt(localStorage.getItem("otr_drills_done") || "0", 10) || 0; } catch (e) { return 0; }
+}
+function bumpDrillsDone() {
+  const n = drillsDone() + 1;
+  try { localStorage.setItem("otr_drills_done", String(n)); } catch (e) {}
+  return n;
+}
+// Rota por índice guardado en localStorage para no repetir el mismo argumento/par seguido.
+function nextArg() {
+  let idx = 0;
+  try { idx = parseInt(localStorage.getItem("otr_drill_arg_idx") || "0", 10) || 0; } catch (e) {}
+  idx = ((idx % DRILL_ARGS.length) + DRILL_ARGS.length) % DRILL_ARGS.length;
+  try { localStorage.setItem("otr_drill_arg_idx", String((idx + 1) % DRILL_ARGS.length)); } catch (e) {}
+  return DRILL_ARGS[idx];
+}
+function nextWeighPair() {
+  let idx = 0;
+  try { idx = parseInt(localStorage.getItem("otr_drill_weigh_idx") || "0", 10) || 0; } catch (e) {}
+  idx = ((idx % DRILL_WEIGH.length) + DRILL_WEIGH.length) % DRILL_WEIGH.length;
+  try { localStorage.setItem("otr_drill_weigh_idx", String((idx + 1) % DRILL_WEIGH.length)); } catch (e) {}
+  return DRILL_WEIGH[idx];
+}
+
+function drillsBadge() {
+  const n = drillsDone();
+  return `
+  <div class="row vcenter fade-up" style="gap:10px;margin-bottom:14px" title="${esc(t("debate.practiceSub"))}">
+    <span class="badge sky"><span class="dot"></span>${esc(t("drill.badgeCount").replace("{n}", String(n)))}</span>
+  </div>`;
+}
+
+// Card 1 · Refutación relámpago — argumento → countdown 60s → textarea → autoevaluación.
+function refuteCard() {
+  const s = refuteState;
+  let body;
+  if (s.phase === "active") {
+    body = `
+      <p style="font-size:13.5px;line-height:1.5;margin-bottom:14px">${esc(s.argText)}</p>
+      <div class="row between vcenter" style="margin-bottom:12px">
+        <span class="eyebrow">${t("drill.timeLeft")}</span>
+        <span id="drill-refute-clock" class="tnum brand-font" style="font-size:30px;font-weight:800;color:var(--otr-green-text)" aria-live="polite">${s.secs}</span>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label class="label" for="drill-refute-input">${t("drill.textareaLabel")}</label>
+        <textarea class="input" id="drill-refute-input" rows="4" style="resize:vertical;font-family:inherit;line-height:1.5" placeholder="${esc(t("drill.textareaPlaceholder"))}">${esc(s.text)}</textarea>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" data-drill-done>${t("drill.doneBtn")}</button>`;
+  } else if (s.phase === "review") {
+    body = `
+      ${s.text ? `<div class="callout" style="font-size:12.5px;white-space:pre-wrap;margin-bottom:14px">${esc(s.text)}</div>` : ""}
+      <p class="eyebrow" style="margin-bottom:10px">${t("drill.reviewTitle")}</p>
+      <div class="stack" style="gap:10px;margin-bottom:14px">
+        <label class="check"><input type="checkbox" data-drill-check="0"/>${t("drill.check1")}</label>
+        <label class="check"><input type="checkbox" data-drill-check="1"/>${t("drill.check2")}</label>
+        <label class="check"><input type="checkbox" data-drill-check="2"/>${t("drill.check3")}</label>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm" data-drill-finish>${t("drill.finishBtn")}</button>`;
+  } else {
+    body = `
+      <div class="empty" style="padding:36px 8px">
+        <div class="ill">${IC.mic}</div>
+        <h4>${t("drill.refuteTitle")}</h4>
+        <p>${t("drill.refuteDesc")}</p>
+        <button type="button" class="btn btn-primary btn-sm" data-drill-start>${t("drill.refuteStart")}</button>
+      </div>`;
+  }
+  return `
+    <div class="tile card-pad fade-up" id="drill-refute-card">
+      ${s.phase !== "idle" ? `<div class="eyebrow" style="margin-bottom:10px">${t("drill.refuteTitle")}</div>` : ""}
+      ${body}
+    </div>`;
+}
+
+// Card 2 · Weighing — par de impactos → elige A/B → panel fijo de los 3 lentes.
+function weighCard() {
+  const s = weighState;
+  let body;
+  if (!s.pair) {
+    body = `
+      <div class="empty" style="padding:36px 8px">
+        <div class="ill">${IC.chart}</div>
+        <h4>${t("drill.weighTitle")}</h4>
+        <p>${t("drill.weighDesc")}</p>
+        <button type="button" class="btn btn-primary btn-sm" data-drill-weigh-start>${t("drill.weighStart")}</button>
+      </div>`;
+  } else if (!s.chosen) {
+    body = `
+      <div class="eyebrow" style="margin-bottom:10px">${t("drill.weighTitle")}</div>
+      <p class="faint" style="font-size:12.5px;margin-bottom:12px">${t("drill.chooseImpact")}</p>
+      <div class="stack" style="gap:10px">
+        <button type="button" class="btn btn-soft btn-block" style="height:auto;padding:12px 14px;text-align:left;white-space:normal;justify-content:flex-start" data-drill-weigh-pick="a">
+          <span style="display:block"><b style="display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px">${t("drill.impactA")}</b><span style="font-size:13.5px;line-height:1.4;font-weight:500">${esc(pickText(s.pair.a))}</span></span>
+        </button>
+        <button type="button" class="btn btn-soft btn-block" style="height:auto;padding:12px 14px;text-align:left;white-space:normal;justify-content:flex-start" data-drill-weigh-pick="b">
+          <span style="display:block"><b style="display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px">${t("drill.impactB")}</b><span style="font-size:13.5px;line-height:1.4;font-weight:500">${esc(pickText(s.pair.b))}</span></span>
+        </button>
+      </div>`;
+  } else {
+    const chosenItem = s.chosen === "a" ? s.pair.a : s.pair.b;
+    body = `
+      <div class="eyebrow" style="margin-bottom:10px">${t("drill.weighTitle")}</div>
+      <div class="callout" style="font-size:12.5px;margin-bottom:14px"><b>${t("drill.youChose")}:</b> ${esc(pickText(chosenItem))}</div>
+      <p class="eyebrow" style="margin-bottom:8px">${t("drill.lensesTitle")}</p>
+      <div class="stack" style="gap:10px;margin-bottom:14px">
+        <div><b style="font-size:12.5px">${t("drill.lensMagnitude")}</b><p class="faint" style="font-size:12px;margin-top:2px;line-height:1.4">${t("drill.lensMagnitudeBody")}</p></div>
+        <div><b style="font-size:12.5px">${t("drill.lensProbability")}</b><p class="faint" style="font-size:12px;margin-top:2px;line-height:1.4">${t("drill.lensProbabilityBody")}</p></div>
+        <div><b style="font-size:12.5px">${t("drill.lensTimeframe")}</b><p class="faint" style="font-size:12px;margin-top:2px;line-height:1.4">${t("drill.lensTimeframeBody")}</p></div>
+      </div>
+      <p class="faint" style="font-size:11.5px;font-style:italic;margin-bottom:12px">${t("drill.weighNoRight")}</p>
+      <button type="button" class="btn btn-ghost btn-sm" data-drill-weigh-other>${t("drill.otherPair")}</button>`;
+  }
+  return `<div class="tile card-pad fade-up" id="drill-weigh-card">${body}</div>`;
+}
+
+// Countdown de 60s: SOLO muta el span vía textContent (nada de re-render completo cada
+// segundo — mismo patrón que el timerEl de scr-learn). El interval vive en
+// window.__drillTimer para que S.debateHub.mount lo limpie defensivamente siempre.
+function startRefuteTimer(root, repaint) {
+  if ((window as any).__drillTimer) clearInterval((window as any).__drillTimer);
+  (window as any).__drillTimer = setInterval(() => {
+    const clockEl = root.querySelector && root.querySelector("#drill-refute-clock");
+    // [Safety] .page es la MISMA clase que usan TODAS las pantallas del SPA sobre el
+    // mismo `root` persistente (renderShell). Si el usuario navegó fuera del Debate Hub
+    // (o cambió de sub-tab) mientras el countdown corría, este nodo ya no está en el
+    // documento — apaga el interval SIN llamar repaint(), que si no sobrescribiría la
+    // pantalla que el usuario esté viendo ahora con el HTML del Debate Hub.
+    if (!clockEl || !document.contains(clockEl)) {
+      clearInterval((window as any).__drillTimer);
+      (window as any).__drillTimer = null;
+      return;
+    }
+    refuteState.secs = Math.max(0, refuteState.secs - 1);
+    clockEl.textContent = String(refuteState.secs);
+    if (refuteState.secs <= 0) {
+      clearInterval((window as any).__drillTimer);
+      (window as any).__drillTimer = null;
+      const ta = root.querySelector && root.querySelector("#drill-refute-input");
+      finishRefuteActive(root, ta ? ta.value : refuteState.text, repaint);
+    }
+  }, 1000);
+}
+function finishRefuteActive(root, text, repaint) {
+  if ((window as any).__drillTimer) { clearInterval((window as any).__drillTimer); (window as any).__drillTimer = null; }
+  refuteState = { ...refuteState, phase: "review", text };
+  repaint();
 }
 
 /* ---------------- helpers de datos (defaults defensivos) ---------------- */
@@ -297,13 +460,13 @@ function viewPractice() {
     .sort((a, b) => a.diff - b.diff)
     .slice(0, 5);
 
+  // [Fase 1 · Drills] Refutación relámpago + Weighing — ver estado/render arriba.
+  // El badge de contador reusa debate.practiceSub (title) para reforzar que entrenan
+  // pero NO mueven el rating (eso solo pasa con rondas adjudicadas por el coach).
   const drills = `
-    <div class="card card-pad fade-up">
-      <div class="empty" style="padding:44px 20px">
-        <div class="ill">${IC.mic}</div>
-        <h4>${t("debate.drillsTitle")}</h4>
-        <p>${t("debate.drillsBody")}</p>
-      </div>
+    <div>
+      ${drillsBadge()}
+      <div class="grid g-2">${refuteCard()}${weighCard()}</div>
     </div>`;
 
   const finder = `
@@ -376,6 +539,11 @@ S.debateHub = {
   },
 
   mount(root, state) {
+    // [Drills] defensivo: nunca dejar un setInterval de drill huérfano. Se limpia SIEMPRE
+    // al montar (repaint por sub-tab, reentrada a Práctica, o navegación) — antes de que
+    // startRefuteTimer cree uno nuevo más abajo si el drill sigue activo.
+    if ((window as any).__drillTimer) { clearInterval((window as any).__drillTimer); (window as any).__drillTimer = null; }
+
     // Repinta solo la pantalla del debate dentro del .page, conservando el shell.
     const repaint = () => {
       const page = root.querySelector(".page");
@@ -426,6 +594,55 @@ S.debateHub = {
         })
         .catch(() => { (nsdaBody as any).innerHTML = `<p class="faint" style="font-size:12.5px">${t("debate.nsdaEmpty")}</p>`; });
     }
+
+    // [Fase 1 · Drills] Refutación relámpago — empezar / listo / terminar drill.
+    root.querySelectorAll("[data-drill-start]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const arg = nextArg();
+        refuteState = { phase: "active", argText: pickText(arg), text: "", secs: DRILL_TIME };
+        repaint();
+        startRefuteTimer(root, repaint);
+      })
+    );
+    root.querySelectorAll("[data-drill-done]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const ta = root.querySelector("#drill-refute-input");
+        finishRefuteActive(root, ta ? (ta as any).value : refuteState.text, repaint);
+      })
+    );
+    root.querySelectorAll("[data-drill-finish]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        bumpDrillsDone();
+        refuteState = { phase: "idle", argText: "", text: "", secs: DRILL_TIME };
+        repaint();
+      })
+    );
+    // Si el drill de refutación sigue activo al (re)montar (p.ej. volvemos a la pestaña
+    // Práctica desde otra), retoma el countdown visual desde donde iba.
+    if (refuteState.phase === "active" && root.querySelector("#drill-refute-clock")) {
+      startRefuteTimer(root, repaint);
+    }
+
+    // [Fase 1 · Drills] Weighing — empezar / elegir impacto / otro par.
+    root.querySelectorAll("[data-drill-weigh-start]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        weighState = { pair: nextWeighPair(), chosen: null };
+        repaint();
+      })
+    );
+    root.querySelectorAll("[data-drill-weigh-pick]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        weighState = { ...weighState, chosen: btn.getAttribute("data-drill-weigh-pick") };
+        bumpDrillsDone(); // [instrucción] cada par visto (elegido) suma al contador
+        repaint();
+      })
+    );
+    root.querySelectorAll("[data-drill-weigh-other]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        weighState = { pair: nextWeighPair(), chosen: null };
+        repaint();
+      })
+    );
 
     // [FIX conversión] Inscripción al torneo desde el Hub (donde nace la intención): POST
     // /api/tournaments (idempotente) + sello "Inscrito" optimista, sin saltar a otra pantalla.

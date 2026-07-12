@@ -3,6 +3,7 @@ import { t, I18N } from "../app/lib/i18n";
 
 // Todos los diccionarios por pantalla (deben quedar fusionados en el DICT central por i18n.ts).
 import { dict as admin } from "../app/lib/i18n-keys/admin";
+import { dict as am } from "../app/lib/i18n-keys/am";
 import { dict as arsenal } from "../app/lib/i18n-keys/arsenal";
 import { dict as au } from "../app/lib/i18n-keys/au";
 import { dict as cert } from "../app/lib/i18n-keys/cert";
@@ -25,7 +26,7 @@ import { dict as settings } from "../app/lib/i18n-keys/settings";
 import { dict as teacher } from "../app/lib/i18n-keys/teacher";
 
 const SCREEN_DICTS: Record<string, any> = {
-  admin, arsenal, au, cert, comm, core, cw, debate, events, extra, hub,
+  admin, am, arsenal, au, cert, comm, core, cw, debate, events, extra, hub,
   learn, lifetime, mb, mkt, parent, placement, profile, room, settings, teacher,
 };
 

@@ -32,6 +32,7 @@ import { dict as d_teacher } from "./i18n-keys/teacher";
 import { dict as d_comm } from "./i18n-keys/comm";
 import { dict as d_admin } from "./i18n-keys/admin";
 import { dict as d_au } from "./i18n-keys/au";
+import { dict as d_am } from "./i18n-keys/am";
 import { dict as d_extra } from "./i18n-keys/extra";
 import { dict as d_arsenal } from "./i18n-keys/arsenal";
 import { dict as d_events } from "./i18n-keys/events";
@@ -64,6 +65,7 @@ const DICT = {
     "nav.mybookings": "Mis reservas",
     "nav.admin": "Moderación",
     "nav.users": "Usuarios",
+    "nav.metrics": "Métricas",
     "nav.certifications": "Certificaciones",
     "nav.marketplace": "Marketplace",
     "nav.events": "Eventos",
@@ -387,6 +389,7 @@ const DICT = {
     "nav.mybookings": "My Bookings",
     "nav.admin": "Moderation",
     "nav.users": "Users",
+    "nav.metrics": "Metrics",
     "nav.certifications": "Certifications",
     "nav.marketplace": "Marketplace",
     "nav.events": "Events",
@@ -692,7 +695,7 @@ const DICT = {
 // Object.assign respeta las claves ya presentes del chrome y añade las de cada pantalla.
 for (const d of [
   d_core, d_learn, d_debate, d_lifetime, d_mkt, d_mb, d_hub, d_settings, d_parent,
-  d_profile, d_cw, d_teacher, d_comm, d_admin, d_au, d_extra, d_arsenal, d_events,
+  d_profile, d_cw, d_teacher, d_comm, d_admin, d_au, d_am, d_extra, d_arsenal, d_events,
   d_cert, d_placement, d_room,
 ]) {
   if (d && d.es) Object.assign(DICT.es, d.es);

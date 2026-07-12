@@ -70,8 +70,6 @@ export const dict = {
     "debate.practiceEyebrow": "Entrena bajo presión",
     "debate.practiceTitle": "Práctica",
     "debate.practiceSub": "Entrena destrezas puntuales con drills enfocados. Tu rating solo se mueve en rondas adjudicadas por un coach.",
-    "debate.drillsTitle": "Drills en camino",
-    "debate.drillsBody": "Pronto vas a entrenar destrezas puntuales aquí: refutación, weighing, crossfire y más.",
 
     // leaderboard
     "debate.lbEmptyTitle": "Entra en la clasificación",
@@ -165,6 +163,37 @@ export const dict = {
     "debate.registerError": "No se pudo registrar",
 
     // temporizador PF (runtime)
+
+    // drills de práctica (Fase 1) — Refutación relámpago + Weighing, 100% cliente
+    "drill.badgeCount": "{n} drills completados",
+    "drill.refuteTitle": "Refutación relámpago",
+    "drill.refuteDesc": "Un argumento, 60 segundos, tu refutación. Entrena el reflejo de responder bajo presión.",
+    "drill.refuteStart": "Empezar",
+    "drill.timeLeft": "Tiempo restante",
+    "drill.textareaLabel": "Tu refutación",
+    "drill.textareaPlaceholder": "Escribe tu refutación aquí…",
+    "drill.doneBtn": "Listo",
+    "drill.reviewTitle": "Autoevaluación",
+    "drill.check1": "¿Atacaste la afirmación directamente?",
+    "drill.check2": "¿Diste una razón propia?",
+    "drill.check3": "¿Usaste un ejemplo o evidencia?",
+    "drill.finishBtn": "Terminar drill",
+    "drill.weighTitle": "Weighing",
+    "drill.weighDesc": "Compara dos impactos y practica justificar cuál pesa más. No hay respuesta correcta — el valor está en el framework.",
+    "drill.weighStart": "Empezar",
+    "drill.chooseImpact": "Elige el impacto que pesa más",
+    "drill.impactA": "Impacto A",
+    "drill.impactB": "Impacto B",
+    "drill.youChose": "Elegiste",
+    "drill.lensesTitle": "Los 3 lentes del weighing",
+    "drill.lensMagnitude": "Magnitud",
+    "drill.lensMagnitudeBody": "¿A cuántas personas afecta y qué tan grande es el efecto? Un impacto grande en pocos puede pesar tanto como uno pequeño en muchos.",
+    "drill.lensProbability": "Probabilidad",
+    "drill.lensProbabilityBody": "¿Qué tan seguro es que ocurra? Un impacto certero pesa más que uno especulativo, aunque sea menor.",
+    "drill.lensTimeframe": "Plazo",
+    "drill.lensTimeframeBody": "¿Cuándo ocurre? Un impacto inmediato suele pesar más que uno lejano, salvo que el lejano sea irreversible.",
+    "drill.weighNoRight": "No hay una respuesta \"correcta\" — lo que se evalúa es el framework que usas para decidir.",
+    "drill.otherPair": "Otro par",
   },
   en: {
     // sub-tabs
@@ -233,8 +262,6 @@ export const dict = {
     "debate.practiceEyebrow": "Train under pressure",
     "debate.practiceTitle": "Practice",
     "debate.practiceSub": "Train specific skills with focused drills. Your rating only moves on rounds adjudicated by a coach.",
-    "debate.drillsTitle": "Drills coming soon",
-    "debate.drillsBody": "Soon you'll train specific skills here: rebuttal, weighing, crossfire and more.",
 
     // leaderboard
     "debate.lbEmptyTitle": "Join the standings",
@@ -328,5 +355,36 @@ export const dict = {
     "debate.registerError": "Couldn't register",
 
     // PF timer (runtime)
+
+    // practice drills (Phase 1) — Rapid-fire refutation + Weighing, fully client-side
+    "drill.badgeCount": "{n} drills completed",
+    "drill.refuteTitle": "Rapid-fire refutation",
+    "drill.refuteDesc": "One argument, 60 seconds, your refutation. Train the reflex of answering under pressure.",
+    "drill.refuteStart": "Start",
+    "drill.timeLeft": "Time left",
+    "drill.textareaLabel": "Your refutation",
+    "drill.textareaPlaceholder": "Write your refutation here…",
+    "drill.doneBtn": "Done",
+    "drill.reviewTitle": "Self-assessment",
+    "drill.check1": "Did you attack the claim directly?",
+    "drill.check2": "Did you give your own reason?",
+    "drill.check3": "Did you use an example or evidence?",
+    "drill.finishBtn": "Finish drill",
+    "drill.weighTitle": "Weighing",
+    "drill.weighDesc": "Compare two impacts and practice justifying which one weighs more. There's no correct answer — the value is in the framework.",
+    "drill.weighStart": "Start",
+    "drill.chooseImpact": "Choose the impact that weighs more",
+    "drill.impactA": "Impact A",
+    "drill.impactB": "Impact B",
+    "drill.youChose": "You chose",
+    "drill.lensesTitle": "The 3 weighing lenses",
+    "drill.lensMagnitude": "Magnitude",
+    "drill.lensMagnitudeBody": "How many people does it affect, and how big is the effect? A large impact on a few can weigh as much as a small one on many.",
+    "drill.lensProbability": "Probability",
+    "drill.lensProbabilityBody": "How certain is it to happen? A sure impact weighs more than a speculative one, even if smaller.",
+    "drill.lensTimeframe": "Timeframe",
+    "drill.lensTimeframeBody": "When does it happen? An immediate impact usually weighs more than a distant one, unless the distant one is irreversible.",
+    "drill.weighNoRight": "There's no \"correct\" answer — what matters is the framework you use to decide.",
+    "drill.otherPair": "Another pair",
   },
 };

@@ -89,6 +89,7 @@ const NAV = {
     { gk:'group.main', group:'Administración', items:[
       { r:'admin', ic:'flag', k:'nav.admin', l:'Moderación' },
       { r:'admin-users', ic:'users', k:'nav.users', l:'Usuarios' },
+      { r:'admin-metrics', ic:'chart', k:'nav.metrics', l:'Métricas' },
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
       { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
     ]},
