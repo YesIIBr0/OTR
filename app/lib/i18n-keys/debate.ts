@@ -166,6 +166,7 @@ export const dict = {
 
     // drills de práctica (Fase 1) — Refutación relámpago + Weighing, 100% cliente
     "drill.badgeCount": "{n} drills completados",
+    "drill.badgeCountSingular": "{n} drill completado",
     "drill.refuteTitle": "Refutación relámpago",
     "drill.refuteDesc": "Un argumento, 60 segundos, tu refutación. Entrena el reflejo de responder bajo presión.",
     "drill.refuteStart": "Empezar",
@@ -358,6 +359,7 @@ export const dict = {
 
     // practice drills (Phase 1) — Rapid-fire refutation + Weighing, fully client-side
     "drill.badgeCount": "{n} drills completed",
+    "drill.badgeCountSingular": "{n} drill completed",
     "drill.refuteTitle": "Rapid-fire refutation",
     "drill.refuteDesc": "One argument, 60 seconds, your refutation. Train the reflex of answering under pressure.",
     "drill.refuteStart": "Start",

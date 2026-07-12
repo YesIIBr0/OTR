@@ -79,7 +79,7 @@ function drillsBadge() {
   const n = drillsDone();
   return `
   <div class="row vcenter fade-up" style="gap:10px;margin-bottom:14px" title="${esc(t("debate.practiceSub"))}">
-    <span class="badge sky"><span class="dot"></span>${esc(t("drill.badgeCount").replace("{n}", String(n)))}</span>
+    <span class="badge sky"><span class="dot"></span>${esc(t(n === 1 ? "drill.badgeCountSingular" : "drill.badgeCount").replace("{n}", String(n)))}</span>
   </div>`;
 }
 
