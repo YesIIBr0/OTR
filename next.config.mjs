@@ -33,6 +33,14 @@ if (!isDev) {
 }
 
 const nextConfig = {
+  // [CI] El lint YA corre como paso dedicado en el job "ci" (npx eslint ., con las
+  // excepciones de eslint.config.mjs para los builders scr-*.ts / db-types.ts / etc.).
+  // El lint INTERNO de `next build` usa su propio detector y NO respeta esas excepciones
+  // ("The Next.js plugin was not detected..."), así que sin esto el `docker build` del
+  // job build-and-push fallaría de forma redundante y mal configurada sobre archivos que
+  // el paso de lint real ya aprobó — desactivado para no duplicar el gate con reglas
+  // distintas a las nuestras.
+  eslint: { ignoreDuringBuilds: true },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

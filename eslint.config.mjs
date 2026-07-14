@@ -68,15 +68,18 @@ export default tseslint.config(
     },
   },
   {
-    // `any` es sistémico (no un descuido puntual) en estos 3 puntos: el motor SPA
-    // (Aula.tsx) y el contenedor de datos hidratados en runtime (data.ts → DB: any) leen
-    // formas dinámicas que cambian por rol/pantalla; queries.ts (capa Prisma) las produce.
-    // Tiparlos de verdad es un refactor de tipado grande (ver rama refactor/audit-m8-typed-db
-    // en el otro worktree), fuera de alcance de este lint mínimo no bloqueante. Las pruebas
+    // `any` es sistémico (no un descuido puntual) en estos puntos: el motor SPA
+    // (Aula.tsx) lee formas dinámicas que cambian por rol/pantalla; queries.ts (capa
+    // Prisma) las produce; db-types.ts (M8 — fundación tipada de DB, fusionada de
+    // refactor/audit-m8-typed-db) es DELIBERADAMENTE incremental — su propio header
+    // documenta el índice `[key: string]: any` como válvula de escape para lo aún no
+    // nombrado, y varios campos anidados usan `any` a propósito para no bloquear el
+    // pilotaje mientras se tipa el resto del árbol. Tiparlos de verdad al 100% es un
+    // refactor grande, fuera de alcance de este lint mínimo no bloqueante. Las pruebas
     // (tests/**) también tipan sus mocks/harnesses sueltos a propósito. Se dejan en warning
     // (quedan para después, como pide el audit) en vez de forzar un `any` real a "unknown" a
     // ciegas en 250+ sitios.
-    files: ["app/components/Aula.tsx", "app/lib/queries.ts", "app/lib/data.ts", "tests/**"],
+    files: ["app/components/Aula.tsx", "app/lib/queries.ts", "app/lib/data.ts", "app/lib/db-types.ts", "tests/**"],
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
     },

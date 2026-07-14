@@ -1,4 +1,3 @@
-// @ts-nocheck
 // OTR Hub · Placement de bienvenida (PRD §2.2 Journey A + §4.3).
 // Auto-evaluación de 3 minutos para el usuario recién registrado: 6 sliders
 // (uno por dimensión) que fijan SU punto de partida en el Skill Graph.
@@ -9,7 +8,16 @@ import { IC } from "./icons";
 import { esc } from "./esc";
 import { t } from "./i18n";
 
-export const S = {};
+// Contrato mínimo de una pantalla del SPA (ver despacho en app/lib/screens.ts /
+// app/components/Aula.tsx: `screen.render(state)` + `screen.mount?.(content, state)`).
+// Los parámetros extra que Aula.tsx pasa (state) se ignoran aquí a propósito — TS
+// permite asignar una función con MENOS parámetros a un tipo que acepta más.
+interface Screen {
+  render(): string;
+  mount(root: HTMLElement | null): void;
+}
+
+export const S: { placement: Screen } = {} as { placement: Screen };
 
 // Las 6 dimensiones canónicas, con una descripción corta de qué mide cada una.
 // El key es identificador canónico (data-skill, matching con el Skill Graph): NO se
@@ -85,13 +93,13 @@ S.placement = {
       </div>`;
   },
 
-  mount(root) {
+  mount(root: HTMLElement | null) {
     if (!root) return;
 
-    const ranges = Array.from(root.querySelectorAll(".pl-range"));
-    const btn = root.querySelector("#pl-submit");
-    const fill = root.querySelector("#pl-progress-fill");
-    const countEl = root.querySelector("#pl-count");
+    const ranges = Array.from(root.querySelectorAll<HTMLInputElement>(".pl-range"));
+    const btn = root.querySelector<HTMLButtonElement>("#pl-submit");
+    const fill = root.querySelector<HTMLElement>("#pl-progress-fill");
+    const countEl = root.querySelector<HTMLElement>("#pl-count");
     const total = ranges.length || 6;
     const touchedCount = () => ranges.filter((r) => r.getAttribute("data-touched") === "1").length;
 
@@ -104,9 +112,9 @@ S.placement = {
     };
 
     // Reflejo en vivo del valor de UNA barra ya tocada en su <output> + aria.
-    const syncOne = (range) => {
-      const skill = range.getAttribute("data-skill");
-      const out = root.querySelector(`[data-out="${CSS && CSS.escape ? CSS.escape(skill) : skill}"]`);
+    const syncOne = (range: HTMLInputElement) => {
+      const skill = range.getAttribute("data-skill") || "";
+      const out = root.querySelector<HTMLElement>(`[data-out="${CSS && CSS.escape ? CSS.escape(skill) : skill}"]`);
       if (out) { out.textContent = String(range.value); out.classList.add("sky"); }
       range.setAttribute("aria-valuenow", String(range.value));
       range.setAttribute("aria-label", t("placement.sliderAriaSet").replace("{skill}", skill).replace("{value}", String(range.value)));
@@ -122,15 +130,15 @@ S.placement = {
 
     // Lee los valores actuales de las 6 barras (default 50 = neutral en las no tocadas).
     const readScores = () => {
-      const scores = {};
+      const scores: Record<string, number> = {};
       ranges.forEach((r) => {
-        const skill = r.getAttribute("data-skill");
+        const skill = r.getAttribute("data-skill") || "";
         scores[skill] = Math.max(0, Math.min(100, Number(r.value) || 0));
       });
       return scores;
     };
     // Envío compartido por el CTA principal y por "Saltar por ahora".
-    const send = async (triggerBtn) => {
+    const send = async (triggerBtn: HTMLButtonElement | null) => {
       const scores = readScores();
       if (triggerBtn) { triggerBtn.dataset.prev = triggerBtn.innerHTML; triggerBtn.disabled = true; triggerBtn.textContent = t("placement.saving"); }
       if (btn) btn.disabled = true;
@@ -154,6 +162,6 @@ S.placement = {
     // [ONBOARDING · audit] "Saltar por ahora": envía los valores por defecto (50 = neutral
     // válido) y entra al aula SIN muro. El placement deja de ser una pared en el pico de
     // abandono (primer contacto); el alumno puede refinar sus skills después.
-    root.querySelector("#pl-skip")?.addEventListener("click", (e) => send(e.currentTarget));
+    root.querySelector<HTMLButtonElement>("#pl-skip")?.addEventListener("click", (e) => send(e.currentTarget as HTMLButtonElement));
   },
 };
