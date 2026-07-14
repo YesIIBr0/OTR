@@ -38,6 +38,7 @@ import { dict as d_events } from "./i18n-keys/events";
 import { dict as d_cert } from "./i18n-keys/cert";
 import { dict as d_placement } from "./i18n-keys/placement";
 import { dict as d_room } from "./i18n-keys/room";
+import { dict as d_wap } from "./i18n-keys/wap";
 
 export type Lang = "es" | "en";
 // Diccionario plano { llave: texto }. Los ~22 módulos de app/lib/i18n-keys/*.ts
@@ -74,6 +75,7 @@ const DICT: LangDict = {
     "nav.admin": "Moderación",
     "nav.users": "Usuarios",
     "nav.metrics": "Métricas",
+    "nav.whatsapp": "WhatsApp",
     "nav.certifications": "Certificaciones",
     "nav.marketplace": "Marketplace",
     "nav.events": "Eventos",
@@ -398,6 +400,7 @@ const DICT: LangDict = {
     "nav.admin": "Moderation",
     "nav.users": "Users",
     "nav.metrics": "Metrics",
+    "nav.whatsapp": "WhatsApp",
     "nav.certifications": "Certifications",
     "nav.marketplace": "Marketplace",
     "nav.events": "Events",
@@ -704,7 +707,7 @@ const DICT: LangDict = {
 for (const d of [
   d_core, d_learn, d_debate, d_lifetime, d_mkt, d_mb, d_hub, d_settings, d_parent,
   d_profile, d_cw, d_teacher, d_comm, d_admin, d_au, d_am, d_extra, d_arsenal, d_events,
-  d_cert, d_placement, d_room,
+  d_cert, d_placement, d_room, d_wap,
 ]) {
   if (d && d.es) Object.assign(DICT.es, d.es);
   if (d && d.en) Object.assign(DICT.en, d.en);

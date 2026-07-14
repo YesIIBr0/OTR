@@ -42,6 +42,7 @@ import { DB } from "../app/lib/data";
 
 import { S as SAdminUsers } from "../app/lib/scr-admin-users";
 import { S as SAdminMetrics } from "../app/lib/scr-admin-metrics";
+import { S as SAdminWhatsapp } from "../app/lib/scr-admin-whatsapp";
 import { S as SAdmin } from "../app/lib/scr-admin";
 import { S as SArsenal } from "../app/lib/scr-arsenal";
 import { S as SCertificate } from "../app/lib/scr-certificate";
@@ -66,6 +67,7 @@ import { S as STeacher } from "../app/lib/scr-teacher";
 const SCREENS: Record<string, Record<string, any>> = {
   "scr-admin-users": SAdminUsers,
   "scr-admin-metrics": SAdminMetrics,
+  "scr-admin-whatsapp": SAdminWhatsapp,
   "scr-admin": SAdmin,
   "scr-arsenal": SArsenal,
   "scr-certificate": SCertificate,

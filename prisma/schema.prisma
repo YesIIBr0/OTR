@@ -816,3 +816,31 @@ model ClubMembership {
   @@unique([clubId, userId])
   @@index([userId])
 }
+
+// --- WhatsApp Business (Meta Cloud API) — bandeja del equipo (Fase 1: entrada + respuesta
+// 1 a 1, SIN broadcast/plantillas — eso requiere plantillas pre-aprobadas por Meta y es
+// decisión de negocio pendiente, fuera de alcance). ---
+model WhatsAppContact {
+  id            String            @id @default(cuid())
+  phone         String            @unique // E.164 sin "+" (ej "18092920939")
+  name          String?
+  lastMessageAt DateTime?
+  createdAt     DateTime          @default(now())
+  messages      WhatsAppMessage[]
+
+  @@index([lastMessageAt])
+}
+
+model WhatsAppMessage {
+  id           String          @id @default(cuid())
+  contactId    String
+  contact      WhatsAppContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  direction    String          // "IN" | "OUT"
+  body         String
+  waMessageId  String?         @unique // dedupe de reintentos de Meta (IN) / id de la Graph API (OUT)
+  status       String          @default("received") // IN: "received"; OUT: "queued" | "sent" | "failed"
+  sentByUserId String?         // userId del miembro del equipo que respondió (solo OUT)
+  createdAt    DateTime        @default(now())
+
+  @@index([contactId, createdAt])
+}

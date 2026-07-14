@@ -33,6 +33,7 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   admin:       () => import("./scr-admin"),
   adminUsers:  () => import("./scr-admin-users"),
   adminMetrics: () => import("./scr-admin-metrics"),
+  adminWhatsapp: () => import("./scr-admin-whatsapp"),
   mybookings:  () => import("./scr-mybookings"),
   placement:   () => import("./scr-placement"),
   settings:    () => import("./scr-settings"),
@@ -52,7 +53,7 @@ const SCREEN_MODULE: Record<string, string> = {
   arsenal:'arsenal', hub:'hub', onboarding:'hub', certificate:'certificate',
   debateHub:'debate', marketplace:'marketplace', parentPortal:'parent',
   lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
-  adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', myBookings:'mybookings',
+  adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp', myBookings:'mybookings',
   placement:'placement', settings:'settings', events:'events', room:'room',
 };
 
@@ -96,7 +97,7 @@ const ROLE_PREFETCH: Record<string, string[]> = {
   student: ['debateHub','marketplace','lifetimeProfile','events','myBookings','grades','settings','profile','placement'],
   teacher: ['teacher','participants','manage','coachwork','marketplace','messages','profile','settings'],
   parent:  ['parentPortal','marketplace','messages','membership','profile','settings'],
-  admin:   ['adminConsole','adminUsers','adminMetrics','marketplace','debateHub','profile','settings'],
+  admin:   ['adminConsole','adminUsers','adminMetrics','adminWhatsapp','marketplace','debateHub','profile','settings'],
 };
 let didPrefetch = false;
 // `role` acepta string (no un union Role importado de shell.ts): Aula.tsx pasa
@@ -187,4 +188,6 @@ export const ROUTES: Record<string, RouteDef> = {
   'admin-users':  { screen:'adminUsers',   nav:'admin-users',  crumbs:['Administración','Gestión de usuarios'], role:'admin' },
   // Admin → Métricas de negocio (PRD §3.3): usuarios, embudo, reservas/GMV, debates → scr-admin-metrics.ts.
   'admin-metrics': { screen:'adminMetrics', nav:'admin-metrics', crumbs:['Administración','Métricas'], role:'admin' },
+  // Admin → WhatsApp Business (Meta Cloud API, Fase 1): bandeja del equipo, entrada + respuesta 1 a 1 → scr-admin-whatsapp.ts.
+  'admin-whatsapp': { screen:'adminWhatsapp', nav:'admin-whatsapp', crumbs:['Administración','WhatsApp'], role:'admin' },
 };

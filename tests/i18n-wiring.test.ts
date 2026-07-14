@@ -24,10 +24,11 @@ import { dict as profile } from "../app/lib/i18n-keys/profile";
 import { dict as room } from "../app/lib/i18n-keys/room";
 import { dict as settings } from "../app/lib/i18n-keys/settings";
 import { dict as teacher } from "../app/lib/i18n-keys/teacher";
+import { dict as wap } from "../app/lib/i18n-keys/wap";
 
 const SCREEN_DICTS: Record<string, any> = {
   admin, am, arsenal, au, cert, comm, core, cw, debate, events, extra, hub,
-  learn, lifetime, mb, mkt, parent, placement, profile, room, settings, teacher,
+  learn, lifetime, mb, mkt, parent, placement, profile, room, settings, teacher, wap,
 };
 
 // Prefijos del chrome (nav/sidebar/topbar) definidos inline en i18n.ts — no deben ser pisados.

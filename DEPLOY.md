@@ -320,6 +320,32 @@ pm2 reload otr
 
 ---
 
+## WhatsApp Business (Meta Cloud API) — bandeja del equipo
+
+Fase 1: el equipo recibe y responde 1 a 1, desde el panel admin, los mensajes de un número
+de WhatsApp Business real — sin usar la app de WhatsApp directamente. **No** incluye envío
+masivo/broadcast (eso requiere plantillas pre-aprobadas por Meta; decisión de negocio
+pendiente, fuera de alcance de esta fase).
+
+Las 4 variables son **opcionales en runtime**: sin ellas, el webhook GET responde 403 (Meta
+no logra verificar la URL) y enviar mensajes falla suave (`sendWhatsAppMessage` nunca lanza),
+pero el resto de la app sigue funcionando con normalidad.
+
+- `WHATSAPP_ACCESS_TOKEN` — token de acceso de la app de Meta (Graph API).
+- `WHATSAPP_PHONE_NUMBER_ID` — ID del número de WhatsApp Business (Meta dashboard).
+- `WHATSAPP_VERIFY_TOKEN` — token propio (inventado) que se configura también en el
+  dashboard de Meta para el handshake de verificación del webhook.
+- `WHATSAPP_APP_SECRET` — App Secret de Meta, usado para verificar la firma HMAC-SHA256 de
+  cada webhook entrante (header `X-Hub-Signature-256`).
+
+En el dashboard de Meta (WhatsApp → Configuration → Webhook), configura la URL:
+
+```
+https://TU-DOMINIO/api/whatsapp/webhook
+```
+
+---
+
 ## Variables de entorno (referencia rápida)
 
 | Variable | Obligatoria | Descripción |
@@ -330,4 +356,5 @@ pm2 reload otr
 | `SMTP_URL` | no | SMTP para correos reales; si falta, se loguean. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | no | Pagos de programas. |
 | `CLOUDFLARE_*` | no | Video protegido vía Cloudflare Stream. |
+| `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` / `WHATSAPP_VERIFY_TOKEN` / `WHATSAPP_APP_SECRET` | no | Bandeja de WhatsApp Business (Meta Cloud API). |
 | `PORT` | no | Puerto de escucha (default 3000). |
