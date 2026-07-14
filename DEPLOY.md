@@ -45,7 +45,7 @@ producción sobre un **VPS de Hostinger** (Ubuntu 22.04+). Hay dos caminos:
 
 > La app del LMS vive en `/aula`. La raíz `/` sirve la landing estática
 > (`public/site/`). Login demo tras el seed: `saul@otr.do` (coach) y
-> `analia.reyes@otr.do` (estudiante), contraseña `otr1234`.
+> `analia.reyes@otr.do` (estudiante); la contraseña es la definida en `SEED_PASSWORD` (o la aleatoria que imprime el seed si no la fijaste).
 
 ---
 
@@ -313,7 +313,7 @@ pm2 reload otr
 
 - [ ] `https://aula.otr-academy.com/` muestra la landing.
 - [ ] `https://aula.otr-academy.com/aula` carga el LMS.
-- [ ] Login con `saul@otr.do` / `analia.reyes@otr.do` (pass `otr1234`).
+- [ ] Login con `saul@otr.do` / `analia.reyes@otr.do` (pass = `SEED_PASSWORD`, o la aleatoria que imprimió el seed).
 - [ ] Subir un audio/PDF en una entrega persiste en `public/uploads/`.
 - [ ] `pm2 logs otr` (o `docker compose --env-file .env.production logs web`) sin errores.
 - [ ] Backup de BD (`pg_dump`) y de `public/uploads/` programado.

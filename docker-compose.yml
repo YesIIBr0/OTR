@@ -36,7 +36,11 @@ services:
         condition: service_healthy
     environment:
       # Apunta a la BD del servicio postgres (host = nombre del servicio).
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-otr}:${POSTGRES_PASSWORD:-otr}@postgres:5432/${POSTGRES_DB:-otr_aula}?schema=public&connection_limit=50&pool_timeout=20"
+      # [CTO-audit LOW] Sin fallback en la contraseña: si POSTGRES_PASSWORD no está definida,
+      # compose FALLA en vez de correr con "otr" (credencial trivial). Usuario/nombre de BD sí
+      # conservan default (no son secretos). El path automatizado (bootstrap-vps.sh) genera una
+      # contraseña aleatoria, así que solo bloquea el error de operador en el path manual.
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-otr}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido (definilo en .env.production)}@postgres:5432/${POSTGRES_DB:-otr_aula}?schema=public&connection_limit=50&pool_timeout=20"
       AUTH_SECRET: "${AUTH_SECRET}"
       APP_URL: "${APP_URL}"
       SMTP_URL: "${SMTP_URL}"
@@ -76,7 +80,8 @@ services:
         max-file: "3"
     environment:
       POSTGRES_USER: "${POSTGRES_USER:-otr}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-otr}"
+      # [CTO-audit LOW] Sin fallback: la BD no arranca con la contraseña trivial "otr".
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido (definilo en .env.production)}"
       POSTGRES_DB: "${POSTGRES_DB:-otr_aula}"
     volumes:
       - otr_pgdata:/var/lib/postgresql/data
