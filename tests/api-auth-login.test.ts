@@ -76,16 +76,16 @@ describe("POST /api/auth/login — credenciales", () => {
     expect(db.fn("user.findUnique")).not.toHaveBeenCalled();
   });
 
-  // [OBSERVACIÓN F5.2] El route NO comprueba `suspended` en el login (la suspensión se aplica
-  // en getSessionUser, que devuelve null en cada request para un usuario suspendido — auth.ts
-  // P0-7). Por tanto el login de un suspendido con password correcta SÍ devuelve 200 y emite
-  // cookie; queda inutilizable en el primer request autenticado. Fijamos el comportamiento REAL.
-  it("usuario suspendido con password correcta → 200 y emite sesión (el bloqueo vive en getSessionUser, no aquí)", async () => {
+  // [F5-fix] El login ahora RECHAZA suspendidos con 403 explícito y sin cookie (antes emitía
+  // sesión y era getSessionUser — auth.ts P0-7, que sigue vigente como segunda capa — quien
+  // lo cortaba en el request siguiente). El chequeo va DESPUÉS de verificar la contraseña:
+  // no filtra la existencia de la cuenta a quien no la conoce.
+  it("usuario suspendido con password correcta → 403 y NO emite sesión", async () => {
     db.fn("user.findUnique").mockResolvedValue({ ...USER, suspended: true });
     const { status, json } = await login("suspendido@x.com", PASSWORD);
-    expect(status).toBe(200);
-    expect(json.ok).toBe(true);
-    expect(setSession).toHaveBeenCalledOnce();
+    expect(status).toBe(403);
+    expect(json.error).toMatch(/suspendida/i);
+    expect(setSession).not.toHaveBeenCalled();
   });
 });
 

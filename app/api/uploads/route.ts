@@ -32,7 +32,8 @@ export async function POST(req: Request) {
   // Validación temprana (la lib revalida en profundidad antes de escribir).
   if (!isAllowedMime(f.type || "")) return bad("Tipo de archivo no permitido");
   if (typeof f.size === "number" && f.size > MAX_UPLOAD_BYTES) {
-    return bad("Archivo demasiado grande (máx 50MB)");
+    // [F5-fix] Tope derivado de la constante real (antes decía "50MB" con tope efectivo de 25MB).
+    return bad(`Archivo demasiado grande (máx ${Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))}MB)`);
   }
 
   try {

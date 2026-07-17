@@ -19,6 +19,11 @@ export async function POST(req: Request) {
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return bad("Correo o contraseña incorrectos", 401);
   }
+  // [F5-fix] Un suspendido NO recibe cookie: antes el login emitía sesión y era getSessionUser
+  // (auth.ts P0-7) quien lo cortaba en el request siguiente — funcionalmente seguro, pero
+  // confuso (el usuario "entraba" y todo fallaba en silencio) y regalaba una cookie inútil.
+  // Se rechaza aquí explícito, DESPUÉS de verificar la contraseña (no filtra si la cuenta existe).
+  if (user.suspended) return bad("Cuenta suspendida. Contacta al equipo de OTR.", 403);
   await setSession(user);
   return ok();
 }
