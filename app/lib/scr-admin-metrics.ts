@@ -9,7 +9,14 @@
    navy + sky, fade-up; nada de emojis. Cliente vía globales de Aula.tsx: api(url,body,method). */
 import { C } from "./components";
 import { IC } from "./icons";
-import { t, getLang } from "./i18n";
+import { t, getLang, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): am.* (directo) + au.*/mb.* (compartidos con otras vistas admin). Ver app/lib/i18n.ts.
+import { dict as d_am } from "./i18n-keys/am";
+import { dict as d_au } from "./i18n-keys/au";
+import { dict as d_mb } from "./i18n-keys/mb";
+registerDict(d_am);
+registerDict(d_au);
+registerDict(d_mb);
 import { money } from "./money";
 
 export const S = {};

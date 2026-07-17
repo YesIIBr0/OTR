@@ -10,7 +10,10 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { getLang, t } from "./i18n";
+import { getLang, t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): settings.*. Ver app/lib/i18n.ts.
+import { dict as d_settings } from "./i18n-keys/settings";
+registerDict(d_settings);
 export const S = {};
 
 const NOTIF = [

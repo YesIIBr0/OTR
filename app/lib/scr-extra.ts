@@ -5,7 +5,10 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): extra.* — los prefijos err.*/apierr.* que antes vivían aquí son CHROME (i18n-keys/chrome.ts). Ver app/lib/i18n.ts.
+import { dict as d_extra } from "./i18n-keys/extra";
+registerDict(d_extra);
 import { videoEmbedHtml } from "./video";
 
 /* ---- Helpers de autoría reutilizados por "Mis cursos" y el constructor de curso ---- */

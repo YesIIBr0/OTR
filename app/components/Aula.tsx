@@ -7,7 +7,9 @@ import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
 // Alias 'tr' para no chocar con los muchos `const t = e.target` locales de este archivo.
 import { t as tr } from "../lib/i18n";
-import { COURSE_TEMPLATES } from "../lib/course-templates";
+// COURSE_TEMPLATES (~11.6 kB) se carga de forma diferida vía import() dentro de
+// openCourseStart(): solo lo baja el profesor al abrir el modal "crear curso",
+// no viaja en el first load de /aula (F4.2).
 
 export default function Aula({ data, user }: { data: any; user: any }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -372,7 +374,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       } catch (e: any) { prog.close(); toast(tr("aula.templatePartialFail") + (e?.message || ""), "warn"); }
     }
     // Paso 0: galería "¿Cómo quieres empezar?" — en blanco o desde una plantilla OTR.
-    function openCourseStart() {
+    // async: las plantillas (~11.6 kB) se bajan bajo demanda al abrir el modal (F4.2),
+    // así ningún alumno las descarga en el first load de /aula.
+    async function openCourseStart() {
+      const { COURSE_TEMPLATES } = await import("../lib/course-templates");
       const scrim = document.createElement("div"); scrim.className = "modal-scrim";
       const blank = `<button class="tile click" data-tpl="" style="text-align:left;padding:14px;cursor:pointer;border:1.5px dashed var(--border);background:var(--surface)">
         <b style="font-size:13.5px;display:block">${IC.plus} ${tr("aula.startBlank")}</b><span class="faint" style="font-size:12px;display:block;margin-top:3px">${tr("aula.startBlankDesc")}</span></button>`;

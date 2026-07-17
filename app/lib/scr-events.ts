@@ -7,7 +7,12 @@
 import { DB } from "./data";
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): events.* (directo) + debate.* (badges de tier). Ver app/lib/i18n.ts.
+import { dict as d_events } from "./i18n-keys/events";
+import { dict as d_debate } from "./i18n-keys/debate";
+registerDict(d_events);
+registerDict(d_debate);
 export const S = {};
 
 // Acento por "tone" del evento (mapea a tokens de marca; oro = logro, verde = activo).

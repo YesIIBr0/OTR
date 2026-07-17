@@ -4,7 +4,10 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): teacher.*. Ver app/lib/i18n.ts.
+import { dict as d_teacher } from "./i18n-keys/teacher";
+registerDict(d_teacher);
 export const S = {};
   const spark = (vals,color='var(--otr-sky)') => `<div class="spark">${vals.map(v=>`<i style="height:${v}%;background:${color}"></i>`).join('')}</div>`;
 

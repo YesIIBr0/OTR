@@ -19,7 +19,12 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): room.* (directo) + core.* (compartido). Ver app/lib/i18n.ts.
+import { dict as d_room } from "./i18n-keys/room";
+import { dict as d_core } from "./i18n-keys/core";
+registerDict(d_room);
+registerDict(d_core);
 
 export const S = {};
 

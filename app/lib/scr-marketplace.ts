@@ -22,7 +22,10 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): mkt.*. Ver app/lib/i18n.ts.
+import { dict as d_mkt } from "./i18n-keys/mkt";
+registerDict(d_mkt);
 import { money } from "./money";
 
 export const S = {};

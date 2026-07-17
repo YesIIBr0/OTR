@@ -18,7 +18,10 @@
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): wap.*. Ver app/lib/i18n.ts.
+import { dict as d_wap } from "./i18n-keys/wap";
+registerDict(d_wap);
 
 export const S = {};
 

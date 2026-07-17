@@ -11,7 +11,10 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): hub.*. Ver app/lib/i18n.ts.
+import { dict as d_hub } from "./i18n-keys/hub";
+registerDict(d_hub);
 
 // Etiqueta visible de una opción de preferencia (ritmo/horario/meta). El VALOR crudo
 // (v) sigue siendo el dato guardado en prefs y comparado; solo se traduce el texto que

@@ -78,9 +78,11 @@
   --lvl-strategist:#C8920C;
   --lvl-elite:#0C0C0C;
 
-  /* ---- Typography (solo Inter, tracking compacto del brand book) ---- */
-  --font-ui:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  --font-brand:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  /* ---- Typography (solo Inter, tracking compacto del brand book) ----
+     --font-inter la inyecta next/font (Inter self-hosteada) desde layout.tsx;
+     'Inter' + system stack quedan de fallback si la variable no está disponible. */
+  --font-ui:var(--font-inter),'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --font-brand:var(--font-inter),'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
   --track-tight:-0.06em;   /* tracking -60 del brand book para títulos */
   --track-tighter:-0.065em;/* display grande */

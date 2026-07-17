@@ -19,7 +19,10 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { t, tierLabel, getLang } from "./i18n";
+import { t, tierLabel, getLang, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): debate.* + drill.*. Ver app/lib/i18n.ts.
+import { dict as d_debate } from "./i18n-keys/debate";
+registerDict(d_debate);
 import { DRILL_ARGS, DRILL_WEIGH } from "./drills-data";
 
 export const S = {};

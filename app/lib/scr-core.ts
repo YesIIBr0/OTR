@@ -4,7 +4,12 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { videoEmbedHtml } from "./video";
-import { t, tierLabel, getLang } from "./i18n";
+import { t, tierLabel, getLang, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): core.* (directo) + debate.* (vía tierLabel → "debate.tier.*"). Ver app/lib/i18n.ts.
+import { dict as d_core } from "./i18n-keys/core";
+import { dict as d_debate } from "./i18n-keys/debate";
+registerDict(d_core);
+registerDict(d_debate);
 // [EPIC-2] La sección "Cursos" unifica "Mis cursos" (S.course) + "Catálogo" (S.catalog).
 // Reusamos el render/mount del catálogo (vive en scr-extra) sin duplicar su lógica.
 // scr-extra NO importa scr-core → no hay ciclo.

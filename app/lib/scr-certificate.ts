@@ -3,7 +3,10 @@ import { DB } from "./data";
 import { C } from "./components";
 import { IC, otrCrest } from "./icons";
 import { esc } from "./esc";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): cert.*. Ver app/lib/i18n.ts.
+import { dict as d_cert } from "./i18n-keys/cert";
+registerDict(d_cert);
 export const S = {};
 
 /* ---------------- CERTIFICADO / DIPLOMA OFICIAL OTR ---------------- */

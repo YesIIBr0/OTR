@@ -6,7 +6,10 @@
 // mostrará el rank de debut y el radar poblado).
 import { IC } from "./icons";
 import { esc } from "./esc";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): placement.* — las etiquetas aula.skill* que también usa son chrome inline (i18n.ts). Ver app/lib/i18n.ts.
+import { dict as d_placement } from "./i18n-keys/placement";
+registerDict(d_placement);
 
 // Contrato mínimo de una pantalla del SPA (ver despacho en app/lib/screens.ts /
 // app/components/Aula.tsx: `screen.render(state)` + `screen.mount?.(content, state)`).

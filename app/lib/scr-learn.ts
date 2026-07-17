@@ -4,7 +4,10 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { videoEmbedHtml } from "./video";
 import { esc } from "./esc";
-import { t } from "./i18n";
+import { t, registerDict } from "./i18n";
+// [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): learn.*. Ver app/lib/i18n.ts.
+import { dict as d_learn } from "./i18n-keys/learn";
+registerDict(d_learn);
 export const S = {};
 
 // Resuelve la lección activa (window.__lesson) entre TODOS los cursos inscritos:
