@@ -438,6 +438,7 @@ model Report {
   reason     String
   status     String   @default("OPEN") // OPEN | REVIEWED | DISMISSED
   resolution String?  // nota del ADMIN al cerrar
+  resolvedBy String?  // [F2.1] id del admin que resolvió/suspendió (antes no había rastro)
   createdAt  DateTime @default(now())
 
   @@index([status, createdAt])
@@ -843,4 +844,23 @@ model WhatsAppMessage {
   createdAt    DateTime        @default(now())
 
   @@index([contactId, createdAt])
+}
+
+// --- AuditLog: rastro inmutable de acciones ADMINISTRATIVAS (COPPA / Ley 172-13 RD) ---
+// Toda acción admin que toca a un usuario/menor debe ser atribuible: cambio de rol,
+// verificación de coach, suspensión, resolución de reportes, borrado de cursos.
+// A diferencia de ActivityEvent, NO tiene relación FK a User: el log debe SOBREVIVIR al
+// borrado del actor o del objetivo, así que guarda ids + el nombre del actor como snapshot.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String   // quién ejecutó la acción
+  actorName  String   // snapshot del nombre del actor (sobrevive si el actor se borra)
+  action     String   // user.role_change | user.suspend | user.unsuspend | coach.verify | coach.unverify | report.resolve | course.delete
+  targetType String   // user | report | course ...
+  targetId   String
+  detail     String   // resumen legible del antes→después ("rol STUDENT → TEACHER")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
 }

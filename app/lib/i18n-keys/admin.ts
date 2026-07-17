@@ -32,6 +32,21 @@ export const dict = {
     "admin.markReviewed": "Marcar revisado",
     "admin.dismiss": "Descartar",
 
+    // [F2.3] contexto del objetivo — contenido reportado que ve el admin antes de accionar
+    "admin.ctxReportedContent": "Contenido reportado",
+    "admin.ctxSender": "Emisor",
+    "admin.ctxParticipants": "Participantes",
+    "admin.ctxLatestMessages": "Últimos mensajes",
+    "admin.ctxCoach": "Coach",
+    "admin.ctxStudent": "Alumno",
+    "admin.ctxSession": "Sesión",
+    "admin.ctxStatus": "Estado",
+    "admin.bkPending": "Pendiente",
+    "admin.bkConfirmed": "Confirmada",
+    "admin.bkCompleted": "Completada",
+    "admin.bkCancelled": "Cancelada",
+    "admin.bkDisputed": "En disputa",
+
     // loading / empty states
     "admin.loadingHeading": "Cargando reportes…",
     "admin.loadingBody": "Estamos recuperando la cola de moderación.",
@@ -56,6 +71,44 @@ export const dict = {
     "admin.toastUpdateError": "No se pudo actualizar el reporte",
     "admin.toastSuspended": "Usuario suspendido · reporte marcado revisado",
     "admin.toastSuspendError": "No se pudo suspender al usuario",
+
+    // [F2.2] pestañas de la consola
+    "admin.tabReports": "Reportes",
+    "admin.tabAudit": "Auditoría",
+
+    // [F2.2] rastro de auditoría — encabezados de la tabla
+    "admin.auditColWhen": "Cuándo",
+    "admin.auditColWho": "Quién",
+    "admin.auditColAction": "Acción",
+    "admin.auditColTarget": "Objetivo",
+    "admin.auditColDetail": "Detalle",
+
+    // [F2.2] etiquetas de acción (AuditLog.action)
+    "admin.actRoleChange": "Cambio de rol",
+    "admin.actSuspend": "Suspensión",
+    "admin.actUnsuspend": "Reactivación",
+    "admin.actCoachVerify": "Coach verificado",
+    "admin.actCoachUnverify": "Verificación retirada",
+    "admin.actReportResolve": "Reporte resuelto",
+    "admin.actCourseDelete": "Curso borrado",
+
+    // [F2.2] etiquetas de tipo de objetivo (AuditLog.targetType)
+    "admin.auditTargetUser": "Usuario",
+    "admin.auditTargetReport": "Reporte",
+    "admin.auditTargetCourse": "Curso",
+
+    // [F2.2] fecha relativa
+    "admin.timeNow": "ahora",
+    "admin.timeMin": "hace {n} min",
+    "admin.timeHour": "hace {n} h",
+    "admin.timeDay": "hace {n} d",
+
+    // [F2.2] estados / vacío del rastro
+    "admin.auditLoadingHeading": "Cargando el rastro…",
+    "admin.auditLoadingBody": "Estamos recuperando el registro de auditoría.",
+    "admin.auditEmptyHeading": "Aún no hay acciones registradas",
+    "admin.auditEmptyBody": "Cada cambio de rol, verificación, suspensión o borrado quedará registrado aquí.",
+    "admin.auditErrLoad": "No se pudo cargar el rastro de auditoría",
   },
   en: {
     // page head
@@ -86,6 +139,21 @@ export const dict = {
     "admin.markReviewed": "Mark reviewed",
     "admin.dismiss": "Dismiss",
 
+    // [F2.3] target context — reported content the admin sees before acting
+    "admin.ctxReportedContent": "Reported content",
+    "admin.ctxSender": "Sender",
+    "admin.ctxParticipants": "Participants",
+    "admin.ctxLatestMessages": "Latest messages",
+    "admin.ctxCoach": "Coach",
+    "admin.ctxStudent": "Student",
+    "admin.ctxSession": "Session",
+    "admin.ctxStatus": "Status",
+    "admin.bkPending": "Pending",
+    "admin.bkConfirmed": "Confirmed",
+    "admin.bkCompleted": "Completed",
+    "admin.bkCancelled": "Cancelled",
+    "admin.bkDisputed": "In dispute",
+
     // loading / empty states
     "admin.loadingHeading": "Loading reports…",
     "admin.loadingBody": "We're fetching the moderation queue.",
@@ -110,5 +178,43 @@ export const dict = {
     "admin.toastUpdateError": "Couldn't update the report",
     "admin.toastSuspended": "User suspended · report marked reviewed",
     "admin.toastSuspendError": "Couldn't suspend the user",
+
+    // [F2.2] console tabs
+    "admin.tabReports": "Reports",
+    "admin.tabAudit": "Audit log",
+
+    // [F2.2] audit trail — table headers
+    "admin.auditColWhen": "When",
+    "admin.auditColWho": "Who",
+    "admin.auditColAction": "Action",
+    "admin.auditColTarget": "Target",
+    "admin.auditColDetail": "Detail",
+
+    // [F2.2] action labels (AuditLog.action)
+    "admin.actRoleChange": "Role change",
+    "admin.actSuspend": "Suspension",
+    "admin.actUnsuspend": "Reactivation",
+    "admin.actCoachVerify": "Coach verified",
+    "admin.actCoachUnverify": "Verification removed",
+    "admin.actReportResolve": "Report resolved",
+    "admin.actCourseDelete": "Course deleted",
+
+    // [F2.2] target type labels (AuditLog.targetType)
+    "admin.auditTargetUser": "User",
+    "admin.auditTargetReport": "Report",
+    "admin.auditTargetCourse": "Course",
+
+    // [F2.2] relative date
+    "admin.timeNow": "now",
+    "admin.timeMin": "{n} min ago",
+    "admin.timeHour": "{n}h ago",
+    "admin.timeDay": "{n}d ago",
+
+    // [F2.2] audit trail states / empty
+    "admin.auditLoadingHeading": "Loading the trail…",
+    "admin.auditLoadingBody": "We're fetching the audit log.",
+    "admin.auditEmptyHeading": "No actions recorded yet",
+    "admin.auditEmptyBody": "Every role change, verification, suspension or deletion will be recorded here.",
+    "admin.auditErrLoad": "Couldn't load the audit trail",
   },
 };

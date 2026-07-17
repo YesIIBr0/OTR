@@ -12,6 +12,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean } from "../../../lib/api";
+import { audit } from "../../../lib/audit";
 
 // role es String libre en el schema; este set es la fuente de verdad de valores válidos.
 const ROLES = new Set(["STUDENT", "PARENT", "TEACHER", "COACH", "ADMIN"]);
@@ -83,7 +84,11 @@ export async function PATCH(req: Request) {
   const userId = clean(body.userId, 64);
   if (!userId) return bad("Falta el usuario", 400);
 
-  const target = await db.user.findUnique({ where: { id: userId }, select: { id: true } });
+  // [F2.1] Cargamos el estado ANTERIOR (no solo el id) para escribir el rastro antes→después.
+  const target = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, role: true, coachVerified: true, suspended: true },
+  });
   if (!target) return bad("Usuario no encontrado", 404);
 
   const data: { role?: string; coachVerified?: boolean; suspended?: boolean } = {};
@@ -103,5 +108,27 @@ export async function PATCH(req: Request) {
   if (Object.keys(data).length === 0) return bad("Nada que actualizar", 400);
 
   const updated = await db.user.update({ where: { id: userId }, data, select: SELECT });
+
+  // [F2.1] Rastro de auditoría best-effort (fuera del update; nunca revierte el cambio).
+  // Un registro por dimensión EFECTIVAMENTE modificada, con el antes→después legible.
+  if (data.role !== undefined && data.role !== target.role) {
+    await audit({
+      actorId: user.id, actorName: user.name, action: "user.role_change", targetType: "user", targetId: userId,
+      detail: `${target.name}: rol ${target.role} → ${data.role}`,
+    });
+  }
+  if (data.coachVerified !== undefined && data.coachVerified !== target.coachVerified) {
+    await audit({
+      actorId: user.id, actorName: user.name, action: data.coachVerified ? "coach.verify" : "coach.unverify", targetType: "user", targetId: userId,
+      detail: `${target.name}: verificación de coach ${target.coachVerified ? "sí" : "no"} → ${data.coachVerified ? "sí" : "no"}`,
+    });
+  }
+  if (data.suspended !== undefined && data.suspended !== target.suspended) {
+    await audit({
+      actorId: user.id, actorName: user.name, action: data.suspended ? "user.suspend" : "user.unsuspend", targetType: "user", targetId: userId,
+      detail: `${target.name}: ${data.suspended ? "suspendido" : "reactivado"}`,
+    });
+  }
+
   return ok({ user: updated });
 }

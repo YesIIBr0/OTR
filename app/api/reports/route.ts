@@ -6,8 +6,10 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
+import { esc } from "../../lib/esc";
 import { rateLimit } from "../../lib/rate-limit";
 import { logActivitySafe } from "../../lib/activity";
+import { audit } from "../../lib/audit";
 
 const TARGET_TYPES = ["user", "message", "conversation", "booking", "coach"];
 
@@ -98,18 +100,115 @@ export async function GET(req: Request) {
     else if (r.targetType === "coach") targetNameById[r.targetId] = userNameById[coachUserId[r.targetId]] || "";
   }
 
-  const items = reports.map((r) => ({
-    id: r.id,
-    targetType: r.targetType,
-    targetId: r.targetId,
-    targetName: targetNameById[r.targetId] || null,
-    reason: r.reason,
-    status: r.status,
-    resolution: r.resolution,
-    createdAt: r.createdAt,
-    reporterId: r.reporterId,
-    reporterName: nameById[r.reporterId] || "Usuario OTR",
-  }));
+  // [F2.3] CONTEXTO del objetivo — el admin modera VIENDO el contenido reportado, no un id
+  // opaco. Resolvemos en BATCH (agrupamos los targetIds por tipo → UNA query por tipo, sin
+  // N+1) y adjuntamos un campo `context` (objeto | null) sin tocar el shape que la UI ya
+  // consume. Todo texto de usuario (body de mensaje, títulos, nombres) se escapa UNA vez
+  // AQUÍ con esc() — el body se guarda CRUDO en DB (ver /api/messages POST) y el builder
+  // scr-admin lo renderiza CRUDO (contrato de escape: el servidor escapa, el builder no).
+  const messageIds = [...new Set(reports.filter((r) => r.targetType === "message").map((r) => r.targetId))];
+  const conversationIds = [...new Set(reports.filter((r) => r.targetType === "conversation").map((r) => r.targetId))];
+  const bookingIds = [...new Set(reports.filter((r) => r.targetType === "booking").map((r) => r.targetId))];
+
+  const [ctxMessages, ctxConversations, ctxBookings] = await Promise.all([
+    messageIds.length
+      ? db.chatMessage.findMany({
+          where: { id: { in: messageIds } },
+          select: { id: true, body: true, senderId: true, conversationId: true },
+        })
+      : [],
+    conversationIds.length
+      ? db.conversation.findMany({
+          where: { id: { in: conversationIds } },
+          select: {
+            id: true,
+            name: true,
+            participants: { select: { userId: true } },
+            // Últimos 3 mensajes: orderBy position desc + take 3 (Prisma aplica el take POR
+            // conversación → sin N+1). Se invierten abajo a orden cronológico para leerlos.
+            messages: { orderBy: { position: "desc" }, take: 3, select: { id: true, body: true, senderId: true } },
+          },
+        })
+      : [],
+    bookingIds.length
+      ? db.booking.findMany({
+          where: { id: { in: bookingIds } },
+          select: { id: true, coachId: true, studentId: true, slotAt: true, status: true },
+        })
+      : [],
+  ]);
+
+  // Nombres de TODOS los usuarios referidos por el contexto en UNA sola query (emisores de
+  // mensajes, participantes/emisores de conversaciones, coach + alumno de reservas).
+  const ctxUserIds = new Set<string>();
+  for (const m of ctxMessages) if (m.senderId) ctxUserIds.add(m.senderId);
+  for (const c of ctxConversations) {
+    for (const p of c.participants) ctxUserIds.add(p.userId);
+    for (const m of c.messages) if (m.senderId) ctxUserIds.add(m.senderId);
+  }
+  for (const b of ctxBookings) {
+    ctxUserIds.add(b.coachId);
+    ctxUserIds.add(b.studentId);
+  }
+  const ctxUsers = ctxUserIds.size
+    ? await db.user.findMany({ where: { id: { in: [...ctxUserIds] } }, select: { id: true, name: true } })
+    : [];
+  const ctxNameById: Record<string, string> = {};
+  for (const u of ctxUsers) ctxNameById[u.id] = u.name;
+
+  // Mapas de contexto por targetId (varios reports pueden apuntar al mismo objetivo).
+  const messageCtx: Record<string, unknown> = {};
+  for (const m of ctxMessages) {
+    messageCtx[m.id] = {
+      kind: "message",
+      body: esc(m.body),
+      senderName: esc(ctxNameById[m.senderId || ""] || ""),
+      conversationId: m.conversationId,
+    };
+  }
+  const conversationCtx: Record<string, unknown> = {};
+  for (const c of ctxConversations) {
+    conversationCtx[c.id] = {
+      kind: "conversation",
+      title: esc(c.name),
+      participants: c.participants.map((p) => esc(ctxNameById[p.userId] || "")).filter(Boolean),
+      messages: [...c.messages].reverse().map((m) => ({
+        body: esc(m.body),
+        senderName: esc(ctxNameById[m.senderId || ""] || ""),
+      })),
+    };
+  }
+  const bookingCtx: Record<string, unknown> = {};
+  for (const b of ctxBookings) {
+    bookingCtx[b.id] = {
+      kind: "booking",
+      coachName: esc(ctxNameById[b.coachId] || ""),
+      studentName: esc(ctxNameById[b.studentId] || ""),
+      slotAt: b.slotAt,
+      status: b.status,
+    };
+  }
+
+  const items = reports.map((r) => {
+    let context: unknown = null;
+    if (r.targetType === "message") context = messageCtx[r.targetId] || null;
+    else if (r.targetType === "conversation") context = conversationCtx[r.targetId] || null;
+    else if (r.targetType === "booking") context = bookingCtx[r.targetId] || null;
+    return {
+      id: r.id,
+      targetType: r.targetType,
+      targetId: r.targetId,
+      targetName: targetNameById[r.targetId] || null,
+      reason: r.reason,
+      status: r.status,
+      resolution: r.resolution,
+      createdAt: r.createdAt,
+      reporterId: r.reporterId,
+      reporterName: nameById[r.reporterId] || "Usuario OTR",
+      // [F2.3] contexto del objetivo (mensaje/conversación/reserva) o null si no aplica / no existe.
+      context,
+    };
+  });
 
   return ok({ reports: items, total });
 }
@@ -151,7 +250,17 @@ export async function PATCH(req: Request) {
     await db.user.update({ where: { id: targetUserId }, data: { suspended: action === "suspend" } });
     await db.report.update({
       where: { id: reportId },
-      data: { status: "REVIEWED", resolution: resolution || (action === "suspend" ? "Usuario suspendido" : "Usuario reactivado") },
+      // [F2.1] resolvedBy: deja rastro de QUÉ admin resolvió (antes se resolvía a ciegas).
+      data: {
+        status: "REVIEWED",
+        resolution: resolution || (action === "suspend" ? "Usuario suspendido" : "Usuario reactivado"),
+        resolvedBy: user.id,
+      },
+    });
+    // [F2.1] Rastro de auditoría best-effort (fuera de la escritura; nunca la revierte).
+    await audit({
+      actorId: user.id, actorName: user.name, action: action === "suspend" ? "user.suspend" : "user.unsuspend", targetType: "user", targetId: targetUserId,
+      detail: `${action === "suspend" ? "Suspendido" : "Reactivado"} desde la cola de moderación (reporte ${reportId})`,
     });
     return ok({ suspended: action === "suspend", userId: targetUserId });
   }
@@ -159,7 +268,13 @@ export async function PATCH(req: Request) {
   if (!["REVIEWED", "DISMISSED"].includes(status)) return bad("Estado inválido");
   await db.report.update({
     where: { id: reportId },
-    data: { status, resolution: resolution || null },
+    // [F2.1] resolvedBy: id del admin que resolvió el reporte.
+    data: { status, resolution: resolution || null, resolvedBy: user.id },
+  });
+  // [F2.1] Rastro de auditoría best-effort de la resolución (REVIEWED | DISMISSED).
+  await audit({
+    actorId: user.id, actorName: user.name, action: "report.resolve", targetType: "report", targetId: reportId,
+    detail: `Reporte ${existing.targetType} resuelto: ${status}`,
   });
   return ok();
 }

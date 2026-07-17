@@ -3,13 +3,21 @@ import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { teacherOwnsCourse } from "../../../lib/authz";
 import { normalizeKind, normalizeVideoSrc } from "../../../lib/video";
+import { audit } from "../../../lib/audit";
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   const { id } = await params;
-  if (!(await teacherOwnsCourse(id, user))) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  // teacherOwnsCourse devuelve el curso (con nombre) si autoriza → lo usamos para el rastro.
+  const course = await teacherOwnsCourse(id, user);
+  if (!course) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   await db.course.deleteMany({ where: { id } }); // idempotente: no falla si ya no existe
+  // [F2.1] Rastro de auditoría best-effort — el borrado de un curso debe ser atribuible.
+  await audit({
+    actorId: user.id, actorName: user.name, action: "course.delete", targetType: "course", targetId: id,
+    detail: `Curso "${course.name}" borrado`,
+  });
   return NextResponse.json({ ok: true });
 }
 
