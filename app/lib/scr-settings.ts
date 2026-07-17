@@ -67,6 +67,37 @@ function card(title, inner, d = 0) {
   return `<div class="card card-pad fade-up" style="--d:${d};margin-bottom:16px"><b style="font-size:14px">${title}</b><div style="margin-top:4px">${inner}</div></div>`;
 }
 
+// [BUG vínculo-padre §11.3] El lado del ALUMNO que faltaba: un padre/madre reclamó un vínculo
+// (initiatedBy="parent") sobre esta cuenta y quedó PENDING por diseño (COPPA — un padre no
+// activa un vínculo sobre un menor por su sola palabra). Antes nada mostraba esta solicitud
+// del lado del alumno, así que nunca se confirmaba. DB.pendingGuardianRequests (queries.ts,
+// solo para STUDENT) trae { id, parentName, parentEmail, parentInitials } por solicitud.
+function guardianRequestsBlock(requests) {
+  if (!requests || !requests.length) return "";
+  return `
+  <div class="card card-pad fade-up" style="border-color:var(--otr-sky);margin-bottom:16px">
+    <div class="row between vcenter">
+      <b style="font-size:14px">${t("settings.guardianRequestsTitle")}</b>
+      <span class="badge sky"><span class="dot"></span>${requests.length}</span>
+    </div>
+    <p class="muted" style="font-size:12.5px;margin-top:4px">${t("settings.guardianRequestsBody")}</p>
+    <div class="stack" style="gap:0;margin-top:6px">
+      ${requests.map((r, i) => `
+      <div class="lrow fade-up" style="padding:12px 0;gap:12px;border-bottom:1px solid var(--border);--d:${i}">
+        ${C.avatar(esc(r.parentInitials || "?"), { size: "sm", bg: "var(--otr-sky-lo)" })}
+        <div style="flex:1;min-width:0">
+          <b style="font-size:13.5px">${t("settings.guardianRequestLine").replace("{name}", esc(r.parentName || t("settings.guardianFallback")))}</b>
+          <div class="faint" style="font-size:12px;margin-top:2px">${esc(r.parentEmail || "")}</div>
+        </div>
+        <div class="row" style="gap:6px;flex:none">
+          <button class="btn btn-primary btn-sm" data-guardian-confirm="${esc(r.id)}">${IC.check} ${t("settings.guardianConfirm")}</button>
+          <button class="btn btn-ghost btn-sm" data-guardian-reject="${esc(r.id)}">${t("settings.guardianReject")}</button>
+        </div>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
 S.settings = {
   render() {
     const me = DB.me || {};
@@ -113,11 +144,16 @@ S.settings = {
       row(IC.doc, t("settings.passwordTitle"), t("settings.passwordDesc"), `<button class="btn btn-soft btn-sm" data-action="change-pw">${t("settings.changePassword")}</button>`),
     ].join("");
 
+    // [BUG vínculo-padre §11.3] Solo STUDENT recibe pendingGuardianRequests (queries.ts lo
+    // añade role-scoped, igual que myBookings/parent) — otros roles nunca ven este banner.
+    const guardianRequests = role === "STUDENT" && Array.isArray(DB.pendingGuardianRequests) ? DB.pendingGuardianRequests : [];
+
     return `
     <div class="page-head fade-up"><div><p class="eyebrow">${t("settings.eyebrow")}</p>
       <h1 class="page-title">${t("settings.title")}</h1>
       <div class="page-sub">${t("settings.subtitle")}</div></div></div>
 
+    ${guardianRequestsBlock(guardianRequests)}
     ${card(t("settings.cardAccount"), account, 0)}
     ${card(t("settings.cardLanguage"), row("", t("settings.languageTitle"), t("settings.languageDesc"), langCtrl), 1)}
     ${card(t("settings.cardNotifications"), notif, 2)}
@@ -135,6 +171,70 @@ S.settings = {
   mount(root) {
     if (!root) return;
     const w = window;
+    const repaint = () => {
+      const page = root.querySelector(".page");
+      if (!page) return;
+      page.innerHTML = S.settings.render();
+      S.settings.mount(root);
+    };
+
+    // [BUG vínculo-padre §11.3] Confirmar una solicitud de tutela que un padre/madre reclamó
+    // sobre esta cuenta → PATCH /api/guardianship { guardianshipId, action:"confirm" }. El
+    // backend activa el vínculo + escribe ConsentRecord (misma transacción que el lado padre).
+    root.querySelectorAll("[data-guardian-confirm]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-guardian-confirm");
+        if (!id) return;
+        btn.disabled = true;
+        btn.textContent = t("settings.guardianConfirming");
+        try {
+          await w.api("/api/guardianship", { guardianshipId: id, action: "confirm" }, "PATCH");
+          if (Array.isArray(DB.pendingGuardianRequests)) {
+            DB.pendingGuardianRequests = DB.pendingGuardianRequests.filter((r) => r.id !== id);
+          }
+          w.toast?.(t("settings.guardianConfirmed"), "ok");
+          repaint();
+        } catch (e) {
+          w.toast?.((e && e.message) || t("settings.guardianActionFailed"), "danger");
+          btn.disabled = false;
+          btn.innerHTML = `${IC.check} ${t("settings.guardianConfirm")}`;
+        }
+      })
+    );
+
+    // Rechazar (con armado de dos toques, mismo patrón que data-pcancel en scr-parent.ts) →
+    // PATCH { guardianshipId, action:"reject" }, el vínculo pasa a REVOKED.
+    root.querySelectorAll("[data-guardian-reject]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-guardian-reject");
+        if (!id) return;
+        if (btn.getAttribute("data-armed") !== "1") {
+          btn.setAttribute("data-armed", "1");
+          const t0 = btn.textContent;
+          btn.textContent = t("settings.guardianRejectArm");
+          setTimeout(() => {
+            if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
+          }, 4000);
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = t("settings.guardianRejecting");
+        try {
+          await w.api("/api/guardianship", { guardianshipId: id, action: "reject" }, "PATCH");
+          if (Array.isArray(DB.pendingGuardianRequests)) {
+            DB.pendingGuardianRequests = DB.pendingGuardianRequests.filter((r) => r.id !== id);
+          }
+          w.toast?.(t("settings.guardianRejected"), "warn");
+          repaint();
+        } catch (e) {
+          w.toast?.((e && e.message) || t("settings.guardianActionFailed"), "danger");
+          btn.disabled = false;
+          btn.removeAttribute("data-armed");
+          btn.textContent = t("settings.guardianReject");
+        }
+      })
+    );
+
     // Idioma: reusa el toggle global (persistente en localStorage + re-render del shell).
     root.querySelectorAll("[data-set-lang]").forEach((b) =>
       b.addEventListener("click", () => { const lg = b.getAttribute("data-set-lang"); if (w.otrSetLang) w.otrSetLang(lg); }));

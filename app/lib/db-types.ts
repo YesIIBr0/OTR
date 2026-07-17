@@ -92,6 +92,9 @@ export interface AppDB {
   membership?: any;
   // PRD §7: solo se añade para STUDENT.
   myBookings?: any[];
+  // [BUG vínculo-padre §11.3] Solicitudes de tutela PENDING que un PARENT reclamó sobre esta
+  // cuenta — solo se añade para STUDENT (ver S.settings en scr-settings.ts).
+  pendingGuardianRequests?: any[];
   // PRD §11: solo se añade para PARENT.
   parent?: any;
   // Solo se añaden para TEACHER/ADMIN.

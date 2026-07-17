@@ -88,9 +88,10 @@ export const S = {};
                 ${DB.students.map(s=>`<tr data-name="${esc(String(s.n).toLowerCase())}" data-risk="${s.risk?'1':'0'}">
                   <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.badge(t("teacher.riskBadge"),'danger'):''}</div></td>
                   <td>${C.levelBadge(s.lvl)}</td>
-                  <td class="num"><b style="color:${s.grade>=85?'var(--ok)':s.grade>=70?'var(--warn)':'var(--danger)'}">${s.grade}%</b></td>
-                  <td class="num tnum">${s.att}%</td>
-                  <td><span class="eng-pill eng-${s.eng}">${esc(s.eng)}</span></td>
+                  <td class="num">${s.grade==null?'<span class="faint">—</span>':`<b style="color:${s.grade>=85?'var(--ok)':s.grade>=70?'var(--warn)':'var(--danger)'}">${s.grade}%</b>`}</td>
+                  <td class="num tnum">${s.att==null?'—':`${s.att}%`}</td>
+                  ${/* [auditoría] "—" (sin ActivityEvent aún) no es una clase eng-Alto/Medio/Bajo válida en CSS → se mapea a eng-none */""}
+                  <td><span class="eng-pill eng-${s.eng==='—'?'none':s.eng}">${esc(s.eng)}</span></td>
                   <td class="center">${spark(s.trend==='up'?[40,55,50,68,72,80,88]:s.trend==='down'?[80,70,64,55,48,40,34]:[60,62,58,64,60,62,60], s.risk?'var(--danger)':'var(--otr-sky)')}</td>
                   <td class="num faint" style="font-size:12px">${esc(s.last)}</td>
                 </tr>`).join('')}
@@ -106,7 +107,7 @@ export const S = {};
             <div class="card-body" style="padding:6px 16px 10px">
               ${atRisk.map(s=>`<div class="risk-row">${C.avatar(s.i,{size:'sm',bg:'var(--danger)'})}
                 <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px">${esc(s.n)}</div>
-                <div class="faint" style="font-size:12px">${s.att<70?t("teacher.lowAttendance"):t("teacher.noSubmissions")} · ${esc(s.last)}</div></div>
+                <div class="faint" style="font-size:12px">${s.att!=null&&s.att<70?t("teacher.lowAttendance"):t("teacher.noSubmissions")} · ${esc(s.last)}</div></div>
                 <button class="btn btn-soft btn-sm" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>`).join('')}
               ${atRisk.length?'':'<div class="empty" style="padding:24px 16px"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.noAlertsTitle")+'</h4><p>'+t("teacher.noAlertsBody")+'</p></div>'}
             </div>

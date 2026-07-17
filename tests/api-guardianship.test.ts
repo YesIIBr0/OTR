@@ -16,7 +16,7 @@ vi.mock("../app/lib/db", () => ({
 vi.mock("../app/lib/auth", () => ({ setSession: vi.fn(), getSessionUser: () => box.user, clearSession: vi.fn() }));
 vi.mock("../app/lib/mail", () => ({ sendMail: vi.fn(), emailShell: vi.fn(), emailButton: vi.fn(), sendPasswordReset: vi.fn(), hashToken: (x: string) => x }));
 
-import { POST } from "../app/api/guardianship/route";
+import { POST, PATCH } from "../app/api/guardianship/route";
 import { sendMail } from "../app/lib/mail";
 
 box.db = makeDb();
@@ -28,6 +28,12 @@ const STUDENT_ADULT = { id: "s2", role: "STUDENT", email: "adulto@x.com", name: 
 
 async function claim(body: Record<string, unknown>) {
   const res = await POST(jsonReq("/api/guardianship", body));
+  const json = await res.json();
+  return { status: res.status, json };
+}
+
+async function patch(body: Record<string, unknown>) {
+  const res = await PATCH(jsonReq("/api/guardianship", body, "PATCH"));
   const json = await res.json();
   return { status: res.status, json };
 }
@@ -140,6 +146,105 @@ describe("POST /api/guardianship — confirmación de vínculo existente (COPPA)
     expect(json.already).toBe(true);
     expect(json.guardianship).toEqual(existing);
     expect(db.fn("guardianship.update")).not.toHaveBeenCalled();
+    expect(db.fn("consentRecord.create")).not.toHaveBeenCalled();
+    expect(sendMail).not.toHaveBeenCalled();
+  });
+});
+
+// [BE-TEST · BUG vínculo-padre §11.3] PATCH /api/guardianship — el lado del ALUMNO que faltaba:
+// un padre reclama un vínculo (initiatedBy="parent") que nace PENDING y nunca se auto-activa
+// (COPPA); el alumno debe poder CONFIRMARLO o RECHAZARLO desde su cuenta. Confirmar activa +
+// escribe ConsentRecord en la misma $transaction (mismo patrón que la confirmación del padre
+// en POST); rechazar deja el vínculo en REVOKED sin evidencia de consentimiento.
+describe("PATCH /api/guardianship — el alumno confirma/rechaza un vínculo parent-initiated", () => {
+  const PENDING_PARENT_INITIATED = {
+    id: "g1", studentId: STUDENT_MINOR.id, parentId: PARENT.id, status: "PENDING", initiatedBy: "parent",
+  };
+
+  it("rechaza sin sesión con 401", async () => {
+    box.user = null;
+    const { status } = await patch({ guardianshipId: "g1" });
+    expect(status).toBe(401);
+  });
+
+  it("rechaza a un rol que no es STUDENT ni PARENT con 403", async () => {
+    box.user = { id: "t1", role: "TEACHER" };
+    const { status } = await patch({ guardianshipId: "g1" });
+    expect(status).toBe(403);
+    expect(db.fn("guardianship.findUnique")).not.toHaveBeenCalled();
+  });
+
+  it("404 si la solicitud no existe", async () => {
+    box.user = STUDENT_MINOR;
+    db.fn("guardianship.findUnique").mockResolvedValue(null);
+    const { status } = await patch({ guardianshipId: "g-no-existe" });
+    expect(status).toBe(404);
+  });
+
+  it("404 si el vínculo es de OTRO alumno (ownership estricto — nunca por id ajeno)", async () => {
+    box.user = STUDENT_MINOR;
+    db.fn("guardianship.findUnique").mockResolvedValue({ ...PENDING_PARENT_INITIATED, studentId: "otro-alumno" });
+    const { status } = await patch({ guardianshipId: "g1" });
+    expect(status).toBe(404);
+    expect(db.fn("guardianship.update")).not.toHaveBeenCalled();
+  });
+
+  it("400 si initiatedBy='student' (ese lo confirma el PADRE vía POST, no esta ruta)", async () => {
+    box.user = STUDENT_MINOR;
+    db.fn("guardianship.findUnique").mockResolvedValue({ ...PENDING_PARENT_INITIATED, initiatedBy: "student" });
+    const { status } = await patch({ guardianshipId: "g1" });
+    expect(status).toBe(400);
+    expect(db.fn("guardianship.update")).not.toHaveBeenCalled();
+  });
+
+  it("400 si el vínculo ya no está PENDING (p.ej. ya ACTIVE)", async () => {
+    box.user = STUDENT_MINOR;
+    db.fn("guardianship.findUnique").mockResolvedValue({ ...PENDING_PARENT_INITIATED, status: "ACTIVE" });
+    const { status } = await patch({ guardianshipId: "g1" });
+    expect(status).toBe(400);
+    expect(db.fn("guardianship.update")).not.toHaveBeenCalled();
+  });
+
+  it("confirma: PENDING+initiatedBy=parent+dueño → ACTIVE + ConsentRecord en una $transaction + email al padre", async () => {
+    box.user = STUDENT_MINOR;
+    db.fn("guardianship.findUnique").mockResolvedValue(PENDING_PARENT_INITIATED);
+    db.fn("user.findUnique").mockResolvedValue(PARENT); // fetch del padre para notificarlo
+    db.fn("guardianship.update").mockImplementation(async ({ data }: any) => ({ ...PENDING_PARENT_INITIATED, ...data }));
+    db.fn("consentRecord.create").mockResolvedValue({ id: "c1" });
+
+    const { status, json } = await patch({ guardianshipId: "g1" });
+
+    expect(status).toBe(200);
+    expect(json.guardianship.status).toBe("ACTIVE");
+
+    const updateArg = db.fn("guardianship.update").mock.calls[0][0];
+    expect(updateArg.where).toEqual({ id: "g1" });
+    expect(updateArg.data.status).toBe("ACTIVE");
+
+    // Evidencia COPPA auditable, misma transacción — grantedById es el ALUMNO (quien confirma).
+    const consentArg = db.fn("consentRecord.create").mock.calls[0][0].data;
+    expect(consentArg.studentId).toBe(STUDENT_MINOR.id);
+    expect(consentArg.grantedById).toBe(STUDENT_MINOR.id);
+    expect(consentArg.kind).toBe("guardianship");
+    expect(consentArg.policyVersion).toBe("2026-07");
+
+    // Notificación al padre, best-effort fuera de la tx.
+    expect(sendMail).toHaveBeenCalledOnce();
+    expect(sendMail).toHaveBeenCalledWith(expect.objectContaining({ to: PARENT.email }));
+  });
+
+  it("rechaza (action:'reject'): PENDING+initiatedBy=parent+dueño → REVOKED, sin ConsentRecord ni email", async () => {
+    box.user = STUDENT_MINOR;
+    db.fn("guardianship.findUnique").mockResolvedValue(PENDING_PARENT_INITIATED);
+    db.fn("user.findUnique").mockResolvedValue(PARENT);
+    db.fn("guardianship.update").mockImplementation(async ({ data }: any) => ({ ...PENDING_PARENT_INITIATED, ...data }));
+
+    const { status, json } = await patch({ guardianshipId: "g1", action: "reject" });
+
+    expect(status).toBe(200);
+    expect(json.guardianship.status).toBe("REVOKED");
+    const updateArg = db.fn("guardianship.update").mock.calls[0][0];
+    expect(updateArg.data).toEqual({ status: "REVOKED" });
     expect(db.fn("consentRecord.create")).not.toHaveBeenCalled();
     expect(sendMail).not.toHaveBeenCalled();
   });

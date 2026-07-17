@@ -388,7 +388,13 @@ function baseFixture() {
     membership: { tier: "pro", sinceLabel: "Desde enero 2026", prices: { proMonthly: "US$9", proAnnual: "US$79" } },
     myBookings: MY_BOOKINGS_FIXTURE,
     parent: PARENT_FIXTURE,
-    students: [{ id: "s-1", n: "Juan Pérez", i: "JP", lvl: "OTR Apprentice", xp: 1200, grade: 88, att: 92, eng: "Alto", trend: "up", risk: false, last: "hace 1 día" }],
+    students: [
+      { id: "s-1", n: "Juan Pérez", i: "JP", lvl: "OTR Apprentice", xp: 1200, grade: 88, att: 92, eng: "Alto", trend: "up", risk: false, last: "hace 1 día" },
+      // [BUG-ROSTER-REAL] alumno SIN señal real (nunca hubo Submission/Booking/ActivityEvent):
+      // grade/att null y eng "—" — cubre las ramas nuevas del builder (antes esto NO podía
+      // pasar: Enrollment.grade/att siempre traían un número sembrado).
+      { id: "s-2", n: "Sin Señal", i: "SS", lvl: "OTR Initiate", xp: 0, grade: null, att: null, eng: "—", trend: "flat", risk: true, last: "—" },
+    ],
     teacherKpis: { avg: 85, attendance: 90, onTime: 80, atRisk: 1 },
     pendingSubs: 3,
     gradebook: { cols: ["Quiz 1", "Ensayo"], rows: [{ n: "Juan Pérez", i: "JP", g: [90, 85] }] },

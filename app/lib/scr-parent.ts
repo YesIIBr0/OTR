@@ -144,9 +144,14 @@ function pendingLinksBlock(pending) {
           <div class="faint" style="font-size:12px;margin-top:2px">${esc(pl.email || "")}${pl.ageBand === "minor" ? ` · ${t("parent.protectedMinor")}` : ""}</div>
         </div>
         <div class="row" style="gap:6px;flex:none">
-          ${pl.ageBand === "adult"
-            ? `<span class="faint" style="font-size:11.5px">${t("parent.waitingForAccept").replace("{name}", esc((pl.name || t("parent.theStudent")).split(" ")[0]))}</span>`
-            : `<button class="btn btn-primary btn-sm" data-glink-confirm="${esc(pl.email)}">${IC.check} ${t("parent.confirmLink")}</button>`}
+          ${pl.initiatedBy === "parent"
+            // [BUG vínculo-padre §11.3] TÚ reclamaste este vínculo — ya hiciste tu parte. Por
+            // COPPA no puedes activarlo con un segundo clic (un padre no activa un vínculo
+            // sobre un menor por su sola palabra): el copy debe ser honesto, no un CTA que no hace nada.
+            ? `<span class="faint" style="font-size:11.5px">${t("parent.waitingForStudentConfirm")}</span>`
+            : pl.ageBand === "adult"
+              ? `<span class="faint" style="font-size:11.5px">${t("parent.waitingForAccept").replace("{name}", esc((pl.name || t("parent.theStudent")).split(" ")[0]))}</span>`
+              : `<button class="btn btn-primary btn-sm" data-glink-confirm="${esc(pl.email)}">${IC.check} ${t("parent.confirmLink")}</button>`}
         </div>
       </div>`).join("")}
     </div>

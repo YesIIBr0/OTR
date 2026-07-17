@@ -176,6 +176,8 @@
 .risk-row:last-child{border-bottom:0}
 .eng-pill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:var(--r-pill)}
 .eng-Alto{background:var(--ok-soft);color:var(--ok)} .eng-Medio{background:var(--warn-soft);color:var(--otr-gold-text)} .eng-Bajo{background:var(--danger-soft);color:var(--danger)}
+/* [BUG-ROSTER-REAL] "—" = alumno sin ActivityEvent aún (sin señal), distinto de "Bajo" medido */
+.eng-none{background:var(--n-25);color:var(--text-3)}
 .trend-up{color:var(--ok)} .trend-down{color:var(--danger)} .trend-flat{color:var(--text-3)}
 
 /* gradebook */

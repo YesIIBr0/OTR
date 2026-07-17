@@ -71,6 +71,75 @@ function lifecycleState(events: Array<{ createdAt: Date }>, isNew: boolean): { s
   return { state, daysAway };
 }
 
+// [BUG-ROSTER-REAL] La analítica del roster del coach (grade/attendance/engagement/trend/
+// risk) vivía en columnas Enrollment con @default sembrado (0/"Medio"/"flat"/false) que NUNCA
+// se recalculaban → el panel del profesor mostraba datos de seed, no la realidad del alumno.
+// Esta función PURA reduce señales REALES (ya agregadas en batch por getAppData, sin N+1: ver
+// rosterGradeAgg/rosterQuizRows/rosterBookingAgg/rosterProgressRows/rosterLastEventAgg/
+// rosterRecentEvents) a la forma que consumen scr-teacher.ts/scr-extra.ts. Pura y sin tocar la
+// DB → testeable directo (tests/roster-metrics.test.ts) sin mockear Prisma.
+const ROSTER_RISK_PROGRESS_PCT = 50; // progreso del curso por debajo de esto cuenta como "bajo"
+const ROSTER_RISK_INACTIVE_DAYS = 14; // + sin actividad en 14 días → riesgo (mismo umbral que lifecycleState 'lapsed')
+const ROSTER_ENG_HIGH_EVENTS = 6; // >=6 ActivityEvent en los últimos 14 días → "Alto"
+const ROSTER_ENG_MED_EVENTS = 2; // >=2 (y <6) → "Medio"; 1 o más pero <2 → "Bajo"; 0 CON historial previo → "Bajo"
+
+export type RosterMetricsInput = {
+  progressPct: number; // 0-100: LessonProgress done / lecciones contables del curso
+  gradeFromSubmissions: number | null; // avg de Submission GRADED (courseCode del curso)
+  gradeFromQuizzes: number | null; // fallback: avg % de QuizAttempt de las lecciones del curso
+  bookingCompleted: number; // Booking COMPLETED del alumno con este coach
+  bookingRelevant: number; // Booking CONFIRMED + COMPLETED del alumno con este coach
+  lastEventAt: Date | null; // ActivityEvent más reciente del alumno (cualquier fecha, o null si nunca)
+  recentLast7: number; // nº de ActivityEvent en los últimos 7 días
+  recentPrior7: number; // nº de ActivityEvent entre hace 8 y 14 días (para el trend)
+  nowMs: number; // "ahora" del caller (testeable sin Date.now() real)
+  lang?: string; // idioma del label relativo de "last"
+};
+
+export type RosterMetrics = {
+  grade: number | null; // null = sin entregas calificadas ni exámenes → "—" en la UI, no un 0 falso
+  att: number | null; // null = sin reservas confirmadas/completadas con este coach (sin señal)
+  eng: "Alto" | "Medio" | "Bajo" | "—"; // "—" = nunca tuvo ActivityEvent (no hay señal, no "Medio" inventado)
+  trend: "up" | "down" | "flat";
+  risk: boolean;
+  last: string; // label relativo ("hace 2 días") o "—" si nunca hubo actividad
+  prog: number; // 0-100, expuesto para paneles futuros y para depurar el criterio de risk
+};
+
+export function computeRosterMetrics(input: RosterMetricsInput): RosterMetrics {
+  const {
+    progressPct, gradeFromSubmissions, gradeFromQuizzes,
+    bookingCompleted, bookingRelevant, lastEventAt,
+    recentLast7, recentPrior7, nowMs, lang = "es",
+  } = input;
+
+  const grade = gradeFromSubmissions ?? gradeFromQuizzes ?? null;
+  const att = bookingRelevant > 0 ? Math.round((bookingCompleted / bookingRelevant) * 100) : null;
+
+  const hasHistory = !!lastEventAt;
+  const daysSinceActivity = hasHistory ? Math.floor((nowMs - (lastEventAt as Date).getTime()) / 86400000) : null;
+  const recent14 = recentLast7 + recentPrior7;
+
+  const eng: RosterMetrics["eng"] = !hasHistory
+    ? "—"
+    : recent14 >= ROSTER_ENG_HIGH_EVENTS ? "Alto"
+    : recent14 >= ROSTER_ENG_MED_EVENTS ? "Medio"
+    : "Bajo";
+
+  const trend: RosterMetrics["trend"] = !hasHistory
+    ? "flat"
+    : recentLast7 > recentPrior7 ? "up"
+    : recentLast7 < recentPrior7 ? "down"
+    : "flat";
+
+  const risk = progressPct < ROSTER_RISK_PROGRESS_PCT
+    && (!hasHistory || (daysSinceActivity ?? Infinity) >= ROSTER_RISK_INACTIVE_DAYS);
+
+  const last = hasHistory ? whenLabel(lastEventAt, lang) : "—";
+
+  return { grade, att, eng, trend, risk, last, prog: Math.round(progressPct) };
+}
+
 // Etiqueta legible mes + año en español, tipo "jun 2026" (texto generado por nosotros).
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -354,12 +423,32 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const studentCoach = !isTeacher ? (studentMainCourse?.teacher ?? null) : null;
   // base.teacher: profesor → él mismo; estudiante → coach del curso en que está inscrito.
   const headCoach: any = isTeacher ? me : studentCoach;
+
+  // [BUG-ROSTER-REAL] Preparación para computeRosterMetrics: ids del roster (curso impartido
+  // por el profesor) + lecciones "contables" de ESE curso (mismo criterio que courseProgress
+  // del alumno — lo oculto por el profesor no cuenta). taughtCourses[0] ya viene con
+  // modules→lessons cargado (primer Promise.all de esta función), así que esto es gratis.
+  const rosterIds: string[] = isTeacher ? (taughtRoster as any[]).map((e: any) => e.userId) : [];
+  const rosterCourse: any = isTeacher ? (taughtCourses[0] as any) : null;
+  const rosterCourseCode: string = rosterCourse?.code ?? "";
+  const rosterLessonRows: Array<{ id: string; title: string }> = [];
+  (rosterCourse?.modules || []).forEach((m: any) => {
+    if (m.hidden) return;
+    (m.lessons || []).forEach((l: any) => { if (!l.hidden) rosterLessonRows.push({ id: l.id, title: l.title }); });
+  });
+  const rosterLessonIds = rosterLessonRows.map((l) => l.id);
+  const rosterLessonTitles = [...new Set(rosterLessonRows.map((l) => l.title))];
+  // "Ahora" fijado UNA vez para toda la ventana de actividad reciente (7/14 días) del roster.
+  const rosterNowMs = Date.now();
+  const rosterActivityCutoff = new Date(rosterNowMs - ROSTER_RISK_INACTIVE_DAYS * 86400000);
+
   const [
     myProgress, mySubs, myQuizzes, enrolledLessons, pendingSubs, quizRows, studentModules,
     coachPrograms, myReviewRow, activityEvents,
     debateRecords, debateCriteriaScores, leaderboardRows, upcomingTournaments, myLeaderboardAhead,
-    coachUsers, myBookingRows, parentGuardianships, myTournamentRegs,
+    coachUsers, myBookingRows, parentGuardianships, studentGuardianRequests, myTournamentRegs,
     coachBookingRows, myCoachProfileRow,
+    rosterGradeAgg, rosterQuizRows, rosterBookingAgg, rosterProgressRows, rosterLastEventAgg, rosterRecentEvents,
   ] = await Promise.all([
     me ? db.lessonProgress.findMany({ where: { userId: me.id, done: true } }) : Promise.resolve([]),
     // Una sola consulta de TODAS las entregas del usuario; las GRADED se derivan en JS.
@@ -463,6 +552,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     me && me.role === "PARENT"
       ? db.guardianship.findMany({ where: { parentId: me.id, status: { in: ["ACTIVE", "PENDING"] } }, include: { student: { select: { id: true, name: true, email: true, initials: true, ageBand: true } } }, orderBy: { createdAt: "asc" } })
       : Promise.resolve([]),
+    // [BUG vínculo-padre §11.3] Solicitudes de tutela que un PARENT reclamó sobre ESTE alumno
+    // (initiatedBy="parent", status PENDING) — el lado que faltaba: el alumno debe poder VER y
+    // CONFIRMAR/RECHAZAR esa solicitud (PATCH /api/guardianship). Antes un vínculo parent-initiated
+    // quedaba PENDING para siempre porque nada mostraba la solicitud del lado del menor.
+    me && me.role === "STUDENT"
+      ? db.guardianship.findMany({ where: { studentId: me.id, status: "PENDING", initiatedBy: "parent" }, include: { parent: { select: { id: true, name: true, email: true, initials: true } } }, orderBy: { createdAt: "asc" } })
+      : Promise.resolve([]),
     // PRD §8 ledger: nº de torneos en los que el usuario se ha registrado.
     me ? db.tournamentRegistration.count({ where: { userId: me.id } }) : Promise.resolve(0),
     // Coach Workspace (PRD §7.5): TODOS los bookings donde el usuario es el coach,
@@ -484,10 +580,88 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           },
         })
       : Promise.resolve(null),
+    // [BUG-ROSTER-REAL] A partir de aquí: agregaciones EN BATCH (una consulta para TODO el
+    // roster, sin N+1) que alimentan computeRosterMetrics. Todas condicionadas a que haya
+    // roster (isTeacher && rosterIds.length) — para STUDENT/PARENT/ADMIN-sin-curso quedan [].
+    // grade%: promedio de Submission GRADED del alumno EN ESTE CURSO (courseCode).
+    isTeacher && rosterIds.length
+      ? db.submission.groupBy({ by: ["userId"], where: { status: "GRADED", grade: { not: null }, userId: { in: rosterIds }, courseCode: rosterCourseCode }, _avg: { grade: true } })
+      : Promise.resolve([] as any[]),
+    // grade% fallback: QuizAttempt no tiene courseId (limitación de schema) — se acota por
+    // lessonTitle a las lecciones REALES de este curso (mismo criterio ya usado para
+    // correlacionar QuizAttempt↔lección en el resto de queries.ts, p.ej. gradeRows del alumno).
+    isTeacher && rosterIds.length && rosterLessonTitles.length
+      ? db.quizAttempt.findMany({ where: { userId: { in: rosterIds }, lessonTitle: { in: rosterLessonTitles } }, select: { userId: true, score: true, total: true } })
+      : Promise.resolve([] as any[]),
+    // attendance%: Booking del alumno CON ESTE coach, agrupado por estado.
+    isTeacher && rosterIds.length
+      ? db.booking.groupBy({ by: ["studentId", "status"], where: { coachId: me?.id, studentId: { in: rosterIds } }, _count: { _all: true } })
+      : Promise.resolve([] as any[]),
+    // progress%: LessonProgress done de las lecciones contables de este curso.
+    isTeacher && rosterIds.length && rosterLessonIds.length
+      ? db.lessonProgress.findMany({ where: { done: true, userId: { in: rosterIds }, lessonId: { in: rosterLessonIds } }, select: { userId: true } })
+      : Promise.resolve([] as any[]),
+    // last access REAL (sin acotar por fecha): último ActivityEvent de cada alumno, cualquiera.
+    isTeacher && rosterIds.length
+      ? db.activityEvent.groupBy({ by: ["userId"], where: { userId: { in: rosterIds } }, _max: { createdAt: true } })
+      : Promise.resolve([] as any[]),
+    // engagement/trend: ActivityEvent de los últimos 14 días (ventana acotada; se bucketiza
+    // en JS en last7 vs prior7 para el trend up/down/flat).
+    isTeacher && rosterIds.length
+      ? db.activityEvent.findMany({ where: { userId: { in: rosterIds }, createdAt: { gte: rosterActivityCutoff } }, select: { userId: true, createdAt: true } })
+      : Promise.resolve([] as any[]),
   ]);
 
   // Entregas calificadas (GRADED) derivadas en JS de la consulta única de entregas.
   const mySubsGraded = (mySubs as any[]).filter((s) => s.status === "GRADED");
+
+  // [BUG-ROSTER-REAL] Reduce las agregaciones batch del roster a Maps por alumno — O(1) al
+  // construir base.students más abajo, sin volver a tocar la DB por estudiante (sin N+1).
+  const rosterGradeByStudent = new Map<string, number>(
+    (rosterGradeAgg as any[])
+      .filter((r: any) => r._avg?.grade != null)
+      .map((r: any) => [r.userId, Math.round(r._avg.grade)]),
+  );
+  const rosterQuizAcc = new Map<string, { sum: number; n: number }>();
+  (rosterQuizRows as any[]).forEach((q: any) => {
+    if (!q.total) return; // examen sin preguntas — no aporta señal
+    const acc = rosterQuizAcc.get(q.userId) || { sum: 0, n: 0 };
+    acc.sum += (q.score / q.total) * 100;
+    acc.n += 1;
+    rosterQuizAcc.set(q.userId, acc);
+  });
+  const rosterQuizAvgByStudent = new Map<string, number>(
+    [...rosterQuizAcc.entries()].map(([uid, v]) => [uid, Math.round(v.sum / v.n)]),
+  );
+  const rosterBookingByStudent = new Map<string, { completed: number; relevant: number }>();
+  (rosterBookingAgg as any[]).forEach((r: any) => {
+    const cur = rosterBookingByStudent.get(r.studentId) || { completed: 0, relevant: 0 };
+    const n = r._count?._all || 0;
+    if (r.status === "COMPLETED") { cur.completed += n; cur.relevant += n; }
+    else if (r.status === "CONFIRMED") { cur.relevant += n; }
+    rosterBookingByStudent.set(r.studentId, cur);
+  });
+  const rosterProgressCountByStudent = new Map<string, number>();
+  (rosterProgressRows as any[]).forEach((p: any) => {
+    rosterProgressCountByStudent.set(p.userId, (rosterProgressCountByStudent.get(p.userId) || 0) + 1);
+  });
+  const rosterLessonTotal = rosterLessonIds.length;
+  const rosterLastEventByStudent = new Map<string, Date>(
+    (rosterLastEventAgg as any[])
+      .filter((r: any) => r._max?.createdAt)
+      .map((r: any) => [r.userId, r._max.createdAt as Date]),
+  );
+  // Bucketiza los ActivityEvent de los últimos 14 días en last7 (0-6 días) / prior7 (7-13 días)
+  // usando el día calendario RD (mismo criterio que computeStreak/lifecycleState de arriba).
+  const rosterTodayNum = Math.floor((rosterNowMs + RD_OFFSET_MS) / 86400000);
+  const rosterLast7ByStudent = new Map<string, number>();
+  const rosterPrior7ByStudent = new Map<string, number>();
+  (rosterRecentEvents as any[]).forEach((e: any) => {
+    const daysAgo = rosterTodayNum - dayNumRD(e.createdAt);
+    if (daysAgo < 0 || daysAgo >= 14) return;
+    const bucket = daysAgo < 7 ? rosterLast7ByStudent : rosterPrior7ByStudent;
+    bucket.set(e.userId, (bucket.get(e.userId) || 0) + 1);
+  });
 
   // [GAMIFICATION-2 §9] Racha real (con grace de 1 día). La racha necesita cobertura por
   // DÍAS, no por eventos: activityEvents está topado a take:60 (feed/journey) y un usuario
@@ -934,6 +1108,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // [MINORS-CONSENT-01 §11.3] Solicitudes PENDIENTES: un menor declaró a este adulto como
   // tutor al registrarse; nace PENDING y el adulto la confirma (POST /api/guardianship,
   // flip PENDING→ACTIVE). El portal DEBE mostrarlas para que el padre pueda confirmar.
+  // [BUG vínculo-padre §11.3] initiatedBy viaja al cliente: cuando el PADRE es quien reclamó
+  // (initiatedBy="parent") el padre YA hizo su parte — el botón "Confirmar vínculo" no aplica
+  // (un segundo POST no activa nada, COPPA lo exige); la UI debe mostrar copy honesto de espera
+  // en vez del mismo CTA que usa el caso student-initiated (donde sí falta la acción del padre).
   const pendingLinks = (parentGuardianships as any[])
     .filter((g) => g.status === "PENDING")
     .map((g) => ({
@@ -943,6 +1121,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       email: esc(g.student?.email || ""),
       initials: esc(g.student?.initials || (g.student?.name || "?").slice(0, 2).toUpperCase()),
       ageBand: g.student?.ageBand || "", // minor → el padre confirma; adult → espera al alumno
+      initiatedBy: g.initiatedBy || "student",
     }));
   // Coach Workspace (§7.5): estudiantes de los bookings del coach (nombre/iniciales).
   const coachStudentIds = [...new Set((coachBookingRows as any[]).map((b: any) => b.studentId))];
@@ -1587,6 +1766,16 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // PRD §7: "Mis reservas" — SOLO para STUDENT (sus propios bookings).
   if (me?.role === "STUDENT") {
     base.myBookings = myBookings;
+    // [BUG vínculo-padre §11.3] Solicitudes de tutela que un PARENT reclamó sobre esta cuenta
+    // y siguen PENDING — el alumno las confirma/rechaza (PATCH /api/guardianship) desde
+    // Ajustes. Sin esto el vínculo quedaba PENDING para siempre y el alumno nunca se enteraba.
+    base.pendingGuardianRequests = (studentGuardianRequests as any[]).map((g) => ({
+      id: g.id,
+      parentId: g.parentId,
+      parentName: esc(g.parent?.name || ""),
+      parentEmail: esc(g.parent?.email || ""),
+      parentInitials: esc(g.parent?.initials || (g.parent?.name || "?").slice(0, 2).toUpperCase()),
+    }));
   }
   // PRD §11: Parent Portal — SOLO para PARENT (role-scoped; un STUDENT/TEACHER
   // NUNCA recibe los datos de hijos de nadie).
@@ -1598,22 +1787,44 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // Un STUDENT NUNCA recibe gradebook, students, manage, teacherCourses ni
   // reviewsReceived. Solo se añaden para TEACHER/ADMIN.
   if (isTeacher) {
-    base.students = (taughtRoster as any[]).map((e) => ({
-      id: e.user.id, n: esc(e.user.name), i: esc(e.user.initials), lvl: e.user.level, xp: e.user.xp,
-      grade: e.grade, att: e.attendance, eng: e.engagement, trend: e.trend, risk: e.risk, last: e.lastAccess,
-    }));
+    // [BUG-ROSTER-REAL] grade/att/eng/trend/risk/last YA NO se leen de Enrollment (columnas
+    // @default sembradas, nunca recalculadas) — se derivan EN VIVO con computeRosterMetrics a
+    // partir de las agregaciones batch de arriba (Submission/QuizAttempt/Booking/
+    // LessonProgress/ActivityEvent). Sin señal → null/"—" (honesto), nunca un número inventado.
+    base.students = (taughtRoster as any[]).map((e: any) => {
+      const uid = e.user.id;
+      const prog = rosterLessonTotal ? ((rosterProgressCountByStudent.get(uid) || 0) / rosterLessonTotal) * 100 : 0;
+      const m = computeRosterMetrics({
+        progressPct: prog,
+        gradeFromSubmissions: rosterGradeByStudent.get(uid) ?? null,
+        gradeFromQuizzes: rosterQuizAvgByStudent.get(uid) ?? null,
+        bookingCompleted: rosterBookingByStudent.get(uid)?.completed ?? 0,
+        bookingRelevant: rosterBookingByStudent.get(uid)?.relevant ?? 0,
+        lastEventAt: rosterLastEventByStudent.get(uid) ?? null,
+        recentLast7: rosterLast7ByStudent.get(uid) || 0,
+        recentPrior7: rosterPrior7ByStudent.get(uid) || 0,
+        nowMs: rosterNowMs,
+        lang,
+      });
+      return {
+        id: uid, n: esc(e.user.name), i: esc(e.user.initials), lvl: e.user.level, xp: e.user.xp,
+        grade: m.grade, att: m.att, eng: m.eng, trend: m.trend, risk: m.risk, last: m.last, prog: m.prog,
+      };
+    });
 
     // --- KPIs del profesor (calculados del roster base.students) ------------
-    // avg=promedio de s.grade; attendance=promedio de s.att; onTime=promedio de
-    // s.eng (engagement string mapeado a %); atRisk=conteo de s.risk truthy.
-    const engPct = (eng: string): number => (eng === "Alto" ? 100 : eng === "Bajo" ? 33 : 66);
+    // avg/attendance/onTime promedian SOLO alumnos con señal real (grade/att no-null, eng
+    // distinto de "—") — un alumno sin datos NO cuenta como 0 ni arrastra el promedio del grupo.
+    // atRisk = conteo de s.risk truthy (ver computeRosterMetrics para el umbral).
+    const engPct = (eng: string): number | null => (eng === "Alto" ? 100 : eng === "Medio" ? 66 : eng === "Bajo" ? 33 : null);
     const roster = base.students as any[];
     const avgOf = (vals: number[]): number =>
       vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+    const numericSignal = (vals: Array<number | null>): number[] => vals.filter((v): v is number => v != null);
     base.teacherKpis = {
-      avg: avgOf(roster.map((s) => Number(s.grade) || 0)),
-      attendance: avgOf(roster.map((s) => Number(s.att) || 0)),
-      onTime: avgOf(roster.map((s) => engPct(s.eng))),
+      avg: avgOf(numericSignal(roster.map((s) => s.grade))),
+      attendance: avgOf(numericSignal(roster.map((s) => s.att))),
+      onTime: avgOf(numericSignal(roster.map((s) => engPct(s.eng)))),
       atRisk: roster.filter((s) => s.risk).length,
     };
     // Entregas pendientes (no calificadas) de los cursos del profesor.

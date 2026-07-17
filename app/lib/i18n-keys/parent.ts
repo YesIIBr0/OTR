@@ -32,10 +32,14 @@ export const dict = {
 
     // pending guardianship links block
     "parent.pendingLinksTitle": "Solicitudes de vínculo pendientes",
-    "parent.pendingLinksBody": "Estos estudiantes te declararon como su tutor al registrarse. Confirma el vínculo para ver su progreso y aprobar sus reservas.",
+    "parent.pendingLinksBody": "Confirma las que tu hijo/a declaró al registrarse; las que reclamaste tú están esperando que él/ella las confirme desde su cuenta.",
     "parent.protectedMinor": "menor protegido",
     "parent.confirmLink": "Confirmar vínculo",
     "parent.waitingForAccept": "Esperando que {name} acepte",
+    // [BUG vínculo-padre §11.3] Copy honesto para el vínculo que TÚ reclamaste sobre un menor:
+    // por seguridad (COPPA) un padre no puede activarlo por su sola palabra — el hijo/a debe
+    // confirmarlo desde su cuenta. Antes no existía este mensaje y el padre no se enteraba.
+    "parent.waitingForStudentConfirm": "Esperando que tu hijo/a confirme el vínculo desde su cuenta",
     "parent.theStudent": "el alumno",
     "parent.studentFallback": "Estudiante",
 
@@ -57,7 +61,10 @@ export const dict = {
     "parent.studentEmailLabel": "Correo del estudiante",
     "parent.studentEmailPh": "estudiante@correo.com",
     "parent.linkStudent": "Vincular estudiante",
-    "parent.linkFormNote": "Si tu hijo/a es menor, el vínculo se activa de inmediato. Si es adulto, deberá aceptar tu solicitud.",
+    // [BUG vínculo-padre §11.3 · fix honestidad] Antes decía "si es menor, se activa de
+    // inmediato" — FALSO: por COPPA un padre nunca activa un vínculo sobre un menor por su
+    // sola palabra, sea cual sea su edad. El hijo/a siempre debe confirmarlo desde su cuenta.
+    "parent.linkFormNote": "Tu hijo/a deberá confirmar el vínculo desde su cuenta para activarlo — así protegemos su privacidad.",
 
     // monthly report card
     "parent.monthlyReport": "Reporte mensual",
@@ -188,10 +195,11 @@ export const dict = {
 
     // pending guardianship links block
     "parent.pendingLinksTitle": "Pending link requests",
-    "parent.pendingLinksBody": "These students named you as their guardian when they signed up. Confirm the link to see their progress and approve their bookings.",
+    "parent.pendingLinksBody": "Confirm the ones your child named when they signed up; the ones you claimed are waiting for them to confirm from their own account.",
     "parent.protectedMinor": "protected minor",
     "parent.confirmLink": "Confirm link",
     "parent.waitingForAccept": "Waiting for {name} to accept",
+    "parent.waitingForStudentConfirm": "Waiting for your child to confirm the link from their account",
     "parent.theStudent": "the student",
     "parent.studentFallback": "Student",
 
@@ -213,7 +221,7 @@ export const dict = {
     "parent.studentEmailLabel": "Student email",
     "parent.studentEmailPh": "student@email.com",
     "parent.linkStudent": "Link student",
-    "parent.linkFormNote": "If your child is a minor, the link is activated right away. If they're an adult, they'll need to accept your request.",
+    "parent.linkFormNote": "Your child will need to confirm the link from their own account to activate it — that's how we protect their privacy.",
 
     // monthly report card
     "parent.monthlyReport": "Monthly report",

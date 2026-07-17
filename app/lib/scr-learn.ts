@@ -146,6 +146,11 @@ function priorQuizAttempt() {
       }
 
       const bars = Array.from({length:48}, (_,i)=>`<i style="height:${10+Math.abs(Math.sin(i*0.6))*30}%"></i>`).join('');
+      // Marcar como completada a mano (paridad con S.player/S.lesson; delegado en Aula.tsx).
+      // El backend ya marca done=true al entregar (app/api/submissions/route.ts), este botón
+      // permite deshacerlo o marcarla sin entregar (p.ej. tarea que el coach evalúa fuera de línea).
+      const doneByMe = !!(L && L.doneByMe);
+      const markBtn = L ? `<button class="btn ${doneByMe ? "btn-soft" : "btn-primary"} btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="${doneByMe ? "false" : "true"}" ${doneByMe ? `title="${t("learn.unmarkDone")}"` : ""}>${doneByMe ? `${IC.checkCircle} ${t("learn.completedUndo")}` : `${IC.check} ${t("learn.markComplete")}`}</button>` : "";
       return `
       <div class="row between vcenter fade-up" style="--d:0;margin-bottom:18px;flex-wrap:wrap;gap:12px">
         <div>
@@ -153,7 +158,10 @@ function priorQuizAttempt() {
           <h1 class="page-title" style="font-size:22px;margin-top:2px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</h1>
           ${course && course.name ? `<div class="page-sub" style="margin-top:2px">${course.name}</div>` : ''}
         </div>
-        ${dueLabel ? `<span class="badge warn" style="height:28px;align-self:flex-start">${IC.clock} ${t("learn.dueLabelPrefix")} ${dueLabel}</span>` : ''}
+        <div class="row vcenter" style="gap:10px;align-self:flex-start;flex-wrap:wrap">
+          ${dueLabel ? `<span class="badge warn" style="height:28px">${IC.clock} ${t("learn.dueLabelPrefix")} ${dueLabel}</span>` : ''}
+          ${markBtn}
+        </div>
       </div>
 
       ${prevCard}

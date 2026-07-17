@@ -82,6 +82,22 @@ export const dict = {
     "settings.passwordTooShort": "La nueva contraseña debe tener al menos 6 caracteres",
     "settings.passwordMismatch": "Las contraseñas no coinciden",
     "settings.passwordUpdated": "Contraseña actualizada",
+
+    // [BUG vínculo-padre §11.3] Solicitudes de tutela pendientes (STUDENT): un padre/madre
+    // reclamó un vínculo sobre esta cuenta y espera tu confirmación — el lado del alumno que
+    // faltaba (antes el vínculo quedaba PENDING para siempre sin que nadie lo viera aquí).
+    "settings.guardianRequestsTitle": "Solicitudes de tutor/a pendientes",
+    "settings.guardianRequestsBody": "Alguien pidió vincularse como tu tutor/a. Confirma solo si reconoces a la persona — así ve tu progreso y aprueba tus reservas.",
+    "settings.guardianRequestLine": "{name} solicitó vincularse como tu tutor/a",
+    "settings.guardianFallback": "Un adulto",
+    "settings.guardianConfirm": "Confirmar",
+    "settings.guardianReject": "Rechazar",
+    "settings.guardianRejectArm": "¿Seguro? Toca de nuevo",
+    "settings.guardianConfirming": "Confirmando…",
+    "settings.guardianRejecting": "Rechazando…",
+    "settings.guardianConfirmed": "Vínculo confirmado",
+    "settings.guardianRejected": "Solicitud rechazada",
+    "settings.guardianActionFailed": "No se pudo procesar la solicitud",
   },
   en: {
     // page head
@@ -163,5 +179,19 @@ export const dict = {
     "settings.passwordTooShort": "The new password must be at least 6 characters",
     "settings.passwordMismatch": "Passwords don't match",
     "settings.passwordUpdated": "Password updated",
+
+    // pending guardian requests (STUDENT)
+    "settings.guardianRequestsTitle": "Pending guardian requests",
+    "settings.guardianRequestsBody": "Someone asked to link as your guardian. Confirm only if you recognize them — they'll see your progress and approve your bookings.",
+    "settings.guardianRequestLine": "{name} asked to link as your guardian",
+    "settings.guardianFallback": "An adult",
+    "settings.guardianConfirm": "Confirm",
+    "settings.guardianReject": "Reject",
+    "settings.guardianRejectArm": "Sure? Tap again",
+    "settings.guardianConfirming": "Confirming…",
+    "settings.guardianRejecting": "Rejecting…",
+    "settings.guardianConfirmed": "Link confirmed",
+    "settings.guardianRejected": "Request rejected",
+    "settings.guardianActionFailed": "Couldn't process the request",
   },
 };

@@ -108,10 +108,35 @@ export async function POST(req: Request) {
     // almacenado cuando hay senderId.
     data: { conversationId: convId, senderId: user.id, me: true, body, timeLabel: "ahora", position: count },
   });
+  // [NOTIF-BELL] unread es un contador compartido de la conversación (no hay reset todavía
+  // al abrir el hilo): cada mensaje nuevo lo incrementa para que el badge de la lista se mueva.
   await db.conversation.update({
     where: { id: convId },
-    data: { lastLabel: body.slice(0, 40), whenLabel: "ahora" },
+    data: { lastLabel: body.slice(0, 40), whenLabel: "ahora", unread: { increment: 1 } },
   });
+
+  // [NOTIF-BELL] Avisa al OTRO participante (nunca al emisor) — una Notification por
+  // destinatario y por mensaje, no en bucle. Texto SIN esc(): el contrato de escape lo
+  // aplica queries.ts (GET /api/notifications) UNA vez al servir al cliente.
+  const others = participants.filter((p) => p.userId !== user.id);
+  if (others.length) {
+    await Promise.all(
+      others.map((p) =>
+        db.notification.create({
+          data: {
+            userId: p.userId,
+            icon: "msg",
+            tone: "sky",
+            title: `Nuevo mensaje de ${user.name}`,
+            detail: body.slice(0, 80),
+            whenLabel: "ahora",
+            unread: true,
+            position: 0,
+          },
+        }),
+      ),
+    );
+  }
 
   await logActivitySafe({
     userId: user.id,

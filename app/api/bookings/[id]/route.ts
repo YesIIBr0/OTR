@@ -19,6 +19,7 @@ import { logActivitySafe } from "../../../lib/activity";
 import { dateLabel, timeLabel } from "../../../lib/consultations";
 import { sendMail, emailShell, emailButton } from "../../../lib/mail";
 import { esc } from "../../../lib/esc";
+import { money } from "../../../lib/money";
 
 const ACTIONS = new Set(["approve", "complete", "cancel", "recording"]);
 
@@ -94,6 +95,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       });
     }
 
+    // [NOTIF-BELL] Notificación in-app al alumno, en paralelo al email de arriba (best-effort,
+    // fuera de la transacción). Texto SIN esc(): lo escapa queries.ts al servir al cliente.
+    await db.notification.create({
+      data: {
+        userId: booking.studentId,
+        icon: "calendar",
+        tone: "ok",
+        title: "Sesión confirmada",
+        detail: `${dateLabel(booking.slotAt)} · ${timeLabel(booking.slotAt)}`,
+        whenLabel: "ahora",
+        unread: true,
+        position: 0,
+      },
+    });
+
     return ok({ booking: { id: updated.id, status: updated.status } });
   }
 
@@ -134,6 +150,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const amount = booking.escrow?.amountCents ?? 0;
     const takeRatePct = booking.escrow?.takeRatePct ?? 18;
     const payoutCents = Math.round((amount * (100 - takeRatePct)) / 100);
+
+    // [NOTIF-BELL] Notificación in-app al COACH: el escrow se liberó (best-effort). Texto
+    // SIN esc(): lo escapa queries.ts al servir al cliente.
+    await db.notification.create({
+      data: {
+        userId: booking.coachId,
+        icon: "award",
+        tone: "ok",
+        title: "Pago liberado",
+        detail: `${money(payoutCents)} · sesión completada`,
+        whenLabel: "ahora",
+        unread: true,
+        position: 0,
+      },
+    });
+
     return ok({
       booking: { id, status: "COMPLETED" },
       escrow: { status: "RELEASED", amountCents: amount, takeRatePct, payoutCents },

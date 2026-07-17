@@ -235,6 +235,23 @@ export async function POST(req: Request) {
   const origin = process.env.APP_URL || req.headers.get("origin") || "";
   const dLabel = dateLabel(slotAt);
   const tLabel = timeLabel(slotAt);
+
+  // [NOTIF-BELL] Notificación in-app al ALUMNO (en paralelo al email de arriba, que va al
+  // padre cuando queda PENDING o al propio alumno cuando queda CONFIRMED). Best-effort,
+  // fuera de la transacción de DB. Texto SIN esc(): lo escapa queries.ts al servir al cliente.
+  await db.notification.create({
+    data: {
+      userId: bStudent.id,
+      icon: "calendar",
+      tone: booking.status === "CONFIRMED" ? "ok" : "warn",
+      title: booking.status === "CONFIRMED" ? "Sesión confirmada" : "Sesión por aprobar",
+      detail: `${coachName} · ${dLabel} · ${tLabel}`,
+      whenLabel: "ahora",
+      unread: true,
+      position: 0,
+    },
+  });
+
   if (booking.status === "PENDING" && booking.consentBy) {
     // Candado parental: el padre resuelto (consentBy) via Guardianship ACTIVE aprueba desde su portal.
     const [parent, student] = await Promise.all([

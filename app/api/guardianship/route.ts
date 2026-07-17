@@ -96,18 +96,25 @@ export async function POST(req: Request) {
   return ok({ guardianship, already: false });
 }
 
-// PATCH — un PARENT ajusta los controles de consentimiento de un hijo ya vinculado.
+// PATCH — dos usos por rol (gate primero, luego se despacha):
+//  · PARENT ajusta los controles de consentimiento de un hijo ya vinculado.
+//  · STUDENT confirma o rechaza una solicitud de tutela que un PARENT reclamó sobre
+//    su cuenta (ver patchStudentConfirm — el lado que faltaba del bug de vínculo).
+export async function PATCH(req: Request) {
+  const user = await getSessionUser();
+  if (!user) return bad("No autenticado", 401);
+  if (user.role === "STUDENT") return patchStudentConfirm(req, user);
+  if (user.role !== "PARENT") return bad("Solo una cuenta de padre/madre puede ajustar el consentimiento", 403);
+  return patchParentConsent(req, user);
+}
+
 // PRD §11.3 (umbral configurable de auto-aprobación): body { studentId,
 // approveUnderCents?: number|null, consentLevel? }.
 //  - approveUnderCents: null = aprobar CADA reserva manualmente; N (entero >=0) =
 //    auto-aprueba reservas hasta N centavos. Omitido = no se toca.
 //  - consentLevel: full | standard | progress_only (allowlist). Omitido = no se toca.
 // Requiere un Guardianship ACTIVE con parentId = yo y el studentId dado.
-export async function PATCH(req: Request) {
-  const user = await getSessionUser();
-  if (!user) return bad("No autenticado", 401);
-  if (user.role !== "PARENT") return bad("Solo una cuenta de padre/madre puede ajustar el consentimiento", 403);
-
+async function patchParentConsent(req: Request, user: { id: string }) {
   const data = await readJson<{ studentId?: string; approveUnderCents?: number | null; consentLevel?: string }>(req);
   const studentId = clean(data.studentId, 60);
   if (!studentId) return bad("Falta el estudiante", 400);
@@ -149,6 +156,57 @@ export async function PATCH(req: Request) {
     data: patch,
   });
   return ok({ guardianship: updated });
+}
+
+// [BUG vínculo-padre §11.3] El lado del ALUMNO que faltaba: un padre que reclama un vínculo
+// (initiatedBy="parent") lo deja PENDING para siempre por diseño — un padre NO puede activar
+// un vínculo sobre un menor por su sola palabra (COPPA). Hasta ahora nada del lado del menor
+// permitía cerrar ese círculo: el alumno no tenía forma de VER ni CONFIRMAR la solicitud.
+// body { guardianshipId, action?: "confirm"|"reject" } (default "confirm").
+async function patchStudentConfirm(req: Request, user: { id: string; name: string }) {
+  const data = await readJson<{ guardianshipId?: string; action?: string }>(req);
+  const guardianshipId = clean(data.guardianshipId, 60);
+  if (!guardianshipId) return bad("Falta la solicitud", 400);
+  const action = data.action === "reject" ? "reject" : "confirm";
+
+  const guardianship = await db.guardianship.findUnique({ where: { id: guardianshipId } });
+  // Ownership estricto: solo el ALUMNO dueño de esta fila puede resolverla (nunca por id ajeno).
+  if (!guardianship || guardianship.studentId !== user.id) {
+    return bad("Solicitud no encontrada", 404);
+  }
+  // Solo aplica a solicitudes PENDIENTES que el PADRE reclamó — un vínculo que el propio
+  // alumno declaró (initiatedBy="student") lo confirma el PADRE (POST), no esta ruta; y un
+  // vínculo ya ACTIVE/REVOKED no tiene nada que confirmar/rechazar aquí.
+  if (guardianship.status !== "PENDING" || guardianship.initiatedBy !== "parent") {
+    return bad("Esta solicitud ya fue resuelta", 400);
+  }
+
+  const parent = await db.user.findUnique({ where: { id: guardianship.parentId } });
+
+  if (action === "reject") {
+    const updated = await db.guardianship.update({ where: { id: guardianship.id }, data: { status: "REVOKED" } });
+    return ok({ guardianship: updated });
+  }
+
+  // [COPPA §11] Activación + evidencia auditable en UNA transacción (mismo patrón que la
+  // confirmación del lado del padre en POST): si el ConsentRecord falla, el vínculo NO
+  // queda ACTIVE — el reintento vuelve a activar en vez de dejar un ACTIVE sin evidencia.
+  const [updated] = await db.$transaction([
+    db.guardianship.update({ where: { id: guardianship.id }, data: { status: "ACTIVE" } }),
+    db.consentRecord.create({ data: { studentId: guardianship.studentId, grantedById: user.id, kind: "guardianship", policyVersion: POLICY_VERSION } }),
+  ]);
+
+  // Email al padre, fuera de la tx, best-effort (sendMail nunca lanza).
+  if (parent?.email) {
+    const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;"><strong>${esc(user.name)}</strong> confirmó tu solicitud de vínculo de tutor/a en OTR Academy. Ya puedes ver su progreso desde el Portal de familia.</p>`;
+    await sendMail({
+      to: parent.email,
+      subject: "Tu hijo/a confirmó el vínculo · OTR Academy",
+      html: emailShell("Vínculo confirmado", emailBody),
+    });
+  }
+
+  return ok({ guardianship: updated, already: false });
 }
 
 export async function GET() {

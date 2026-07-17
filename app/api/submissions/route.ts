@@ -42,6 +42,39 @@ export async function POST(req: Request) {
   const submission = await db.submission.create({
     data: { userId: user.id, userName: user.name, activity, kind, courseCode, lessonId, fileUrl, fileName, textBody },
   });
+
+  // [BUG-CERT] Al entregar la tarea el alumno completó la actividad → se marca la lección
+  // como hecha (mismo espíritu que el quiz: aprobar marca done — ver
+  // quizzes/[id]/attempt/route.ts:72-76). La nota del coach es un atributo posterior y NO
+  // bloquea el progreso. Sin esto, cualquier curso con una tarea nunca llegaba a 100% y el
+  // certificado quedaba inalcanzable. Solo si la entrega trae lessonId (entregas sueltas no
+  // tocan progreso). Idempotente en re-entrega (upsert por el unique userId_lessonId).
+  if (lessonId) {
+    const lessonRow = await db.lesson.findUnique({
+      where: { id: lessonId },
+      select: { module: { select: { courseId: true } } },
+    });
+    const lessonCourseId = lessonRow?.module?.courseId;
+    if (lessonCourseId) {
+      // Defensa en profundidad: verifica inscripción en el curso REAL de la lección
+      // (podría no coincidir con el courseCode declarado por el cliente).
+      const lessonEnrolled = await db.enrollment.findUnique({
+        where: { userId_courseId: { userId: user.id, courseId: lessonCourseId } },
+      });
+      if (lessonEnrolled) {
+        await db.lessonProgress.upsert({
+          where: { userId_lessonId: { userId: user.id, lessonId } },
+          create: { userId: user.id, lessonId, done: true },
+          update: { done: true },
+        });
+        const courseLessons = await db.lesson.findMany({ where: { module: { courseId: lessonCourseId } }, select: { id: true } });
+        const doneCount = await db.lessonProgress.count({ where: { userId: user.id, done: true, lessonId: { in: courseLessons.map((l) => l.id) } } });
+        const prog = courseLessons.length ? Math.round((doneCount / courseLessons.length) * 100) : 0;
+        await db.enrollment.updateMany({ where: { userId: user.id, courseId: lessonCourseId }, data: { progress: prog } });
+      }
+    }
+  }
+
   return ok({ submission });
 }
 
