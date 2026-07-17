@@ -4,10 +4,16 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
+import { rateLimit } from "../../lib/rate-limit";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
+
+  // [F1.4] Anti-spam de reseñas: 20 / 10 min por usuario. El gate verified-booking ya acota el
+  // abuso, pero esto frena un bucle de upserts.
+  const rl = rateLimit(`review:${user.id}`, 20, 10 * 60 * 1000);
+  if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
 
   const body = await readJson<{ courseId?: string; coachId?: string; rating?: number; body?: string }>(req);
   const courseId = clean(body.courseId, 64);

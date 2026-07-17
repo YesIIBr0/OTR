@@ -1,6 +1,7 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
+import { rateLimit } from "../../lib/rate-limit";
 import { filterContactInfo, isMinor } from "../../lib/safety";
 import { logActivitySafe } from "../../lib/activity";
 
@@ -53,6 +54,12 @@ export async function GET() {
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
+
+  // [F1.4] Anti-spam de chat (plataforma con menores): 30 mensajes por minuto y por usuario.
+  // Una conversación activa cabe de sobra; un bot que inunda el hilo, no.
+  const rl = rateLimit(`msg:${user.id}`, 30, 60 * 1000);
+  if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
+
   const data = await readJson<{ conversationId?: string; body?: string }>(req);
   const rawBody = clean(data.body, 4000);
   if (!rawBody) return bad("Mensaje vacío", 400);

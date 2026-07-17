@@ -1,11 +1,17 @@
 import { db } from "../../../lib/db";
-import { ok, bad, readJson, clean } from "../../../lib/api";
+import { ok, bad, readJson, clean, clientIp } from "../../../lib/api";
 import { hashPassword } from "../../../lib/auth-crypto";
 import { hashToken } from "../../../lib/mail";
+import { rateLimit } from "../../../lib/rate-limit";
 
 // POST /api/auth/reset — { token, password }. Valida el token (no usado, no expirado),
 // la contraseña (≥6), actualiza el hash del usuario y marca el token como usado.
 export async function POST(req: Request) {
+  // [F1.4] Anti fuerza-bruta de tokens de reset: 5 intentos por IP cada 10 min (igual que /auth/forgot).
+  const ip = clientIp(req);
+  const rl = rateLimit(`reset:${ip}`, 5, 10 * 60 * 1000);
+  if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
+
   const body = await readJson<{ token?: string; password?: string }>(req);
   const token = clean(body.token, 200);
   const password = String(body.password ?? "");

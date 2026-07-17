@@ -6,6 +6,7 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
+import { rateLimit } from "../../lib/rate-limit";
 import { logActivitySafe } from "../../lib/activity";
 
 const TARGET_TYPES = ["user", "message", "conversation", "booking", "coach"];
@@ -13,6 +14,10 @@ const TARGET_TYPES = ["user", "message", "conversation", "booking", "coach"];
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
+
+  // [F1.4] Anti-inundación de la cola de moderación: 10 reportes / 10 min por usuario.
+  const rl = rateLimit(`report:${user.id}`, 10, 10 * 60 * 1000);
+  if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
 
   const body = await readJson<{ targetType?: string; targetId?: string; reason?: string }>(req);
   const targetType = clean(body.targetType, 32).toLowerCase();
@@ -133,6 +138,16 @@ export async function PATCH(req: Request) {
       targetUserId = cp?.userId ?? existing.targetId;
     }
     if (!targetUserId) return bad("Este reporte no apunta a un usuario suspendible", 400);
+
+    // [F1.6] Anti-lockout: al SUSPENDER (no al reactivar) no puedes suspenderte a ti mismo ni
+    // suspender a otro ADMIN — misma guarda que /api/admin/users (route.ts:94-100). Sin esto,
+    // un admin podía quedar suspendido desde la cola de moderación y perder la plataforma.
+    if (action === "suspend") {
+      if (targetUserId === user.id) return bad("No puedes suspenderte a ti mismo", 400);
+      const targetUser = await db.user.findUnique({ where: { id: targetUserId }, select: { role: true } });
+      if (targetUser?.role === "ADMIN") return bad("No puedes suspender a otro administrador", 400);
+    }
+
     await db.user.update({ where: { id: targetUserId }, data: { suspended: action === "suspend" } });
     await db.report.update({
       where: { id: reportId },

@@ -1,11 +1,18 @@
 // POST /api/uploads — sube un archivo real a disco (public/uploads) y registra la fila.
 import { ok, bad, clean } from "../../lib/api";
 import { getSessionUser } from "../../lib/auth";
+import { rateLimit } from "../../lib/rate-limit";
 import { saveUpload, isAllowedMime, MAX_UPLOAD_BYTES } from "../../lib/uploads";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
+
+  // [F1.4] Anti-DoS de disco: sin límite, un autenticado sube 25 MB/req en bucle hasta llenar
+  // el disco del VPS (y tumba Postgres + backups). Tope por usuario: 20 subidas / 10 min cubre
+  // el uso legítimo (materiales de un curso, grabaciones) e impide el flood.
+  const rl = rateLimit(`uploads:${user.id}`, 20, 10 * 60 * 1000);
+  if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
 
   let form: FormData;
   try {

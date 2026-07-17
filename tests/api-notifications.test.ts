@@ -14,6 +14,9 @@ vi.mock("../app/lib/db", () => ({
   db: new Proxy({}, { get: (_t, p: string) => (p === "then" ? undefined : box.db.db[p]) }),
 }));
 vi.mock("../app/lib/auth", () => ({ setSession: vi.fn(), getSessionUser: () => box.user, clearSession: vi.fn() }));
+// POST /api/messages ahora tiene rate-limit (F1.4); lo neutralizamos en el test para ejercitar
+// la lógica de la campana sin depender del limiter (mismo mecanismo que api-register.test.ts).
+vi.mock("../app/lib/rate-limit", () => ({ rateLimit: () => ({ ok: true, retryAfter: 0 }) }));
 vi.mock("../app/lib/mail", () => ({
   sendMail: vi.fn(),
   emailShell: vi.fn((title: string, body: string) => `<html>${title}${body}</html>`),
