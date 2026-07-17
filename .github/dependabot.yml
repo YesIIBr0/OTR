@@ -1,0 +1,39 @@
+# Dependabot — actualizaciones automáticas de dependencias (Plan Maestro §1.5 / §2).
+# Los minors/patches de npm se agrupan en UN solo PR semanal (menos ruido, una sola
+# revisión). Los majors de prisma/@prisma/client, next y typescript se ignoran a
+# propósito: son las líneas soportadas que decidimos congelar (§2), con reevaluación
+# trimestral MANUAL — no queremos que Dependabot abra un PR de Next 16 o Prisma 7.
+version: 2
+updates:
+  # ── Dependencias npm ────────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      # Un único PR agrupado con todos los minor+patch pendientes de la semana.
+      # Los majors NO se agrupan: cada uno abre su propio PR para revisión aislada
+      # (salvo los ignorados abajo, que no abren PR).
+      dependencias-npm:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Prisma va como par acoplado (cliente + CLI comparten major): se congela junto.
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
