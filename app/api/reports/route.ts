@@ -6,6 +6,7 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
+import { requireRole } from "../../lib/authz";
 import { esc } from "../../lib/esc";
 import { rateLimit } from "../../lib/rate-limit";
 import { logActivitySafe } from "../../lib/activity";
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "ADMIN") return bad("Solo administradores", 403);
+  if (!requireRole(user, "ADMIN")) return bad("Solo administradores", 403);
 
   // [ENT-01] Acota la cola: antes la query era sin límite (degradaba con miles de
   // reportes). Page de 100 + skip acumulativo + total para "cargar más" en el cliente.
@@ -216,7 +217,7 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "ADMIN") return bad("Solo administradores", 403);
+  if (!requireRole(user, "ADMIN")) return bad("Solo administradores", 403);
 
   const body = await readJson<{ reportId?: string; status?: string; resolution?: string; action?: string }>(req);
   const reportId = clean(body.reportId, 64);

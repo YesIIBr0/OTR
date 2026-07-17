@@ -12,6 +12,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean } from "../../../lib/api";
+import { requireRole } from "../../../lib/authz";
 import { audit } from "../../../lib/audit";
 
 // role es String libre en el schema; este set es la fuente de verdad de valores válidos.
@@ -45,7 +46,7 @@ const SELECT = {
 export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "ADMIN") return bad("Solo administradores", 403);
+  if (!requireRole(user, "ADMIN")) return bad("Solo administradores", 403);
 
   const url = new URL(req.url);
   const q = clean(url.searchParams.get("q"), 80);
@@ -78,7 +79,7 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "ADMIN") return bad("Solo administradores", 403);
+  if (!requireRole(user, "ADMIN")) return bad("Solo administradores", 403);
 
   const body = await readJson<{ userId?: unknown; role?: unknown; coachVerified?: unknown; suspended?: unknown }>(req);
   const userId = clean(body.userId, 64);

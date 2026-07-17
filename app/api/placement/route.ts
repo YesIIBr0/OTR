@@ -7,6 +7,7 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson } from "../../lib/api";
+import { requireRole } from "../../lib/authz";
 import { logActivitySafe } from "../../lib/activity";
 
 // Las 6 dimensiones canónicas, en orden de contrato.
@@ -35,7 +36,7 @@ export async function GET() {
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "STUDENT") return bad("Solo estudiantes", 403);
+  if (!requireRole(user, "STUDENT")) return bad("Solo estudiantes", 403);
 
   const body = await readJson<{ scores?: unknown }>(req);
   const scores = (body.scores ?? {}) as Record<string, unknown>;

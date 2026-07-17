@@ -4,6 +4,7 @@ import { ok, bad, readJson, clean } from "../../lib/api";
 import { rateLimit } from "../../lib/rate-limit";
 import { filterContactInfo, isMinor } from "../../lib/safety";
 import { logActivitySafe } from "../../lib/activity";
+import { notify } from "../../lib/notify";
 
 // PRD §7.4 / §17.4 — Mensajería segura para menores.
 // Scoping real por ConversationParticipant (no por UI) + enmascarado de datos de
@@ -133,18 +134,7 @@ export async function POST(req: Request) {
   if (others.length) {
     await Promise.all(
       others.map((p) =>
-        db.notification.create({
-          data: {
-            userId: p.userId,
-            icon: "msg",
-            tone: "sky",
-            title: `Nuevo mensaje de ${user.name}`,
-            detail: body.slice(0, 80),
-            whenLabel: "ahora",
-            unread: true,
-            position: 0,
-          },
-        }),
+        notify({ userId: p.userId, icon: "msg", tone: "sky", title: `Nuevo mensaje de ${user.name}`, detail: body.slice(0, 80) }),
       ),
     );
   }

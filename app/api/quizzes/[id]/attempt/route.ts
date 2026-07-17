@@ -3,6 +3,7 @@ import { ok, bad, readJson } from "../../../../lib/api";
 import { getSessionUser } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
 import { logActivitySafe } from "../../../../lib/activity";
+import { recalcCourseProgress } from "../../../../lib/course-progress";
 
 type Body = { answers?: Record<string, unknown> };
 
@@ -74,11 +75,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       create: { userId: user.id, lessonId: quiz.lessonId, done: true },
       update: { done: true },
     });
-    const courseLessons = await db.lesson.findMany({ where: { module: { courseId } }, select: { id: true } });
-    const doneCount = await db.lessonProgress.count({ where: { userId: user.id, done: true, lessonId: { in: courseLessons.map((l) => l.id) } } });
-    const prog = courseLessons.length ? Math.round((doneCount / courseLessons.length) * 100) : 0;
-    await db.enrollment.updateMany({ where: { userId: user.id, courseId }, data: { progress: prog } });
-    courseProgress = prog;
+    // Recalcula el % del curso tras marcar la lección (bloque unificado en course-progress.ts).
+    courseProgress = await recalcCourseProgress(user.id, courseId);
   }
 
   // --- XP solo-si-mejora: lógica EXACTA de /api/quiz-attempts ---

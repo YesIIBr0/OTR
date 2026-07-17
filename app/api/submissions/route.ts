@@ -1,6 +1,7 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean, safeUrl } from "../../lib/api";
+import { recalcCourseProgress } from "../../lib/course-progress";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -67,10 +68,8 @@ export async function POST(req: Request) {
           create: { userId: user.id, lessonId, done: true },
           update: { done: true },
         });
-        const courseLessons = await db.lesson.findMany({ where: { module: { courseId: lessonCourseId } }, select: { id: true } });
-        const doneCount = await db.lessonProgress.count({ where: { userId: user.id, done: true, lessonId: { in: courseLessons.map((l) => l.id) } } });
-        const prog = courseLessons.length ? Math.round((doneCount / courseLessons.length) * 100) : 0;
-        await db.enrollment.updateMany({ where: { userId: user.id, courseId: lessonCourseId }, data: { progress: prog } });
+        // Recalcula el % del curso REAL de la lección (bloque unificado en course-progress.ts).
+        await recalcCourseProgress(user.id, lessonCourseId);
       }
     }
   }

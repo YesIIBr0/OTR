@@ -13,12 +13,13 @@
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad } from "../../../lib/api";
+import { requireRole } from "../../../lib/authz";
 import { esc } from "../../../lib/esc";
 
 export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "ADMIN") return bad("Solo administradores", 403);
+  if (!requireRole(user, "ADMIN")) return bad("Solo administradores", 403);
 
   // Paginación por página: take acotado a 100 (defensa contra un take gigante que degrade la
   // query), page ≥ 1. skip acumulativo derivado en el servidor — el cliente solo manda page/take.

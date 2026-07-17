@@ -6,6 +6,7 @@
 import { db } from "../../lib/db";
 import { ok, bad, readJson, clean, clientIp } from "../../lib/api";
 import { getSessionUser } from "../../lib/auth";
+import { requireRole } from "../../lib/authz";
 import { rateLimit } from "../../lib/rate-limit";
 import { sendMail } from "../../lib/mail";
 import { isValidSlot, dateLabel, timeLabel, DURATION_MIN } from "../../lib/consultations";
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "ADMIN") return bad("No autorizado", 403);
+  if (!requireRole(user, "ADMIN")) return bad("No autorizado", 403);
 
   // Próximas reservas (desde ahora), ordenadas por slotAt asc.
   const bookings = await db.consultationBooking.findMany({

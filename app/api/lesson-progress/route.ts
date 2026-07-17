@@ -3,6 +3,7 @@ import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson } from "../../lib/api";
 import { logActivitySafe } from "../../lib/activity";
+import { recalcCourseProgress } from "../../lib/course-progress";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -61,29 +62,11 @@ export async function POST(req: Request) {
     });
   }
 
+  // Recalcula el % del curso (lecciones hechas/totales) y lo persiste en la matrícula.
+  // Bloque unificado en app/lib/course-progress.ts (antes duplicado en 3 rutas).
   let progress = 0;
   if (courseId) {
-    // IDs de todas las lecciones del curso (LessonProgress no tiene relación a Lesson).
-    const courseLessons = await db.lesson.findMany({
-      where: { module: { courseId } },
-      select: { id: true },
-    });
-    const totalLessons = courseLessons.length;
-    // Lecciones completadas por el usuario en ese curso.
-    const doneLessons = await db.lessonProgress.count({
-      where: {
-        userId: user.id,
-        done: true,
-        lessonId: { in: courseLessons.map((l) => l.id) },
-      },
-    });
-    progress = totalLessons > 0 ? Math.round((doneLessons / totalLessons) * 100) : 0;
-
-    // Si existe la matrícula, actualiza su progreso.
-    await db.enrollment.updateMany({
-      where: { userId: user.id, courseId },
-      data: { progress },
-    });
+    progress = await recalcCourseProgress(user.id, courseId);
   }
 
   return ok({ progress });

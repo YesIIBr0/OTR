@@ -2,13 +2,14 @@
 import { db } from "../../../lib/db";
 import { ok, bad, readJson, clean } from "../../../lib/api";
 import { getSessionUser } from "../../../lib/auth";
+import { requireRole } from "../../../lib/authz";
 
 const STATUSES = new Set(["CONFIRMED", "CANCELLED", "COMPLETED"]);
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "TEACHER" && user.role !== "ADMIN") return bad("No autorizado", 403);
+  if (!requireRole(user, "TEACHER", "ADMIN")) return bad("No autorizado", 403);
 
   const { id } = await params;
   const body = await readJson<{ status?: string }>(req);

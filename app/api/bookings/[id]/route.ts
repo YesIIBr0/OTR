@@ -16,6 +16,7 @@ import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean, safeVideoUrl } from "../../../lib/api";
 import { logActivitySafe } from "../../../lib/activity";
+import { notify } from "../../../lib/notify";
 import { dateLabel, timeLabel } from "../../../lib/consultations";
 import { sendMail, emailShell, emailButton } from "../../../lib/mail";
 import { esc } from "../../../lib/esc";
@@ -97,17 +98,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     // [NOTIF-BELL] Notificación in-app al alumno, en paralelo al email de arriba (best-effort,
     // fuera de la transacción). Texto SIN esc(): lo escapa queries.ts al servir al cliente.
-    await db.notification.create({
-      data: {
-        userId: booking.studentId,
-        icon: "calendar",
-        tone: "ok",
-        title: "Sesión confirmada",
-        detail: `${dateLabel(booking.slotAt)} · ${timeLabel(booking.slotAt)}`,
-        whenLabel: "ahora",
-        unread: true,
-        position: 0,
-      },
+    await notify({
+      userId: booking.studentId,
+      icon: "calendar",
+      tone: "ok",
+      title: "Sesión confirmada",
+      detail: `${dateLabel(booking.slotAt)} · ${timeLabel(booking.slotAt)}`,
     });
 
     return ok({ booking: { id: updated.id, status: updated.status } });
@@ -153,17 +149,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     // [NOTIF-BELL] Notificación in-app al COACH: el escrow se liberó (best-effort). Texto
     // SIN esc(): lo escapa queries.ts al servir al cliente.
-    await db.notification.create({
-      data: {
-        userId: booking.coachId,
-        icon: "award",
-        tone: "ok",
-        title: "Pago liberado",
-        detail: `${money(payoutCents)} · sesión completada`,
-        whenLabel: "ahora",
-        unread: true,
-        position: 0,
-      },
+    await notify({
+      userId: booking.coachId,
+      icon: "award",
+      tone: "ok",
+      title: "Pago liberado",
+      detail: `${money(payoutCents)} · sesión completada`,
     });
 
     return ok({

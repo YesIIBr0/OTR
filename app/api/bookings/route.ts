@@ -24,6 +24,7 @@ import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
 import { logActivitySafe } from "../../lib/activity";
+import { notify } from "../../lib/notify";
 import { TZ_OFFSET, dateLabel, timeLabel } from "../../lib/consultations";
 import { sendMail, emailShell, emailButton } from "../../lib/mail";
 import { esc } from "../../lib/esc";
@@ -239,17 +240,12 @@ export async function POST(req: Request) {
   // [NOTIF-BELL] Notificación in-app al ALUMNO (en paralelo al email de arriba, que va al
   // padre cuando queda PENDING o al propio alumno cuando queda CONFIRMED). Best-effort,
   // fuera de la transacción de DB. Texto SIN esc(): lo escapa queries.ts al servir al cliente.
-  await db.notification.create({
-    data: {
-      userId: bStudent.id,
-      icon: "calendar",
-      tone: booking.status === "CONFIRMED" ? "ok" : "warn",
-      title: booking.status === "CONFIRMED" ? "Sesión confirmada" : "Sesión por aprobar",
-      detail: `${coachName} · ${dLabel} · ${tLabel}`,
-      whenLabel: "ahora",
-      unread: true,
-      position: 0,
-    },
+  await notify({
+    userId: bStudent.id,
+    icon: "calendar",
+    tone: booking.status === "CONFIRMED" ? "ok" : "warn",
+    title: booking.status === "CONFIRMED" ? "Sesión confirmada" : "Sesión por aprobar",
+    detail: `${coachName} · ${dLabel} · ${tLabel}`,
   });
 
   if (booking.status === "PENDING" && booking.consentBy) {

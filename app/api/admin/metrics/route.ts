@@ -18,6 +18,7 @@
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad } from "../../../lib/api";
+import { requireRole } from "../../../lib/authz";
 
 const WEEKS = 8;
 const MS_DAY = 24 * 60 * 60 * 1000;
@@ -41,7 +42,7 @@ function bucketByWeek(dates: Date[], since: Date, weeks: number) {
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "ADMIN") return bad("Solo administradores", 403);
+  if (!requireRole(user, "ADMIN")) return bad("Solo administradores", 403);
 
   const now = new Date();
   const since = new Date(now.getTime() - WEEKS * MS_WEEK);

@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { readJson, clean } from "../../lib/api";
+import { requireRole } from "../../lib/authz";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  if (user.role !== "TEACHER" && user.role !== "ADMIN")
+  if (!requireRole(user, "TEACHER", "ADMIN"))
     return NextResponse.json({ error: "Solo profesores pueden crear cursos" }, { status: 403 });
   const body = await readJson<Record<string, unknown>>(req);
   const name = clean(body.name, 120);

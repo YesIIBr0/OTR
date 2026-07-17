@@ -2,6 +2,7 @@ import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean } from "../../../lib/api";
 import { logActivitySafe } from "../../../lib/activity";
+import { notify } from "../../../lib/notify";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await getSessionUser();
@@ -49,12 +50,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       refId: submission.id,
       meta: { grade: g, courseCode: submission.courseCode },
     });
-    await db.notification.create({
-      data: {
-        userId: submission.userId, icon: "chart", tone: "ok",
-        title: "Tu entrega fue calificada", detail: `${submission.activity} · ${g} — por ${user.name}`,
-        whenLabel: "ahora", unread: true, position: 0,
-      },
+    await notify({
+      userId: submission.userId, icon: "chart", tone: "ok",
+      title: "Tu entrega fue calificada", detail: `${submission.activity} · ${g} — por ${user.name}`,
     });
   }
   return ok({ submission });

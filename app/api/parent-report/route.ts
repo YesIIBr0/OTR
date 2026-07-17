@@ -13,6 +13,7 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, clean } from "../../lib/api";
+import { requireRole } from "../../lib/authz";
 
 const MESES_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const MESES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -35,7 +36,7 @@ function money(cents: number): string {
 export async function GET(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "PARENT") return bad("Solo una cuenta de padre/madre puede ver reportes", 403);
+  if (!requireRole(user, "PARENT")) return bad("Solo una cuenta de padre/madre puede ver reportes", 403);
 
   const url = new URL(req.url);
   const studentId = clean(url.searchParams.get("studentId"), 80);

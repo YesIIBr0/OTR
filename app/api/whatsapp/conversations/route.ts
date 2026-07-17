@@ -5,13 +5,14 @@
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad } from "../../../lib/api";
+import { requireRole } from "../../../lib/authz";
 
 const TAKE = 100;
 
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  if (user.role !== "TEACHER" && user.role !== "ADMIN") return bad("No autorizado", 403);
+  if (!requireRole(user, "TEACHER", "ADMIN")) return bad("No autorizado", 403);
 
   // [F3.3] take-per-parent: el último mensaje de cada contacto vía include + take:1 (orderBy
   // createdAt desc), en UNA sola query. Antes se bajaban TODOS los mensajes de hasta 100
