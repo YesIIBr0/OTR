@@ -1,8 +1,7 @@
 // OTR Aula · WhatsApp Business — bandeja del equipo (Fase 1).
 //  GET — TEACHER o ADMIN — lista WhatsAppContact ordenados por lastMessageAt desc, con el
-//        último mensaje de cada uno (preview corto). Dos queries en total (sin N+1): una
-//        findMany de contactos + una findMany de mensajes de esos contactos ordenada por
-//        fecha desc, quedándonos con la primera ocurrencia (= la más reciente) por contacto.
+//        último mensaje de cada uno (preview corto). UNA sola query (sin N+1): findMany de
+//        contactos con include del mensaje más reciente por contacto (take:1, createdAt desc).
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad } from "../../../lib/api";
@@ -14,23 +13,24 @@ export async function GET() {
   if (!user) return bad("No autenticado", 401);
   if (user.role !== "TEACHER" && user.role !== "ADMIN") return bad("No autorizado", 403);
 
+  // [F3.3] take-per-parent: el último mensaje de cada contacto vía include + take:1 (orderBy
+  // createdAt desc), en UNA sola query. Antes se bajaban TODOS los mensajes de hasta 100
+  // contactos para quedarnos con el primero por contacto (sin cota → degradaba con hilos largos).
   const contacts = await db.whatsAppContact.findMany({
     orderBy: { lastMessageAt: "desc" },
     take: TAKE,
+    include: {
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { body: true, direction: true, createdAt: true },
+      },
+    },
   });
   if (!contacts.length) return ok({ conversations: [] });
 
-  const contactIds = contacts.map((c) => c.id);
-  const messages = await db.whatsAppMessage.findMany({
-    where: { contactId: { in: contactIds } },
-    orderBy: { createdAt: "desc" },
-    select: { contactId: true, body: true, direction: true, createdAt: true },
-  });
-  const lastByContact = new Map<string, (typeof messages)[number]>();
-  for (const m of messages) if (!lastByContact.has(m.contactId)) lastByContact.set(m.contactId, m);
-
   const conversations = contacts.map((c) => {
-    const last = lastByContact.get(c.id) || null;
+    const last = c.messages[0] || null;
     return {
       id: c.id,
       phone: c.phone,

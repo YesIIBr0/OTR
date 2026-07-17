@@ -479,7 +479,7 @@ model Submission {
   createdLabel String  @default("ahora")
   createdAt    DateTime @default(now())
 
-  @@index([userId])
+  @@index([userId, createdAt]) // [F3.4] mySubs y GET /submissions (alumno): where userId + orderBy createdAt desc, sin sort en memoria. El prefijo userId cubre los filtros por userId solo, así que reemplaza al simple [userId].
   @@index([status])
   @@index([courseCode])
   @@index([userId, status])       // notas del alumno (GRADED) sin sort en memoria
@@ -728,7 +728,7 @@ model Booking {
   coach       User          @relation("BookingCoach", fields: [coachId], references: [id], onDelete: Restrict)
   consenter   User?         @relation("BookingConsent", fields: [consentBy], references: [id], onDelete: SetNull)
 
-  @@index([studentId])
+  @@index([studentId, slotAt]) // [F3.4] myBookings (order slotAt desc), childBookings (order slotAt asc), parent-report (rango slotAt): evita sort en memoria. El prefijo studentId cubre los filtros por studentId solo (count/findFirst), así que reemplaza al simple [studentId].
   @@index([coachId, slotAt])
   @@index([packageId]) // [DATA-6] "Mis reservas" filtra/junta por paquete
 }

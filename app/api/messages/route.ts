@@ -19,10 +19,14 @@ export async function GET() {
   // [P0-4 + PERF] Solo conversaciones donde el usuario es participante registrado, filtrado
   // EN DB (aprovecha ConversationParticipant.@@index([userId])). Antes traía TODAS las
   // conversaciones de la plataforma con sus mensajes y filtraba en memoria (scan total).
+  // [F3.3] Acota los mensajes por conversación (antes sin cota → el hilo entero). Traemos los
+  // 200 más recientes (orderBy position desc + take) y los reinvertimos a orden cronológico
+  // abajo — mismo patrón take-per-parent que getAppData. La UI (scr-community) renderiza desde
+  // getAppData; este GET queda como endpoint de refresco, ya acotado.
   const visible = await db.conversation.findMany({
     where: { participants: { some: { userId: user.id } } },
     orderBy: { position: "asc" },
-    include: { participants: true, messages: { orderBy: { position: "asc" } } },
+    include: { participants: true, messages: { orderBy: { position: "desc" }, take: 200 } },
   });
 
   // Mantiene el shape que espera la pantalla de mensajes (scr-community: ini/name/
@@ -36,7 +40,7 @@ export async function GET() {
     unread: c.unread,
     online: c.online,
     navy: c.navy,
-    messages: c.messages.map((m) => ({
+    messages: [...c.messages].reverse().map((m) => ({
       id: m.id,
       // [CROSS-01] me se computa POR USUARIO: una burbuja es "mía" solo si la envié yo.
       // Antes devolvía el `me` almacenado (siempre true para el creador) → el receptor

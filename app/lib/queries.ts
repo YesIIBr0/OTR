@@ -5,8 +5,6 @@ import { safeUrl } from "./api";
 import { dateLabel, timeLabel } from "./consultations";
 
 const ME_EMAIL = "analia.reyes@otr.do";
-const TEACHER_EMAIL = "saul@otr.do";
-const MAIN_COURSE = "PF-101";
 
 // Etiqueta de fecha relativa en español (texto generado por nosotros, no de usuario).
 function whenLabel(d?: Date | null, lang: string = "es"): string {
@@ -264,26 +262,24 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const myRole = (me?.role || "STUDENT").toLowerCase(); // rol REAL: student | teacher | admin
 
   const [
-    /* teacher (no usado) */, levels, meEnrollments, /* pfModules (no usado) */, /* pfStudents (no usado) */,
-    gradeCells, competencies, badges, notifications, events, /* activity (no usado) */,
+    levels, meEnrollments, badges, notifications, events,
     threads, mainThread, convos, allCourses, allModules, taughtCourses,
-    /* resources (no usado) */, /* mainCourse (no usado) */, myStudentSkills, myCertificates, coachProfiles,
+    myStudentSkills, myCertificates, coachProfiles,
   ] = await Promise.all([
-    db.user.findUnique({ where: { email: TEACHER_EMAIL }, select: { name: true, email: true, initials: true, headline: true, bio: true, teachingStyle: true, formats: true, location: true } }),
     db.level.findMany({ orderBy: { position: "asc" } }),
     db.enrollment.findMany({ where: { user: { email } }, include: { course: true }, orderBy: { course: { position: "asc" } } }),
-    db.module.findMany({ where: { course: { code: MAIN_COURSE } }, include: { lessons: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } }),
-    // Roster de estudiantes: solo para profesor/admin (un estudiante NUNCA debe verlo).
-    isTeacher
-      ? db.enrollment.findMany({ where: { course: { code: MAIN_COURSE } }, include: { user: true }, orderBy: { user: { xp: "desc" } }, take: 200 })
-      : Promise.resolve([]),
-    // Gradebook: solo profesor/admin.
-    isTeacher ? db.gradeCell.findMany({ orderBy: [{ studentPos: "asc" }, { colPos: "asc" }] }) : Promise.resolve([]),
-    db.competency.findMany({ orderBy: { position: "asc" } }),
     db.badge.findMany({ orderBy: { position: "asc" } }),
-    db.notification.findMany({ orderBy: { position: "asc" }, take: 200 }),
+    // [F3.2 fix] Notificaciones scopeadas EN LA DB (no en JS): antes se traían las 200 GLOBALES
+    // por posición (sin where) y se filtraban por userId en memoria (:1699) → con más usuarios
+    // las 200 posiciones se llenaban de notificaciones ajenas y las PROPIAS del usuario
+    // desaparecían del feed. Misma forma correcta que /api/notifications: OR(userId propio, null),
+    // no leídas primero, take acotado. me puede ser null (sin sesión) → solo globales (userId null).
+    db.notification.findMany({
+      where: me ? { OR: [{ userId: me.id }, { userId: null }] } : { userId: null },
+      orderBy: [{ unread: "desc" }, { position: "asc" }],
+      take: 50,
+    }),
     db.eventItem.findMany({ orderBy: { position: "asc" }, take: 200 }),
-    db.activityItem.findMany({ orderBy: { position: "asc" }, take: 200 }),
     // Foro APAGADO (PRD-estricto, Fase 3 §10): no se cargan ni envían threads.
     Promise.resolve([] as any[]),
     Promise.resolve(null as any),
@@ -296,7 +292,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           where: { participants: { some: { userId: me.id } } },
           orderBy: { position: "asc" },
           take: 50,
-          include: { messages: { orderBy: { position: "asc" }, take: 200 } },
+          // [F3.3] take-per-parent (mismo patrón que /api/reports GET desde F2): en vez de
+          // 50 convos × 200 msgs = 10k filas por carga, traemos los 60 mensajes MÁS RECIENTES
+          // de cada conversación (orderBy position desc + take) y los reinvertimos a orden
+          // cronológico en el mapping (~línea 1697). scr-community NO pagina el hilo y renderiza
+          // el array completo → 60 cubre la ventana visible; los mensajes nuevos se anexan al final.
+          include: { messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true } } },
         })
       : Promise.resolve([] as any[]),
     db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true, summary: true, summaryEn: true, welcomeVideoKind: true, welcomeVideoSrc: true } }),
@@ -306,18 +307,6 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     isTeacher
       ? db.course.findMany({ where: { teacher: { email } }, include: { modules: { include: { lessons: { orderBy: { position: "asc" } } }, orderBy: { position: "asc" } }, reviews: { include: { student: true }, orderBy: { createdAt: "desc" } } }, orderBy: { position: "asc" } })
       : Promise.resolve([]),
-    // Arsenal (recursos), ordenados por posición y luego por creación.
-    // Arsenal APAGADO (PRD-estricto): no se cargan recursos.
-    Promise.resolve([] as any[]),
-    // Curso principal con su profesor, programas del coach y reseñas (para coachProfile del estudiante).
-    db.course.findUnique({
-      where: { code: MAIN_COURSE },
-      include: {
-        // select defensivo del coach: solo los campos que consume buildCoachProfile (sin passwordHash).
-        teacher: { select: { id: true, name: true, initials: true, headline: true, bio: true, teachingStyle: true, formats: true, location: true } },
-        reviews: { include: { student: true }, orderBy: { createdAt: "desc" } },
-      },
-    }),
     // Habilidades (radar) del estudiante logueado. [] si no existe el usuario.
     me ? db.studentSkill.findMany({ where: { userId: me.id } }) : Promise.resolve([]),
     // Certificados del estudiante logueado, con el curso para obtener programName.
@@ -330,11 +319,20 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // techo a 500 para eliminar el "cliff" de coaches que desaparecían >100 en cualquier escala
     // realista cercana. La paginación server-side real (cursor + filtro/orden en /api/coaches,
     // que ya existe) es el fix definitivo para miles de coaches — diferido a su propio esfuerzo.
+    // [F3.3] take 500 se MANTIENE a propósito (bajarlo a 100 reintroduciría el cliff que ENT-07
+    // arregló; la fila no tiene columnas pesadas y ya está capada). Lo que SÍ afinamos es el
+    // select explícito: el mapping (marketplace + workspace propio) NO usa los agregados
+    // ALMACENADOS ratingAvg/reviewCount (se derivan EN VIVO de Review, ver reviewByTeacher) →
+    // no viajan (evita leer por error el valor stale). `active` SÍ se incluye: el coach que ve su
+    // propio perfil lo obtiene de aquí (está active:true) y el workspace lee myCoachProfile.active.
     db.coachProfile.findMany({
       where: { active: true },
-      include: {
-        packages: { orderBy: { position: "asc" } },
-        availability: { orderBy: [{ weekday: "asc" }, { startMin: "asc" }] },
+      select: {
+        id: true, userId: true, introVideoUrl: true, credentials: true, specialties: true,
+        languages: true, hourlyCents: true, responseTime: true, cancelPolicy: true,
+        bookingCount: true, active: true,
+        packages: { orderBy: { position: "asc" }, select: { id: true, name: true, sessions: true, priceCents: true, discountPct: true } },
+        availability: { orderBy: [{ weekday: "asc" }, { startMin: "asc" }], select: { id: true, weekday: true, startMin: true, endMin: true } },
       },
       take: 500,
     }),
@@ -374,15 +372,6 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   );
   const xpLevelStart = curLevel?.startXp ?? 0;
   const xpNext = nextLevel?.startXp ?? (curLevel?.startXp ?? 0);
-
-  const colMap = new Map<number, string>();
-  gradeCells.forEach((c) => colMap.set(c.colPos, c.colName));
-  const cols = [...colMap.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1]);
-  const studentPositions = [...new Set(gradeCells.map((c) => c.studentPos))].sort((a, b) => a - b);
-  const gbRows = studentPositions.map((sp) => {
-    const cells = gradeCells.filter((c) => c.studentPos === sp).sort((a, b) => a.colPos - b.colPos);
-    return { n: esc(cells[0]?.studentName), i: esc(cells[0]?.studentInit), g: cells.map((c) => c.value) };
-  });
 
   const enrolledIds = new Set(meEnrollments.map((e) => e.courseId));
 
@@ -454,7 +443,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // Una sola consulta de TODAS las entregas del usuario; las GRADED se derivan en JS.
     // (Antes había dos findMany: GRADED + todas. select defensivo: solo campos usados.)
     me ? db.submission.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" }, take: 300, select: { id: true, status: true, activity: true, grade: true, feedback: true, kind: true, fileUrl: true, fileName: true, textBody: true, courseCode: true, createdLabel: true } }) : Promise.resolve([]),
-    me ? db.quizAttempt.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" } }) : Promise.resolve([]),
+    // [F3.3] Acotado: TODOS los QuizAttempt del usuario crecían sin límite con el uso. Alimenta
+    // gradeRows→myGrades (avg/best/count histórico). mySubs ya está capado a take:300, así que
+    // capar los exámenes a los 200 más recientes es CONSISTENTE; el promedio refleja la actividad
+    // reciente (sesgo documentado). Histórico completo/paginado → server-side, F10.
+    me ? db.quizAttempt.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" }, take: 200 }) : Promise.resolve([]),
     // Lecciones (id + courseId) de los cursos en que está inscrito, para el % real.
     meEnrollments.length
       ? db.lesson.findMany({ where: { module: { courseId: { in: [...enrolledIds] } } }, select: { id: true, hidden: true, module: { select: { courseId: true, hidden: true } } } })
@@ -510,6 +503,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     me
       ? db.rubricScore.findMany({
           where: { ballot: { debate: { userId: me.id } } },
+          // [F3.3] Guard contra crecimiento sin límite (~5 filas/debate). Cap alto que NO
+          // distorsiona el promedio por criterio en uso realista (>1000 scores ≈ >200 debates).
+          // orderBy id desc (cuid ~cronológico) → si algún usuario superara el cap, el promedio
+          // reflejaría sus debates más recientes. El select ya proyecta 2 campos mínimos.
+          orderBy: { id: "desc" },
+          take: 1000,
           select: { criterion: true, score: true },
         })
       : Promise.resolve([]),
@@ -1614,9 +1613,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       items: m.lessons.filter((l: any) => !l.hidden).map((l) => ({
         id: l.id, t: esc(pickLang(l.title, l.titleEn)), titleEs: esc(l.title), type: l.type, done: l.done, doneByMe: doneSet.has(l.id), locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
         dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
-        videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
-        // Examen real adjunto solo a lecciones type='quiz' (null si no tiene).
-        quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
+        // [F3.1 dedup] courseModules es SOLO el backbone del dashboard (nextLessonItem/Aula leen
+        // id/type/doneByMe/locked). El contentHtml completo del curso YA viaja en coursesContent
+        // (fuente de render) y el examen en quizByLesson (fuente canónica) → aquí no se repiten.
+        videoKind: l.videoKind, videoSrc: l.videoSrc,
       })),
     })),
     // Moodle multi-curso: módulos de TODOS los cursos inscritos, agrupados por curso.
@@ -1645,8 +1645,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
               id: l.id, t: esc(pickLang(l.title, l.titleEn)), titleEs: esc(l.title), type: l.type, done: false, doneByMe: false,
               locked: false, grade: null, dur: l.dur, due: l.due,
               dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
+              // [F3.1 dedup] El examen NO se re-serializa por lección: la fuente canónica es
+              // DB.quizByLesson (scr-learn/scr-extra/scr-teacher lo resuelven por lessonId).
+              // type==='quiz' es el flag que la UI usa; el id de la lección es la clave del lookup.
               videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
-              quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
             })),
           })),
         }));
@@ -1675,8 +1677,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
             id: l.id, t: esc(pickLang(l.title, l.titleEn)), titleEs: esc(l.title), type: l.type, done: l.done, doneByMe: doneSet.has(l.id),
             locked: lessonLocked(l), grade: l.grade, dur: l.dur, due: l.due,
             dueAt: l.dueAt ? l.dueAt.toISOString() : null, maxPoints: l.maxPoints ?? null, submitKinds: l.submitKinds ?? null,
+            // [F3.1 dedup] El examen NO se re-serializa por lección: la fuente canónica es
+            // DB.quizByLesson (scr-learn/scr-extra/scr-teacher lo resuelven por lessonId).
+            // type==='quiz' es el flag que la UI usa; el id de la lección es la clave del lookup.
             videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: pickLang(l.contentHtml, l.contentHtmlEn),
-            quiz: l.type === "quiz" ? (quizByLessonMap.get(l.id) ?? null) : undefined,
           })),
         })),
       }));
@@ -1685,7 +1689,6 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     mySubmissions: mySubmissionsByActivity,
     // [i18n] Mismo estado indexado por lessonId (clave estable) — S.assignment lo prefiere.
     mySubmissionsByLesson,
-    competencies: competencies.map((c) => ({ name: c.name, score: c.score })),
     badges: badges.map((b) => ({ n: b.name, d: b.description, got: gotBadge(b.name), ic: b.icon, tone: b.tone })),
     // [auditoría] La etiqueta de fecha se DERIVA de startsAt (viva, como los torneos); whenLabel
     // es solo fallback para eventos legados sin startsAt. Así "Hoy/Mañana" no queda congelado.
@@ -1696,7 +1699,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       type: a.type, title: esc(a.title), detail: esc(a.detail || ""),
       xp: a.xp || 0, when: whenLabel(a.createdAt, lang),
     })),
-    notifications: notifications.filter((n) => !n.userId || n.userId === me?.id).map((n) => ({ ic: n.icon, tone: n.tone, t: esc(n.title), d: esc(n.detail), when: n.whenLabel, unread: n.unread })),
+    // [F3.2] Ya scopeadas en la DB (where OR userId propio/null) — sin filtro en JS. Mapping/escape intactos.
+    notifications: notifications.map((n) => ({ ic: n.icon, tone: n.tone, t: esc(n.title), d: esc(n.detail), when: n.whenLabel, unread: n.unread })),
     forum: threads.map((t) => ({ id: t.id, title: esc(t.title), author: esc(t.author), ini: esc(t.initials), tag: esc(t.tag), replies: t.replies, views: t.views, pinned: t.pinned, last: t.lastLabel, excerpt: esc(t.excerpt) })),
     forumThread: mainThread ? {
       id: mainThread.id, title: esc(mainThread.title), tag: esc(mainThread.tag),
@@ -1709,10 +1713,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     messages: convos.map((c) => ({
       id: c.id, ini: esc(c.initials), name: esc(c.name), last: esc(c.lastLabel), when: c.whenLabel,
       unread: c.unread, online: c.online, navy: c.navy,
-      messages: (c.messages ?? []).map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
+      // [F3.3] Los mensajes vienen desc (los 60 más recientes) desde la query → se reinvierten
+      // aquí a orden cronológico ascendente (viejo→nuevo), que es como el hilo se renderiza.
+      messages: (c.messages ?? []).slice().reverse().map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
     })),
-    // Legacy: mensajes de la 1ª conversación (se conserva por compatibilidad).
-    chat: (convos[0]?.messages ?? []).map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
     // VENTA POR CURSO APAGADA (PRD §13.1): los cursos son valor de la membresía —
     // price 0 → la UI muestra "Gratis"/Inscribirme y /api/checkout inscribe directo.
     catalog: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(pickLang(c.name, c.nameEn)), coach: esc(c.coachName), color: c.color, price: 0, enrolled: enrolledIds.has(c.id),
@@ -1830,7 +1834,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // Entregas pendientes (no calificadas) de los cursos del profesor.
     base.pendingSubs = pendingSubs;
 
-    base.gradebook = { cols, rows: gbRows };
+    // [F3.1] base.gradebook eliminado: la ruta 'gradebook' está APAGADA (screens.ts) y ningún
+    // builder lee DB.gradebook (el feedback es por ballots/rúbricas y session tools, no matriz de
+    // notas). Con ello desaparece también la query gradeCell.findMany (tabla entera) del payload.
     // Gestión de contenido: SOLO los cursos del propio profesor (borradores incluidos),
     // no los publicados globales — así un curso recién creado o en borrador sí aparece
     // en el desplegable de "Nuevo módulo" y se le puede añadir contenido.

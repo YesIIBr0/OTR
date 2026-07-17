@@ -35,13 +35,15 @@ function currentQuiz() {
   const byLesson = DB.quizByLesson || {};
   const lid = (window as any).__quizLesson;
   if (lid && byLesson[lid]) return byLesson[lid];
-  // Quiz de la lección activa (si __lesson apunta a una lección quiz).
+  // Quiz de la lección activa (si __lesson apunta a una lección quiz). [F3.1] El examen ya no
+  // viaja embebido en el item de coursesContent; se resuelve por lessonId contra quizByLesson
+  // (fuente canónica) — byLesson[id] es exactamente lo que antes traía it.quiz.
   const active = currentLesson();
-  if (active && active.type === "quiz" && active.quiz) return active.quiz;
-  // Fallback: primera lección quiz con quiz embebido en cualquier curso inscrito.
+  if (active && active.type === "quiz" && byLesson[active.id]) return byLesson[active.id];
+  // Fallback: primera lección quiz de cualquier curso inscrito → su examen en quizByLesson.
   for (const c of (DB.coursesContent || [])) {
     for (const m of (c.modules || [])) {
-      for (const it of (m.items || [])) if (it.type === "quiz" && it.quiz) return it.quiz;
+      for (const it of (m.items || [])) if (it.type === "quiz" && byLesson[it.id]) return byLesson[it.id];
     }
   }
   // Segundo fallback: cualquier entrada de quizByLesson.

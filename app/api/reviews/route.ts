@@ -82,9 +82,13 @@ export async function GET(req: Request) {
   if (teacherId) where.teacherId = teacherId;
   if (courseId) where.courseId = courseId;
 
+  // [F3.3] Cap: sin params `where` queda {} → devolvía la tabla Review ENTERA. Acotamos a las
+  // 100 más recientes (ya ordenadas createdAt desc). Cubre de sobra el perfil de coach/curso
+  // (scoped por teacherId/courseId); la paginación server-side (skip/cursor) queda para F10.
   const reviews = await db.review.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    take: 100,
     include: {
       student: { select: { name: true } },
     },

@@ -55,7 +55,6 @@ export interface AppDB {
   coursesContent?: any[];
   mySubmissions?: any;
   mySubmissionsByLesson?: any;
-  competencies?: any[];
   badges?: any[];
   // PRD §3.1 Events (S.events) + torneos (S.debateHub/S.events). Ver toneVar/eventCard
   // en scr-events.ts para la forma exacta de cada item.
@@ -66,7 +65,6 @@ export interface AppDB {
   forum?: any[];
   forumThread?: any;
   messages?: any[];
-  chat?: any[];
   catalog?: any[];
   arsenal?: any;
   skills?: any;
@@ -101,7 +99,6 @@ export interface AppDB {
   students?: any[];
   teacherKpis?: any;
   pendingSubs?: any;
-  gradebook?: any;
   manage?: any;
   teacherCourses?: any[];
   reviewsReceived?: any[];
