@@ -31,6 +31,10 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      # @types/node va anclado al runtime REAL (Dockerfile: node:22-alpine) — un major
+      # de types sin subir el runtime solo introduce tipos de APIs que no existen.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   # ── GitHub Actions ──────────────────────────────────────────────────────────
   - package-ecosystem: "github-actions"
