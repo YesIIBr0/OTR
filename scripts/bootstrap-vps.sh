@@ -140,9 +140,31 @@ else
   echo "     certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}"
 fi
 
+# ---------- 8) Crons (backup + auto-deploy) ----------
+# Los crons vivían SOLO en la crontab manual del VPS: re-provisionar el servidor los
+# perdía en silencio (sin backups ni auto-deploy). Se instalan aquí de forma IDEMPOTENTE
+# vía /etc/cron.d/otr — un archivo dedicado que se sobrescribe entero en cada run, así
+# que re-ejecutar el bootstrap NO duplica entradas.
+say "Instalando crons (backup DB 03:00, backup uploads 03:30, vps-pull cada 2 min)…"
+cat > /etc/cron.d/otr <<CRON
+# OTR Academy — crons gestionados por scripts/bootstrap-vps.sh (IDEMPOTENTE: se
+# reescribe en cada bootstrap; no edites a mano, tus cambios se perderán).
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# m h dom mon dow user  command
+0  3 * * * root ${REPO_DIR}/scripts/backup-db.sh      >> /var/log/otr-backup.log 2>&1
+30 3 * * * root ${REPO_DIR}/scripts/backup-uploads.sh >> /var/log/otr-backup.log 2>&1
+*/2 * * * * root ${REPO_DIR}/scripts/vps-pull.sh      >> /var/log/otr-deploy.log 2>&1
+CRON
+chmod 0644 /etc/cron.d/otr
+# Recarga cron para que tome el archivo nuevo (no falla si el servicio se llama distinto).
+systemctl reload cron 2>/dev/null || systemctl reload crond 2>/dev/null || true
+echo "  → crons en /etc/cron.d/otr (offsite requiere configurar rclone — ver DEPLOY.md)"
+
 say "¡Listo! OTR Academy está corriendo."
 echo "  · Sitio:  https://${DOMAIN}    (landing)"
 echo "  · Aula:   https://${DOMAIN}/aula"
 echo "  · Login demo: saul@otr.do / analia.reyes@otr.do — contraseña = SEED_PASSWORD (o la aleatoria que imprimió el seed arriba)"
 echo "  · Logs:   docker compose logs -f web"
 echo "  · Cambia los secretos/llaves en: ${REPO_DIR}/.env.production  (luego: docker compose up -d)"
+echo "  · Backups: diarios a /opt/otr/backups (DB 03:00, uploads 03:30). Offsite → configura rclone (DEPLOY.md § Backups offsite)."

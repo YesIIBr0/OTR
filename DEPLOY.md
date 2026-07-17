@@ -237,23 +237,120 @@ Certbot edita el server block para servir en HTTPS y renueva automáticamente.
 
 ## 9. Persistencia de archivos subidos
 
-Los archivos que suben los usuarios se guardan en `public/uploads/` (servidos
-por Next en `/uploads/...`). **No se versionan en git** y deben sobrevivir a los
-redeploys:
+Los archivos que suben los usuarios (entregas, grabaciones, avatares) se guardan en
+`var/uploads/` (`UPLOAD_DIR`, **fuera** de `public/` y fuera de git) y se sirven por la
+ruta autenticada `app/uploads/[...path]/route.ts`, **no** como estáticos de Next. Deben
+sobrevivir a los redeploys:
 
-- **Opción A (PM2):** el directorio ya persiste en disco; solo asegúrate de no
-  borrarlo en los redeploys. Para mayor seguridad, móntalo en un volumen/disco
-  aparte y enlázalo:
+- **Opción A (PM2):** `var/uploads/` ya persiste en disco; solo no lo borres en los
+  redeploys. Para mayor seguridad móntalo en un disco aparte y enlázalo:
   ```bash
   mkdir -p /var/otr-uploads
-  rm -rf public/uploads && ln -s /var/otr-uploads public/uploads
-  mkdir -p /var/otr-uploads && touch /var/otr-uploads/.gitkeep
+  rm -rf var/uploads && ln -s /var/otr-uploads var/uploads
+  touch /var/otr-uploads/.gitkeep
   ```
-- **Opción B (Docker):** ya está cubierto por el volumen `otr_uploads` en
-  `docker-compose.yml`.
+- **Opción B (Docker):** ya está cubierto por el volumen `otr_uploads` (montado en
+  `/app/var/uploads`) en `docker-compose.yml`.
 
-Haz **backup periódico** de `public/uploads/` y de la base de datos
-(`pg_dump otr_aula`).
+El **backup de estos archivos y de la base de datos está automatizado** (crons +
+offsite) — ver la sección [Backups offsite y restauración](#backups-offsite-y-restauración).
+
+---
+
+## Backups offsite y restauración
+
+El VPS es un **único punto de pérdida total**: app, Postgres, uploads y backups viven en
+el mismo disco. Estos scripts cierran ese riesgo con copia local **y** offsite.
+
+### Qué corre automáticamente
+
+`bootstrap-vps.sh` instala tres crons en `/etc/cron.d/otr` (idempotente: se reescribe en
+cada bootstrap, nunca duplica):
+
+| Cron | Script | Qué hace | Rotación local |
+|---|---|---|---|
+| `0 3 * * *` | `scripts/backup-db.sh` | `pg_dump` gz de Postgres | 14 días |
+| `30 3 * * *` | `scripts/backup-uploads.sh` | `tar.gz` del volumen `otr_uploads` (entregas, grabaciones, avatares) | 7 días |
+| `*/2 * * * *` | `scripts/vps-pull.sh` | auto-deploy de la última imagen de ghcr | — |
+
+Los backups quedan en `/opt/otr/backups/` y se registran en `/var/log/otr-backup.log`.
+Tras cada dump local, si **rclone está configurado** se sube a un bucket remoto y **se
+verifica** (`rclone check`), con rotación remota a 30 días. Si rclone **no** está
+configurado, los scripts degradan con gracia: dejan el backup local, avisan en el log y
+**no** rompen el cron.
+
+### Activar offsite (una sola vez en el VPS) — Backblaze B2
+
+Bucket ~1 USD/mes. Crea una **Application Key** en el panel de Backblaze (con acceso al
+bucket) y corre en el VPS:
+
+```bash
+apt-get install -y rclone
+# 1) Configura el remote 'otr-backups' (reemplaza los valores por los tuyos):
+rclone config create otr-backups b2 account=TU_KEY_ID key=TU_APPLICATION_KEY
+# 2) Crea el bucket (nombre de ejemplo; debe ser único global en B2):
+rclone mkdir otr-backups:otr-academy-backups
+# 3) Fija el destino para los crons (persistente, lo leen los scripts de backup):
+echo 'OTR_BACKUP_REMOTE=otr-backups:otr-academy-backups' > /etc/otr-backup.env
+# 4) Verifica que el remote responde:
+rclone lsd otr-backups:
+# 5) Prueba el backup completo (debe imprimir "subido y verificado"):
+/opt/otr/scripts/backup-db.sh
+```
+
+### Activar offsite — Cloudflare R2 (alternativa, S3-compatible)
+
+R2 no cobra egress. Crea un **API Token** de R2 (Access Key ID + Secret) y su
+`ACCOUNT_ID` en el panel de Cloudflare, y corre:
+
+```bash
+apt-get install -y rclone
+# 1) Remote 's3' apuntando al endpoint de R2 de tu cuenta:
+rclone config create otr-backups s3 provider=Cloudflare \
+  access_key_id=TU_ACCESS_KEY secret_access_key=TU_SECRET_KEY \
+  endpoint=https://TU_ACCOUNT_ID.r2.cloudflarestorage.com
+# 2) Crea el bucket:
+rclone mkdir otr-backups:otr-academy-backups
+# 3) Destino persistente para los crons:
+echo 'OTR_BACKUP_REMOTE=otr-backups:otr-academy-backups' > /etc/otr-backup.env
+# 4) Verifica y 5) prueba:
+rclone lsd otr-backups:
+/opt/otr/scripts/backup-uploads.sh
+```
+
+> Sin `/etc/otr-backup.env`, el default es `otr-backups:` (remote pelado, **sin** bucket):
+> los scripts avisan y se quedan en backup local. Con B2/R2 el destino **debe** incluir el
+> bucket, por eso el paso 3 es obligatorio.
+
+### Restaurar la base de datos (probado)
+
+```bash
+cd /opt/otr
+# 1) Elige el dump: el último local, o bájalo del offsite primero:
+#    rclone copy otr-backups:otr-academy-backups/db/otr-YYYYMMDD-HHMMSS.sql.gz /opt/otr/backups/
+DUMP=$(ls -1t /opt/otr/backups/otr-*.sql.gz | head -n1)
+# 2) Restaura dentro del contenedor postgres (DROP+CREATE de objetos vía el dump):
+gunzip -c "$DUMP" | docker compose --env-file .env.production exec -T postgres \
+  sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+# 3) Reinicia la app para reconectar limpio:
+docker compose --env-file .env.production restart web
+```
+
+### Restaurar los uploads (probado)
+
+```bash
+cd /opt/otr
+# 1) Elige el tar (último local, o bájalo del offsite como arriba con .../uploads/):
+TAR=$(ls -1t /opt/otr/backups/otr-uploads-*.tar.gz | head -n1)
+# 2) Detecta el nombre real del volumen (compose lo prefija con el proyecto):
+VOL=$(docker volume ls --format '{{.Name}}' | grep -E '(^|_)otr_uploads$' | head -n1)
+# 3) Extrae el tar DENTRO del volumen (sobrescribe el contenido actual):
+docker run --rm -v "$VOL":/data -v /opt/otr/backups:/backup:ro alpine \
+  sh -c "cd /data && tar xzf /backup/$(basename "$TAR")"
+```
+
+> Prueba de humo del restore (recomendada antes de confiar en él): restaura en un stack de
+> staging aparte y confirma login + que una entrega con adjunto abre el archivo.
 
 ---
 
@@ -314,9 +411,9 @@ pm2 reload otr
 - [ ] `https://aula.otr-academy.com/` muestra la landing.
 - [ ] `https://aula.otr-academy.com/aula` carga el LMS.
 - [ ] Login con `saul@otr.do` / `analia.reyes@otr.do` (pass = `SEED_PASSWORD`, o la aleatoria que imprimió el seed).
-- [ ] Subir un audio/PDF en una entrega persiste en `public/uploads/`.
+- [ ] Subir un audio/PDF en una entrega persiste en `var/uploads/` (volumen `otr_uploads`).
 - [ ] `pm2 logs otr` (o `docker compose --env-file .env.production logs web`) sin errores.
-- [ ] Backup de BD (`pg_dump`) y de `public/uploads/` programado.
+- [ ] Crons de backup activos (`cat /etc/cron.d/otr`) y offsite configurado (`rclone lsd otr-backups:`).
 
 ---
 
