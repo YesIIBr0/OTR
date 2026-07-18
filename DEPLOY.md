@@ -418,6 +418,24 @@ pm2 reload otr
 
 > **No** ejecutes `npm run db:seed` en redeploys: borraría los datos reales.
 
+### Rollback en <5 min [R3]
+
+Cada deploy de `vps-pull.sh` conserva la imagen saliente taggeada como `:prev` y anota el
+cambio en `/opt/otr/releases.log`. Si un deploy sale mal:
+
+```bash
+/opt/otr/scripts/rollback.sh          # vuelve a :prev (retag local, sin CI ni red)
+                                      # y PAUSA el auto-deploy (.deploy-hold)
+# ... pushea el fix a main, espera CI verde ...
+/opt/otr/scripts/rollback.sh --resume # reanuda: el cron despliega el :latest bueno en ≤2 min
+```
+
+- El rollback **no revierte migraciones**: la convención del repo es que sean aditivas
+  (la imagen anterior corre sobre el schema nuevo). Ante una migración destructiva, el
+  camino es el restore del backup (§ Backups offsite y restauración).
+- Mientras exista `/opt/otr/.deploy-hold`, `vps-pull.sh` no despliega nada (lo verás en
+  el log del cron como `⏸ deploy en pausa`).
+
 ---
 
 ## 11. Checklist de salud

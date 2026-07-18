@@ -14,6 +14,11 @@ IMG="ghcr.io/yesiibr0/otr:latest"
 
 [ -f .env.production ] || { echo "$(date -u) ✗ falta .env.production"; exit 0; }
 
+# [R3] Freno del auto-deploy: rollback.sh crea este archivo para que el cron NO vuelva a
+# desplegar :latest encima de un rollback recién hecho. Se quita con `rollback.sh --resume`
+# (cuando el fix ya esté pusheado a main) o borrando el archivo a mano.
+[ -f .deploy-hold ] && { echo "$(date -u) ⏸ deploy en pausa (.deploy-hold — rollback activo; usa scripts/rollback.sh --resume)"; exit 0; }
+
 before=$(docker image inspect "$IMG" --format '{{.Id}}' 2>/dev/null || echo none)
 # Baja la imagen; si falla (p.ej. sin login a ghcr) salimos sin romper el cron.
 if ! docker compose --env-file .env.production pull web >/dev/null 2>&1; then
@@ -25,6 +30,12 @@ after=$(docker image inspect "$IMG" --format '{{.Id}}' 2>/dev/null || echo none)
 [ "$before" = "$after" ] && exit 0
 
 echo "$(date -u) ▸ nueva imagen detectada — redeploy"
+# [R3] La imagen SALIENTE se conserva taggeada :prev (sobrevive al prune de dangling) — es
+# el punto de retorno de scripts/rollback.sh. Historial legible en releases.log.
+if [ "$before" != "none" ]; then
+  docker tag "$before" ghcr.io/yesiibr0/otr:prev 2>/dev/null || true
+fi
+echo "$(date -u) release: $before -> $after" >> releases.log
 # Migrar ANTES de swappear (down/up): `run` levanta un contenedor efímero con la imagen
 # NUEVA pero conectado al stack VIEJO (la app y la DB actuales siguen vivas mientras esto
 # corre). Si `migrate deploy` falla, abortamos aquí — nunca llegamos al down/up — así la
