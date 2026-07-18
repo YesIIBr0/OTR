@@ -8,6 +8,7 @@
    Patrón de la casa: render(state)->string + mount(root,state); IC.* iconos, C.kpi/C.bar,
    navy + sky, fade-up; nada de emojis. Cliente vía globales de Aula.tsx: api(url,body,method). */
 import { C } from "./components";
+import { esc } from "./esc";
 import { IC } from "./icons";
 import { t, getLang, registerDict } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): am.* (directo) + au.*/mb.* (compartidos con otras vistas admin). Ver app/lib/i18n.ts.
@@ -95,6 +96,8 @@ function funnelCard(funnel) {
     { l: t("am.funnelStudents"), v: funnel.studentsTotal },
     { l: t("am.funnelPlaced"), v: funnel.placed },
     { l: t("am.funnelEnrolled"), v: funnel.enrolled },
+    // [R6] Activación real: ≥1 acción core alguna vez (el "aha" medible, no el registro).
+    { l: t("am.funnelFirstAction"), v: funnel.firstCoreAction },
     { l: t("am.funnelBooked"), v: funnel.booked },
   ];
   const rows = steps
@@ -167,7 +170,9 @@ function viewBody() {
 
   const d = st.data;
   const usersByRole = d.usersByRole || {};
-  const funnel = d.funnel || { studentsTotal: 0, placed: 0, enrolled: 0, booked: 0 };
+  const funnel = d.funnel || { studentsTotal: 0, placed: 0, enrolled: 0, booked: 0, firstCoreAction: 0 };
+  // [R6] North Star con definición viajando en el payload (nunca un número sin contexto).
+  const northStar = d.northStar || { activeStudentsWeek: 0, definition: "" };
   const bookings = d.bookings || { total: 0, byStatus: {}, gmvCents: 0 };
   const debates = d.debates || { total: 0, pending: 0, approved: 0, rejected: 0 };
   const courses = d.courses || { published: 0, enrollments: 0 };
@@ -178,7 +183,8 @@ function viewBody() {
 
   return `
   <div class="grid g-4 fade-up" style="--d:1;margin-bottom:18px">
-    <div class="tile tile--hero otr-shine">${C.kpi(t("am.kpiUsers"), fmtNum(totalUsers), { ic: "users", accent: "var(--otr-green-text)" })}</div>
+    <div class="tile tile--hero otr-shine" title="${esc(northStar.definition)}">${C.kpi(t("am.northStar"), fmtNum(northStar.activeStudentsWeek), { ic: "check", accent: "var(--otr-green-text)" })}</div>
+    <div class="tile">${C.kpi(t("am.kpiUsers"), fmtNum(totalUsers), { ic: "users" })}</div>
     <div class="tile tile--hero-gold otr-shine">${C.kpi(t("am.kpiGmv"), money(bookings.gmvCents), { ic: "star", accent: "var(--otr-gold-text)" })}</div>
     <div class="tile">${C.kpi(t("am.kpiBookings"), fmtNum(bookings.total), { ic: "calendar" })}</div>
     <div class="tile">${C.kpi(t("am.kpiDebatesPending"), fmtNum(debates.pending), { ic: "flag" })}</div>

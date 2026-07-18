@@ -9,6 +9,8 @@ export const dict = {
     "am.title": "Métricas de negocio",
     "am.subtitle": "Usuarios, reservas, debates y cursos — el estado de OTR de un vistazo",
     "am.exportEnrollments": "Exportar inscripciones (CSV)",
+    "am.funnelFirstAction": "Primera acción core",
+    "am.northStar": "Alumnos activos (7 días)",
     "am.exportBookings": "Exportar reservas (CSV)",
 
     // KPIs (fila principal)
@@ -63,6 +65,8 @@ export const dict = {
     "am.title": "Business metrics",
     "am.subtitle": "Users, bookings, debates and courses — OTR's status at a glance",
     "am.exportEnrollments": "Export enrollments (CSV)",
+    "am.funnelFirstAction": "First core action",
+    "am.northStar": "Active students (7 days)",
     "am.exportBookings": "Export bookings (CSV)",
 
     // KPIs (main row)

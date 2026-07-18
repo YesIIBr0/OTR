@@ -39,6 +39,11 @@ function bucketByWeek(dates: Date[], since: Date, weeks: number) {
   return buckets;
 }
 
+// [R6 — Tribunal 1.5] Acciones "core" = práctica real del alumno (no login ni navegación):
+// completar lección, aprobar examen, pedir debate, reservar sesión. Alimentan los dos
+// escalones nuevos del funnel y la North Star.
+const CORE_TYPES = ["lesson_done", "quiz_done", "debate_requested", "booking_made"];
+
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
@@ -66,6 +71,8 @@ export async function GET() {
     membershipRaw,
     tournamentsTotal,
     tournamentRegistrations,
+    studentsFirstAction,
+    northStarActiveWeek,
   ] = await Promise.all([
     db.user.groupBy({ by: ["role"], _count: { _all: true } }),
     db.user.findMany({ where: { createdAt: { gte: since } }, select: { createdAt: true } }),
@@ -85,6 +92,11 @@ export async function GET() {
     db.user.groupBy({ by: ["membership"], _count: { _all: true } }),
     db.tournament.count(),
     db.tournamentRegistration.count(),
+    // [R6] Funnel de activación: alumnos con ≥1 acción core ALGUNA VEZ (¿llegaron al valor?).
+    db.user.count({ where: { role: "STUDENT", activityEvents: { some: { type: { in: CORE_TYPES } } } } }),
+    // [R6] NORTH STAR: alumnos con ≥1 acción core en los últimos 7 días. Es LA métrica de
+    // producto (predice retención); "usuarios registrados" queda como vanidad de contexto.
+    db.user.count({ where: { role: "STUDENT", activityEvents: { some: { type: { in: CORE_TYPES }, createdAt: { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } } } } }),
   ]);
 
   const usersByRole: Record<string, number> = {};
@@ -110,6 +122,14 @@ export async function GET() {
       placed: studentsPlaced,
       enrolled: studentsEnrolled,
       booked: studentsBooked,
+      // [R6] Activación real: ≥1 acción core (lección/examen/debate/reserva) alguna vez.
+      firstCoreAction: studentsFirstAction,
+    },
+    // [R6] North Star: alumnos con práctica real esta semana. La definición viaja con el
+    // dato para que el panel nunca la pinte sin contexto.
+    northStar: {
+      activeStudentsWeek: northStarActiveWeek,
+      definition: "Alumnos con ≥1 acción core (lección, examen, debate o reserva) en los últimos 7 días",
     },
     bookings: {
       total: bookingsTotal,
