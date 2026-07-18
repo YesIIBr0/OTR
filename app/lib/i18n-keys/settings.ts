@@ -79,7 +79,7 @@ export const dict = {
     "settings.currentPassword": "Contraseña actual",
     "settings.newPassword": "Nueva contraseña (mín. 6)",
     "settings.confirmPassword": "Confirmar nueva contraseña",
-    "settings.passwordTooShort": "La nueva contraseña debe tener al menos 6 caracteres",
+    "settings.passwordTooShort": "La nueva contraseña debe tener al menos 8 caracteres",
     "settings.passwordMismatch": "Las contraseñas no coinciden",
     "settings.passwordUpdated": "Contraseña actualizada",
 
@@ -176,7 +176,7 @@ export const dict = {
     "settings.currentPassword": "Current password",
     "settings.newPassword": "New password (min. 6)",
     "settings.confirmPassword": "Confirm new password",
-    "settings.passwordTooShort": "The new password must be at least 6 characters",
+    "settings.passwordTooShort": "The new password must be at least 8 characters",
     "settings.passwordMismatch": "Passwords don't match",
     "settings.passwordUpdated": "Password updated",
 

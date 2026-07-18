@@ -865,3 +865,14 @@ model AuditLog {
   @@index([createdAt])
   @@index([actorId])
 }
+
+// --- StripeEvent: ledger de eventos de webhook procesados (dedupe) [R1/F7-prep] ---
+// Stripe REINTENTA webhooks: sin este ledger, el mismo checkout.session.completed entregado
+// dos veces podía otorgar acceso dos veces (gap fijado por los tests de F5). El id ES el
+// event.id de Stripe (evt_...): el intento de crear un duplicado falla por PK y la ruta
+// responde 200 sin repetir efectos. Solo-escritura (nunca se borra: es el rastro de pagos).
+model StripeEvent {
+  id        String   @id // event.id de Stripe — la unicidad de la PK ES el dedupe
+  type      String
+  createdAt DateTime @default(now())
+}

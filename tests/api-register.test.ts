@@ -45,19 +45,19 @@ describe("POST /api/auth/register — validación", () => {
   });
 
   it("rechaza email inválido", async () => {
-    const { status } = await register({ name: "Ana Ruiz", email: "no-es-email", password: "secret1", role: "student", birthYear: currentYear - 20 });
+    const { status } = await register({ name: "Ana Ruiz", email: "no-es-email", password: "secreto-fuerte-9", role: "student", birthYear: currentYear - 20 });
     expect(status).toBe(400);
   });
 
   it("rechaza email ya registrado con 409", async () => {
     db.fn("user.findUnique").mockResolvedValue({ id: "u-old", email: "ana@x.com" });
-    const { status } = await register({ name: "Ana Ruiz", email: "ana@x.com", password: "secret1", role: "student", birthYear: currentYear - 20 });
+    const { status } = await register({ name: "Ana Ruiz", email: "ana@x.com", password: "secreto-fuerte-9", role: "student", birthYear: currentYear - 20 });
     expect(status).toBe(409);
     expect(db.fn("user.create")).not.toHaveBeenCalled();
   });
 
   it("bloquea el auto-registro de coaches con 403", async () => {
-    const { status } = await register({ name: "Coach X", email: "c@x.com", password: "secret1", role: "teacher" });
+    const { status } = await register({ name: "Coach X", email: "c@x.com", password: "secreto-fuerte-9", role: "teacher" });
     expect(status).toBe(403);
     expect(db.fn("user.create")).not.toHaveBeenCalled();
   });
@@ -65,19 +65,19 @@ describe("POST /api/auth/register — validación", () => {
 
 describe("POST /api/auth/register — COPPA / age-gate", () => {
   it("BLOQUEA a un menor de 13 (corte conservador <14) con 403", async () => {
-    const { status, json } = await register({ name: "Niño Test", email: "nino@x.com", password: "secret1", role: "student", birthYear: currentYear - 12 });
+    const { status, json } = await register({ name: "Niño Test", email: "nino@x.com", password: "secreto-fuerte-9", role: "student", birthYear: currentYear - 12 });
     expect(status).toBe(403);
     expect(json.code).toBe("underThirteen");
     expect(db.fn("user.create")).not.toHaveBeenCalled();
   });
 
   it("también bloquea la cohorte límite de 13 (solo tenemos año)", async () => {
-    const { status } = await register({ name: "Trece", email: "t@x.com", password: "secret1", role: "student", birthYear: currentYear - 13 });
+    const { status } = await register({ name: "Trece", email: "t@x.com", password: "secreto-fuerte-9", role: "student", birthYear: currentYear - 13 });
     expect(status).toBe(403);
   });
 
   it("crea un ADULTO (>=18) con ageBand adult y abre sesión", async () => {
-    const { status } = await register({ name: "Adulta Ya", email: "adulta@x.com", password: "secret1", role: "student", birthYear: currentYear - 25 });
+    const { status } = await register({ name: "Adulta Ya", email: "adulta@x.com", password: "secreto-fuerte-9", role: "student", birthYear: currentYear - 25 });
     expect(status).toBe(200);
     const arg = db.fn("user.create").mock.calls[0][0].data;
     expect(arg.ageBand).toBe("adult");
@@ -85,7 +85,7 @@ describe("POST /api/auth/register — COPPA / age-gate", () => {
   });
 
   it("un MENOR 14-17 se crea con ageBand minor", async () => {
-    const { status } = await register({ name: "Menor Val", email: "menor@x.com", password: "secret1", role: "student", birthYear: currentYear - 15 });
+    const { status } = await register({ name: "Menor Val", email: "menor@x.com", password: "secreto-fuerte-9", role: "student", birthYear: currentYear - 15 });
     expect(status).toBe(200);
     expect(db.fn("user.create").mock.calls[0][0].data.ageBand).toBe("minor");
   });
@@ -95,7 +95,7 @@ describe("POST /api/auth/register — COPPA / age-gate", () => {
     db.fn("user.findUnique")
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ id: "p1", role: "PARENT", email: "papa@x.com" });
-    const { status } = await register({ name: "Hijo Val", email: "hijo@x.com", password: "secret1", role: "student", birthYear: currentYear - 15, guardianEmail: "papa@x.com" });
+    const { status } = await register({ name: "Hijo Val", email: "hijo@x.com", password: "secreto-fuerte-9", role: "student", birthYear: currentYear - 15, guardianEmail: "papa@x.com" });
     expect(status).toBe(200);
     const g = db.fn("guardianship.create").mock.calls[0][0].data;
     expect(g.status).toBe("PENDING");

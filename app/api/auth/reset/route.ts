@@ -3,9 +3,10 @@ import { ok, bad, readJson, clean, clientIp } from "../../../lib/api";
 import { hashPassword } from "../../../lib/auth-crypto";
 import { hashToken } from "../../../lib/mail";
 import { rateLimit } from "../../../lib/rate-limit";
+import { passwordPolicyError } from "../../../lib/password-policy";
 
 // POST /api/auth/reset — { token, password }. Valida el token (no usado, no expirado),
-// la contraseña (≥6), actualiza el hash del usuario y marca el token como usado.
+// la contraseña (política R2: ≥8 + no-común), actualiza el hash y marca el token usado.
 export async function POST(req: Request) {
   // [F1.4] Anti fuerza-bruta de tokens de reset: 5 intentos por IP cada 10 min (igual que /auth/forgot).
   const ip = clientIp(req);
@@ -17,7 +18,9 @@ export async function POST(req: Request) {
   const password = String(body.password ?? "");
 
   if (!token) return bad("Token inválido", 400);
-  if (password.length < 6) return bad("La contraseña debe tener al menos 6 caracteres", 400);
+  // [R2] Mínimo 8 + bloqueo de comunes (antes: 6 y sin lista) — ver lib/password-policy.
+  const pwErr = passwordPolicyError(password);
+  if (pwErr) return bad(pwErr, 400);
 
   const record = await db.passwordReset.findUnique({ where: { tokenHash: hashToken(token) } });
   if (!record || record.usedAt || record.expiresAt.getTime() < Date.now()) {

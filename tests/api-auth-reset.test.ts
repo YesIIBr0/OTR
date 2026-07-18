@@ -107,10 +107,10 @@ describe("POST /api/auth/reset — validación del token", () => {
     expect(db.fn("passwordReset.findUnique")).not.toHaveBeenCalled();
   });
 
-  it("password corta (<6) → 400 y NO busca el token todavía", async () => {
+  it("password corta (política R2: <8) → 400 y NO busca el token todavía", async () => {
     const { status, json } = await reset({ token: "tok", password: "123" });
     expect(status).toBe(400);
-    expect(json.error).toBe("La contraseña debe tener al menos 6 caracteres");
+    expect(json.error).toBe("La contraseña debe tener al menos 8 caracteres");
     expect(db.fn("passwordReset.findUnique")).not.toHaveBeenCalled();
   });
 

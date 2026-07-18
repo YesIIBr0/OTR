@@ -59,7 +59,7 @@ const STR = {
     emailPh: "tu@correo.com",
     passwordLabel: "Contraseña",
     newPwdLabel: "Nueva contraseña",
-    newPwdPh: "Mínimo 6 caracteres",
+    newPwdPh: "Mínimo 8 caracteres",
     confirmPwdLabel: "Confirmar contraseña",
     confirmPwdPh: "Repite la contraseña",
     // Pies
@@ -71,7 +71,7 @@ const STR = {
     langLabel: "Idioma",
     // Mensajes (handlers)
     forgotNotice: "Si el correo existe, te enviamos un enlace para restablecer tu contraseña.",
-    errPwdShort: "La contraseña debe tener al menos 6 caracteres",
+    errPwdShort: "La contraseña debe tener al menos 8 caracteres",
     errPwdMismatch: "Las contraseñas no coinciden",
     resetDone: "Contraseña actualizada. Inicia sesión con tu nueva contraseña.",
     errBadLink: "El enlace no es válido o ya expiró",
@@ -122,7 +122,7 @@ const STR = {
     emailPh: "you@email.com",
     passwordLabel: "Password",
     newPwdLabel: "New password",
-    newPwdPh: "At least 6 characters",
+    newPwdPh: "At least 8 characters",
     confirmPwdLabel: "Confirm password",
     confirmPwdPh: "Repeat the password",
     forgotLink: "Forgot your password?",
@@ -132,7 +132,7 @@ const STR = {
     backToLogin: "Back to sign in",
     langLabel: "Language",
     forgotNotice: "If the email exists, we've sent you a link to reset your password.",
-    errPwdShort: "Your password must be at least 6 characters",
+    errPwdShort: "Your password must be at least 8 characters",
     errPwdMismatch: "Passwords don't match",
     resetDone: "Password updated. Sign in with your new password.",
     errBadLink: "This link is invalid or has expired",
@@ -240,7 +240,7 @@ export default function Auth() {
 
     // --- Restablecer contraseña con token ---
     if (mode === "reset") {
-      if (password.length < 6) { setError(T.errPwdShort); return; }
+      if (password.length < 8) { setError(T.errPwdShort); return; } // [R2] espejo del server (lib/password-policy); la lista de comunes la valida el server
       if (password !== password2) { setError(T.errPwdMismatch); return; }
       setLoading(true);
       try {

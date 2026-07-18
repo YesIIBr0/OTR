@@ -3,6 +3,7 @@ import { setSession } from "../../../lib/auth";
 import { hashPassword } from "../../../lib/auth-crypto";
 import { ok, bad, readJson, clean, clientIp } from "../../../lib/api";
 import { rateLimit } from "../../../lib/rate-limit";
+import { passwordPolicyError } from "../../../lib/password-policy";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -38,7 +39,9 @@ export async function POST(req: Request) {
 
   if (name.length < 2) return bad("Nombre inválido", 400);
   if (!EMAIL_RE.test(email)) return bad("Correo inválido", 400);
-  if (password.length < 6) return bad("La contraseña debe tener al menos 6 caracteres", 400);
+  // [R2] Mínimo 8 + bloqueo de comunes (antes: 6 y sin lista) — ver lib/password-policy.
+  const pwErr = passwordPolicyError(password);
+  if (pwErr) return bad(pwErr, 400);
 
   // Age-gate (PRD §11.3): solo estudiantes declaran año de nacimiento.
   // ageBand = minor (<18) | adult (>=18). Validamos un rango razonable.

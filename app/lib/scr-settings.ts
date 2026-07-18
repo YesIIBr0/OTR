@@ -299,7 +299,7 @@ S.settings = {
         const cur = String(v.currentPassword || "").trim();
         const nw = String(v.newPassword || "").trim();
         const cf = String(v.confirm || "").trim();
-        if (nw.length < 6) throw new Error(t("settings.passwordTooShort"));
+        if (nw.length < 8) throw new Error(t("settings.passwordTooShort")); // [R2] espejo del server
         if (nw !== cf) throw new Error(t("settings.passwordMismatch"));
         await w.api("/api/profile", { currentPassword: cur, newPassword: nw }, "PATCH");
         w.toast?.(t("settings.passwordUpdated"), "ok");

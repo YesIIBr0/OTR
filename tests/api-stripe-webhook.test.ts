@@ -9,11 +9,11 @@
 // Mockea el SDK "stripe" (vi.mock) para controlar constructEvent sin claves reales, y Prisma
 // (harness). NO se usa ninguna clave real: la firma se simula vía el mock de constructEvent.
 //
-// GAP DOCUMENTADO PARA F7 (ver test "replay del mismo event.id"): la ruta NO lleva un ledger
-// de event.id procesados. Su idempotencia depende EXCLUSIVAMENTE de la unicidad de Enrollment
-// (userId_courseId): si el mismo evento llega dos veces ANTES de que la inscripción exista en
-// la DB, se crea DOS veces. Con Stripe real (reintentos de webhook) hace falta dedupe por
-// event.id + registro de pago. El test lo deja fijado como comportamiento actual, no lo arregla.
+// [R1] GAP DE F5 CERRADO: la ruta ahora lleva un ledger StripeEvent (PK = event.id) que se
+// escribe ANTES de aplicar efectos — un replay de Stripe (P2002) responde 200 duplicate sin
+// repetir la inscripción; un fallo REAL del ledger (DB caída) responde 500 para que Stripe
+// reintente y el pago no se pierda. Además Enrollment + studentsCount van en UNA $transaction
+// (antes eran dos awaits sueltos que podían desalinear el contador).
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeDb } from "./helpers/route-harness";
 
@@ -61,6 +61,9 @@ beforeEach(() => {
   db.fn("enrollment.findUnique").mockResolvedValue(null);
   db.fn("enrollment.create").mockResolvedValue({ id: "enr-1" });
   db.fn("course.update").mockResolvedValue({ id: COURSE_ID });
+  // [R1] Ledger de dedupe: por defecto el evento es nuevo (create ok). Cada test de replay
+  // lo hace rechazar con { code: "P2002" } (PK duplicada de Prisma).
+  db.fn("stripeEvent.create").mockResolvedValue({ id: "evt_1" });
 });
 
 describe("POST /api/stripe/webhook — configuración ausente", () => {
@@ -90,7 +93,8 @@ describe("POST /api/stripe/webhook — verificación de firma", () => {
     const res = await POST(webhookReq("cuerpo-crudo", "firma-mala"));
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/^Firma inválida:/);
-    // Ninguna operación de DB ante firma inválida.
+    // Ninguna operación de DB ante firma inválida — ni siquiera el ledger de dedupe.
+    expect(db.fn("stripeEvent.create")).not.toHaveBeenCalled();
     expect(db.fn("enrollment.findUnique")).not.toHaveBeenCalled();
     expect(db.fn("enrollment.create")).not.toHaveBeenCalled();
     expect(db.fn("course.update")).not.toHaveBeenCalled();
@@ -149,15 +153,35 @@ describe("POST /api/stripe/webhook — checkout.session.completed", () => {
     expect(db.fn("enrollment.create")).not.toHaveBeenCalled();
   });
 
-  // GAP F7: la ruta NO deduplica por event.id. Si el mismo evento llega dos veces antes de que
-  // la inscripción exista (findUnique null en ambas), CREA DOS VECES. En producción real la
-  // unicidad de Enrollment en la DB lo frenaría en la 2ª, pero no hay registro de pago/evento.
-  it("[GAP F7] replay del mismo event.id sin dedupe → crea dos veces (no hay ledger de eventos)", async () => {
+  // [R1] El gap de F5 cerrado: el ledger StripeEvent deduplica por event.id.
+  it("[R1] replay del mismo event.id → 200 duplicate SIN repetir efectos (ledger dedupe)", async () => {
     box.ev.mockReturnValue(completedEvent({ courseId: COURSE_ID, userId: USER_ID }, "evt_repetido"));
-    await POST(webhookReq("{}")); // primera entrega
-    await POST(webhookReq("{}")); // reintento de Stripe, mismo event.id
-    // Con la DB mockeada (findUnique null siempre) queda a la vista que NO consulta event.id:
-    expect(db.fn("enrollment.create")).toHaveBeenCalledTimes(2);
+    await POST(webhookReq("{}")); // primera entrega: procesa
+    // Reintento de Stripe: la PK del ledger choca (P2002 de Prisma).
+    db.fn("stripeEvent.create").mockRejectedValueOnce(Object.assign(new Error("unique"), { code: "P2002" }));
+    const res = await POST(webhookReq("{}"));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ received: true, duplicate: true });
+    // Los efectos ocurrieron UNA sola vez (la primera entrega).
+    expect(db.fn("enrollment.create")).toHaveBeenCalledTimes(1);
+    expect(db.fn("course.update")).toHaveBeenCalledTimes(1);
+  });
+
+  it("[R1] el ledger registra event.id + type ANTES de aplicar efectos", async () => {
+    box.ev.mockReturnValue(completedEvent({ courseId: COURSE_ID, userId: USER_ID }, "evt_abc"));
+    await POST(webhookReq("{}"));
+    expect(db.fn("stripeEvent.create")).toHaveBeenCalledWith({
+      data: { id: "evt_abc", type: "checkout.session.completed" },
+    });
+  });
+
+  it("[R1] fallo REAL del ledger (no P2002, p.ej. DB caída) → 500 para que Stripe REINTENTE, sin efectos", async () => {
+    box.ev.mockReturnValue(completedEvent({ courseId: COURSE_ID, userId: USER_ID }));
+    db.fn("stripeEvent.create").mockRejectedValueOnce(new Error("connection refused"));
+    const res = await POST(webhookReq("{}"));
+    expect(res.status).toBe(500);
+    expect(db.fn("enrollment.create")).not.toHaveBeenCalled();
+    expect(db.fn("course.update")).not.toHaveBeenCalled();
   });
 });
 

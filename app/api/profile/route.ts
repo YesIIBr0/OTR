@@ -3,6 +3,7 @@ import { db } from "../../lib/db";
 import { getSessionUser, setSession } from "../../lib/auth";
 import { hashPassword, verifyPassword } from "../../lib/auth-crypto";
 import { clean, safeUrl } from "../../lib/api";
+import { passwordPolicyError } from "../../lib/password-policy";
 
 export async function PATCH(req: Request) {
   const user = await getSessionUser();
@@ -36,8 +37,10 @@ export async function PATCH(req: Request) {
   }
 
   if (body.newPassword) {
-    if (String(body.newPassword).length < 6) {
-      return NextResponse.json({ error: "La nueva contraseña debe tener al menos 6 caracteres" }, { status: 400 });
+    // [R2] Política nueva (≥8 + no-común) — misma que register/reset; ver lib/password-policy.
+    const pwErr = passwordPolicyError(String(body.newPassword));
+    if (pwErr) {
+      return NextResponse.json({ error: pwErr }, { status: 400 });
     }
     if (!verifyPassword(body.currentPassword || "", user.passwordHash)) {
       return NextResponse.json({ error: "La contraseña actual es incorrecta" }, { status: 400 });

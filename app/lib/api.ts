@@ -34,8 +34,9 @@ const ERROR_CODES: Record<string, string> = {
   "Este programa requiere pago": "requiresPayment",
   "Pagos no disponibles temporalmente": "paymentsUnavailable",
   "Correo o contraseña incorrectos": "badCredentials",
-  "La contraseña debe tener al menos 6 caracteres": "passwordShort",
-  "La nueva contraseña debe tener al menos 6 caracteres": "passwordShort",
+  // [R2] Política de contraseñas: mínimo 8 + bloqueo de comunes (lib/password-policy).
+  "La contraseña debe tener al menos 8 caracteres": "passwordShort",
+  "Esa contraseña es demasiado común — elige otra más difícil de adivinar": "passwordCommon",
   "El registro de menores de 13 años requiere el consentimiento verificable de su padre, madre o tutor. Pídele a tu tutor que nos contacte para crear tu cuenta.": "underThirteen",
 };
 

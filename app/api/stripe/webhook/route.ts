@@ -4,6 +4,14 @@ import { db } from "../../../lib/db";
 // Webhook de Stripe: fuente de verdad para otorgar acceso pagado.
 // El redirect success_url NO basta (es falsificable); el acceso se concede aquí,
 // tras verificar la firma del evento checkout.session.completed.
+//
+// [R1/F7-prep] Robustez que el gap de F5 dejó fijado y ahora se cierra:
+//  · DEDUPE por event.id: Stripe REINTENTA webhooks. Cada evento se registra en el ledger
+//    StripeEvent (PK = event.id) ANTES de aplicar efectos; un replay choca con la PK y
+//    responde 200 sin repetir efectos. Si el ledger falla por otra causa (DB caída) se
+//    responde 500 a propósito: Stripe reintenta más tarde y no se pierde el pago.
+//  · ATOMICIDAD: Enrollment + studentsCount van en UNA $transaction (misma forma que
+//    /api/checkout) — antes eran dos awaits sueltos y un fallo intermedio desalineaba el contador.
 export async function POST(req: Request) {
   const key = process.env.STRIPE_SECRET_KEY;
   const whSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -24,6 +32,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Firma inválida: ${msg}` }, { status: 400 });
   }
 
+  // Dedupe: registra el evento en el ledger ANTES de aplicar efectos. P2002 (PK duplicada)
+  // = replay de Stripe → 200 sin efectos. Cualquier otro error = problema real de DB → 500
+  // para que Stripe REINTENTE (responder 200 aquí perdería el pago para siempre).
+  try {
+    await db.stripeEvent.create({ data: { id: event.id, type: event.type } });
+  } catch (err) {
+    if ((err as { code?: string })?.code === "P2002") {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    return NextResponse.json({ error: "No se pudo registrar el evento" }, { status: 500 });
+  }
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const courseId = session.metadata?.courseId;
@@ -31,10 +51,13 @@ export async function POST(req: Request) {
     if (courseId && userId) {
       const existing = await db.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } });
       if (!existing) {
-        await db.enrollment.create({
-          data: { userId, courseId, status: "ACTIVE", source: "PAID", lastAccess: "ahora" },
-        });
-        await db.course.update({ where: { id: courseId }, data: { studentsCount: { increment: 1 } } });
+        // Atómico: o se inscriben Y suma el contador, o nada (misma forma que /api/checkout).
+        await db.$transaction([
+          db.enrollment.create({
+            data: { userId, courseId, status: "ACTIVE", source: "PAID", lastAccess: "ahora" },
+          }),
+          db.course.update({ where: { id: courseId }, data: { studentsCount: { increment: 1 } } }),
+        ]);
       }
     }
   }
