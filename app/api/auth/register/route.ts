@@ -26,15 +26,19 @@ export async function POST(req: Request) {
   const email = clean(data.email, 160).toLowerCase(); // consistencia con login/forgot (l13)
   const password = String(data.password ?? "");
 
-  // Rol (PRD §2): el formulario manda 'student' | 'parent'.
-  // AUTO-REGISTRO DE COACHES APAGADO (PRD §7.4/§7.6): Fase 1 = solo coaches de OTR,
-  // verificados ANTES de salir al marketplace. Los crea el admin/equipo, no el público.
+  // Rol (PRD §2): el formulario manda 'student' | 'parent' (y 'teacher' cuando se abra M6).
+  // [F-MKT M6] AUTO-REGISTRO DE PROFESORES tras flag — APAGADO hasta que Isaac/Wilser
+  // decidan el VETTING de externos (spec docs/review/MARKETPLACE_ABIERTO_2026-07.md §3.2:
+  // identidad, entrevista, antecedentes — plataforma con MENORES). Al encenderlo, el
+  // profesor nace SIN coachVerified: no recibe reservas ni publica listings aprobados
+  // hasta pasar la revisión manual del admin. Mismo patrón que FORUM_ENABLED.
+  const TEACHER_SIGNUP_ENABLED = false;
   const roleRaw = clean(data.role, 20).toLowerCase();
-  if (roleRaw === "teacher" || roleRaw === "coach") {
+  if ((roleRaw === "teacher" || roleRaw === "coach") && !TEACHER_SIGNUP_ENABLED) {
     return bad("El registro de coaches es por invitación del equipo OTR", 403);
   }
-  const role = roleRaw === "parent" ? "PARENT" : "STUDENT";
-  const isTeacher = false;
+  const role = roleRaw === "parent" ? "PARENT" : roleRaw === "teacher" || roleRaw === "coach" ? "TEACHER" : "STUDENT";
+  const isTeacher = role === "TEACHER";
   const isStudent = role === "STUDENT";
 
   if (name.length < 2) return bad("Nombre inválido", 400);
