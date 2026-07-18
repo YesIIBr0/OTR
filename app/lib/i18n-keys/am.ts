@@ -8,6 +8,8 @@ export const dict = {
     "am.eyebrow": "Administración",
     "am.title": "Métricas de negocio",
     "am.subtitle": "Usuarios, reservas, debates y cursos — el estado de OTR de un vistazo",
+    "am.exportEnrollments": "Exportar inscripciones (CSV)",
+    "am.exportBookings": "Exportar reservas (CSV)",
 
     // KPIs (fila principal)
     "am.kpiUsers": "Usuarios totales",
@@ -60,6 +62,8 @@ export const dict = {
     "am.eyebrow": "Administration",
     "am.title": "Business metrics",
     "am.subtitle": "Users, bookings, debates and courses — OTR's status at a glance",
+    "am.exportEnrollments": "Export enrollments (CSV)",
+    "am.exportBookings": "Export bookings (CSV)",
 
     // KPIs (main row)
     "am.kpiUsers": "Total users",

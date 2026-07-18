@@ -213,6 +213,12 @@ S.adminMetrics = {
       <div class="page-sub">${t("am.subtitle")}</div>
     </div></div>
 
+    <!-- [F6.4] Export CSV de entidades de negocio (descarga directa; filename datado en servidor). -->
+    <div class="row fade-up" style="--d:1;margin-bottom:14px;justify-content:flex-end;gap:8px">
+      <a class="btn btn-ghost btn-sm" href="/api/admin/export?entity=enrollments" download>${IC.doc} ${t("am.exportEnrollments")}</a>
+      <a class="btn btn-ghost btn-sm" href="/api/admin/export?entity=bookings" download>${IC.doc} ${t("am.exportBookings")}</a>
+    </div>
+
     <div class="fade-up" style="--d:1" id="am-body">${viewBody()}</div>`;
   },
 

@@ -163,6 +163,11 @@ S.adminUsers = {
         <button class="btn btn-primary btn-sm" id="au-search-btn">${IC.search} ${t("au.searchBtn")}</button>
       </div>
       <div class="row wrap" style="gap:8px;margin-top:12px" id="au-roles">${chips}</div>
+      <!-- [F6.4] Export CSV: descarga directa del endpoint admin (la cookie de sesión viaja sola).
+           Anchor nativo con download — sin JS ni estado; el servidor pone el filename datado. -->
+      <div class="row" style="margin-top:12px;justify-content:flex-end">
+        <a class="btn btn-ghost btn-sm" href="/api/admin/export?entity=users" download>${IC.doc} ${t("au.exportCsv")}</a>
+      </div>
     </div>
 
     <div class="fade-up" style="--d:3" id="au-body">${viewBody()}${more}</div>`;

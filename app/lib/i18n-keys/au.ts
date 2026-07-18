@@ -18,6 +18,7 @@ export const dict = {
     // search
     "au.searchPlaceholder": "Buscar por nombre o correo…",
     "au.searchBtn": "Buscar",
+    "au.exportCsv": "Exportar CSV",
 
     // role filter chips
     "au.filterAll": "Todos",
@@ -79,6 +80,7 @@ export const dict = {
     // search
     "au.searchPlaceholder": "Search by name or email…",
     "au.searchBtn": "Search",
+    "au.exportCsv": "Export CSV",
 
     // role filter chips
     "au.filterAll": "All",
