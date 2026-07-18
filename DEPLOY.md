@@ -264,7 +264,7 @@ el mismo disco. Estos scripts cierran ese riesgo con copia local **y** offsite.
 
 ### Qué corre automáticamente
 
-`bootstrap-vps.sh` instala tres crons en `/etc/cron.d/otr` (idempotente: se reescribe en
+`bootstrap-vps.sh` instala cuatro crons en `/etc/cron.d/otr` (idempotente: se reescribe en
 cada bootstrap, nunca duplica):
 
 | Cron | Script | Qué hace | Rotación local |
@@ -272,12 +272,26 @@ cada bootstrap, nunca duplica):
 | `0 3 * * *` | `scripts/backup-db.sh` | `pg_dump` gz de Postgres | 14 días |
 | `30 3 * * *` | `scripts/backup-uploads.sh` | `tar.gz` del volumen `otr_uploads` (entregas, grabaciones, avatares) | 7 días |
 | `*/2 * * * *` | `scripts/vps-pull.sh` | auto-deploy de la última imagen de ghcr | — |
+| `*/15 * * * *` | `scripts/cron-reminders.sh` | recordatorios de sesión: `POST /api/cron/reminders` con `x-cron-secret` (ver abajo) | — |
 
 Los backups quedan en `/opt/otr/backups/` y se registran en `/var/log/otr-backup.log`.
 Tras cada dump local, si **rclone está configurado** se sube a un bucket remoto y **se
 verifica** (`rclone check`), con rotación remota a 30 días. Si rclone **no** está
 configurado, los scripts degradan con gracia: dejan el backup local, avisan en el log y
 **no** rompen el cron.
+
+### Recordatorios de sesión (F6.1)
+
+`scripts/cron-reminders.sh` (cada 15 min) hace `POST http://127.0.0.1:${APP_PORT}/api/cron/reminders`
+con el header `x-cron-secret: $CRON_SECRET` (leído de `.env.production`). La ruta selecciona las
+reservas **CONFIRMED** con sesión en las próximas 24 h que aún no se recordaron, envía email +
+notificación in-app al **alumno y al coach** (cada uno respetando su preferencia *Recordatorios de
+sesiones* de Ajustes) y sella `Booking.reminderSentAt` para no repetir. Es **idempotente**: correrlo
+dos veces no re-envía. Registra en `/var/log/otr-cron.log`.
+
+**FAIL-CLOSED:** define `CRON_SECRET` en `.env.production` (`openssl rand -hex 32`). Sin él la ruta
+responde `503` y el cron es no-op — los recordatorios no salen hasta configurarlo. El correo real
+requiere además `SMTP_URL`; sin SMTP el recordatorio se loguea (la notificación in-app sí queda).
 
 ### Activar offsite (una sola vez en el VPS) — Backblaze B2
 
@@ -451,6 +465,7 @@ https://TU-DOMINIO/api/whatsapp/webhook
 | `AUTH_SECRET` | sí | Secreto HMAC de sesión (≥16 chars). |
 | `APP_URL` | recomendada | URL pública (enlaces de email). |
 | `SMTP_URL` | no | SMTP para correos reales; si falta, se loguean. |
+| `CRON_SECRET` | recomendada | Secreto del cron de recordatorios (`POST /api/cron/reminders`). Sin él la ruta responde 503 (fail-closed) y no se envían recordatorios. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | no | Pagos de programas. |
 | `CLOUDFLARE_*` | no | Video protegido vía Cloudflare Stream. |
 | `WHATSAPP_ACCESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` / `WHATSAPP_VERIFY_TOKEN` / `WHATSAPP_APP_SECRET` | no | Bandeja de WhatsApp Business (Meta Cloud API). |

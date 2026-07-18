@@ -1014,6 +1014,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     : null;
 
   // --- Tournaments: UPCOMING|LIVE con flag `registered` del usuario ----------
+  // [F6.2] Para STAFF (ADMIN|TEACHER) adjuntamos los campos CRUDOS editables (ageDivision,
+  // entryCents, source, startsISO) que el modal de edición del Aula necesita para prefilar. No
+  // se exponen al alumno (payload intacto). Los strings van escapados (contrato de escape): al
+  // colocarse en un value="…" el navegador los decodifica de vuelta al valor real al editar.
+  const isStaff = !!me && (me.role === "ADMIN" || me.role === "TEACHER");
   const tournaments = me
     ? (upcomingTournaments || []).map((t: any) => ({
         id: t.id,
@@ -1025,6 +1030,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         status: t.status,
         entryLabel: t.entryCents > 0 ? `RD$${(t.entryCents / 100).toLocaleString("es-DO")}` : "Gratis",
         registered: (t.registrations || []).length > 0,
+        ...(isStaff
+          ? {
+              ageDivision: esc(t.ageDivision || ""),
+              entryCents: t.entryCents,
+              source: t.source,
+              startsISO: t.startsAt ? new Date(t.startsAt).toISOString().slice(0, 10) : "",
+            }
+          : {}),
       }))
     : [];
 

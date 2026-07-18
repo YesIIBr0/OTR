@@ -75,7 +75,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (!def) return;
       // Guard de rol en el cliente: si la ruta exige un rol distinto al actual, redirige al
       // home del rol (el backend ya rechaza los datos, pero esto evita pintar UI ajena).
-      if (def.role && def.role !== state.role) { r = ROLE_HOME[state.role] || "dashboard"; def = (ROUTES as any)[r]; if (!def) return; }
+      // def.role puede ser un string (un rol) o una lista (varios roles autorizados).
+      if (def.role) {
+        const allowed = Array.isArray(def.role) ? def.role : [def.role];
+        if (!allowed.includes(state.role)) { r = ROLE_HOME[state.role] || "dashboard"; def = (ROUTES as any)[r]; if (!def) return; }
+      }
       const keep = !!(opts && opts.keepScroll);
       currentRoute = r; // se fija ANTES del await para el guard "la última navegación gana"
 
@@ -373,6 +377,23 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         prog.close(); toast(tr("aula.courseFromTemplate"), "ok");
       } catch (e: any) { prog.close(); toast(tr("aula.templatePartialFail") + (e?.message || ""), "warn"); }
     }
+    // [F6.3] Cache de coaches para el selector de dueño del ADMIN (se baja una sola vez, on-demand
+    // al abrir el modal de crear curso). null = aún no cargado; [] = cargado sin resultados.
+    let adminCoachList: Array<{ id: string; name: string }> | null = null;
+    async function loadAdminCoaches(): Promise<Array<{ id: string; name: string }>> {
+      if (adminCoachList) return adminCoachList;
+      try {
+        // Reusa /api/admin/users?role=TEACHER (devuelve TEACHER+COACH, ver ruta): la lista de
+        // quienes pueden impartir un curso. Best-effort: si falla, el selector queda vacío y el
+        // curso nace a nombre del propio admin (comportamiento por defecto del backend).
+        const d = await api("/api/admin/users?role=TEACHER", undefined, "GET");
+        adminCoachList = (d?.users || []).map((u: any) => ({ id: u.id, name: u.name }));
+      } catch {
+        adminCoachList = [];
+      }
+      return adminCoachList;
+    }
+
     // Paso 0: galería "¿Cómo quieres empezar?" — en blanco o desde una plantilla OTR.
     // async: las plantillas (~11.6 kB) se bajan bajo demanda al abrir el modal (F4.2),
     // así ningún alumno las descarga en el first load de /aula.
@@ -411,8 +432,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         openCreateCourse(tpl);
       });
     }
-    function openCreateCourse(tpl?: any) {
-      formModal(tpl ? tr("aula.newCourseTpl").replace("{name}", tpl.name) : tr("aula.newCourse"), [
+    async function openCreateCourse(tpl?: any) {
+      const fields: any[] = [
         { name: "name", label: tr("aula.courseFullName"), value: tpl ? tpl.name : "", ph: "Public Forum II", req: true },
         { name: "code", label: tr("aula.courseCode"), ph: "PF-201", req: true },
         { name: "format", label: tr("aula.courseFormat"), type: "select", value: tpl ? tpl.format : "Public Forum", options: [
@@ -426,9 +447,22 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "summary", label: tr("aula.programSummary"), type: "textarea", value: tpl ? tpl.summary : "", ph: tr("aula.programSummaryPh") },
         { name: "published", label: tr("aula.status"), type: "select", value: "false", options: [
           { value: "false", label: tr("aula.statusDraft") }, { value: "true", label: tr("aula.statusPublished") }] },
-      ], async (v) => {
+      ];
+      // [F6.3] Selector de coach dueño — SOLO ADMIN. Un profesor crea sus propios cursos (dueño =
+      // él, sin selector). El admin elige a nombre de quién nace el curso; "A mi nombre" (value "")
+      // conserva el comportamiento por defecto (dueño = admin). Los coaches se bajan on-demand.
+      if (isAdmin) {
+        const coaches = await loadAdminCoaches();
+        fields.push({ name: "teacherId", label: tr("aula.courseOwner"), type: "select", value: "", options: [
+          { value: "", label: tr("aula.courseOwnerSelf") },
+          ...coaches.map((c) => ({ value: c.id, label: c.name })),
+        ] });
+      }
+      formModal(tpl ? tr("aula.newCourseTpl").replace("{name}", tpl.name) : tr("aula.newCourse"), fields, async (v) => {
         v.published = v.published === "true";
         if (v.capacity === "") delete v.capacity;
+        // teacherId vacío ("A mi nombre") o ausente → no se envía: el backend usa al creador.
+        if (!v.teacherId) delete v.teacherId;
         const d = await api("/api/courses", v);
         const newId = d?.course?.id;
         if (tpl && newId) await applyTemplate(newId, tpl);

@@ -719,6 +719,7 @@ model Booking {
   consentBy   String?       // parentId si el alumno es menor
   videoUrl    String?       // sala on-platform
   recordingUrl String?      // [P0-9] enlace de grabación de la sesión (coach lo adjunta; el padre lo ve)
+  reminderSentAt DateTime?  // [F6.1] marca de idempotencia del cron de recordatorios: null = aún no recordada. Un solo campo cubre ambos envíos (alumno + coach).
   createdAt   DateTime      @default(now())
   escrow      EscrowTxn?
   session     CoachSession?

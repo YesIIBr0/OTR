@@ -63,6 +63,9 @@ const NAV: Record<Role, NavGroup[]> = {
   teacher: [
     { gk:'group.main', group:'Principal', items:[
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
+      // [F6.2] Eventos: el coach gestiona torneos (crear/editar/borrar) desde aquí. La pantalla
+      // ya listaba torneos; solo faltaba exponerle la ruta (los controles son staff-only).
+      { r:'events', ic:'calendar', k:'nav.events', l:'Eventos' },
     ]},
     { gk:'group.workspace', group:'Espacio de coach', items:[
       { r:'teacher', ic:'grid', k:'nav.workspace', l:'Panel de coach' },
@@ -105,8 +108,14 @@ const NAV: Record<Role, NavGroup[]> = {
       { r:'admin-users', ic:'users', k:'nav.users', l:'Usuarios' },
       { r:'admin-metrics', ic:'chart', k:'nav.metrics', l:'Métricas' },
       { r:'admin-whatsapp', ic:'msg', k:'nav.whatsapp', l:'WhatsApp' },
+      // [F6.3] Gestión de cursos: el admin crea cursos a nombre de un coach y reasigna dueños.
+      // Reusa la pantalla 'manage' del profesor (ruta abierta a admin en screens.ts).
+      { r:'manage', ic:'book', k:'nav.course', l:'Cursos' },
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
       { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
+      // [F6.2] Eventos: el admin gestiona torneos (crear/editar/borrar) desde la pantalla que
+      // ya los listaba. El borrado (con inscritos bloqueado) es exclusivo del admin.
+      { r:'events', ic:'calendar', k:'nav.events', l:'Eventos' },
     ]},
   ],
 };

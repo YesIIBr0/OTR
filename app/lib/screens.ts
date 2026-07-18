@@ -115,7 +115,9 @@ interface RouteDef {
   screen: string;
   nav: string;
   crumbs: string[];
-  role?: string;
+  // Rol(es) autorizados para la ruta. Acepta un string (un solo rol) o una lista (varios).
+  // El guard de cliente (Aula.tsx) redirige al home si state.role no está incluido.
+  role?: string | string[];
 }
 
 export const ROUTES: Record<string, RouteDef> = {
@@ -148,10 +150,12 @@ export const ROUTES: Record<string, RouteDef> = {
   teacher:        { screen:'teacher',      nav:'teacher',      crumbs:['Profesor','Tracking'], role:'teacher' },
   // 'gradebook' APAGADA (PRD-estricto): el feedback del PDF son ballots/rúbricas (§6.5) y session tools (§7.5), no una matriz de notas.
   participants:   { screen:'participants', nav:'participants', crumbs:['Profesor','Participantes'], role:'teacher' },
-  manage:         { screen:'manage',       nav:'manage',       crumbs:['Profesor','Mis cursos'], role:'teacher' },
+  // [F6.3] Gestión de cursos abierta también al ADMIN (crear a nombre de un coach + reasignar).
+  // El backend ya autoriza a ADMIN (teacherOwnsCourse); aquí solo se abre la superficie de UI.
+  manage:         { screen:'manage',       nav:'manage',       crumbs:['Profesor','Mis cursos'], role:['teacher','admin'] },
   // Constructor de curso estilo Moodle (secciones + actividades). El courseId va en
   // window.__builderCourseId (ruta plana, sin params) → ver S.courseBuilder.
-  'course-builder': { screen:'courseBuilder', nav:'manage',     crumbs:['Profesor','Constructor de curso'], role:'teacher' },
+  'course-builder': { screen:'courseBuilder', nav:'manage',     crumbs:['Profesor','Constructor de curso'], role:['teacher','admin'] },
   // 'arsenal' APAGADA (PRD-estricto): no existe en el PDF — el "motion library" (§6.4) es otra cosa y es Fase 2.
   coach:          { screen:'coach',        nav:'profile',      crumbs:['OTR','Coach'] },
   // 'hub' APAGADA (PRD-estricto): el HQ del PDF es el Dashboard (§4); Learn = Cursos + Mi aprendizaje.

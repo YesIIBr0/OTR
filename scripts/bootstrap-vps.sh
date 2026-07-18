@@ -145,7 +145,7 @@ fi
 # perdía en silencio (sin backups ni auto-deploy). Se instalan aquí de forma IDEMPOTENTE
 # vía /etc/cron.d/otr — un archivo dedicado que se sobrescribe entero en cada run, así
 # que re-ejecutar el bootstrap NO duplica entradas.
-say "Instalando crons (backup DB 03:00, backup uploads 03:30, vps-pull cada 2 min)…"
+say "Instalando crons (backup DB 03:00, backup uploads 03:30, vps-pull cada 2 min, recordatorios cada 15 min)…"
 cat > /etc/cron.d/otr <<CRON
 # OTR Academy — crons gestionados por scripts/bootstrap-vps.sh (IDEMPOTENTE: se
 # reescribe en cada bootstrap; no edites a mano, tus cambios se perderán).
@@ -155,6 +155,9 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 0  3 * * * root ${REPO_DIR}/scripts/backup-db.sh      >> /var/log/otr-backup.log 2>&1
 30 3 * * * root ${REPO_DIR}/scripts/backup-uploads.sh >> /var/log/otr-backup.log 2>&1
 */2 * * * * root ${REPO_DIR}/scripts/vps-pull.sh      >> /var/log/otr-deploy.log 2>&1
+# [F6.1] Recordatorios de sesión: golpea POST /api/cron/reminders con CRON_SECRET (no-op si el
+# secreto no está configurado en .env.production → la ruta responde 503 fail-closed).
+*/15 * * * * root ${REPO_DIR}/scripts/cron-reminders.sh >> /var/log/otr-cron.log 2>&1
 CRON
 chmod 0644 /etc/cron.d/otr
 # Recarga cron para que tome el archivo nuevo (no falla si el servicio se llama distinto).

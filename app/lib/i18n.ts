@@ -151,6 +151,9 @@ const DICT: LangDict = {
     "aula.statusDraft": "Borrador (oculto del catálogo)",
     "aula.statusPublished": "Publicado (visible en el catálogo)",
     "aula.formatOther": "Otro",
+    // [F6.3] Selector de coach dueño (solo ADMIN)
+    "aula.courseOwner": "Coach responsable",
+    "aula.courseOwnerSelf": "A mi nombre",
     "aula.courseCreated": "Curso creado — añade sus secciones",
     // duplicar
     "aula.copySuffix": " (copia)",
@@ -476,6 +479,9 @@ const DICT: LangDict = {
     "aula.statusDraft": "Draft (hidden from catalog)",
     "aula.statusPublished": "Published (visible in catalog)",
     "aula.formatOther": "Other",
+    // [F6.3] Owner coach selector (ADMIN only)
+    "aula.courseOwner": "Owner coach",
+    "aula.courseOwnerSelf": "In my name",
     "aula.courseCreated": "Course created — add its sections",
     // duplicate
     "aula.copySuffix": " (copy)",

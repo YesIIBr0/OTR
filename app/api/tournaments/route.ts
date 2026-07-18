@@ -1,13 +1,21 @@
 // OTR Debate Hub · /api/tournaments
 //   GET  — lista de torneos con filtros opcionales ?format= ?region= ?status=
 //          y conteo de inscritos por torneo.
-//   POST — register (auth): inscribe al usuario (idempotente). Valida que el
-//          torneo exista y esté UPCOMING.
+//   POST — dos operaciones sobre la MISMA colección, distinguidas por body.op:
+//            · op:"create"  → alta de torneo (staff: ADMIN|TEACHER). Allowlist estricta. [F6.2]
+//            · (por defecto) → register (auth): inscribe al usuario (idempotente). Valida que
+//              el torneo exista y esté UPCOMING. CONTRATO INTACTO — la rama de creación se
+//              antepone sin tocar una línea de la inscripción.
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
-
-const VALID_STATUS = new Set(["UPCOMING", "LIVE", "DONE"]);
+import { requireRole } from "../../lib/authz";
+import { audit } from "../../lib/audit";
+import {
+  VALID_STATUS,
+  cleanTournamentInput,
+  type TournamentCreateData,
+} from "../../lib/tournaments";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -43,11 +51,42 @@ export async function GET(req: Request) {
   return ok({ tournaments });
 }
 
+// [F6.2] Alta de torneo (staff). Allowlist ESTRICTA vía cleanTournamentInput: nunca el body
+// crudo (bloquea mass-assignment de id/rounds/registrations/_count). audit "tournament.create".
+async function createTournament(
+  user: { id: string; name: string },
+  body: Record<string, unknown>,
+) {
+  const data = cleanTournamentInput(body, { forCreate: true }) as TournamentCreateData;
+  if (!data.name) return bad("El nombre del torneo es obligatorio");
+
+  const tournament = await db.tournament.create({ data });
+  await audit({
+    actorId: user.id,
+    actorName: user.name,
+    action: "tournament.create",
+    targetType: "tournament",
+    targetId: tournament.id,
+    detail: `Torneo "${tournament.name}" creado (${tournament.format} · ${tournament.status})`,
+  });
+  return ok({ tournament });
+}
+
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
 
-  const body = await readJson<{ tournamentId?: string; partner?: string }>(req);
+  const body = await readJson<{ op?: string; tournamentId?: string; partner?: string }>(req);
+
+  // --- Rama de CREACIÓN (staff) — se distingue por op:"create", así la inscripción de abajo
+  //     conserva su contrato exacto para el alumno. Gate de rol estricto (STUDENT → 403). ---
+  if (body.op === "create") {
+    if (!requireRole(user, "ADMIN", "TEACHER"))
+      return bad("Solo administradores o profesores pueden gestionar torneos", 403);
+    return createTournament(user, body as Record<string, unknown>);
+  }
+
+  // --- Inscripción (register) — comportamiento INTACTO ---
   const tournamentId = clean(body.tournamentId, 80);
   if (!tournamentId) return bad("Falta el torneo");
 
