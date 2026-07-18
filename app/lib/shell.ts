@@ -44,6 +44,8 @@ const NAV: Record<Role, NavGroup[]> = {
     { gk:'group.learn', group:'Aprender', items:[
       { r:'course', ic:'book', k:'nav.course', l:'Cursos' },
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
+      // [F-MKT M4] Buscador por materia del marketplace abierto (inglés, matemáticas, AI…).
+      { r:'listings', ic:'search', k:'nav.listings', l:'Buscar clases' },
       { r:'my-bookings', ic:'calendar', k:'nav.mybookings', l:'Mis reservas' },
       { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes' },
     ]},
@@ -74,6 +76,8 @@ const NAV: Record<Role, NavGroup[]> = {
       // duplicaba 'Gestionar' y rompía el modelo mental del coach. La vista-como-alumno
       // sigue accesible contextual desde "Vista previa" dentro del constructor (scr-extra.ts).
       { r:'manage', ic:'sliders', k:'nav.manage', l:'Gestionar' },
+      // [F-MKT M5] Sus listings del marketplace abierto (N materias, cada una con su tarifa).
+      { r:'my-listings', ic:'book', k:'nav.myListings', l:'Mis clases' },
       // [NAV-03] Mensajes: el coach no tenía entrada a su único canal con alumnos/padres
       // (consultas pre-reserva del marketplace). La ruta ya existe; solo faltaba exponerla.
       { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes' },
@@ -98,6 +102,7 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     { gk:'group.marketplace', group:'Marketplace', items:[
       { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
+      { r:'listings', ic:'search', k:'nav.listings', l:'Buscar clases' },
       { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes' },
     ]},
   ],

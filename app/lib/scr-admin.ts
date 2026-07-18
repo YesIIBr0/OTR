@@ -11,6 +11,7 @@
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+import { money } from "./money";
 import { t, registerDict } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): admin.*. Ver app/lib/i18n.ts.
 import { dict as d_admin } from "./i18n-keys/admin";
@@ -207,10 +208,59 @@ function viewBody() {
 const TABS = () => [
   { k: "reports", l: t("admin.tabReports"), ic: "flag" },
   { k: "audit", l: t("admin.tabAudit"), ic: "shield" },
+  // [F-MKT M2-UI] Cola de vetting del marketplace abierto: listings PENDING.
+  { k: "lst", l: t("admin.tabListings"), ic: "book" },
 ];
 function activeTab() {
   const st = modState();
-  return st.tab === "audit" ? "audit" : "reports";
+  return st.tab === "audit" ? "audit" : st.tab === "lst" ? "lst" : "reports";
+}
+
+/* ================= [F-MKT M2-UI] COLA DE LISTINGS ================= */
+// Sub-estado en window.__mod.lst (mismo patrón on-demand que audit): solo carga al abrir
+// la pestaña. GET /api/listings?review=1 sirve los PENDING (la más antigua primero) con
+// title/description/teacherName YA escapados — se renderizan crudos.
+function lstQueueState() {
+  const st = modState();
+  if (!st.lst) st.lst = { loaded: false, loading: false, error: false, items: [] };
+  return st.lst;
+}
+
+function lstCard(l, d) {
+  return `
+  <div class="card card-pad fade-up" style="--d:${d}" data-lst-card="${esc(l.id)}">
+    <div class="row between vcenter wrap" style="gap:10px">
+      <div style="min-width:0;flex:1">
+        <div class="row vcenter wrap" style="gap:8px">
+          <b style="font-size:13.5px">${l.title}</b>
+          <span class="badge">${esc(l.category)}</span>
+          <span class="badge tnum">${money(l.priceCentsHour)}/h</span>
+          ${l.teacherVerified ? "" : `<span class="badge warn" style="font-size:10.5px">${t("admin.lstUnverifiedTeacher")}</span>`}
+        </div>
+        <div class="faint" style="font-size:12px;margin-top:3px">${l.teacherName} · ${l.teacherEmail}</div>
+        ${l.description ? `<p class="muted" style="font-size:12.5px;margin-top:8px;line-height:1.5">${l.description}</p>` : ""}
+      </div>
+      <div class="row vcenter" style="gap:6px;flex:none">
+        <button class="btn btn-primary btn-sm" data-lst-approve="${esc(l.id)}">${t("admin.lstApprove")}</button>
+        <button class="btn btn-ghost btn-sm" data-lst-reject="${esc(l.id)}" style="color:var(--danger)">${t("admin.lstReject")}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function lstQueueBody() {
+  const q = lstQueueState();
+  if (!q.loaded && q.loading) {
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("admin.lstLoading")}</h4></div></div>`;
+  }
+  if (q.error) {
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>${t("admin.lstErrLoad")}</h4></div></div>`;
+  }
+  const items = Array.isArray(q.items) ? q.items : [];
+  if (!items.length) {
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.check}</div><h4>${t("admin.lstEmptyTitle")}</h4><p>${t("admin.lstEmptyBody")}</p></div></div>`;
+  }
+  return `<div class="stack" style="gap:12px">${items.map((l, i) => lstCard(l, Math.min(i, 6))).join("")}</div>`;
 }
 
 // Fecha relativa corta ("ahora" / "hace 5 min" / "hace 3 h" / "hace 2 d"); más allá de una
@@ -341,6 +391,11 @@ S.adminConsole = {
       return `${head}${tabsHtml}<div class="fade-up" style="--d:2" id="audit-body">${auditBody()}${more}</div>`;
     }
 
+    // [F-MKT M2-UI] Pestaña Clases: cola de vetting del marketplace abierto.
+    if (tab === "lst") {
+      return `${head}${tabsHtml}<div class="fade-up" style="--d:2" id="lst-queue">${lstQueueBody()}</div>`;
+    }
+
     // Pestaña Reportes (comportamiento original).
     return `${head}${tabsHtml}
     <div class="grid g-2 fade-up" style="--d:2;margin-bottom:18px">
@@ -415,11 +470,51 @@ S.adminConsole = {
     // Carga inicial de la pestaña ACTIVA (una sola vez por pestaña). El rastro no se carga en
     // el mount de la consola: solo cuando el admin abre la pestaña Auditoría.
     const tab = activeTab();
+    // [F-MKT M2-UI] Cola de listings: fetch solo al abrir la pestaña.
+    const lq = lstQueueState();
+    const loadLst = () => {
+      lq.loading = true;
+      w.api("/api/listings?review=1", null, "GET")
+        .then((d) => { lq.items = Array.isArray(d && d.listings) ? d.listings : []; lq.error = false; lq.loaded = true; })
+        .catch(() => { lq.items = []; lq.error = true; lq.loaded = true; })
+        .finally(() => { lq.loading = false; repaint(); });
+    };
     if (tab === "audit") {
       if (!st.audit.loaded && !st.audit.loading) { loadAudit(false); return; }
+    } else if (tab === "lst") {
+      if (!lq.loaded && !lq.loading) { loadLst(); return; }
     } else if (!st.loaded && !st.loading) {
       load(false); return;
     }
+
+    // [F-MKT M2-UI] Aprobar / rechazar listings (PATCH /api/listings/[id] { action }).
+    // Rechazo con razón vía otrFormModal (visible para el profesor); aprobar es directo.
+    const lstAction = async (id, body, okKey) => {
+      await w.api(`/api/listings/${encodeURIComponent(id)}`, body, "PATCH");
+      lq.items = lq.items.filter((x) => x.id !== id);
+      w.toast?.(t(okKey), body.action === "approve" ? "ok" : "warn");
+      repaint();
+    };
+    root.querySelectorAll("[data-lst-approve]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-lst-approve");
+        if (!id) return;
+        btn.disabled = true;
+        try { await lstAction(id, { action: "approve" }, "admin.lstApproved"); }
+        catch (e) { w.toast?.((e && e.message) || t("admin.lstActionFail"), "danger"); btn.disabled = false; }
+      })
+    );
+    root.querySelectorAll("[data-lst-reject]").forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-lst-reject");
+        if (!id || !w.otrFormModal) return;
+        w.otrFormModal(t("admin.lstRejectTitle"), [
+          { name: "reason", label: t("admin.lstRejectReason"), type: "text", req: true, value: "" },
+        ], async (v) => {
+          await lstAction(id, { action: "reject", reason: String(v.reason || "") }, "admin.lstRejected");
+        });
+      })
+    );
 
     // Cambio de pestaña (Reportes ↔ Auditoría). El repaint dispara la carga on-demand del rastro.
     root.querySelectorAll("[data-mod-tab]").forEach((el) =>

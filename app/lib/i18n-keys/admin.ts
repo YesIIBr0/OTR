@@ -75,6 +75,19 @@ export const dict = {
     // [F2.2] pestañas de la consola
     "admin.tabReports": "Reportes",
     "admin.tabAudit": "Auditoría",
+    "admin.tabListings": "Clases",
+    "admin.lstLoading": "Cargando la cola de clases…",
+    "admin.lstErrLoad": "No se pudo cargar la cola",
+    "admin.lstEmptyTitle": "Sin clases pendientes",
+    "admin.lstEmptyBody": "Cuando un profesor publique una clase nueva, aparecerá aquí para tu revisión.",
+    "admin.lstApprove": "Aprobar",
+    "admin.lstReject": "Rechazar",
+    "admin.lstRejectTitle": "Rechazar clase",
+    "admin.lstRejectReason": "Motivo (visible para el profesor)",
+    "admin.lstApproved": "Clase publicada",
+    "admin.lstRejected": "Clase rechazada",
+    "admin.lstActionFail": "No se pudo completar la acción",
+    "admin.lstUnverifiedTeacher": "Profesor sin verificar",
 
     // [F2.2] rastro de auditoría — encabezados de la tabla
     "admin.auditColWhen": "Cuándo",
@@ -182,6 +195,19 @@ export const dict = {
     // [F2.2] console tabs
     "admin.tabReports": "Reports",
     "admin.tabAudit": "Audit log",
+    "admin.tabListings": "Classes",
+    "admin.lstLoading": "Loading the class queue…",
+    "admin.lstErrLoad": "Could not load the queue",
+    "admin.lstEmptyTitle": "No pending classes",
+    "admin.lstEmptyBody": "When a teacher publishes a new class it will show up here for your review.",
+    "admin.lstApprove": "Approve",
+    "admin.lstReject": "Reject",
+    "admin.lstRejectTitle": "Reject class",
+    "admin.lstRejectReason": "Reason (visible to the teacher)",
+    "admin.lstApproved": "Class published",
+    "admin.lstRejected": "Class rejected",
+    "admin.lstActionFail": "Could not complete the action",
+    "admin.lstUnverifiedTeacher": "Unverified teacher",
 
     // [F2.2] audit trail — table headers
     "admin.auditColWhen": "When",

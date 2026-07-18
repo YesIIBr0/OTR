@@ -167,3 +167,34 @@ describe("PATCH /api/listings/[id] — dueño: edición con re-vetting", () => {
     expect((await patch("l-1", { title: "Robo de listing" })).status).toBe(403);
   });
 });
+
+describe("GET /api/listings — vistas mine (profesor) y review (admin)", () => {
+  it("?mine=1: STUDENT 403; el profesor recibe SUS listings en todos los estados", async () => {
+    box.user = { id: "s-1", name: "Ana", role: "STUDENT" };
+    const r1 = await GET(jsonReq("/api/listings?mine=1", undefined, "GET"));
+    expect(r1.status).toBe(403);
+    box.user = TEACHER;
+    db.fn("listing.findMany").mockResolvedValue([{ ...BASE, status: "REJECTED", rejectReason: "Falta <detalle>" }]);
+    const r2 = await GET(jsonReq("/api/listings?mine=1", undefined, "GET"));
+    const json = await r2.json();
+    expect(db.fn("listing.findMany").mock.calls[0][0].where).toEqual({ teacherId: TEACHER.id });
+    expect(json.listings[0].status).toBe("REJECTED");
+    expect(json.listings[0].rejectReason).toBe("Falta &lt;detalle&gt;"); // esc una vez
+  });
+
+  it("?review=1: TEACHER 403; el admin recibe SOLO PENDING (la más antigua primero) con el profesor", async () => {
+    const r1 = await GET(jsonReq("/api/listings?review=1", undefined, "GET"));
+    expect(r1.status).toBe(403); // TEACHER no revisa
+    box.user = ADMIN;
+    db.fn("listing.findMany").mockResolvedValue([
+      { ...BASE, createdAt: new Date(), teacher: { name: "Saúl", email: "s@x.com", coachVerified: false } },
+    ]);
+    const r2 = await GET(jsonReq("/api/listings?review=1", undefined, "GET"));
+    const json = await r2.json();
+    const arg = db.fn("listing.findMany").mock.calls[0][0];
+    expect(arg.where).toEqual({ status: "PENDING" });
+    expect(arg.orderBy).toEqual({ createdAt: "asc" });
+    expect(json.listings[0].teacherName).toBe("Saúl");
+    expect(json.listings[0].teacherVerified).toBe(false); // el admin VE si aún falta verificar al humano
+  });
+});

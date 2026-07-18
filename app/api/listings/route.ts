@@ -1,5 +1,9 @@
 // OTR · Marketplace abierto — colección de listings [F-MKT M1].
-//  GET  — PÚBLICO (requiere sesión): buscador del alumno. Solo ACTIVE, filtros
+//  GET  — tres vistas por query param:
+//    · (default) PÚBLICO (requiere sesión): buscador del alumno. Solo ACTIVE, filtros
+//    · ?mine=1   (TEACHER|ADMIN): MIS listings, todos los estados — alimenta "Mis clases".
+//    · ?review=1 (ADMIN): cola de vetting — solo PENDING, con datos del profesor.
+//  Vista pública: solo ACTIVE, filtros
 //         ?category=&q= (texto sobre título), paginado take/page (tope 50). Sirve el
 //         nombre del profesor + su rating derivado de Review (la fuente viva, igual que
 //         el marketplace de coaches). Contrato de escape: title/description/teacherName
@@ -24,6 +28,49 @@ export async function GET(req: Request) {
   if (!user) return bad("No autenticado", 401);
 
   const url = new URL(req.url);
+
+  // --- Vista del PROFESOR: mis listings (todos los estados, para editar) ---
+  if (url.searchParams.get("mine") === "1") {
+    if (!requireRole(user, "TEACHER", "ADMIN")) return bad("Solo profesores", 403);
+    const rows = await db.listing.findMany({
+      where: { teacherId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+    // esc() UNA vez (contrato): el builder mete los valores en value="…" (el navegador
+    // los decodifica al valor real para editar) — mismo patrón que los torneos staff (F6.2).
+    return ok({
+      listings: rows.map((l) => ({
+        id: l.id, category: l.category, title: esc(l.title), description: esc(l.description),
+        priceCentsHour: l.priceCentsHour, language: l.language, modality: l.modality,
+        status: l.status, rejectReason: l.rejectReason ? esc(l.rejectReason) : null,
+      })),
+    });
+  }
+
+  // --- Vista del ADMIN: cola de vetting (PENDING) ---
+  if (url.searchParams.get("review") === "1") {
+    if (!requireRole(user, "ADMIN")) return bad("Solo administradores", 403);
+    const rows = await db.listing.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "asc" }, // la más antigua primero: nadie espera para siempre
+      take: 100,
+      select: {
+        id: true, category: true, title: true, description: true, priceCentsHour: true,
+        language: true, modality: true, createdAt: true,
+        teacher: { select: { name: true, email: true, coachVerified: true } },
+      },
+    });
+    return ok({
+      listings: rows.map((l) => ({
+        id: l.id, category: l.category, title: esc(l.title), description: esc(l.description),
+        priceCentsHour: l.priceCentsHour, language: l.language, modality: l.modality,
+        teacherName: esc(l.teacher.name), teacherEmail: esc(l.teacher.email),
+        teacherVerified: !!l.teacher.coachVerified,
+      })),
+    });
+  }
+
   const category = (url.searchParams.get("category") || "").toLowerCase();
   const q = (url.searchParams.get("q") || "").slice(0, 80);
   const take = Math.min(50, Math.max(1, Number(url.searchParams.get("take")) || 24));

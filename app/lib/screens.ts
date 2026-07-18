@@ -27,6 +27,8 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   certificate: () => import("./scr-certificate"),
   debate:      () => import("./scr-debate"),
   marketplace: () => import("./scr-marketplace"),
+  listings:    () => import("./scr-listings"),
+  myListings:  () => import("./scr-my-listings"),
   parent:      () => import("./scr-parent"),
   lifetime:    () => import("./scr-lifetime"),
   coachwork:   () => import("./scr-coachwork"),
@@ -51,7 +53,7 @@ const SCREEN_MODULE: Record<string, string> = {
   forum:'community', forumThread:'community', messages:'community',
   catalog:'extra', manage:'extra', courseBuilder:'extra', search:'extra',
   arsenal:'arsenal', hub:'hub', onboarding:'hub', certificate:'certificate',
-  debateHub:'debate', marketplace:'marketplace', parentPortal:'parent',
+  debateHub:'debate', marketplace:'marketplace', listings:'listings', myListings:'myListings', parentPortal:'parent',
   lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
   adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp', myBookings:'mybookings',
   placement:'placement', settings:'settings', events:'events', room:'room',
@@ -94,9 +96,9 @@ export async function ensureScreen(name: string): Promise<unknown> {
 // Prefetch en segundo plano (fire-and-forget) de las pantallas probables de un rol, para que
 // la navegación se sienta instantánea sin inflar el primer paint.
 const ROLE_PREFETCH: Record<string, string[]> = {
-  student: ['debateHub','marketplace','lifetimeProfile','events','myBookings','grades','settings','profile','placement'],
-  teacher: ['teacher','participants','manage','coachwork','marketplace','messages','profile','settings'],
-  parent:  ['parentPortal','marketplace','messages','membership','profile','settings'],
+  student: ['debateHub','marketplace','listings','lifetimeProfile','events','myBookings','grades','settings','profile','placement'],
+  teacher: ['teacher','participants','manage','coachwork','marketplace','myListings','messages','profile','settings'],
+  parent:  ['parentPortal','marketplace','listings','messages','membership','profile','settings'],
   admin:   ['adminConsole','adminUsers','adminMetrics','adminWhatsapp','marketplace','debateHub','profile','settings'],
 };
 let didPrefetch = false;
@@ -163,6 +165,10 @@ export const ROUTES: Record<string, RouteDef> = {
   // 'marketplace' queda como alias explícito de la misma pantalla.
   explore:        { screen:'marketplace',  nav:'explore',      crumbs:['Marketplace','Coaches'] },
   marketplace:    { screen:'marketplace',  nav:'explore',      crumbs:['Marketplace','Coaches'] },
+  // [F-MKT M4/M5] Marketplace abierto multi-materia (visión Isaac): buscador por materia
+  // (alumno/padre) + gestión de listings del profesor.
+  listings:       { screen:'listings',     nav:'listings',     crumbs:['Marketplace','Buscar clases'] },
+  'my-listings':  { screen:'myListings',   nav:'my-listings',  crumbs:['Profesor','Mis clases'], role:['teacher','admin'] },
   // Coach Workspace (PRD §7.5, supply-side) → scr-coachwork.ts.
   coachwork:      { screen:'coachwork',    nav:'coachwork',    crumbs:['Espacio de coach','Reservas e ingresos'] },
   // Mis reservas (PRD §7.3 paso 6 + §4.2 ④, demand-side) → scr-mybookings.ts.
