@@ -65,6 +65,11 @@ function userCard(u, d) {
   const suspendBtn = `<button class="btn btn-sm ${suspended ? "btn-soft" : "btn-ghost"}" data-user-suspend="${esc(u.id)}" data-val="${suspended ? "false" : "true"}" style="${suspended ? "" : "color:var(--danger)"}">
         ${suspended ? t("au.reactivate") : t("au.suspend")}
       </button>`;
+  // [R4] Derecho de supresión (Ley 172-13/COPPA): SOLO no-admins (el server re-valida las
+  // guardas). Dos toques armados — es irreversible: anonimiza y purga datos personales.
+  const eraseBtn = role === "ADMIN"
+    ? ""
+    : `<button class="btn btn-ghost btn-sm" data-user-erase="${esc(u.id)}" style="color:var(--danger)">${t("au.erase")}</button>`;
 
   return `
   <div class="card card-pad fade-up" style="--d:${d}" data-user-card="${esc(u.id)}">
@@ -88,6 +93,7 @@ function userCard(u, d) {
       <span style="flex:1"></span>
       ${verifyBtn}
       ${suspendBtn}
+      ${eraseBtn}
     </div>
   </div>`;
 }
@@ -290,6 +296,36 @@ S.adminUsers = {
         const val = btn.getAttribute("data-val") === "true";
         btn.disabled = true;
         patch(id, { suspended: val }, (u) => (u.suspended = val), val ? t("au.toastSuspended") : t("au.toastReactivated"));
+      })
+    );
+
+    // [R4] Erasure con armado de dos toques (mismo patrón que data-guardian-reject en
+    // scr-settings): el primer clic arma y muestra la confirmación; el segundo ejecuta.
+    root.querySelectorAll("[data-user-erase]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-user-erase");
+        if (!id) return;
+        if (btn.getAttribute("data-armed") !== "1") {
+          btn.setAttribute("data-armed", "1");
+          const t0 = btn.textContent;
+          btn.textContent = t("au.eraseArm");
+          setTimeout(() => {
+            if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
+          }, 4000);
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = t("au.erasing");
+        try {
+          await w.api("/api/admin/erase", { userId: id }, "POST");
+          w.toast?.(t("au.erased"), "ok");
+          loadUsers(); // recarga: el usuario aparece anonimizado y suspendido
+        } catch (e) {
+          w.toast?.((e && e.message) || t("au.eraseFailed"), "danger");
+          btn.disabled = false;
+          btn.removeAttribute("data-armed");
+          btn.textContent = t("au.erase");
+        }
       })
     );
   },

@@ -19,6 +19,11 @@ export const dict = {
     "au.searchPlaceholder": "Buscar por nombre o correo…",
     "au.searchBtn": "Buscar",
     "au.exportCsv": "Exportar CSV",
+    "au.erase": "Borrar datos",
+    "au.eraseArm": "¿Seguro? Es irreversible — toca otra vez",
+    "au.erasing": "Borrando…",
+    "au.erased": "Datos personales suprimidos",
+    "au.eraseFailed": "No se pudo completar el borrado",
 
     // role filter chips
     "au.filterAll": "Todos",
@@ -81,6 +86,11 @@ export const dict = {
     "au.searchPlaceholder": "Search by name or email…",
     "au.searchBtn": "Search",
     "au.exportCsv": "Export CSV",
+    "au.erase": "Erase data",
+    "au.eraseArm": "Sure? This is irreversible — tap again",
+    "au.erasing": "Erasing…",
+    "au.erased": "Personal data erased",
+    "au.eraseFailed": "Could not complete the erasure",
 
     // role filter chips
     "au.filterAll": "All",
