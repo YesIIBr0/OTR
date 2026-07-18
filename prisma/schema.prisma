@@ -79,6 +79,7 @@ model User {
   activityEvents     ActivityEvent[] @relation("UserActivity")
   guardiansAsParent  Guardianship[]  @relation("GuardianParent")
   guardiansAsStudent Guardianship[]  @relation("GuardianStudent")
+  listings           Listing[]       @relation("TeacherListings") // [F-MKT] ofertas del marketplace abierto
 
   // [PERF] El leaderboard (findMany where leaderboardOptIn orderBy debateRating desc) y el
   // rank (count where debateRating gt me) escaneaban toda la tabla en cada carga de app-data.
@@ -722,6 +723,7 @@ model Booking {
   videoUrl    String?       // sala on-platform
   recordingUrl String?      // [P0-9] enlace de grabación de la sesión (coach lo adjunta; el padre lo ve)
   reminderSentAt DateTime?  // [F6.1] marca de idempotencia del cron de recordatorios: null = aún no recordada. Un solo campo cubre ambos envíos (alumno + coach).
+  listingId   String?       // [F-MKT M3] de qué Listing del marketplace abierto nació la sesión (null = flujo de coaches/paquetes). Sin FK dura: el listing puede pausarse/borrarse sin tocar el historial financiero.
   createdAt   DateTime      @default(now())
   escrow      EscrowTxn?
   session     CoachSession?
@@ -878,4 +880,27 @@ model StripeEvent {
   id        String   @id // event.id de Stripe — la unicidad de la PK ES el dedupe
   type      String
   createdAt DateTime @default(now())
+}
+
+// --- Listing: oferta del marketplace ABIERTO multi-materia [F-MKT M1 — visión Isaac] ---
+// Un profesor publica N listings separados (inglés Y matemáticas = 2 filas), cada uno con
+// SU tarifa por hora. Nace PENDING y SOLO publica tras aprobación manual del admin (vetting
+// — plataforma con menores; ver docs/review/MARKETPLACE_ABIERTO_2026-07.md §3.2). La
+// taxonomía de categorías vive en app/lib/listings.ts (curada, editable sin migración).
+model Listing {
+  id             String   @id @default(cuid())
+  teacherId      String
+  teacher        User     @relation("TeacherListings", fields: [teacherId], references: [id], onDelete: Cascade)
+  category       String   // slug de la taxonomía curada (ingles | matematicas | ai | ...)
+  title          String
+  description    String   @default("")
+  priceCentsHour Int      // tarifa del PROFESOR por hora (el booking multiplica por duración)
+  language       String   @default("es") // es | en | es,en
+  modality       String   @default("online")
+  status         String   @default("PENDING") // PENDING | ACTIVE | PAUSED | REJECTED
+  rejectReason   String?  // razón del admin al rechazar (visible para el profesor)
+  createdAt      DateTime @default(now())
+
+  @@index([category, status]) // buscador del alumno: por materia, solo ACTIVE
+  @@index([teacherId])        // "mis listings" del profesor
 }

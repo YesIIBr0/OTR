@@ -38,11 +38,14 @@ const HORIZON_MS = 60 * 24 * MS_HOUR; // hasta 60 días adelante
 export async function POST(req: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
-  const body = await readJson<{ coachId?: string; packageId?: string; slotAt?: string; studentId?: string }>(req);
+  const body = await readJson<{ coachId?: string; packageId?: string; listingId?: string; slotAt?: string; studentId?: string }>(req);
   const coachKey = clean(body.coachId, 64);
   const packageId = clean(body.packageId, 64);
+  // [F-MKT M3] Vía alternativa: reservar DESDE un listing del marketplace abierto (la
+  // tarifa/hora y el profesor salen del listing; no exige CoachProfile ni paquetes).
+  const listingId = clean(body.listingId, 64);
   const slotRaw = clean(body.slotAt, 40);
-  if (!coachKey) return bad("Falta coachId");
+  if (!coachKey && !listingId) return bad("Falta coachId");
 
   // [PARENT-BOOKING §11.3] Resuelve el ALUMNO de la reserva:
   //  · STUDENT reserva para sí mismo.
@@ -68,28 +71,53 @@ export async function POST(req: Request) {
     return bad("Solo estudiantes o su tutor pueden reservar sesiones de coaching", 403);
   }
 
-  // coachId acepta CoachProfile.id o User.id del coach.
-  const include = { availability: true } as const;
-  const profile =
-    (await db.coachProfile.findUnique({ where: { id: coachKey }, include })) ??
-    (await db.coachProfile.findUnique({ where: { userId: coachKey }, include }));
-  if (!profile || !profile.active) return bad("Coach no encontrado", 404);
-  if (profile.userId === bStudent.id) return bad("No puedes reservar una sesión contigo mismo", 400);
-  // [P0-5] Solo coaches VERIFICADOS reciben reservas (PRD §7.4/§7.6 — sirven a menores;
-  // sin verificación de identidad/credenciales no se permite reservar con ellos).
-  const coachVerifiedRow = await db.user.findUnique({ where: { id: profile.userId }, select: { coachVerified: true } });
-  if (!coachVerifiedRow?.coachVerified) return bad("Este coach aún no está verificado", 403);
-
-  // Paquete opcional: sin packageId la sesión se cobra a la tarifa por hora del
-  // coach (el UI deriva paquetes sugeridos sin id cuando el coach no publicó).
+  // [F-MKT M3] Resolución UNIFICADA del coach y la tarifa según la vía de entrada:
+  //  · listingId → marketplace abierto: profesor + tarifa/hora del Listing ACTIVE
+  //    (sin CoachProfile: la ventana de disponibilidad no aplica; el choque de agenda SÍ).
+  //  · coachId   → marketplace de coaches (flujo original con CoachProfile + paquetes).
+  let coachUserId: string;
+  let amountCents: number;
+  let pkgName: string;
+  let availability: Array<{ weekday: number; startMin: number; endMin: number }> = [];
   let pkg: { id: string; name: string; priceCents: number } | null = null;
-  if (packageId) {
-    const found = await db.coachPackage.findUnique({ where: { id: packageId } });
-    if (!found || found.coachId !== profile.id) return bad("Paquete no encontrado para este coach", 404);
-    pkg = found;
+  let bookedListingId: string | null = null;
+  let profileId: string | null = null; // CoachProfile.id (solo vía coaches; el contador de reservas vive ahí)
+
+  if (listingId) {
+    const listing = await db.listing.findUnique({ where: { id: listingId } });
+    // Solo ACTIVE es reservable: PENDING/PAUSED/REJECTED no están publicados.
+    if (!listing || listing.status !== "ACTIVE") return bad("Clase no encontrada", 404);
+    coachUserId = listing.teacherId;
+    amountCents = listing.priceCentsHour; // sesión estándar de 60 min = 1 hora de tarifa
+    pkgName = listing.title;
+    bookedListingId = listing.id;
+  } else {
+    // coachId acepta CoachProfile.id o User.id del coach.
+    const include = { availability: true } as const;
+    const profile =
+      (await db.coachProfile.findUnique({ where: { id: coachKey }, include })) ??
+      (await db.coachProfile.findUnique({ where: { userId: coachKey }, include }));
+    if (!profile || !profile.active) return bad("Coach no encontrado", 404);
+    coachUserId = profile.userId;
+    availability = profile.availability;
+    profileId = profile.id;
+
+    // Paquete opcional: sin packageId la sesión se cobra a la tarifa por hora del
+    // coach (el UI deriva paquetes sugeridos sin id cuando el coach no publicó).
+    if (packageId) {
+      const found = await db.coachPackage.findUnique({ where: { id: packageId } });
+      if (!found || found.coachId !== profile.id) return bad("Paquete no encontrado para este coach", 404);
+      pkg = found;
+    }
+    amountCents = pkg ? pkg.priceCents : profile.hourlyCents;
+    pkgName = pkg ? pkg.name : "Sesión individual";
   }
-  const amountCents = pkg ? pkg.priceCents : profile.hourlyCents;
-  const pkgName = pkg ? pkg.name : "Sesión individual";
+
+  if (coachUserId === bStudent.id) return bad("No puedes reservar una sesión contigo mismo", 400);
+  // [P0-5] Solo profesores VERIFICADOS reciben reservas (PRD §7.4/§7.6 — sirven a menores).
+  // Aplica IGUAL a ambas vías: un listing aprobado de un profesor sin verificar tampoco pasa.
+  const coachVerifiedRow = await db.user.findUnique({ where: { id: coachUserId }, select: { coachVerified: true } });
+  if (!coachVerifiedRow?.coachVerified) return bad("Este coach aún no está verificado", 403);
 
   // --- Slot: fecha válida, alineada al minuto, en el rango reservable ---
   const slotMs = Date.parse(slotRaw);
@@ -100,11 +128,11 @@ export async function POST(req: Request) {
 
   // Disponibilidad publicada del coach (hora RD, UTC-4 fijo): si tiene franjas,
   // la sesión completa debe caber en una. Sin franjas publicadas no se restringe.
-  if (profile.availability.length) {
+  if (availability.length) {
     const local = new Date(slotMs + TZ_OFFSET * MS_HOUR);
     const weekday = local.getUTCDay();
     const startMin = local.getUTCHours() * 60 + local.getUTCMinutes();
-    const fits = profile.availability.some(
+    const fits = availability.some(
       (a) => a.weekday === weekday && a.startMin <= startMin && startMin + DURATION_MIN <= a.endMin,
     );
     if (!fits) return bad("El coach no está disponible en ese horario", 409);
@@ -138,7 +166,7 @@ export async function POST(req: Request) {
   }
 
   const coachUser = await db.user.findUnique({
-    where: { id: profile.userId },
+    where: { id: coachUserId },
     select: { name: true },
   });
   const coachName = coachUser?.name ?? "Coach";
@@ -154,7 +182,7 @@ export async function POST(req: Request) {
       // de margen hacia atrás); el solape se evalúa en memoria con durationMin.
       const neighbors = await tx.booking.findMany({
         where: {
-          coachId: profile.userId,
+          coachId: coachUserId,
           status: { in: ["PENDING", "CONFIRMED"] },
           slotAt: { gte: new Date(slotMs - 24 * MS_HOUR), lt: new Date(slotMs + DURATION_MIN * MS_MIN) },
         },
@@ -171,8 +199,9 @@ export async function POST(req: Request) {
       let b = await tx.booking.create({
         data: {
           studentId: bStudent.id,
-          coachId: profile.userId,
+          coachId: coachUserId,
           packageId: pkg ? pkg.id : null,
+          listingId: bookedListingId, // [F-MKT M3] de qué clase del marketplace nació (null = flujo de coaches)
           slotAt,
           durationMin: DURATION_MIN,
           // [BOOKING-ESCROW-1 §7.4] snapshot del precio acordado: el escrow de un
@@ -207,10 +236,14 @@ export async function POST(req: Request) {
           },
         });
       }
-      await tx.coachProfile.update({
-        where: { id: profile.id },
-        data: { bookingCount: { increment: 1 } },
-      });
+      // El contador de reservas vive en CoachProfile (vía coaches); un profesor del
+      // marketplace abierto sin perfil no tiene fila que incrementar.
+      if (profileId) {
+        await tx.coachProfile.update({
+          where: { id: profileId },
+          data: { bookingCount: { increment: 1 } },
+        });
+      }
       return b;
     });
   } catch (e) {
