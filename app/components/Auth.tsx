@@ -60,6 +60,8 @@ const STR = {
     passwordLabel: "Contraseña",
     newPwdLabel: "Nueva contraseña",
     newPwdPh: "Mínimo 8 caracteres",
+    totpLabel: "Código de verificación (2FA)",
+    totpPrompt: "Esta cuenta tiene verificación en dos pasos: escribe el código de tu app autenticadora.",
     confirmPwdLabel: "Confirmar contraseña",
     confirmPwdPh: "Repite la contraseña",
     // Pies
@@ -123,6 +125,8 @@ const STR = {
     passwordLabel: "Password",
     newPwdLabel: "New password",
     newPwdPh: "At least 8 characters",
+    totpLabel: "Verification code (2FA)",
+    totpPrompt: "This account uses two-step verification: enter the code from your authenticator app.",
     confirmPwdLabel: "Confirm password",
     confirmPwdPh: "Repeat the password",
     forgotLink: "Forgot your password?",
@@ -159,6 +163,9 @@ export default function Auth() {
   const [headline, setHeadline] = useState("");
   const [formats, setFormats] = useState("");
   const [resetToken, setResetToken] = useState("");
+  // [R5] 2FA TOTP: el server responde code "totpRequired" → se muestra el campo del código.
+  const [totp, setTotp] = useState("");
+  const [totpNeeded, setTotpNeeded] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
@@ -279,6 +286,7 @@ export default function Auth() {
     let body: Record<string, unknown>;
     if (mode === "login") {
       body = { email, password };
+      if (totpNeeded && totp.trim()) body.totp = totp.trim(); // [R5]
     } else {
       // Age-gate: el estudiante declara su año de nacimiento antes de continuar.
       if (role === "student") {
@@ -321,7 +329,14 @@ export default function Auth() {
         }
         window.location.reload();
       } else {
-        setError(data.error || T.errGeneric);
+        // [R5] La cuenta tiene 2FA: desplegar el campo del código (primer intento sin código
+        // no es un "error" del usuario — es el paso 2 del login).
+        if (data.code === "totpRequired") {
+          setTotpNeeded(true);
+          setError(totp ? data.error || T.errGeneric : T.totpPrompt);
+        } else {
+          setError(data.error || T.errGeneric);
+        }
         setLoading(false);
       }
     } catch {
@@ -505,6 +520,14 @@ export default function Auth() {
               <div className="field" style={{ marginBottom: 14 }}>
                 <label className="label" htmlFor="auth-password">{T.passwordLabel}{mode === "register" && <span className="faint" style={{ fontWeight: 500 }}>{" "}{T.reqTag}</span>}</label>
                 <input id="auth-password" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required aria-required="true" />
+              </div>
+            )}
+
+            {/* [R5] 2FA: código de la app autenticadora (solo si el server lo pidió) */}
+            {mode === "login" && totpNeeded && (
+              <div className="field" style={{ marginBottom: 14 }}>
+                <label className="label" htmlFor="auth-totp">{T.totpLabel}</label>
+                <input id="auth-totp" className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={totp} onChange={(e) => setTotp(e.target.value)} placeholder="123456" autoFocus aria-required="true" />
               </div>
             )}
 

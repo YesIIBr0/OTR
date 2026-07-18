@@ -9,6 +9,7 @@
 // password "correcto" y el route lo verifica de verdad. Solo se mockea Prisma + la sesión.
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeDb, jsonReq } from "./helpers/route-harness";
+import { generateTotpSecret, totpCode } from "../app/lib/totp";
 import { hashPassword } from "../app/lib/auth-crypto";
 
 // Caja hoisteada (los factory de vi.mock se elevan sobre los imports; solo pueden tocar
@@ -100,5 +101,41 @@ describe("POST /api/auth/login — rate-limit real (anti fuerza-bruta, 8 / venta
     }
     expect(statuses.slice(0, 8)).toEqual(Array(8).fill(401));
     expect(statuses[8]).toBe(429);
+  });
+});
+
+// [R5] 2FA TOTP en el login: el código se exige DESPUÉS de validar la contraseña (no filtra
+// si la cuenta tiene 2FA a quien no la conoce). Códigos generados con la lib REAL.
+describe("POST /api/auth/login — 2FA TOTP", () => {
+  const SECRET = generateTotpSecret();
+
+  it("cuenta con 2FA y sin código → 401 code totpRequired, SIN sesión", async () => {
+    db.fn("user.findUnique").mockResolvedValue({ ...USER, totpSecret: SECRET });
+    const { status, json } = await login("totp-a@x.com", PASSWORD);
+    expect(status).toBe(401);
+    expect(json.code).toBe("totpRequired");
+    expect(setSession).not.toHaveBeenCalled();
+  });
+
+  it("código incorrecto → 401 totpInvalid, SIN sesión", async () => {
+    db.fn("user.findUnique").mockResolvedValue({ ...USER, totpSecret: SECRET });
+    const res = await POST(jsonReq("/api/auth/login", { email: "totp-b@x.com", password: PASSWORD, totp: "000000" }));
+    const json = await res.json();
+    expect(res.status).toBe(401);
+    expect(json.code).toBe("totpInvalid");
+    expect(setSession).not.toHaveBeenCalled();
+  });
+
+  it("código vigente → 200 y emite sesión", async () => {
+    db.fn("user.findUnique").mockResolvedValue({ ...USER, totpSecret: SECRET });
+    const res = await POST(jsonReq("/api/auth/login", { email: "totp-c@x.com", password: PASSWORD, totp: totpCode(SECRET) }));
+    expect(res.status).toBe(200);
+    expect(setSession).toHaveBeenCalledOnce();
+  });
+
+  it("cuenta SIN 2FA ignora un campo totp enviado de más → 200", async () => {
+    db.fn("user.findUnique").mockResolvedValue({ ...USER, totpSecret: null });
+    const res = await POST(jsonReq("/api/auth/login", { email: "totp-d@x.com", password: PASSWORD, totp: "999999" }));
+    expect(res.status).toBe(200);
   });
 });

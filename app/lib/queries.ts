@@ -256,6 +256,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       membership: true, membershipSince: true, publicSlug: true, publicProfile: true, lang: true,
       // [NOTIF-PERSIST] toggles de notificación persistidos (antes solo localStorage).
       notificationPrefs: true,
+      // [R5] 2FA: solo para derivar me.totpEnabled (el SECRETO jamás viaja al cliente).
+      totpSecret: true,
     },
   });
   const isTeacher = me?.role === "TEACHER" || me?.role === "ADMIN";
@@ -1606,7 +1608,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       ageBand: me?.ageBand || null,
       // [GAMIFICATION-1 §9] estado del opt-in (toggle en Ajustes). [RATING-2 §6.2] speaker rating.
       leaderboardOptIn: me?.leaderboardOptIn !== false,
-      speakerAvg: (me?.speakerRounds ?? 0) > 0 ? Math.round(me?.speakerAvg ?? 0) : null, speakerRounds: me?.speakerRounds ?? 0 },
+      speakerAvg: (me?.speakerRounds ?? 0) > 0 ? Math.round(me?.speakerAvg ?? 0) : null, speakerRounds: me?.speakerRounds ?? 0,
+      // [R5] Estado de la 2FA (booleano — el secreto no sale del servidor). Ajustes lo usa
+      // para pintar la sección de verificación en dos pasos del ADMIN.
+      totpEnabled: !!me?.totpSecret },
     teacher: { name: esc(headCoach?.name), email: headCoach?.email, initials: esc(headCoach?.initials), role: "teacher",
       headline: esc(headCoach?.headline), bio: esc(headCoach?.bio), teachingStyle: esc(headCoach?.teachingStyle), formats: esc(headCoach?.formats), location: esc(headCoach?.location) },
     levels: levels.map((l) => ({ id: l.name.toLowerCase(), name: l.name, range: l.range, color: l.color })),

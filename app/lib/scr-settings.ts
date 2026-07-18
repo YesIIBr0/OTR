@@ -101,6 +101,55 @@ function guardianRequestsBlock(requests) {
   </div>`;
 }
 
+/* [R5] 2FA TOTP del ADMIN. Estado del flujo de alta en window.__totp2fa:
+   null = reposo; { secret, otpauth } = esperando el código de confirmación. El SECRETO
+   nunca está en DB.* (viene de POST /api/auth/totp setup y muere al confirmar/cancelar). */
+function totpRow() {
+  const w = window;
+  const enabled = !!(DB.me && DB.me.totpEnabled);
+  const setup = w.__totp2fa || null;
+  if (setup) {
+    return `
+    <div class="lrow" style="padding:14px 0;border-bottom:1px solid var(--border);display:block">
+      <b style="font-size:13.5px">${t("settings.totpTitle")}</b>
+      <p class="muted" style="font-size:12.5px;margin-top:4px">${t("settings.totpSetupHelp")}</p>
+      <div class="card" style="padding:10px 12px;margin-top:8px;background:var(--surface-2)">
+        <div style="font-size:11.5px" class="faint">${t("settings.totpSecretLabel")}</div>
+        <code style="font-size:13px;letter-spacing:1px;user-select:all;word-break:break-all">${esc(setup.secret)}</code>
+      </div>
+      <div class="row vcenter" style="gap:8px;margin-top:10px;flex-wrap:wrap">
+        <input class="input" id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456" style="max-width:130px"/>
+        <button class="btn btn-primary btn-sm" data-totp="enable">${t("settings.totpConfirm")}</button>
+        <button class="btn btn-ghost btn-sm" data-totp="cancel">${t("settings.totpCancel")}</button>
+      </div>
+    </div>`;
+  }
+  if (enabled) {
+    return `
+    <div class="lrow" style="padding:14px 0;border-bottom:1px solid var(--border);display:block">
+      <div class="row between vcenter" style="gap:10px;flex-wrap:wrap">
+        <div>
+          <b style="font-size:13.5px">${t("settings.totpTitle")}</b>
+          <span class="badge sky" style="font-size:10.5px;margin-left:8px"><span class="dot"></span>${t("settings.totpOn")}</span>
+          <p class="muted" style="font-size:12.5px;margin-top:4px">${t("settings.totpOnDesc")}</p>
+        </div>
+        <div class="row vcenter" style="gap:8px">
+          <input class="input" id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456" style="max-width:130px"/>
+          <button class="btn btn-ghost btn-sm" data-totp="disable" style="color:var(--danger)">${t("settings.totpDisable")}</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="lrow" style="padding:14px 0;border-bottom:1px solid var(--border)">
+    <div style="flex:1">
+      <b style="font-size:13.5px">${t("settings.totpTitle")}</b>
+      <p class="muted" style="font-size:12.5px;margin-top:4px">${t("settings.totpOffDesc")}</p>
+    </div>
+    <button class="btn btn-soft btn-sm" data-totp="setup">${t("settings.totpEnable")}</button>
+  </div>`;
+}
+
 S.settings = {
   render() {
     const me = DB.me || {};
@@ -145,6 +194,9 @@ S.settings = {
         : row(IC.lock, t("settings.publicProfileTitle"), t("settings.publicProfileDesc"), `<button class="btn btn-soft btn-sm" data-go="lifetime">${t("settings.myJourney")} ${IC.arrowR}</button>`),
       leaderboardRow,
       row(IC.doc, t("settings.passwordTitle"), t("settings.passwordDesc"), `<button class="btn btn-soft btn-sm" data-action="change-pw">${t("settings.changePassword")}</button>`),
+      // [R5] 2FA TOTP — solo para ADMIN (la llave de los datos de menores no puede ser solo
+      // una contraseña). El flujo entero vive en window.__totp2fa + los handlers del mount.
+      ...(role === "ADMIN" ? [totpRow()] : []),
     ].join("");
 
     // [BUG vínculo-padre §11.3] Solo STUDENT recibe pendingGuardianRequests (queries.ts lo
@@ -234,6 +286,38 @@ S.settings = {
           btn.disabled = false;
           btn.removeAttribute("data-armed");
           btn.textContent = t("settings.guardianReject");
+        }
+      })
+    );
+
+    // [R5] 2FA TOTP (ADMIN): setup → confirmar código → enable; disable exige código vigente.
+    root.querySelectorAll("[data-totp]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const action = btn.getAttribute("data-totp");
+        try {
+          if (action === "setup") {
+            const d = await w.api("/api/auth/totp", { action: "setup" }, "POST");
+            w.__totp2fa = { secret: d.secret, otpauth: d.otpauth };
+            repaint();
+          } else if (action === "cancel") {
+            w.__totp2fa = null;
+            repaint();
+          } else if (action === "enable") {
+            const code = String(root.querySelector("#totp-code")?.value || "").trim();
+            await w.api("/api/auth/totp", { action: "enable", secret: w.__totp2fa?.secret, code }, "POST");
+            w.__totp2fa = null;
+            if (DB.me) DB.me.totpEnabled = true;
+            w.toast?.(t("settings.totpEnabled"), "ok");
+            repaint();
+          } else if (action === "disable") {
+            const code = String(root.querySelector("#totp-code")?.value || "").trim();
+            await w.api("/api/auth/totp", { action: "disable", code }, "POST");
+            if (DB.me) DB.me.totpEnabled = false;
+            w.toast?.(t("settings.totpDisabled"), "warn");
+            repaint();
+          }
+        } catch (e) {
+          w.toast?.((e && e.message) || t("settings.totpFailed"), "danger");
         }
       })
     );

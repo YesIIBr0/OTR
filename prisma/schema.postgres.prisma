@@ -21,6 +21,9 @@ model User {
   xp            Int          @default(0)
   streak        Int          @default(0)
   passwordHash  String?
+  // [R5] 2FA TOTP (RFC 6238): secreto base32; null = 2FA apagada. Se habilita desde Ajustes
+  // (solo ADMIN puede activarla; el login la EXIGE a cualquier cuenta que la tenga puesta).
+  totpSecret    String?
   emailVerified Boolean      @default(false)
   // [ADMIN-METRICS] Fecha de alta — registrationsByWeek (panel de métricas de negocio).
   // Filas anteriores a esta migración quedan con el momento del backfill (no hay dato real).

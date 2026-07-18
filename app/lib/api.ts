@@ -34,6 +34,9 @@ const ERROR_CODES: Record<string, string> = {
   "Este programa requiere pago": "requiresPayment",
   "Pagos no disponibles temporalmente": "paymentsUnavailable",
   "Correo o contraseña incorrectos": "badCredentials",
+  // [R5] 2FA TOTP: el cliente usa totpRequired para mostrar el campo del código.
+  "Código de verificación requerido": "totpRequired",
+  "Código de verificación incorrecto": "totpInvalid",
   // [R2] Política de contraseñas: mínimo 8 + bloqueo de comunes (lib/password-policy).
   "La contraseña debe tener al menos 8 caracteres": "passwordShort",
   "Esa contraseña es demasiado común — elige otra más difícil de adivinar": "passwordCommon",
