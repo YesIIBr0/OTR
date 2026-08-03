@@ -42,23 +42,31 @@ export function passwordFingerprint(passwordHash: string | null | undefined): st
   return createHash("sha256").update(`${SECRET}:${passwordHash ?? ""}`).digest("hex").slice(0, 16);
 }
 
-export function signSession(userId: string, fp: string): string {
+// [GOAL G4] El token incluye el sessionEpoch del usuario. getSessionUser lo compara con el
+// valor actual de la fila: incrementarlo revoca TODAS las sesiones vivas de esa cuenta al
+// instante ("cerrar sesión en todos los dispositivos"). Antes, un token robado seguía
+// sirviendo 30 días aunque el dueño hiciera logout (clearSession solo borra SU cookie).
+export function signSession(userId: string, fp: string, epoch: number = 0): string {
   const ts = Date.now().toString(36);
-  const payload = `${userId}.${ts}.${fp}`;
+  const payload = `${userId}.${ts}.${fp}.${epoch}`;
   const mac = createHmac("sha256", SECRET).update(payload).digest("hex");
   return `${payload}.${mac}`;
 }
 
-export function verifySession(token: string): { userId: string; fp: string } | null {
+export function verifySession(token: string): { userId: string; fp: string; epoch: number } | null {
   const parts = token.split(".");
-  if (parts.length !== 4) return null; // formato antiguo (3 partes) o inválido → re-login
-  const [userId, ts, fp, mac] = parts;
-  const payload = `${userId}.${ts}.${fp}`;
+  // 5 partes = formato actual (con epoch). Cualquier formato anterior → re-login (mismo
+  // criterio que ya se aplicó al migrar de 3 a 4 partes): más seguro que asumir epoch 0.
+  if (parts.length !== 5) return null;
+  const [userId, ts, fp, epochRaw, mac] = parts;
+  const payload = `${userId}.${ts}.${fp}.${epochRaw}`;
   const expected = createHmac("sha256", SECRET).update(payload).digest("hex");
   const a = Buffer.from(mac);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   const issued = parseInt(ts, 36);
   if (!Number.isFinite(issued) || Date.now() - issued > MAX_AGE_MS) return null; // sesión expirada
-  return { userId, fp };
+  const epoch = Number.parseInt(epochRaw, 10);
+  if (!Number.isFinite(epoch)) return null;
+  return { userId, fp, epoch };
 }

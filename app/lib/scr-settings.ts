@@ -220,6 +220,12 @@ S.settings = {
         <div><b style="font-size:14px">${t("settings.logoutTitle")}</b><div class="faint" style="font-size:12px;margin-top:2px">${t("settings.logoutDesc")}</div></div>
         <button class="btn btn-ghost btn-sm" data-action="logout" style="color:var(--danger);flex:none">${IC.logout} ${t("settings.logout")}</button>
       </div>
+      <!-- [GOAL G4] Revocación server-side: mata TODAS las sesiones de la cuenta (móvil, otro
+           navegador, o la de alguien con la cookie robada). Dos toques: es irreversible. -->
+      <div class="row vcenter between" style="gap:14px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+        <div><b style="font-size:14px">${t("settings.logoutAllTitle")}</b><div class="faint" style="font-size:12px;margin-top:2px">${t("settings.logoutAllDesc")}</div></div>
+        <button class="btn btn-ghost btn-sm" data-logout-all="1" style="color:var(--danger);flex:none">${t("settings.logoutAll")}</button>
+      </div>
     </div>`;
   },
 
@@ -286,6 +292,31 @@ S.settings = {
           btn.disabled = false;
           btn.removeAttribute("data-armed");
           btn.textContent = t("settings.guardianReject");
+        }
+      })
+    );
+
+    // [GOAL G4] Cerrar sesión en TODOS los dispositivos (revoca el epoch server-side).
+    root.querySelectorAll("[data-logout-all]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        if (btn.getAttribute("data-armed") !== "1") {
+          btn.setAttribute("data-armed", "1");
+          const t0 = btn.textContent;
+          btn.textContent = t("settings.logoutAllArm");
+          setTimeout(() => {
+            if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
+          }, 4000);
+          return;
+        }
+        btn.disabled = true;
+        try {
+          await w.api("/api/auth/logout", { all: true }, "POST");
+          location.reload(); // la sesión propia también murió: vuelve al login
+        } catch (e) {
+          w.toast?.((e && e.message) || t("settings.logoutAllFailed"), "danger");
+          btn.disabled = false;
+          btn.removeAttribute("data-armed");
+          btn.textContent = t("settings.logoutAll");
         }
       })
     );

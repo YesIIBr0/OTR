@@ -53,7 +53,9 @@ export async function PATCH(req: Request) {
   // Si cambió la contraseña, reemite la sesión (la huella va ligada al passwordHash;
   // sin esto el propio usuario quedaría deslogueado tras cambiarla).
   if (data.passwordHash) {
-    await setSession({ id: user.id, passwordHash: data.passwordHash as string });
+    // [GOAL G4] Re-emite con el epoch ACTUAL (si no, el token nuevo nacería con epoch 0
+    // y sería inválido para una cuenta que ya revocó sesiones alguna vez).
+    await setSession({ id: user.id, passwordHash: data.passwordHash as string, sessionEpoch: user.sessionEpoch });
   }
   return NextResponse.json({ ok: true });
 }

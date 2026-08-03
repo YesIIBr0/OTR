@@ -24,6 +24,10 @@ model User {
   // [R5] 2FA TOTP (RFC 6238): secreto base32; null = 2FA apagada. Se habilita desde Ajustes
   // (solo ADMIN puede activarla; el login la EXIGE a cualquier cuenta que la tenga puesta).
   totpSecret    String?
+  // [GOAL G4] Revocación de sesiones en O(1): el token lleva este número; incrementarlo
+  // invalida TODAS las sesiones vivas del usuario ("cerrar sesión en todos los dispositivos").
+  // Sin tabla de sesiones que purgar — la comprobación va en el findUnique que ya se hace.
+  sessionEpoch  Int          @default(0)
   emailVerified Boolean      @default(false)
   // [ADMIN-METRICS] Fecha de alta — registrationsByWeek (panel de métricas de negocio).
   // Filas anteriores a esta migración quedan con el momento del backfill (no hay dato real).
