@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { readJson, clean } from "../../lib/api";
+import { enrollOnce } from "../../lib/enroll";
 
 // Inscripción / venta de acceso. Si el curso tiene precio Y hay STRIPE_SECRET_KEY,
 // crea un Checkout de Stripe. Si no, inscribe directo (gratis/manual).
@@ -38,14 +39,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, url: session.url });
   }
 
-  // sin precio (gratis) → inscripción directa
-  const existing = await db.enrollment.findUnique({ where: { userId_courseId: { userId: user.id, courseId } } });
-  if (!existing) {
-    // [DATA-4] Atómico: inscripción + contador en una transacción.
-    await db.$transaction([
-      db.enrollment.create({ data: { userId: user.id, courseId, status: "ACTIVE", source: "FREE", lastAccess: "ahora" } }),
-      db.course.update({ where: { id: courseId }, data: { studentsCount: { increment: 1 } } }),
-    ]);
-  }
+  // Sin precio (gratis) → inscripción directa, IDEMPOTENTE bajo concurrencia [GOAL G2]:
+  // antes era findUnique→create y dos clics/pestañas simultáneos provocaban un 500 en la
+  // segunda (violación del unique). enrollOnce intenta escribir y trata la colisión como
+  // "ya inscrito" — la unicidad la garantiza la DB, no una comprobación previa.
+  await enrollOnce(user.id, courseId, "FREE");
   return NextResponse.json({ ok: true, enrolled: true });
 }

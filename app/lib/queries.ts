@@ -7,10 +7,13 @@ import { dateLabel, timeLabel } from "./consultations";
 const ME_EMAIL = "analia.reyes@otr.do";
 
 // Etiqueta de fecha relativa en español (texto generado por nosotros, no de usuario).
-function whenLabel(d?: Date | null, lang: string = "es"): string {
+// [GOAL] nowMs inyectable: computeRosterMetrics ya recibía su propio "ahora" para ser
+// determinista, pero este label usaba Date.now() por dentro — la mezcla hacía que el
+// resultado dependiera del reloj real (test flaky que reventó al cambiar de día).
+function whenLabel(d?: Date | null, lang: string = "es", nowMs: number = Date.now()): string {
   if (!d) return "";
   const date = d instanceof Date ? d : new Date(d);
-  const ms = Date.now() - date.getTime();
+  const ms = nowMs - date.getTime();
   if (Number.isNaN(ms)) return "";
   const en = lang === "en";
   const min = Math.floor(ms / 60000);
@@ -133,7 +136,7 @@ export function computeRosterMetrics(input: RosterMetricsInput): RosterMetrics {
   const risk = progressPct < ROSTER_RISK_PROGRESS_PCT
     && (!hasHistory || (daysSinceActivity ?? Infinity) >= ROSTER_RISK_INACTIVE_DAYS);
 
-  const last = hasHistory ? whenLabel(lastEventAt, lang) : "—";
+  const last = hasHistory ? whenLabel(lastEventAt, lang, nowMs) : "—";
 
   return { grade, att, eng, trend, risk, last, prog: Math.round(progressPct) };
 }

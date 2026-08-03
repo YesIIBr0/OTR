@@ -114,9 +114,8 @@ describe("POST /api/stripe/webhook — checkout.session.completed", () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ received: true });
 
-    expect(db.fn("enrollment.findUnique")).toHaveBeenCalledWith({
-      where: { userId_courseId: { userId: USER_ID, courseId: COURSE_ID } },
-    });
+    // [GOAL G2] Sin findUnique previo: enrollOnce deja que la unicidad de la DB decida.
+    expect(db.fn("enrollment.findUnique")).not.toHaveBeenCalled();
     expect(db.fn("enrollment.create")).toHaveBeenCalledWith({
       data: { userId: USER_ID, courseId: COURSE_ID, status: "ACTIVE", source: "PAID", lastAccess: "ahora" },
     });
@@ -126,14 +125,14 @@ describe("POST /api/stripe/webhook — checkout.session.completed", () => {
     });
   });
 
-  it("sesión ya inscrita → no duplica (idempotente por unicidad de Enrollment)", async () => {
-    db.fn("enrollment.findUnique").mockResolvedValue({ userId: USER_ID, courseId: COURSE_ID, status: "ACTIVE" });
+  it("sesión ya inscrita (INSERT choca con el unique) → 200 received:true sin romper el webhook", async () => {
+    db.fn("enrollment.create").mockRejectedValueOnce(Object.assign(new Error("Unique constraint failed"), { code: "P2002" }));
     box.ev.mockReturnValue(completedEvent({ courseId: COURSE_ID, userId: USER_ID }));
     const res = await POST(webhookReq("{}"));
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(200); // 200 → Stripe no reintenta un evento ya aplicado
     expect(await res.json()).toEqual({ received: true });
-    expect(db.fn("enrollment.create")).not.toHaveBeenCalled();
-    expect(db.fn("course.update")).not.toHaveBeenCalled();
+    // (En Postgres la transacción hace ROLLBACK, así que el contador NO persiste; el
+    // harness registra la llamada porque evalúa ambas promesas antes del Promise.all.)
   });
 
   it("metadata sin courseId/userId → 200 received:true SIN inscribir", async () => {

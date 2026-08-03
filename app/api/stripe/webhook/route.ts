@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "../../../lib/db";
+import { enrollOnce } from "../../../lib/enroll";
 
 // Webhook de Stripe: fuente de verdad para otorgar acceso pagado.
 // El redirect success_url NO basta (es falsificable); el acceso se concede aquí,
@@ -49,16 +50,10 @@ export async function POST(req: Request) {
     const courseId = session.metadata?.courseId;
     const userId = session.metadata?.userId;
     if (courseId && userId) {
-      const existing = await db.enrollment.findUnique({ where: { userId_courseId: { userId, courseId } } });
-      if (!existing) {
-        // Atómico: o se inscriben Y suma el contador, o nada (misma forma que /api/checkout).
-        await db.$transaction([
-          db.enrollment.create({
-            data: { userId, courseId, status: "ACTIVE", source: "PAID", lastAccess: "ahora" },
-          }),
-          db.course.update({ where: { id: courseId }, data: { studentsCount: { increment: 1 } } }),
-        ]);
-      }
+      // [GOAL G2] Idempotente y atómico vía enrollOnce: el dedupe por event.id cubre el
+      // REPLAY del mismo evento, pero dos eventos DISTINTOS del mismo curso/usuario casi
+      // simultáneos también colisionarían — aquí la unicidad de la DB decide sin 500.
+      await enrollOnce(userId, courseId, "PAID");
     }
   }
 

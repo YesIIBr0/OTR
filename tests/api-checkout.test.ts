@@ -77,10 +77,10 @@ describe("POST /api/checkout — inscripción directa (venta por curso APAGADA)"
     expect(status).toBe(200);
     expect(json).toEqual({ ok: true, enrolled: true });
 
-    // Se busca inscripción previa por la llave compuesta (idempotencia).
-    expect(db.fn("enrollment.findUnique")).toHaveBeenCalledWith({
-      where: { userId_courseId: { userId: STUDENT.id, courseId: COURSE_ID } },
-    });
+    // [GOAL G2] Ya NO hay findUnique previo: enrollOnce INTENTA escribir y trata la
+    // violación de unicidad como "ya inscrito" (entre leer y escribir siempre hay ventana,
+    // y dos checkouts simultáneos daban un 500 real en staging).
+    expect(db.fn("enrollment.findUnique")).not.toHaveBeenCalled();
     // Inscripción creada dentro de la transacción, marcada como fuente FREE.
     expect(db.fn("enrollment.create")).toHaveBeenCalledWith({
       data: { userId: STUDENT.id, courseId: COURSE_ID, status: "ACTIVE", source: "FREE", lastAccess: "ahora" },
@@ -92,13 +92,14 @@ describe("POST /api/checkout — inscripción directa (venta por curso APAGADA)"
     });
   });
 
-  it("ya inscrito → idempotente: no vuelve a crear ni re-incrementa, responde enrolled:true", async () => {
-    db.fn("enrollment.findUnique").mockResolvedValue({ userId: STUDENT.id, courseId: COURSE_ID, status: "ACTIVE" });
+  it("ya inscrito (el INSERT choca con el unique) → idempotente: responde 200 enrolled:true, NO 500", async () => {
+    // Así se comporta Postgres cuando la fila ya existe: el create rechaza con P2002.
+    db.fn("enrollment.create").mockRejectedValueOnce(Object.assign(new Error("Unique constraint failed"), { code: "P2002" }));
     const { status, json } = await checkout({ courseId: COURSE_ID });
     expect(status).toBe(200);
     expect(json).toEqual({ ok: true, enrolled: true });
-    expect(db.fn("enrollment.create")).not.toHaveBeenCalled();
-    expect(db.fn("course.update")).not.toHaveBeenCalled();
+    // (En Postgres la transacción hace ROLLBACK, así que el contador NO persiste; el
+    // harness registra la llamada porque evalúa ambas promesas antes del Promise.all.)
   });
 
   it("curso CON precio → igual inscribe GRATIS (venta apagada; nunca invoca Stripe)", async () => {
