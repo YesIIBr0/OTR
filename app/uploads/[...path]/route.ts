@@ -88,7 +88,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ path: string[] 
     "Content-Type": mime,
     "Content-Disposition": `${disposition}; filename="${encodeURIComponent(downloadName)}"`,
     "X-Content-Type-Options": "nosniff",
-    "Cache-Control": "private, max-age=3600",
+    // [GOAL G3] El nombre en disco es un cuid único por archivo: el contenido de una URL
+    // dada NUNCA cambia (subir otra versión genera otra URL). immutable + 1 año evita que
+    // el navegador revalide avatares, PDFs y grabaciones en cada carga. Sigue siendo
+    // "private": es contenido con control de acceso, no debe cachearlo un proxy compartido.
+    "Cache-Control": "private, max-age=31536000, immutable",
     "Accept-Ranges": "bytes",
   };
 

@@ -1,6 +1,7 @@
 // OTR LMS · funciones de consulta — leen de la base de datos (Prisma).
 import { db } from "./db";
 import { esc } from "./esc";
+import { cached } from "./cache";
 import { safeUrl } from "./api";
 import { dateLabel, timeLabel } from "./consultations";
 
@@ -79,6 +80,11 @@ function lifecycleState(events: Array<{ createdAt: Date }>, isNew: boolean): { s
 // rosterGradeAgg/rosterQuizRows/rosterBookingAgg/rosterProgressRows/rosterLastEventAgg/
 // rosterRecentEvents) a la forma que consumen scr-teacher.ts/scr-extra.ts. Pura y sin tocar la
 // DB → testeable directo (tests/roster-metrics.test.ts) sin mockear Prisma.
+// [GOAL G3] TTL del micro-caché de datos GLOBALES (idénticos para cualquier usuario). Corto
+// a propósito: con N alumnos entrando a la vez la query se hace UNA vez en vez de N, y un
+// cambio del equipo se ve en ≤TTL. Nunca se cachea nada por usuario (ver lib/cache.ts).
+const GLOBAL_TTL_MS = 30_000;
+
 const ROSTER_RISK_PROGRESS_PCT = 50; // progreso del curso por debajo de esto cuenta como "bajo"
 const ROSTER_RISK_INACTIVE_DAYS = 14; // + sin actividad en 14 días → riesgo (mismo umbral que lifecycleState 'lapsed')
 const ROSTER_ENG_HIGH_EVENTS = 6; // >=6 ActivityEvent en los últimos 14 días → "Alto"
@@ -271,7 +277,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     threads, mainThread, convos, allCourses, allModules, taughtCourses,
     myStudentSkills, myCertificates, coachProfiles,
   ] = await Promise.all([
-    db.level.findMany({ orderBy: { position: "asc" } }),
+    // [GOAL G3] Global e idéntico para todos → micro-caché (ver lib/cache.ts).
+    cached("levels", GLOBAL_TTL_MS, () => db.level.findMany({ orderBy: { position: "asc" } })),
     db.enrollment.findMany({ where: { user: { email } }, include: { course: true }, orderBy: { course: { position: "asc" } } }),
     db.badge.findMany({ orderBy: { position: "asc" } }),
     // [F3.2 fix] Notificaciones scopeadas EN LA DB (no en JS): antes se traían las 200 GLOBALES
@@ -284,7 +291,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       orderBy: [{ unread: "desc" }, { position: "asc" }],
       take: 50,
     }),
-    db.eventItem.findMany({ orderBy: { position: "asc" }, take: 200 }),
+    cached("events", GLOBAL_TTL_MS, () => db.eventItem.findMany({ orderBy: { position: "asc" }, take: 200 })), // [GOAL G3] global
     // Foro APAGADO (PRD-estricto, Fase 3 §10): no se cargan ni envían threads.
     Promise.resolve([] as any[]),
     Promise.resolve(null as any),
@@ -517,14 +524,17 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           select: { criterion: true, score: true },
         })
       : Promise.resolve([]),
-    // leaderboard.rows: top 50 usuarios por debateRating desc.
+    // leaderboard.rows: top 50 usuarios por debateRating desc. [GOAL G3] La tabla es la
+    // MISMA para cualquiera que la mire (el "mi posición" se calcula aparte, por usuario),
+    // así que se cachea globalmente: 10 alumnos entrando a la vez = 1 sola query.
     me
-      ? db.user.findMany({
-          where: { ageBand: { not: "minor" }, leaderboardOptIn: true }, // [P0-2] menores fuera; [GAMIFICATION-1 §9] solo quienes optaron por aparecer
-          orderBy: { debateRating: "desc" },
-          take: 50,
-          select: { id: true, name: true, initials: true, debateRating: true, debateTier: true },
-        })
+      ? cached("leaderboard:top50", GLOBAL_TTL_MS, () =>
+          db.user.findMany({
+            where: { ageBand: { not: "minor" }, leaderboardOptIn: true }, // [P0-2] menores fuera; [GAMIFICATION-1 §9] solo quienes optaron por aparecer
+            orderBy: { debateRating: "desc" },
+            take: 50,
+            select: { id: true, name: true, initials: true, debateRating: true, debateTier: true },
+          }))
       : Promise.resolve([]),
     // tournaments: UPCOMING|LIVE (take 20) ordenados por fecha de inicio.
     me
