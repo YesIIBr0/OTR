@@ -76,6 +76,10 @@ const STR = {
     toLogin: "Ya tengo cuenta — iniciar sesión",
     backToLogin: "Volver a iniciar sesión",
     langLabel: "Idioma",
+    audienceLabel: "¿Quién eres?",
+    audStudent: "Estudiante",
+    audCoach: "Coach",
+    subLoginCoach: "Entra a tu espacio de coach — tus clases y tus reservas.",
     // Mensajes (handlers)
     forgotNotice: "Si el correo existe, te enviamos un enlace para restablecer tu contraseña.",
     errPwdShort: "La contraseña debe tener al menos 8 caracteres",
@@ -145,6 +149,10 @@ const STR = {
     toLogin: "I already have an account — sign in",
     backToLogin: "Back to sign in",
     langLabel: "Language",
+    audienceLabel: "Who are you?",
+    audStudent: "Student",
+    audCoach: "Coach",
+    subLoginCoach: "Enter your coach space — your classes and your bookings.",
     forgotNotice: "If the email exists, we've sent you a link to reset your password.",
     errPwdShort: "Your password must be at least 8 characters",
     errPwdMismatch: "Passwords don't match",
@@ -373,7 +381,7 @@ export default function Auth() {
     T.headingReset;
 
   const subheading =
-    mode === "login" ? T.subLogin :
+    mode === "login" ? (role === "teacher" ? T.subLoginCoach : T.subLogin) :
     mode === "register" ? T.subRegister :
     mode === "forgot" ? T.subForgot :
     T.subReset;
@@ -432,6 +440,29 @@ export default function Auth() {
               </button>
             ))}
           </div>
+          {/* [AUTH-ROL] Toggle COACH | ESTUDIANTE, mismo registro visual que el de idioma.
+              Es la primera pregunta de la tarjeta porque decide todo lo que viene: en el
+              registro fija el rol; al entrar solo adapta el texto — la sesión la resuelve
+              SIEMPRE el rol real de la cuenta, así que elegir "mal" aquí no bloquea a
+              nadie ni cambia a qué tiene acceso. */}
+          {(mode === "login" || mode === "register") && (
+            <div role="group" aria-label={T.audienceLabel} className="aud-toggle">
+              {([
+                { k: "student" as Role, l: T.audStudent },
+                { k: "teacher" as Role, l: T.audCoach },
+              ]).map((o) => (
+                <button
+                  key={o.k}
+                  type="button"
+                  onClick={() => { setRole(o.k); setError(""); }}
+                  aria-pressed={role === o.k}
+                  className={role === o.k ? "on" : ""}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+          )}
           <h2>{heading}</h2>
           <p className="muted" style={{ marginBottom: 22 }}>{subheading}</p>
 
@@ -446,48 +477,32 @@ export default function Auth() {
           <form onSubmit={submit}>
             {mode === "register" && (
               <>
-                {/* Elección de rol: perfiles separados */}
-                <div className="field" style={{ marginBottom: 14 }}>
-                  <label className="label">{T.roleQ}</label>
-                  {/* Coaches NO se auto-registran (PRD §7.4/§7.6: Fase 1 = solo
-                      coaches OTR verificados, creados por el equipo). */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                    <RoleCard
-                      active={role === "student"}
-                      onClick={() => setRole("student")}
-                      title={T.roleStudent}
-                      desc={T.roleStudentDesc}
-                    />
-                    <RoleCard
-                      active={role === "parent"}
-                      onClick={() => setRole("parent")}
-                      title={T.roleParent}
-                      desc={T.roleParentDesc}
-                    />
-                    {/* [AUTH-ROL] Coach visible: el marketplace necesita OFERTA, y esconder
-                        la puerta no la crea. Pero NO se auto-registra — la plataforma
-                        entrena menores y el vetting (identidad + antecedentes) es la
-                        decisión abierta del spec §3.2. Al elegirlo se dice la verdad y se
-                        ofrece el canal, en vez de dejar que el formulario choque con un
-                        403 del servidor (TEACHER_SIGNUP_ENABLED = false). */}
-                    <RoleCard
-                      active={role === "teacher"}
-                      onClick={() => setRole("teacher")}
-                      title={T.roleCoach}
-                      desc={T.roleCoachDesc}
-                    />
-                  </div>
-                  {role === "teacher" && (
-                    <div className="alert info" style={{ marginTop: 10 }}>
-                      <span className="ai">{"\u2139"}</span>
-                      <div>
-                        <div className="at">{T.coachGateTitle}</div>
-                        <p style={{ margin: "4px 0 8px", fontSize: 13, lineHeight: 1.5 }}>{T.coachGateBody}</p>
-                        <a className="btn btn-soft btn-sm" href="mailto:hola@otracademy.do?subject=Quiero%20dar%20clases%20en%20OTR">{T.coachGateCta}</a>
-                      </div>
+                {/* [AUTH-ROL] El rol principal lo fija el toggle de arriba (Estudiante |
+                    Coach). Padre/Madre queda como tercera vía en un enlace: es un rol real
+                    (tiene portal propio) pero minoritario en el alta, y meterlo en el toggle
+                    obligaría a tres pastillas donde la decisión es binaria para casi todos. */}
+                {role === "teacher" && (
+                  <div className="alert info" style={{ marginBottom: 14 }}>
+                    <span className="ai">{"\u2139"}</span>
+                    <div>
+                      <div className="at">{T.coachGateTitle}</div>
+                      <p style={{ margin: "4px 0 8px", fontSize: 13, lineHeight: 1.5 }}>{T.coachGateBody}</p>
+                      <a className="btn btn-soft btn-sm" href="mailto:hola@otracademy.do?subject=Quiero%20dar%20clases%20en%20OTR">{T.coachGateCta}</a>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+                {role !== "teacher" && (
+                  <p className="faint" style={{ fontSize: 12.5, marginBottom: 14 }}>
+                    <button
+                      type="button"
+                      onClick={() => setRole(role === "parent" ? "student" : "parent")}
+                      style={{ background: "none", border: 0, padding: 0, font: "inherit", color: "var(--link, #1E8C16)", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                    >
+                      {role === "parent" ? T.roleStudent : T.roleParent}
+                    </button>
+                    {" — "}{role === "parent" ? T.roleStudentDesc : T.roleParentDesc}
+                  </p>
+                )}
 
                 <div className="field" style={{ marginBottom: 14 }}>
                   <label className="label" htmlFor="auth-name">{T.nameLabel} <span className="faint" style={{ fontWeight: 500 }}>{T.reqTag}</span></label>
@@ -639,38 +654,3 @@ function ChevL() {
   );
 }
 
-function RoleCard({ active, onClick, title, desc }: { active: boolean; onClick: () => void; title: string; desc: string }) {
-  const [hover, setHover] = useState(false);
-  const [focus, setFocus] = useState(false);
-  // El anillo de foco accesible se ve incluso cuando la tarjeta está seleccionada.
-  const ring = "var(--ring, 0 0 0 3px rgba(44,170,32,0.35))";
-  const boxShadow = focus ? ring : active ? "0 0 0 3px color-mix(in srgb, var(--otr-green) 18%, transparent)" : hover ? "var(--sh-2, 0 4px 12px rgba(12,12,12,0.10))" : "none";
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onFocus={() => setFocus(true)}
-      onBlur={() => setFocus(false)}
-      style={{
-        textAlign: "left",
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        padding: "12px 13px",
-        borderRadius: 12,
-        cursor: "pointer",
-        outline: "none",
-        border: `1.5px solid ${active || hover || focus ? "var(--otr-green, #2CAA20)" : "var(--border-strong, rgba(0,0,0,0.12))"}`,
-        background: active ? "var(--action-soft, #E1F2DE)" : "var(--otr-white, #fff)",
-        boxShadow,
-        transition: "border-color .18s var(--ease, cubic-bezier(.2,.7,.2,1)), background .18s var(--ease, cubic-bezier(.2,.7,.2,1)), box-shadow .18s var(--ease, cubic-bezier(.2,.7,.2,1))",
-      }}
-    >
-      <span style={{ fontWeight: 700, fontSize: 13.5, color: "var(--text, #111)" }}>{title}</span>
-      <span className="faint" style={{ fontSize: 11.5, lineHeight: 1.35 }}>{desc}</span>
-    </button>
-  );
-}
