@@ -28,6 +28,7 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   debate:      () => import("./scr-debate"),
   marketplace: () => import("./scr-marketplace"),
   listings:    () => import("./scr-listings"),
+  listing:     () => import("./scr-listing"),
   myListings:  () => import("./scr-my-listings"),
   parent:      () => import("./scr-parent"),
   lifetime:    () => import("./scr-lifetime"),
@@ -54,7 +55,7 @@ const SCREEN_MODULE: Record<string, string> = {
   forum:'community', forumThread:'community', messages:'community',
   catalog:'extra', manage:'extra', courseBuilder:'extra', search:'extra',
   arsenal:'arsenal', hub:'hub', onboarding:'hub', certificate:'certificate',
-  debateHub:'debate', marketplace:'marketplace', listings:'listings', myListings:'myListings', parentPortal:'parent',
+  debateHub:'debate', marketplace:'marketplace', listings:'listings', listing:'listing', myListings:'myListings', parentPortal:'parent',
   lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
   adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp',
   placement:'placement', settings:'settings', events:'events', room:'room',
@@ -169,6 +170,9 @@ export const ROUTES: Record<string, RouteDef> = {
   // [F-MKT M4/M5] Marketplace abierto multi-materia (visión Isaac): buscador por materia
   // (alumno/padre) + gestión de listings del profesor.
   listings:       { screen:'listings',     nav:'listings',     crumbs:['Marketplace','Buscar clases'] },
+  // [P2] Ficha de una clase ("adentro de la clase"). window.__listing lleva el id; el nav
+  // sigue marcando 'listings' para que el alumno vea de dónde vino.
+  listing:        { screen:'listing',      nav:'listings',     crumbs:['Marketplace','Buscar clases','Clase'] },
   'my-listings':  { screen:'myListings',   nav:'my-listings',  crumbs:['Profesor','Mis clases'], role:['teacher','admin'] },
   // Coach Workspace (PRD §7.5, supply-side) → scr-coachwork.ts.
   coachwork:      { screen:'coachwork',    nav:'coachwork',    crumbs:['Espacio de coach','Reservas e ingresos'] },
