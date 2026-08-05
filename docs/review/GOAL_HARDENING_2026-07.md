@@ -66,6 +66,21 @@ seguridad. Exentos a propósito los webhooks (firmados, con ráfagas legítimas)
 - Rutas sin autenticación: solo las correctas (health, auth, disponibilidad pública, proxy
   público de Tabroom) — auditadas una a una
 
+## 4.1 · Confirmado sobre el staging YA DESPLEGADO (2026-08-05)
+
+El informe se escribió con los arreglos aún sin desplegar. Repetido el escenario contra
+`https://2.25.205.214.sslip.io` corriendo el commit desplegado:
+
+| Comprobación | Antes | Ahora |
+|---|---|---|
+| Doble inscripción simultánea al mismo curso | **200 / 500** | **200 / 200**, sin 5xx |
+| Inscripciones resultantes | 1 (con error visible) | 1, sin error |
+| Backstop global de rate limit (G5) | no existía | 18 de 75 escrituras frenadas con 429 · **0 errores 5xx** |
+
+La migración `20260720000000_add_user_session_epoch` quedó aplicada (11 de 11). Efecto
+esperado y buscado: el formato del token cambió, así que **las sesiones abiertas antes del
+despliegue dejan de valer** — hay que volver a entrar. Eso ES la revocación funcionando.
+
 ## 5 · Lo que queda fuera del alcance del código
 
 - **Prueba de carga a gran escala** (k6, cientos de usuarios virtuales): lo medido aquí son
