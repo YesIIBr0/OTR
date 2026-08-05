@@ -143,20 +143,32 @@ function activeItemsFlat() {
           sub: t("core.naBookSub"), cta: t("core.naBookCta"), ic: IC.headset, onclick: `go('explore')` };
       }
 
-      const heroNext = `
-      <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
+      // [UI-DASH D1] Arriba va SOLO el saludo. La franja negra ocupaba media pantalla para
+      // decir una frase; el trabajo del alumno (progreso, programas, sesiones) empezaba
+      // debajo del pliegue. Ahora la cabecera es una línea y la acción siguiente baja a ser
+      // una tarjeta más entre las de abajo (nextCard) — sin perder el CTA.
+      const saludo = `
+      <div class="page-head fade-up" style="--d:0">
+        ${/* Solo el saludo: cualquier subtítulo aquí repetiría lo que ya dicen los KPIs
+             de abajo, y el punto de bajar el hero era ganar esa altura. */""}
+        <div><h1 class="page-title">${t("core.welcomeGreeting")}, ${firstName}</h1></div>
+        <div class="row vcenter" style="gap:10px">
+          <span class="streak">${IC.flame} ${DB.me?.streak||0} ${t("core.streakDays")}</span>
+          ${C.levelBadge(myLevel)}
+        </div>
+      </div>`;
+
+      // La acción siguiente, ahora como tarjeta (conserva el contraste de la marca para que
+      // siga siendo LA acción obvia, pero sin comerse la primera pantalla).
+      const nextCard = `
+      <div class="hello-card fade-up" style="--d:1">
         <div class="h-row">
           <div style="max-width:560px">
-            <h1 class="sr-only">${t("core.heroSrTitle")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
-            <h2 class="brand-font" style="margin-top:2px">${DB.me?.lifecycle==='lapsed'?`${t("core.helloLapsed")} ${firstName}`:DB.me?.lifecycle==='new'?`${t("core.helloNew")} ${firstName}`:DB.me?.lifecycle==='returning'?`${t("core.helloReturning")} ${firstName}`:`${t("core.helloDefault")} ${firstName}`}</h2>
-            <p style="color:#fff;font-size:15px;font-weight:650;margin-top:10px">${na.title}</p>
+            <p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
+            <p style="color:#fff;font-size:17px;font-weight:700;margin-top:6px">${na.title}</p>
             ${na.sub ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
-            <button class="btn btn-primary" style="margin-top:14px" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
           </div>
-          <div class="row" style="gap:10px;align-self:flex-start">
-            <span class="streak">${IC.flame} ${DB.me?.streak||0} ${t("core.streakDays")}</span>
-            ${C.levelBadge(myLevel)}
-          </div>
+          <button class="btn btn-primary" style="align-self:center" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
         </div>
       </div>`;
 
@@ -401,10 +413,13 @@ function activeItemsFlat() {
           </div>`;
 
       return `
-      ${heroNext}
+      ${saludo}
       ${kpis}
       <div class="split fade-up" style="--d:2">
         <div class="stack" style="gap:16px">
+          ${/* [UI-DASH D1] La acción siguiente baja aquí: primera tarjeta de la columna
+               principal, ya no una franja que ocupa la pantalla entera. */""}
+          ${nextCard}
           ${skillCard}
           ${recoCard}
         </div>

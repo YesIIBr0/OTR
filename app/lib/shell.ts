@@ -144,6 +144,17 @@ const TABBAR: Record<Role, NavItem[]> = {
 // cerrados) para que un grupo nuevo nazca abierto sin migración. Tolera SSR y storage
 // bloqueado (modo privado): sin acceso, todo abierto — el default seguro.
 export const NAV_CLOSED_KEY = "otr_nav_closed";
+
+// [UI-NAV N3] Sidebar plegado. Se guarda aparte de los grupos: es una preferencia de ancho
+// de trabajo, no de qué secciones te interesan.
+export const SIDEBAR_MINI_KEY = "otr_sidebar_mini";
+function sidebarMini(): boolean {
+  try {
+    return typeof localStorage !== "undefined" && localStorage.getItem(SIDEBAR_MINI_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 function navClosed(): string[] {
   try {
     const raw = typeof localStorage !== "undefined" ? localStorage.getItem(NAV_CLOSED_KEY) : null;
@@ -209,7 +220,7 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
   const avBg = role === 'teacher' ? 'var(--otr-navy)' : 'var(--otr-sky-lo)';
 
   return `
-  <div class="app">
+  <div class="app${sidebarMini() ? " mini" : ""}">
     <a href="#content" class="skip-link">${lang==='en'?'Skip to content':'Saltar al contenido'}</a>
     <aside class="sidebar">
       <div class="sb-head">
@@ -218,6 +229,11 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
           ${otrCrest({ id: "sb", attrs: 'class="crest"' })}
           <span class="txt">OTR <span class="sub">Aula</span></span>
         </a>
+        ${/* [UI-NAV N3] Plegar el sidebar. El modo compacto (.app.mini) ya existía en CSS
+             pero no tenía interruptor: nadie podía recuperar esos 220px de ancho para el
+             contenido. Se recuerda entre sesiones (localStorage). */""}
+        <button type="button" class="sb-collapse" data-sidebar-toggle
+                aria-label="${t('nav.collapse', lang)}" title="${t('nav.collapse', lang)}">${IC.chevL}</button>
       </div>
       <nav class="sb-nav">${sbNav}</nav>
       <div class="sb-foot">
