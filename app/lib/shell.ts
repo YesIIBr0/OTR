@@ -25,6 +25,11 @@ interface NavGroup {
   gk?: string;
   group: string;
   items: NavItem[];
+  // [UI-NAV N1] Grupo DESPLEGABLE: la cabecera es un botón con chevron que colapsa sus
+  // items. `key` identifica el grupo para recordar abierto/cerrado entre navegaciones
+  // (localStorage, ver navClosed()). Un grupo que contiene la ruta activa se abre SIEMPRE:
+  // la navegación nunca esconde dónde estás.
+  key?: string;
 }
 
 const NAV: Record<Role, NavGroup[]> = {
@@ -34,30 +39,31 @@ const NAV: Record<Role, NavGroup[]> = {
   student: [
     { gk:'group.main', group:'Principal', items:[
       { r:'dashboard', ic:'home', k:'nav.dashboard', l:'Inicio' },
-      { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
       { r:'events', ic:'calendar', k:'nav.events', l:'Eventos' },
     ]},
     // [IA-CONSOLIDACIÓN · llamada Isaac] "Aprender" y "Marketplace" eran lo mismo para el
     // alumno ("ver tus programas"): Cursos (S.course = activos + catálogo), Coaches y Mis
-    // reservas. Se fusionan en UN solo grupo "Aprender". Membresía queda en su propio grupo
-    // (fuera de aquí). Mensajes se conserva como el canal coach↔alumno.
-    { gk:'group.learn', group:'Aprender', items:[
-      { r:'course', ic:'book', k:'nav.course', l:'Cursos' },
-      { r:'explore', ic:'search', k:'nav.explore', l:'Coaches' },
+    // reservas. Se fusionan en UN solo grupo. Mensajes se conserva como canal coach↔alumno.
+    // [UI-CURSOS U4] "Mis reservas" salió del nav: sus sesiones reservadas se pintan DENTRO
+    // de Cursos, bajo el curso (scr-core → renderBookings). Un destino menos, misma función.
+    // [UI-NAV N1] Pasa a DESPLEGABLE "Mis programas" y absorbe Debate Hub (venía de
+    // Principal). Los dos sub-tabs de la sección Cursos suben a items propios: "Activos"
+    // (course) y "Buscar nuevos" (catalog) — mismo destino, un clic menos.
+    { gk:'group.programs', group:'Mis programas', key:'programs', items:[
+      { r:'course', ic:'book', k:'nav.coursesActive', l:'Activos' },
+      { r:'catalog', ic:'search', k:'nav.coursesFind', l:'Buscar nuevos' },
+      { r:'explore', ic:'search', k:'nav.explore', l:'Buscar coaches' },
       // [F-MKT M4] Buscador por materia del marketplace abierto (inglés, matemáticas, AI…).
       { r:'listings', ic:'search', k:'nav.listings', l:'Buscar clases' },
-      { r:'my-bookings', ic:'calendar', k:'nav.mybookings', l:'Mis reservas' },
+      { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
       { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes' },
     ]},
-    // [EPIC-2] Membresía elevada a item de primer nivel (propio grupo), fuera de
-    // Marketplace y de Cursos: es la palanca de ingreso free→Pro y merece visibilidad.
-    { gk:'group.membership', group:'Membresía', items:[
-      { r:'membership', ic:'star', k:'nav.membership', l:'Membresía' },
-    ]},
-    { gk:'group.progress', group:'Centro de progreso', items:[
-      { r:'lifetime', ic:'award', k:'nav.lifetime', l:'Mi trayectoria' },
+    // [UI-NAV N1] "Centro de progreso" → desplegable "Progreso". [N2] Membresía dejó de ser
+    // grupo propio: vive en el menú del chip de usuario, junto a Ajustes y Salir.
+    { gk:'group.progress', group:'Progreso', key:'progress', items:[
+      { r:'lifetime', ic:'award', k:'nav.lifetime', l:'Trayectoria' },
       { r:'progress', ic:'levels', k:'nav.progress', l:'Niveles' },
-      { r:'grades', ic:'doc', k:'nav.grades', l:'Mis calificaciones' },
+      { r:'grades', ic:'doc', k:'nav.grades', l:'Asignaciones' },
       { r:'badges', ic:'medal', k:'nav.badges', l:'Logros' },
     ]},
   ],
@@ -134,6 +140,20 @@ const TABBAR: Record<Role, NavItem[]> = {
   admin: [ {r:'admin',ic:'flag',k:'nav.admin',l:'Moderación'},{r:'admin-users',ic:'users',k:'nav.users',l:'Usuarios'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
 };
 
+// [UI-NAV N1] Grupos que el usuario dejó CERRADOS. Se guardan por exclusión (solo los
+// cerrados) para que un grupo nuevo nazca abierto sin migración. Tolera SSR y storage
+// bloqueado (modo privado): sin acceso, todo abierto — el default seguro.
+export const NAV_CLOSED_KEY = "otr_nav_closed";
+function navClosed(): string[] {
+  try {
+    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(NAV_CLOSED_KEY) : null;
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 // [NAV-04] Migas navegables: el primer segmento corresponde al `nav` de la pantalla
 // (p.ej. 'Mi aprendizaje'→course), así que los segmentos no-finales enrutan a la raíz
 // de sección (navRoute). role=button+tabindex reusa el activador de teclado global.
@@ -160,17 +180,27 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
     if (it.r === 'messages') return unreadMsgs > 0 ? String(unreadMsgs) : '';
     return it.badge || '';
   };
-  const sbNav = nav.map(g => `
-    <div class="sb-group">${g.gk ? t(g.gk, lang) : g.group}</div>
-    ${g.items.map(it => `
+  const navItemHtml = (it: NavItem) => `
       <a class="sb-item ${it.r===activeNav?'active':''}" href="#${it.r}" data-go="${it.r}">
         ${IC[it.ic]}<span class="lbl">${L(it)}</span>
         ${navBadge(it)?`<span class="badge-count">${navBadge(it)}</span>`:''}
-      </a>`).join('')}
-  `).join('') + `
-    <div class="sb-group">${t('group.system', lang)}</div>
-    <a class="sb-item ${activeNav==='settings'?'active':''}" href="#settings" data-go="settings">${IC.settings}<span class="lbl">${t('nav.settings', lang)}</span></a>
-    <a class="sb-item" href="#" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></a>`;
+      </a>`;
+
+  const sbNav = nav.map(g => {
+    const label = g.gk ? t(g.gk, lang) : g.group;
+    const items = g.items.map(navItemHtml).join('');
+    if (!g.key) return `<div class="sb-group">${label}</div>${items}`;
+    // [UI-NAV N1] Desplegable. Abierto por defecto; se recuerda cerrado en localStorage,
+    // PERO si la ruta activa vive dentro, se fuerza abierto (nunca escondemos dónde estás).
+    const hasActive = g.items.some(it => it.r === activeNav);
+    const open = hasActive || !navClosed().includes(g.key);
+    return `
+    <button type="button" class="sb-group sb-group--toggle" data-nav-toggle="${g.key}"
+            aria-expanded="${open}" aria-controls="sbg-${g.key}">
+      <span>${label}</span><span class="chev">${IC.chevD}</span>
+    </button>
+    <div class="sb-sub" id="sbg-${g.key}"${open ? '' : ' hidden'}>${items}</div>`;
+  }).join('');
 
   const tabbar = (TABBAR[role]||TABBAR.student).map(it =>
     `<a class="${it.r===activeNav?'active':''}" href="#${it.r}" data-go="${it.r}">${IC[it.ic]}<span>${L(it)}</span></a>`).join('');
@@ -191,13 +221,27 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
       </div>
       <nav class="sb-nav">${sbNav}</nav>
       <div class="sb-foot">
-        <div class="sb-user" data-go="profile">
+        ${/* [UI-NAV N2] Menú de cuenta: Membresía, Ajustes y Salir salieron del listado del
+             nav (eran dos grupos enteros por 3 destinos) y viven aquí, colgando del chip de
+             usuario — el sitio donde la gente ya busca "lo mío". Membresía solo para quien
+             la tiene como producto (alumno); el profesor cobra, no se suscribe. */""}
+        <div class="sb-usermenu" id="sb-usermenu" role="menu" hidden>
+          <a class="sb-item" role="menuitem" href="#profile" data-go="profile">${IC.user}<span class="lbl">${t('nav.profile', lang)}</span></a>
+          ${role === 'student' ? `<a class="sb-item" role="menuitem" href="#membership" data-go="membership">${IC.star}<span class="lbl">${t('nav.membership', lang)}</span></a>` : ''}
+          <a class="sb-item" role="menuitem" href="#settings" data-go="settings">${IC.settings}<span class="lbl">${t('nav.settings', lang)}</span></a>
+          <a class="sb-item" role="menuitem" href="#" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></a>
+        </div>
+        ${/* El chip se ilumina cuando estás en cualquier destino del menú: sin esto esas
+             rutas quedarían huérfanas (sin nada activo ni camino de vuelta visible). */""}
+        <button type="button" class="sb-user${['profile','membership','settings'].includes(activeNav) ? ' active' : ''}"
+                data-user-menu aria-expanded="false" aria-controls="sb-usermenu" aria-haspopup="menu">
           <span class="avatar sm" style="background:${avBg}">${u.initials}</span>
           <span class="meta" style="min-width:0">
             <span style="display:block;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name}</span>
             <span style="display:block;font-size:11px;color:rgba(234,242,251,.5)">${role==='admin'?t('role.admin',lang):role==='teacher'?t('role.teacher',lang):role==='parent'?t('role.parent',lang):t('role.student',lang)}</span>
           </span>
-        </div>
+          <span class="chev">${IC.chevD}</span>
+        </button>
       </div>
     </aside>
 

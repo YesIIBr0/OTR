@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { renderShell } from "../lib/shell";
+import { renderShell, NAV_CLOSED_KEY } from "../lib/shell";
 import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
@@ -82,6 +82,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       }
       const keep = !!(opts && opts.keepScroll);
       currentRoute = r; // se fija ANTES del await para el guard "la última navegación gana"
+      // [UI-CURSOS U4] Publica la ruta viva: los paneles EMBEBIDOS (p.ej. las reservas dentro
+      // de Cursos) necesitan repintar "donde estoy" tras una mutación, no saltar a una
+      // pantalla propia — que puede no existir.
+      (window as unknown as Record<string, unknown>).__route = r;
 
       // [PERF · code-splitting] Asegura que el chunk del módulo de la pantalla esté cargado
       // antes de pintar. Instantáneo si ya se cargó (microtask); en el primer acceso baja su
@@ -930,6 +934,47 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     const onClick = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
       if (t.closest("#create-menu")) { e.stopPropagation(); openCreateMenu(); return; }
+
+      // [UI-NAV N1] Abrir/cerrar un grupo desplegable del sidebar. Se hace en el DOM (sin
+      // re-render): así no parpadea la pantalla por plegar un menú. Solo se PERSISTEN los
+      // grupos cerrados — un grupo nuevo nace abierto sin migrar nada.
+      const navToggle = t.closest("[data-nav-toggle]") as HTMLElement | null;
+      if (navToggle) {
+        e.preventDefault();
+        const key = navToggle.getAttribute("data-nav-toggle") || "";
+        const panel = document.getElementById(`sbg-${key}`);
+        if (!panel) return;
+        const open = navToggle.getAttribute("aria-expanded") !== "true";
+        navToggle.setAttribute("aria-expanded", String(open));
+        panel.hidden = !open;
+        try {
+          const cur: string[] = JSON.parse(localStorage.getItem(NAV_CLOSED_KEY) || "[]");
+          const next = open ? cur.filter((k) => k !== key) : [...new Set([...cur, key])];
+          localStorage.setItem(NAV_CLOSED_KEY, JSON.stringify(next));
+        } catch { /* storage bloqueado (modo privado): el plegado sigue funcionando en sesión */ }
+        return;
+      }
+
+      // [UI-NAV N2] Menú de cuenta del chip de usuario. Se cierra al elegir (el data-go
+      // navega y el shell se repinta) o al clicar fuera — ver el else de más abajo.
+      const userMenuBtn = t.closest("[data-user-menu]") as HTMLElement | null;
+      if (userMenuBtn) {
+        e.preventDefault();
+        const menu = document.getElementById("sb-usermenu");
+        if (!menu) return;
+        const open = userMenuBtn.getAttribute("aria-expanded") !== "true";
+        userMenuBtn.setAttribute("aria-expanded", String(open));
+        menu.hidden = !open;
+        return;
+      }
+      if (!t.closest("#sb-usermenu")) {
+        const openMenu = document.getElementById("sb-usermenu");
+        if (openMenu && !openMenu.hidden) {
+          openMenu.hidden = true;
+          document.querySelector("[data-user-menu]")?.setAttribute("aria-expanded", "false");
+        }
+      }
+
       if (t.closest('[data-action="logout"]')) { e.preventDefault(); api("/api/auth/logout").finally(() => location.reload()); return; }
       const enrollEl = t.closest("[data-enroll]") as HTMLElement | null;
       if (enrollEl) { e.preventDefault(); doEnroll(enrollEl.getAttribute("data-enroll")!); return; }

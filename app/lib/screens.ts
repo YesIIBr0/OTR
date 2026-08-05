@@ -36,7 +36,8 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   adminUsers:  () => import("./scr-admin-users"),
   adminMetrics: () => import("./scr-admin-metrics"),
   adminWhatsapp: () => import("./scr-admin-whatsapp"),
-  mybookings:  () => import("./scr-mybookings"),
+  // [UI-CURSOS U4] scr-mybookings ya NO es una pantalla enrutable: es el panel que scr-core
+  // embebe bajo los cursos, así que viaja en el chunk de 'core' y no necesita loader propio.
   placement:   () => import("./scr-placement"),
   settings:    () => import("./scr-settings"),
   events:      () => import("./scr-events"),
@@ -55,7 +56,7 @@ const SCREEN_MODULE: Record<string, string> = {
   arsenal:'arsenal', hub:'hub', onboarding:'hub', certificate:'certificate',
   debateHub:'debate', marketplace:'marketplace', listings:'listings', myListings:'myListings', parentPortal:'parent',
   lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
-  adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp', myBookings:'mybookings',
+  adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp',
   placement:'placement', settings:'settings', events:'events', room:'room',
 };
 
@@ -96,7 +97,7 @@ export async function ensureScreen(name: string): Promise<unknown> {
 // Prefetch en segundo plano (fire-and-forget) de las pantallas probables de un rol, para que
 // la navegación se sienta instantánea sin inflar el primer paint.
 const ROLE_PREFETCH: Record<string, string[]> = {
-  student: ['debateHub','marketplace','listings','lifetimeProfile','events','myBookings','grades','settings','profile','placement'],
+  student: ['debateHub','marketplace','listings','lifetimeProfile','events','grades','settings','profile','placement'],
   teacher: ['teacher','participants','manage','coachwork','marketplace','myListings','messages','profile','settings'],
   parent:  ['parentPortal','marketplace','listings','messages','membership','profile','settings'],
   admin:   ['adminConsole','adminUsers','adminMetrics','adminWhatsapp','marketplace','debateHub','profile','settings'],
@@ -128,12 +129,12 @@ export const ROUTES: Record<string, RouteDef> = {
   // [EPIC-2] 'catalog' ya no es un item de nav propio: enruta a la sección "Cursos"
   // unificada (nav:'course') forzando el sub-tab Catálogo. El screen S.catalog crudo
   // sigue existiendo (reusado dentro de S.course); aquí usamos el wrapper coursesCatalog.
-  catalog:        { screen:'coursesCatalog', nav:'course',     crumbs:['Cursos','Catálogo'] },
+  catalog:        { screen:'coursesCatalog', nav:'catalog',    crumbs:['Cursos','Buscar nuevos'] },
   // Crumbs genéricos (Moodle multi-curso): el nombre real del curso/lección se
   // muestra en el hero de cada pantalla, no se hardcodea aquí.
   // [EPIC-2] La ruta raíz 'course' entra por "Mis cursos" (wrapper coursesMine);
   // S.course es el renderer interno con los dos sub-tabs.
-  course:         { screen:'coursesMine',   nav:'course',       crumbs:['Cursos'] },
+  course:         { screen:'coursesMine',   nav:'course',       crumbs:['Cursos','Activos'] },
   'course-index': { screen:'courseIndex',  nav:'course',       crumbs:['Cursos','Índice'] },
   lesson:         { screen:'lesson',       nav:'course',       crumbs:['Cursos','Lección'] },
   assignment:     { screen:'assignment',   nav:'course',       crumbs:['Cursos','Entrega'] },
@@ -143,7 +144,7 @@ export const ROUTES: Record<string, RouteDef> = {
   progress:       { screen:'progress',     nav:'progress',     crumbs:['Centro de progreso','Niveles'] },
   badges:         { screen:'badges',       nav:'badges',       crumbs:['Centro de progreso','Logros'] },
   // RE-REGISTRADA: el alumno necesita ver sus notas + el feedback del coach (S.grades).
-  grades:         { screen:'grades',       nav:'grades',       crumbs:['Centro de progreso','Mis calificaciones'] },
+  grades:         { screen:'grades',       nav:'grades',       crumbs:['Progreso','Asignaciones'] },
   // APAGADAS (PRD-estricto §15): 'forum'/'forum-thread' (discussion boards =
   // Fase 3 §10, con espacios cerrados y moderados para menores — este foro abierto
   // no cumple ese diseño). Las pantallas siguen exportadas; solo pierden ruta.
@@ -171,8 +172,8 @@ export const ROUTES: Record<string, RouteDef> = {
   'my-listings':  { screen:'myListings',   nav:'my-listings',  crumbs:['Profesor','Mis clases'], role:['teacher','admin'] },
   // Coach Workspace (PRD §7.5, supply-side) → scr-coachwork.ts.
   coachwork:      { screen:'coachwork',    nav:'coachwork',    crumbs:['Espacio de coach','Reservas e ingresos'] },
-  // Mis reservas (PRD §7.3 paso 6 + §4.2 ④, demand-side) → scr-mybookings.ts.
-  'my-bookings':  { screen:'myBookings',   nav:'my-bookings',  crumbs:['Marketplace','Mis reservas'] },
+  // [UI-CURSOS U4] La ruta demand-side "Mis reservas" (PRD §7.3 paso 6 + §4.2 ④) se retiró:
+  // el panel vive dentro de la sección Cursos. Todo lo que apuntaba aquí enruta a 'course'.
   // Sala de sesión (PRD §7.3 paso 6) → scr-room.ts; destino real del botón "Unirse".
   room:           { screen:'room',         nav:'',             crumbs:['Sala de sesión'] },
   // 'my-experience' APAGADA (PRD-estricto): preferencias de experiencia no están en el PDF.
@@ -186,7 +187,7 @@ export const ROUTES: Record<string, RouteDef> = {
   // Parent Portal (PRD §11) → pantalla real S.parentPortal.
   parent:         { screen:'parentPortal', nav:'parent',       crumbs:['Portal de familia'] },
   // Lifetime Progress Profile (PRD §8) + Membresía (PRD §13) → scr-lifetime.ts.
-  lifetime:       { screen:'lifetimeProfile', nav:'lifetime',  crumbs:['Centro de progreso','Mi trayectoria'] },
+  lifetime:       { screen:'lifetimeProfile', nav:'lifetime',  crumbs:['Progreso','Trayectoria'] },
   membership:     { screen:'membership',   nav:'membership',   crumbs:['Cuenta','Membresía'] },
   // Ajustes (PRD §3.1 ⚙️ Settings): hub de cuenta/idioma/notificaciones/privacidad → scr-settings.ts.
   settings:       { screen:'settings',     nav:'settings',     crumbs:['Cuenta','Ajustes'] },
