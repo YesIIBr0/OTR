@@ -413,6 +413,11 @@
 .lst-cover--hero{height:190px;border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:18px;gap:12px}
 .lst-cover--hero .lc-ic{width:40px;height:40px}
 .lst-cover--hero .lc-cat{font-size:11.5px}
+/* [P5] Cover con FOTO real del profesor: la imagen llena el cover y la materia queda como
+   sello legible encima (degradado inferior para que el texto no dependa de la foto). */
+.lst-cover--photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.lst-cover--photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.62) 0,transparent 52%)}
+.lst-cover--photo .lc-cat{position:absolute;left:0;right:0;bottom:8px;z-index:2;color:#fff}
 
 /* --- fila del listado --- */
 .lst-row{display:flex;align-items:stretch;overflow:hidden;cursor:pointer;transition:box-shadow .18s var(--ease),border-color .18s var(--ease)}

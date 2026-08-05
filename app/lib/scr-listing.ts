@@ -148,9 +148,10 @@ function body(d) {
   return `
   <div class="lst-detail">
     <div class="lst-main">
-      ${/* Cabecera de la clase: cover institucional + título. Sin video porque no existe
-           campo para subirlo — mejor un cover honesto que un reproductor vacío. */""}
-      ${listingCover(d.listing.category, catLabel(d.listing.category), "hero")}
+      ${/* Cabecera: la FOTO del profesor si la tiene, y si no el emblema institucional de
+           la materia. Sin video porque no existe campo para subirlo — mejor un cover
+           honesto que un reproductor vacío. */""}
+      ${listingCover(d.listing.category, catLabel(d.listing.category), "hero", d.teacher.avatarUrl || "")}
 
       <h1 class="lst-title">${d.listing.title}</h1>
 

@@ -53,10 +53,14 @@ function listingRow(l, d) {
     : `<span class="badge">${t("lst.newTeacher")}</span>`;
   return `
   <article class="card lst-row fade-up" style="--d:${d}" role="button" tabindex="0" data-lst-open="${esc(l.id)}">
-    ${listingCover(l.category, catLabel(l.category), "row")}
+    ${/* [P5] La FOTO del profesor manda cuando existe (User.avatarUrl); si no, el emblema
+         institucional de la materia. La cara es la señal de confianza del marketplace. */""}
+    ${listingCover(l.category, catLabel(l.category), "row", l.teacherAvatar || "")}
     <div class="lst-row-body">
       <div class="row vcenter wrap" style="gap:9px">
-        ${C.avatar(esc(ini(l.teacherName)), { size: "sm", bg: "var(--otr-navy)" })}
+        ${l.teacherAvatar
+          ? `<img class="avatar sm" src="${esc(l.teacherAvatar)}" alt="" loading="lazy" decoding="async" style="object-fit:cover"/>`
+          : C.avatar(esc(ini(l.teacherName)), { size: "sm", bg: "var(--otr-navy)" })}
         <b style="font-size:15px;letter-spacing:var(--track-tight)">${l.teacherName}</b>
         ${l.verified ? `<span class="badge ok" style="font-size:10.5px">${IC.check} ${t("lst.verifiedBadge")}</span>` : ""}
       </div>

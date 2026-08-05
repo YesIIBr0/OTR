@@ -91,7 +91,10 @@ export async function GET(req: Request) {
       select: {
         id: true, category: true, title: true, description: true, priceCentsHour: true,
         language: true, modality: true,
-        teacher: { select: { id: true, name: true, coachVerified: true } },
+        // [P5] avatarUrl: la foto del profesor es el thumbnail del listado (registro
+        // Preply). Sin pedirla en el select, Prisma no la trae y el buscador enseñaba
+        // iniciales aunque el profesor la tuviera subida.
+        teacher: { select: { id: true, name: true, coachVerified: true, avatarUrl: true } },
       },
     }),
     db.listing.count({ where }),
@@ -115,6 +118,8 @@ export async function GET(req: Request) {
       modality: l.modality,
       teacherId: l.teacher.id,
       teacherName: esc(l.teacher.name),
+      // Cadena vacía y no null: el builder decide con un if, sin defenderse de nulls.
+      teacherAvatar: l.teacher.avatarUrl || "",
       verified: !!l.teacher.coachVerified,
       rating: ratingByTeacher.get(l.teacher.id)?.avg ?? null,
       reviewCount: ratingByTeacher.get(l.teacher.id)?.count ?? 0,
