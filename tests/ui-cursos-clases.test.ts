@@ -193,10 +193,10 @@ describe("U5 · Buscar clases", () => {
     teacherId: "t-1", teacherName: "Saúl Martínez", verified: true, rating: 4.8, reviewCount: 12,
   };
 
-  it("las tarjetas traen thumbnail", () => {
+  it("las filas traen cover de materia", () => {
     win.__listings = { loaded: true, loading: false, error: false, items: [CLASE], total: 1, category: "", q: "" };
     const html = Listings.listings.render({ role: "student" });
-    expect(html).toContain("lst-thumb");
+    expect(html).toContain("lst-cover");
     expect(html).toContain("Inglés conversacional B2");
   });
 
@@ -210,7 +210,7 @@ describe("U5 · Buscar clases", () => {
   it("existe el estilo del thumbnail y del chip grande", () => {
     const css = readFileSync(join(process.cwd(), "app/styles/screens.css"), "utf8")
       + readFileSync(join(process.cwd(), "app/styles/app.css"), "utf8");
-    expect(css).toMatch(/\.lst-thumb\{/);
+    expect(css).toMatch(/\.lst-cover\{/);
     expect(css).toMatch(/\.chip--lg\{/);
   });
 

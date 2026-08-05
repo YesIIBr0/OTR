@@ -14,6 +14,7 @@ import { IC } from "./icons";
 import { esc } from "./esc";
 import { t, registerDict } from "./i18n";
 import { money } from "./money";
+import { listingCover } from "./listing-cover";
 import { dict as d_lst } from "./i18n-keys/lst";
 registerDict(d_lst);
 
@@ -38,72 +39,42 @@ const catLabel = (slug) => {
 const ini = (name) =>
   (String(name || "?").replace(/&[a-z]+;/g, " ").split(/\s+/).map((w) => w[0]).join("") || "?").slice(0, 2).toUpperCase();
 
-/* ---------------- thumbnail de materia ----------------
-   El marketplace no tiene imágenes que subir (un listing es texto + tarifa), así que el
-   thumbnail se DERIVA de la materia: icono + etiqueta sobre el degradado de marca. Es
-   determinista (misma materia = mismo thumbnail siempre), no pide gestión de archivos y
-   deja la tarjeta escaneable de un vistazo. Paleta de marca (verde/oro/negro) — el ángulo
-   del degradado varía por materia para que dos categorías vecinas no se confundan. */
-const CAT_ICON = {
-  debate: "mic", oratoria: "headset", ingles: "msg", matematicas: "chart",
-  ciencias: "target", programacion: "grid", ai: "levels", musica: "play", otros: "book",
-};
-// Tonos de ARRANQUE del degradado. Todos son de la paleta de marca (verde/oro) y ninguno es
-// el negro del final: así el degradado SIEMPRE tiene profundidad. Se eligen por hash del slug,
-// no por un mapa a mano — una materia nueva recibe su tono sola y nunca cae en un negro plano.
-const CAT_TONES = [
-  "var(--otr-green-hi)", "var(--otr-gold)", "var(--otr-green)",
-  "var(--otr-gold-lo)", "var(--otr-green-lo)",
-];
-// Hash estable del slug: mismo slug ⇒ mismo tono y mismo ángulo, siempre.
-function slugHash(slug) {
-  let h = 0;
-  for (const ch of String(slug || "")) h = (h * 31 + ch.charCodeAt(0)) % 9973;
-  return h;
-}
-function thumb(category) {
-  const key = String(category || "otros");
-  const icon = IC[CAT_ICON[key] || "book"] || IC.book;
-  const h = slugHash(key);
-  const tone = CAT_TONES[h % CAT_TONES.length];
-  const angle = 110 + (h % 60); // 110°–169°: siempre diagonal, nunca plano
-  return `
-  <div class="lst-thumb" style="background:linear-gradient(${angle}deg,${tone},var(--otr-ink))">
-    <span class="lt-ic">${icon}</span>
-    <span class="lt-cat">${catLabel(key)}</span>
-  </div>`;
-}
-
-/* ---------------- cards de resultados ---------------- */
-function listingCard(l, d) {
-  const rating = l.rating != null
-    ? `<span class="badge gold" style="font-size:11px">★ ${Number(l.rating).toFixed(1)} · ${l.reviewCount} ${t("lst.reviewsSuffix")}</span>`
-    : "";
-  const verified = l.verified ? `<span class="badge sky" style="font-size:11px">${IC.check} ${t("lst.verifiedBadge")}</span>` : "";
+/* ---------------- fila de resultado ----------------
+   Registro Preply, no Fiverr: una FILA por clase — cover institucional de la materia,
+   quién enseña con su credencial y sus números reales, y a la derecha el precio con la
+   acción. Se escanea en vertical comparando precio contra reputación, que es exactamente
+   la decisión que toma el alumno (o el padre que paga). El cover lo arma lib/listing-cover,
+   compartido con la ficha, para que una clase se vea igual en los dos sitios. */
+function listingRow(l, d) {
   const modality = l.modality === "presencial" ? t("lst.modalityPresencial")
     : l.modality === "híbrido" ? t("lst.modalityHibrido") : t("lst.modalityOnline");
+  const rating = l.rating != null
+    ? `<span class="row vcenter" style="gap:5px"><b class="tnum">${Number(l.rating).toFixed(1)}</b><span class="lst-stars" aria-hidden="true">★</span><span class="faint">(${l.reviewCount})</span></span>`
+    : `<span class="badge">${t("lst.newTeacher")}</span>`;
   return `
-  <div class="card lst-card fade-up" style="--d:${d}">
-    ${thumb(l.category)}
-    <div class="lst-body">
-      <div>
-        <b style="font-size:16px;font-weight:750;line-height:1.3;letter-spacing:var(--track-tight);display:block">${l.title}</b>
-        <div class="row vcenter wrap" style="gap:8px;margin-top:8px">
-          ${C.avatar(esc(ini(l.teacherName)), { size: "sm", bg: "var(--otr-navy)" })}
-          <span style="font-size:13px;font-weight:600">${l.teacherName}</span>
-          ${verified}${rating}
-        </div>
+  <article class="card lst-row fade-up" style="--d:${d}" role="button" tabindex="0" data-lst-open="${esc(l.id)}">
+    ${listingCover(l.category, catLabel(l.category), "row")}
+    <div class="lst-row-body">
+      <div class="row vcenter wrap" style="gap:9px">
+        ${C.avatar(esc(ini(l.teacherName)), { size: "sm", bg: "var(--otr-navy)" })}
+        <b style="font-size:15px;letter-spacing:var(--track-tight)">${l.teacherName}</b>
+        ${l.verified ? `<span class="badge ok" style="font-size:10.5px">${IC.check} ${t("lst.verifiedBadge")}</span>` : ""}
       </div>
-      ${l.description ? `<p class="muted" style="font-size:13px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${l.description}</p>` : ""}
-      <div class="row between vcenter wrap" style="gap:10px;margin-top:auto;padding-top:13px;border-top:1px solid var(--border)">
-        <div style="line-height:1.25">
-          <b class="lst-price tnum">${money(l.priceCentsHour)}</b><span class="faint" style="font-size:12px;font-weight:400">${t("lst.perHour")}</span>
-          <div class="faint" style="font-size:11.5px">${modality}</div>
-        </div>
-        <button class="btn btn-primary" data-lst-book="${esc(l.id)}">${t("lst.bookBtn")}</button>
+      <b class="lst-row-title">${l.title}</b>
+      <div class="row vcenter wrap" style="gap:6px 10px;font-size:12.5px;color:var(--text-2)">
+        ${rating}<span class="dot-sep"></span><span>${catLabel(l.category)}</span><span class="dot-sep"></span><span>${modality}</span>
       </div>
+      ${l.description ? `<p class="muted lst-row-desc">${l.description}</p>` : ""}
     </div>
-  </div>`;
+    <div class="lst-row-buy">
+      <div style="line-height:1.15">
+        <b class="lst-price tnum">${money(l.priceCentsHour)}</b>
+        <div class="faint" style="font-size:12px">${t("lst.perHour1h")}</div>
+      </div>
+      <button class="btn btn-primary btn-block" data-lst-book="${esc(l.id)}">${t("lst.bookBtn")}</button>
+      <button class="btn btn-soft btn-block" data-lst-open="${esc(l.id)}">${t("lst.viewBtn")}</button>
+    </div>
+  </article>`;
 }
 
 function resultsBody(st) {
@@ -117,7 +88,9 @@ function resultsBody(st) {
   if (!items.length) {
     return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("lst.emptyTitle")}</h4><p>${t("lst.emptyBody")}</p></div></div>`;
   }
-  return `<div class="lst-grid">${items.map((l, i) => listingCard(l, Math.min(i, 6))).join("")}</div>`;
+  return `
+    <p class="faint" style="font-size:12.5px;margin-bottom:12px">${st.total} ${st.total === 1 ? t("lst.resultOne") : t("lst.resultMany")}</p>
+    <div class="stack" style="gap:14px">${items.map((l, i) => listingRow(l, Math.min(i, 6))).join("")}</div>`;
 }
 
 /* ================= PANTALLA ================= */
@@ -189,10 +162,22 @@ S.listings = {
     root.querySelectorAll("[data-lst-cat]").forEach((chip) =>
       chip.addEventListener("click", () => { st.category = chip.getAttribute("data-lst-cat") || ""; load(); }));
 
+    // [P2] Entrar a la clase. La fila entera es el objetivo (Preply): un clic en cualquier
+    // parte que no sea "Reservar" abre la ficha. stopPropagation en el botón de reservar
+    // evita que reservar navegue además de abrir el modal.
+    const open = (id) => { if (!id) return; w.__listing = id; w.go?.("listing"); };
+    root.querySelectorAll("[data-lst-open]").forEach((el) => {
+      el.addEventListener("click", (e) => { e.stopPropagation(); open(el.getAttribute("data-lst-open")); });
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(el.getAttribute("data-lst-open")); }
+      });
+    });
+
     // Reservar: fecha + hora RD (UTC-4 fijo, mismo criterio que el resto del marketplace) →
     // POST /api/bookings { listingId, slotAt ISO }. El server valida lead/horizonte/choques.
     root.querySelectorAll("[data-lst-book]").forEach((btn) =>
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation(); // la fila entera abre la ficha; reservar NO debe navegar además
         const id = btn.getAttribute("data-lst-book");
         if (!id || !w.otrFormModal) return;
         w.otrFormModal(t("lst.bookTitle"), [

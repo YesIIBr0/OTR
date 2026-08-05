@@ -44,6 +44,7 @@ import { S as SAdminUsers } from "../app/lib/scr-admin-users";
 import { S as SAdminMetrics } from "../app/lib/scr-admin-metrics";
 import { S as SAdminWhatsapp } from "../app/lib/scr-admin-whatsapp";
 import { S as SListings } from "../app/lib/scr-listings";
+import { S as SListing } from "../app/lib/scr-listing";
 import { S as SMyListings } from "../app/lib/scr-my-listings";
 import { S as SAdmin } from "../app/lib/scr-admin";
 import { S as SArsenal } from "../app/lib/scr-arsenal";
@@ -70,6 +71,7 @@ const SCREENS: Record<string, Record<string, any>> = {
   "scr-admin-metrics": SAdminMetrics,
   "scr-admin-whatsapp": SAdminWhatsapp,
   "scr-listings": SListings,
+  "scr-listing": SListing,
   "scr-my-listings": SMyListings,
   "scr-admin": SAdmin,
   "scr-arsenal": SArsenal,
