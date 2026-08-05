@@ -1,5 +1,10 @@
 // @ts-nocheck
-/* OTR · Mis reservas (PRD §7.3 paso 6 + §4.2 ④) — S.myBookings.
+/* OTR · Reservas del alumno (PRD §7.3 paso 6 + §4.2 ④) — PANEL, no pantalla.
+   [UI-CURSOS U3/U4] Dejó de ser una ruta propia ("Mis reservas" salió del nav): sus
+   sesiones de coaching son parte de "lo que estoy aprendiendo", así que este panel se
+   pinta DENTRO de la sección Cursos, bajo el curso (ver scr-core.ts). El módulo sigue
+   siendo el ÚNICO dueño de esta UI — scr-core la embebe, no la duplica.
+
    La vista demand-side del marketplace: el alumno consulta sus sesiones de
    coaching reservadas. "Próximas" muestra las CONFIRMED/PENDING futuras con
    coach, horario y estado; para las CONFIRMED con sala on-platform aparece el
@@ -16,7 +21,7 @@
         durationMin, upcoming, priceCents, priceLabel,
         escrowStatus HELD|RELEASED|REFUNDED|null, videoUrl }]
 
-   Patrón de la casa: render(state)->string + mount(root,state); IC.* iconos,
+   Patrón de la casa: renderBookings()->string + mountBookings(root); IC.* iconos,
    esc() para texto del usuario, navy + sky, fade-up; nada de emojis.
    Cliente vía globales de Aula.tsx: go(ruta), toast(msg,tone), data-go. */
 import { DB } from "./data";
@@ -29,8 +34,6 @@ import { dict as d_mb } from "./i18n-keys/mb";
 import { dict as d_core } from "./i18n-keys/core";
 registerDict(d_mb);
 registerDict(d_core);
-
-export const S = {};
 
 /* ---------------- helpers ---------------- */
 const list = () => (Array.isArray(DB.myBookings) ? DB.myBookings : []);
@@ -113,59 +116,68 @@ function historyRow(b) {
   </div>`;
 }
 
-/* ================= PANTALLA ================= */
-S.myBookings = {
-  render() {
-    const all = list();
-    // Próximas: PENDING/CONFIRMED futuras. Historial: COMPLETED/CANCELLED/DISPUTED.
-    const upcoming = all.filter(
-      (b) => (b.status === "CONFIRMED" || b.status === "PENDING") && b.upcoming,
-    );
-    const history = all.filter(
-      (b) => b.status === "COMPLETED" || b.status === "CANCELLED" || b.status === "DISPUTED" || !b.upcoming,
-    );
+/* ================= PANEL EMBEBIDO EN CURSOS ================= */
+/**
+ * HTML del bloque de reservas que va BAJO los cursos.
+ * Devuelve "" cuando el payload no trae `myBookings` — queries.ts solo lo sirve al
+ * STUDENT, así que el profesor/admin que abre el curso en vista previa no ve una
+ * sección que no es suya (antes eso lo resolvía el guard de la ruta, que ya no existe).
+ */
+export function renderBookings() {
+  if (!Array.isArray(DB.myBookings)) return "";
+  const all = list();
+  // Próximas: PENDING/CONFIRMED futuras. Historial: COMPLETED/CANCELLED/DISPUTED.
+  const upcoming = all.filter(
+    (b) => (b.status === "CONFIRMED" || b.status === "PENDING") && b.upcoming,
+  );
+  const history = all.filter(
+    (b) => b.status === "COMPLETED" || b.status === "CANCELLED" || b.status === "DISPUTED" || !b.upcoming,
+  );
 
-    const head = `
-    <div class="page-head fade-up" style="padding:14px 16px;border-radius:var(--r-md,14px);background:linear-gradient(135deg,#fff 0%,var(--action-soft) 100%);border:1px solid color-mix(in srgb,var(--otr-green) 30%,var(--border))"><div>
-      <p class="eyebrow" style="color:var(--otr-green-text)">${t("mb.eyebrow")}</p>
-      <h1 class="page-title">${t("mb.title")}</h1>
-      <div class="page-sub">${t("mb.subtitle")}</div>
-    </div></div>`;
-
-    if (!all.length) {
-      return `${head}
-      <div class="card fade-up" style="--d:1"><div class="empty">
-        <div class="ill">${IC.calendar}</div>
-        <h4>${t("mb.emptyHeading")}</h4>
-        <p>${t("mb.emptyBody")}</p>
-        <button class="btn btn-primary" data-go="explore">${t("mb.emptyCta")}</button>
-      </div></div>`;
-    }
-
-    return `${head}
-    <div class="card card-pad fade-up" style="--d:1">
-      <div class="row between vcenter">
-        <b style="font-size:14px">${t("mb.upcomingTitle")}</b>
-        <span class="badge sky">${upcoming.length}</span>
-      </div>
-      <p class="faint" style="font-size:12px;margin-top:4px">${t("mb.videoRoomNote")}</p>
-      ${upcoming.length
-        ? `<div style="margin-top:6px">${upcoming.map(upcomingRow).join("")}</div>`
-        : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.upcomingEmptyPre")} <a href="#" data-go="explore" style="color:var(--otr-sky-lo);font-weight:600">${t("mb.upcomingEmptyLink")}</a> ${t("mb.upcomingEmptyPost")}</p>`}
+  // Cabecera de SECCIÓN (ya no de pantalla): el <h1> y el eyebrow los pone Cursos.
+  const head = `
+  <div class="row between vcenter wrap fade-up" style="gap:8px;margin:28px 0 12px">
+    <div>
+      <b style="font-size:15px;letter-spacing:var(--track-tight)">${t("mb.title")}</b>
+      <div class="faint" style="font-size:12.5px;margin-top:2px">${t("mb.subtitle")}</div>
     </div>
+  </div>`;
 
-    <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
-      <div class="row between vcenter">
-        <b style="font-size:14px">${t("mb.historyTitle")}</b>
-        <span class="badge">${history.length}</span>
-      </div>
-      ${history.length
-        ? `<div style="margin-top:6px">${history.map(historyRow).join("")}</div>`
-        : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.historyEmpty")}</p>`}
-    </div>`;
-  },
+  if (!all.length) {
+    return `${head}
+    <div class="card fade-up" style="--d:1"><div class="empty">
+      <div class="ill">${IC.calendar}</div>
+      <h4>${t("mb.emptyHeading")}</h4>
+      <p>${t("mb.emptyBody")}</p>
+      <button class="btn btn-primary" data-go="explore">${t("mb.emptyCta")}</button>
+    </div></div>`;
+  }
 
-  mount(root) {
+  return `${head}
+  <div class="card card-pad fade-up" style="--d:1">
+    <div class="row between vcenter">
+      <b style="font-size:14px">${t("mb.upcomingTitle")}</b>
+      <span class="badge sky">${upcoming.length}</span>
+    </div>
+    <p class="faint" style="font-size:12px;margin-top:4px">${t("mb.videoRoomNote")}</p>
+    ${upcoming.length
+      ? `<div style="margin-top:6px">${upcoming.map(upcomingRow).join("")}</div>`
+      : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.upcomingEmptyPre")} <a href="#" data-go="explore" style="color:var(--otr-sky-lo);font-weight:600">${t("mb.upcomingEmptyLink")}</a> ${t("mb.upcomingEmptyPost")}</p>`}
+  </div>
+
+  <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
+    <div class="row between vcenter">
+      <b style="font-size:14px">${t("mb.historyTitle")}</b>
+      <span class="badge">${history.length}</span>
+    </div>
+    ${history.length
+      ? `<div style="margin-top:6px">${history.map(historyRow).join("")}</div>`
+      : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.historyEmpty")}</p>`}
+  </div>`;
+}
+
+/** Cablea unirse / cancelar / reseñar del panel. Lo llama el mount de la sección Cursos. */
+export function mountBookings(root) {
     const w = window;
     // [NAV-07/FLW-04] Unirse a la sesión → pantalla room SPA-nativa (antes window.open
     // de '/aula?room=<id>' caía al dashboard porque el router no lee query params). El
@@ -187,7 +199,10 @@ S.myBookings = {
         const r = await fetch("/api/app-data");
         if (r.ok) { const fresh = await r.json(); const role = DB.me?.role; Object.assign(DB, fresh); if (role) DB.me = { ...(fresh.me || {}), role }; }
       } catch { /* silencioso */ }
-      if (w.go) w.go("my-bookings");
+      // [UI-CURSOS U4] El panel vive embebido (hoy en 'course'), así que repinta la ruta
+      // ACTUAL en vez de saltar a una pantalla propia — que ya no existe. Aula.tsx publica
+      // window.__route en cada navegación; 'course' es el respaldo por si aún no se fijó.
+      if (w.go) w.go(w.__route || "course");
     };
     root.querySelectorAll("[data-mb-cancel]").forEach((btn) =>
       btn.addEventListener("click", async () => {
@@ -240,5 +255,4 @@ S.myBookings = {
         });
       }),
     );
-  },
-};
+}

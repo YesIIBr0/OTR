@@ -367,7 +367,7 @@ function bookedPanel(b, coachId) {
       ? t("mkt.bookedPendingBody")
       : t("mkt.bookedConfirmedBody")}</p>
     <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" data-go="my-bookings">${IC.calendar} ${t("mkt.viewMyBookings")}</button>
+      <button class="btn btn-primary btn-sm" data-go="course">${IC.calendar} ${t("mkt.viewMyBookings")}</button>
       ${coachId ? `<button class="btn btn-soft btn-sm" data-mk-message="${esc(coachId)}">${IC.msg} ${t("mkt.sendMessage")}</button>` : ""}
       <button class="btn btn-ghost btn-sm" data-mk-back>${t("mkt.viewMoreCoaches")}</button>
     </div>

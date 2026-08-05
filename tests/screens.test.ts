@@ -58,7 +58,6 @@ import { S as SHub } from "../app/lib/scr-hub";
 import { S as SLearn } from "../app/lib/scr-learn";
 import { S as SLifetime } from "../app/lib/scr-lifetime";
 import { S as SMarketplace } from "../app/lib/scr-marketplace";
-import { S as SMyBookings } from "../app/lib/scr-mybookings";
 import { S as SParent } from "../app/lib/scr-parent";
 import { S as SPlacement } from "../app/lib/scr-placement";
 import { S as SProfile } from "../app/lib/scr-profile";
@@ -85,7 +84,6 @@ const SCREENS: Record<string, Record<string, any>> = {
   "scr-learn": SLearn,
   "scr-lifetime": SLifetime,
   "scr-marketplace": SMarketplace,
-  "scr-mybookings": SMyBookings,
   "scr-parent": SParent,
   "scr-placement": SPlacement,
   "scr-profile": SProfile,

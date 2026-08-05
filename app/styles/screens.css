@@ -55,10 +55,18 @@
 .lvl-step.cur{background:var(--otr-navy);color:#fff;border-color:var(--otr-navy)}
 
 /* ---------------- COURSE ---------------- */
+/* [UI-CURSOS U1] El hero del curso mide LA MITAD que antes (banner 120→56, cuerpo denso):
+   es el encabezado de la sección, no la sección. [U2] Y contiene sus propios tabs
+   (Contenido/Calificaciones) + el panel activo: el curso es UN bloque, no tres apilados. */
 .course-hero{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);background:#fff;box-shadow:var(--sh-1);margin-bottom:18px}
-.course-hero .ch-banner{height:120px;position:relative;display:flex;align-items:flex-end;padding:16px 20px;background:linear-gradient(120deg,var(--otr-navy),var(--otr-sky-lo))}
+.course-hero .ch-banner{height:56px;position:relative;display:flex;align-items:flex-end;padding:10px 20px;background:linear-gradient(120deg,var(--otr-navy),var(--otr-sky-lo))}
 .course-hero .ch-banner .stripes{position:absolute;inset:0;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 18px,transparent 18px 40px)}
-.course-hero .ch-body{padding:16px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.course-hero .ch-body{padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.course-hero .ch-tabs{margin:0;padding:0 20px;border-bottom:1px solid var(--border);border-top:1px solid var(--border)}
+/* El panel va sobre un tono, no sobre blanco: así las tarjetas anidadas (módulos, progreso)
+   se leen como contenido DENTRO del curso y no como cajas sueltas encima de otra caja. */
+.course-hero .ch-panel{padding:18px 20px;background:var(--n-25)}
+@media (max-width:640px){ .course-hero .ch-body,.course-hero .ch-panel{padding-left:14px;padding-right:14px} .course-hero .ch-tabs{padding:0 14px} }
 .module{border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;margin-bottom:12px;overflow:hidden;box-shadow:var(--sh-1)}
 .module-head{display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer}
 .module-head:hover{background:var(--n-25)}
@@ -386,4 +394,23 @@
   body:has(.diploma-wrap) .diploma-wrap, body:has(.diploma-wrap) .diploma-wrap *{ visibility:visible !important; }
   body:has(.diploma-wrap) .diploma-wrap{ position:absolute; left:0; top:0; width:100%; max-width:100% !important; margin:0 !important; }
   body:has(.diploma-wrap) .diploma{ box-shadow:none !important; }
+}
+
+/* ---------------- MARKETPLACE ABIERTO · BUSCAR CLASES [UI-CURSOS U5] ----------------
+   Tarjeta de clase en horizontal con THUMBNAIL de materia: el alumno decide por materia,
+   profesor y tarifa, así que esos tres datos mandan. El thumbnail se deriva del slug de
+   categoría (ver scr-listings.ts) — no hay imágenes que subir ni que moderar. */
+.lst-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(420px,1fr))}
+@media (max-width:1100px){ .lst-grid{grid-template-columns:1fr} }
+.lst-card{display:flex;overflow:hidden;align-items:stretch}
+.lst-thumb{position:relative;flex:none;width:150px;display:flex;flex-direction:column;justify-content:space-between;padding:14px;color:#fff;background:linear-gradient(135deg,var(--otr-green),var(--otr-navy))}
+/* Misma textura de franjas que el banner del curso: la casa se reconoce. */
+.lst-thumb::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.06) 0 18px,transparent 18px 40px);pointer-events:none}
+.lst-thumb .lt-ic{position:relative;z-index:1;display:flex;width:28px;height:28px;opacity:.95}
+.lst-thumb .lt-cat{position:relative;z-index:1;font-size:12.5px;font-weight:700;line-height:1.25}
+.lst-body{flex:1;min-width:0;padding:16px 18px;display:flex;flex-direction:column;gap:9px}
+.lst-price{font-size:21px;font-weight:800;letter-spacing:var(--track-tight)}
+@media (max-width:560px){
+  .lst-card{flex-direction:column}
+  .lst-thumb{width:auto;height:84px;flex-direction:row;align-items:center;gap:10px}
 }

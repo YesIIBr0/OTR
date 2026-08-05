@@ -14,6 +14,10 @@ registerDict(d_debate);
 // Reusamos el render/mount del catálogo (vive en scr-extra) sin duplicar su lógica.
 // scr-extra NO importa scr-core → no hay ciclo.
 import { S as extraScreens } from "./scr-extra";
+// [UI-CURSOS U3] Las reservas del alumno se pintan BAJO los cursos: "Mis reservas" dejó de
+// ser una pantalla propia. scr-mybookings sigue siendo el dueño de esa UI (render + mount);
+// aquí solo se embebe. scr-mybookings NO importa scr-core → no hay ciclo.
+import { renderBookings, mountBookings } from "./scr-mybookings";
 export const S = {};
 
 // Sub-tab activo de la sección Cursos. Patrón window.__x como el resto del SPA
@@ -21,6 +25,12 @@ export const S = {};
 function coursesTab() {
   const v = (window as any).__coursesTab;
   return v === "catalog" ? "catalog" : "mine";
+}
+
+// [UI-CURSOS U2] Tab DENTRO de la tarjeta del curso: "content" (módulos) | "grades" (notas).
+// Antes "Calificaciones" era un go('grades') que sacaba al alumno de la pantalla.
+function courseTab() {
+  return (window as any).__courseTab === "grades" ? "grades" : "content";
 }
 
 // Curso ACTIVO (multi-curso Moodle): el seleccionado por window.__course, o el
@@ -294,7 +304,7 @@ function activeItemsFlat() {
             const canJoin = b.status === 'CONFIRMED' && b.videoUrl;
             const action = canJoin
               ? `<button class="btn btn-soft btn-sm" style="flex:none" onclick="window.__room='${esc(b.id)}';go('room')">${IC.video} ${t("core.join")}</button>`
-              : `<button class="btn btn-soft btn-sm" style="flex:none" data-go="my-bookings">${t("core.view")} ${IC.arrowR}</button>`;
+              : `<button class="btn btn-soft btn-sm" style="flex:none" data-go="course">${t("core.view")} ${IC.arrowR}</button>`;
             return `
               <div class="agenda-item" style="align-items:center">
                 ${C.avatar(esc(b.coachInitials || 'C'),{size:'sm',bg:'var(--otr-navy)'})}
@@ -317,7 +327,7 @@ function activeItemsFlat() {
 
       const upcoming = `
         <div class="card">
-          <div class="card-head"><h3>${t("core.upcomingTitle")}</h3><a href="#" data-go="my-bookings" style="font-size:12.5px">${t("core.viewAll")}</a></div>
+          <div class="card-head"><h3>${t("core.upcomingTitle")}</h3><a href="#" data-go="course" style="font-size:12.5px">${t("core.viewAll")}</a></div>
           <div class="card-body" style="padding:6px 16px 12px">
             ${sessionsBody}
           </div>
@@ -409,6 +419,47 @@ function activeItemsFlat() {
   };
 
   /* ---------------- VISTA DE CURSO ---------------- */
+  // [UI-CURSOS U2] Panel COMPACTO de notas, dentro del curso. Lee DB.myGrades — el mismo
+  // payload que alimenta "Mis calificaciones" del nav, que sigue existiendo como vista
+  // completa (con todos los cursos). Aquí va lo que importa junto al temario: promedio,
+  // tabla de actividades y el comentario escrito del coach.
+  function renderGradesPanel() {
+    const g = DB.myGrades || { rows: [], avg: 0, submitted: 0, total: 0, best: 0 };
+    const rows = g.rows || [];
+    if (!rows.length) {
+      return `<div class="empty" style="padding:30px 20px">
+        <div class="ill">${IC.chart}</div>
+        <h4>${t("core.gradesEmpty")}</h4>
+        <p>${t("core.gradesEmptyBody")}</p>
+      </div>`;
+    }
+    const stat = (label, value) =>
+      `<div><div class="faint" style="font-size:11.5px;letter-spacing:.02em">${label}</div><b class="tnum" style="font-size:21px;line-height:1.2">${value}</b></div>`;
+    return `
+    <div class="row wrap" style="gap:26px;margin-bottom:16px">
+      ${stat(t("core.gradesKpiAvg"), `${g.avg}%`)}
+      ${stat(t("core.gradesKpiSubmitted"), `${g.submitted} / ${g.total}`)}
+      ${stat(t("core.gradesKpiBest"), `${g.best}%`)}
+    </div>
+    <div class="table-wrap scroll-m">
+      <table class="tbl">
+        <thead><tr><th>${t("core.gradesColActivity")}</th><th class="num">${t("core.gradesColGrade")}</th><th class="center">${t("core.gradesColLetter")}</th></tr></thead>
+        <tbody>${rows.map(r => {
+          const numeric = typeof r.score === 'number' || /^\d+$/.test(String(r.score));
+          // r.activity y r.feedback YA vienen esc() desde queries.ts — NO re-escapar.
+          const hasFeedback = r.feedback && String(r.feedback).trim();
+          return `<tr>
+            <td><b style="font-weight:600">${r.activity}</b>${r.kind ? ` <span class="tag-soft">${esc(r.kind)}</span>` : ''}</td>
+            <td class="num"><b>${esc(String(r.score))}${numeric ? '%' : ''}</b></td>
+            <td class="center">${r.letter === '—' ? '<span class="faint">—</span>' : C.badge(esc(r.letter), r.letter[0] === 'A' ? 'ok' : 'sky')}</td>
+          </tr>${hasFeedback ? `<tr><td colspan="3" style="padding-top:0">
+            <div class="alert info" style="margin:0 0 4px"><span class="ai">${IC.target}</span><div><div class="at">${t("core.gradesCoachComment")}</div>${r.feedback}</div></div>
+          </td></tr>` : ''}`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+
   // [EPIC-2] Render de "Mis cursos" (cursos activos con progreso). Antes era el cuerpo
   // directo de S.course.render; ahora es el sub-tab "Mis cursos" de la sección Cursos.
   function renderMyCourses() {
@@ -515,6 +566,29 @@ function activeItemsFlat() {
       const courseRating = (typeof c.rating === 'number' && c.rating > 0)
         ? `<span class="dot-sep"></span><span class="row vcenter" style="gap:4px"><span style="display:flex;width:13px;color:var(--otr-gold)">${IC.star}</span><b>${c.rating}</b>${c.reviewCount ? `<span class="muted">(${c.reviewCount})</span>` : ''}</span>`
         : '';
+      // [UI-CURSOS U2] Los dos paneles del curso. "Contenido" = temario + progreso (lo que
+      // había); "Calificaciones" = las notas, que antes obligaban a salir de la pantalla.
+      const tab = courseTab();
+      const contentPanel = `
+        ${welcomeVideo}
+        <div class="split">
+          <div>${modules}</div>
+          <div class="stack" style="gap:16px">
+            <div class="card card-pad">
+              <b style="font-size:14px">${t("core.yourProgress")}</b>
+              <div class="row vcenter between" style="margin:14px 0 8px"><span class="muted" style="font-size:13px">${doneActs} ${t("core.ofConnector")} ${totalActs} ${t("core.activitiesCountUnit")}</span><b class="sky">${c.progress}%</b></div>
+              ${C.bar(c.progress)}
+              ${(c.dbId && totalActs > 0 && doneActs === totalActs)
+                ? `<button class="btn btn-primary btn-block" style="margin-top:14px" data-claim-cert="${esc(c.dbId)}">${IC.award} ${t("core.claimCertificate")}</button>`
+                : ''}
+              ${hasAvg ? `<div class="divider"></div>
+              <div class="row between" style="font-size:13px"><span class="muted">${t("core.currentAverage")}</span><b>${avgGrade}%</b></div>` : ''}
+            </div>
+          </div>
+        </div>`;
+
+      // [UI-CURSOS U1] Hero COMPACTO (banner a la mitad, acciones en fila): el curso es el
+      // encabezado de la sección, no la sección entera — el contenido manda.
       return `
       ${previewBar}
       ${selector}
@@ -525,17 +599,17 @@ function activeItemsFlat() {
         </div>
         <div class="ch-body">
           <div style="flex:1;min-width:220px">
-            <h1 style="font-size:var(--fs-20);font-weight:800;letter-spacing:var(--track-tight);margin:0">${c.name}</h1>
-            <div class="row vcenter wrap" style="gap:10px 12px;margin-top:8px;font-size:13px;color:var(--text-2)">
+            <h1 style="font-size:var(--fs-16);font-weight:800;letter-spacing:var(--track-tight);margin:0">${c.name}</h1>
+            <div class="row vcenter wrap" style="gap:6px 10px;margin-top:5px;font-size:12.5px;color:var(--text-2)">
               <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${c.coach}</span>
               ${meta.students!=null?`<span class="dot-sep"></span><span>${meta.students} ${t("core.studentsUnit")}</span>`:''}
               ${meta.lessons!=null?`<span class="dot-sep"></span><span>${meta.lessons} ${t("core.lessonsUnit")}</span>`:''}
               ${courseRating}
             </div>
           </div>
-          <div class="row vcenter" style="gap:var(--s-5)">
-            ${C.ring(c.progress, 64)}
-            <div class="stack" style="gap:var(--s-2)">
+          <div class="row vcenter wrap" style="gap:12px">
+            ${C.ring(c.progress, 44)}
+            <div class="row vcenter wrap" style="gap:8px">
               ${continueBtn}
               <button class="btn btn-ghost btn-sm" onclick="go('course-index')">${t("core.viewIndex")}</button>
               ${/* [EPIC-2] CTA al sub-tab Catálogo (buscar nuevos cursos) sin salir de la sección */""}
@@ -543,30 +617,16 @@ function activeItemsFlat() {
             </div>
           </div>
         </div>
-      </div>
-
-      ${welcomeVideo}
-
-      <div class="tabs fade-up" style="--d:1">
-        <button class="tab active">${t("core.tabContent")}</button>
-        <button class="tab" onclick="go('grades')">${t("core.tabGrades")}</button>
-      </div>
-
-      <div class="split fade-up" style="--d:2">
-        <div>${modules}</div>
-        <div class="stack" style="gap:16px">
-          <div class="card card-pad">
-            <b style="font-size:14px">${t("core.yourProgress")}</b>
-            <div class="row vcenter between" style="margin:14px 0 8px"><span class="muted" style="font-size:13px">${doneActs} ${t("core.ofConnector")} ${totalActs} ${t("core.activitiesCountUnit")}</span><b class="sky">${c.progress}%</b></div>
-            ${C.bar(c.progress)}
-            ${(c.dbId && totalActs > 0 && doneActs === totalActs)
-              ? `<button class="btn btn-primary btn-block" style="margin-top:14px" data-claim-cert="${esc(c.dbId)}">${IC.award} ${t("core.claimCertificate")}</button>`
-              : ''}
-            ${hasAvg ? `<div class="divider"></div>
-            <div class="row between" style="font-size:13px"><span class="muted">${t("core.currentAverage")}</span><b>${avgGrade}%</b></div>` : ''}
-          </div>
+        ${/* [UI-CURSOS U2] Tabs + panel DENTRO de la tarjeta: el curso es un solo bloque. */""}
+        <div class="tabs ch-tabs">
+          <button class="tab ${tab === 'content' ? 'active' : ''}" data-course-tab="content">${t("core.tabContent")}</button>
+          <button class="tab ${tab === 'grades' ? 'active' : ''}" data-course-tab="grades">${t("core.tabGrades")}</button>
         </div>
-      </div>`;
+        <div class="ch-panel" id="course-panel">${tab === 'grades' ? renderGradesPanel() : contentPanel}</div>
+      </div><!--/course-hero-->
+
+      ${/* [UI-CURSOS U3] Las sesiones reservadas, bajo el curso (ya no son pantalla aparte). */""}
+      ${renderBookings()}`;
   }
 
   // [EPIC-2] Barra de sub-tabs de la sección Cursos (estilo Debate Hub): "Mis cursos"
@@ -594,19 +654,39 @@ function activeItemsFlat() {
       return `${coursesSubTabs(tab)}<div class="fade-up" style="--d:1" id="courses-body">${body}</div>`;
     },
     mount(root) {
-      // Cambio de sub-tab: fija window.__coursesTab y repinta solo la página (conserva shell).
+      // Repinta la página conservando el shell. Lo comparten los dos cambios de tab.
+      const repaint = (keepScroll) => {
+        const page = root.querySelector('.page');
+        if (!page) return;
+        page.innerHTML = S.course.render();
+        S.course.mount(root);
+        const content = root.querySelector('#content') || root;
+        if (content && !keepScroll) content.scrollTop = 0;
+      };
+      // [UI-NAV N1] Cambio de sub-tab: NAVEGA de verdad (course ⇄ catalog) en vez de repintar
+      // solo la página. Ahora "Activos" y "Buscar nuevos" también son items del sidebar, y
+      // repintar en sitio dejaba el sidebar marcando el tab equivocado.
       root.querySelectorAll('[data-courses-tab]').forEach(el =>
         el.addEventListener('click', (e) => {
           e.preventDefault();
-          (window as any).__coursesTab = el.getAttribute('data-courses-tab');
-          const page = root.querySelector('.page');
-          if (page) { page.innerHTML = S.course.render(); S.course.mount(root); }
-          const content = root.querySelector('#content') || root;
-          if (content) content.scrollTop = 0;
+          const tab = el.getAttribute('data-courses-tab');
+          (window as any).__coursesTab = tab;
+          const w = window as any;
+          if (w.go) w.go(tab === 'catalog' ? 'catalog' : 'course'); else repaint(false);
+        }));
+      // [UI-CURSOS U2] Contenido ⇄ Calificaciones: cambio EN SITIO dentro de la tarjeta del
+      // curso. Conserva el scroll — el alumno no pierde el punto donde estaba mirando.
+      root.querySelectorAll('[data-course-tab]').forEach(el =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          (window as any).__courseTab = el.getAttribute('data-course-tab');
+          repaint(true);
         }));
       // Acordeón de módulos del tab "Mis cursos" (solo presente en ese tab).
       root.querySelectorAll('[data-acc]').forEach(h =>
         h.addEventListener('click', () => h.closest('.module').classList.toggle('open')));
+      // [UI-CURSOS U3] Cablea unirse/cancelar/reseñar del panel de reservas embebido.
+      mountBookings(root);
       // Mount del tab Catálogo (si lo tuviera): reusa el mount existente de S.catalog.
       if (coursesTab() === 'catalog') extraScreens.catalog.mount?.(root);
     }

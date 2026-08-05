@@ -58,7 +58,8 @@ function findBooking(id) {
   }
   const mine = Array.isArray(DB.myBookings) ? DB.myBookings : [];
   const b = mine.find((x) => x && x.id === id);
-  if (b) return { b, side: "student", who: b.coachName, ini: b.coachInitials, back: "my-bookings", backLabel: t("room.backToBookingsStudent") };
+  // [UI-CURSOS U4] La vuelta del alumno es "Cursos": ahí viven ahora sus reservas.
+  if (b) return { b, side: "student", who: b.coachName, ini: b.coachInitials, back: "course", backLabel: t("room.backToBookingsStudent") };
   return null;
 }
 
@@ -71,7 +72,7 @@ S.room = {
     if (!found) {
       const role = String(DB.me?.role || "").toLowerCase();
       const isCoach = role === "teacher" || role === "coach";
-      const back = isCoach ? "coachwork" : "my-bookings";
+      const back = isCoach ? "coachwork" : "course";
       const backLabel = isCoach ? t("room.goToBookingsCoach") : t("room.goToBookingsStudent");
       return `
       <div class="page-head fade-up"><div><p class="eyebrow">${t("room.eyebrowSession")}</p>

@@ -38,30 +38,70 @@ const catLabel = (slug) => {
 const ini = (name) =>
   (String(name || "?").replace(/&[a-z]+;/g, " ").split(/\s+/).map((w) => w[0]).join("") || "?").slice(0, 2).toUpperCase();
 
+/* ---------------- thumbnail de materia ----------------
+   El marketplace no tiene imágenes que subir (un listing es texto + tarifa), así que el
+   thumbnail se DERIVA de la materia: icono + etiqueta sobre el degradado de marca. Es
+   determinista (misma materia = mismo thumbnail siempre), no pide gestión de archivos y
+   deja la tarjeta escaneable de un vistazo. Paleta de marca (verde/oro/negro) — el ángulo
+   del degradado varía por materia para que dos categorías vecinas no se confundan. */
+const CAT_ICON = {
+  debate: "mic", oratoria: "headset", ingles: "msg", matematicas: "chart",
+  ciencias: "target", programacion: "grid", ai: "levels", musica: "play", otros: "book",
+};
+// Tonos de ARRANQUE del degradado. Todos son de la paleta de marca (verde/oro) y ninguno es
+// el negro del final: así el degradado SIEMPRE tiene profundidad. Se eligen por hash del slug,
+// no por un mapa a mano — una materia nueva recibe su tono sola y nunca cae en un negro plano.
+const CAT_TONES = [
+  "var(--otr-green-hi)", "var(--otr-gold)", "var(--otr-green)",
+  "var(--otr-gold-lo)", "var(--otr-green-lo)",
+];
+// Hash estable del slug: mismo slug ⇒ mismo tono y mismo ángulo, siempre.
+function slugHash(slug) {
+  let h = 0;
+  for (const ch of String(slug || "")) h = (h * 31 + ch.charCodeAt(0)) % 9973;
+  return h;
+}
+function thumb(category) {
+  const key = String(category || "otros");
+  const icon = IC[CAT_ICON[key] || "book"] || IC.book;
+  const h = slugHash(key);
+  const tone = CAT_TONES[h % CAT_TONES.length];
+  const angle = 110 + (h % 60); // 110°–169°: siempre diagonal, nunca plano
+  return `
+  <div class="lst-thumb" style="background:linear-gradient(${angle}deg,${tone},var(--otr-ink))">
+    <span class="lt-ic">${icon}</span>
+    <span class="lt-cat">${catLabel(key)}</span>
+  </div>`;
+}
+
 /* ---------------- cards de resultados ---------------- */
 function listingCard(l, d) {
   const rating = l.rating != null
-    ? `<span class="badge gold" style="font-size:10.5px">★ ${Number(l.rating).toFixed(1)} · ${l.reviewCount} ${t("lst.reviewsSuffix")}</span>`
+    ? `<span class="badge gold" style="font-size:11px">★ ${Number(l.rating).toFixed(1)} · ${l.reviewCount} ${t("lst.reviewsSuffix")}</span>`
     : "";
-  const verified = l.verified ? `<span class="badge sky" style="font-size:10.5px">${IC.check} ${t("lst.verifiedBadge")}</span>` : "";
+  const verified = l.verified ? `<span class="badge sky" style="font-size:11px">${IC.check} ${t("lst.verifiedBadge")}</span>` : "";
+  const modality = l.modality === "presencial" ? t("lst.modalityPresencial")
+    : l.modality === "híbrido" ? t("lst.modalityHibrido") : t("lst.modalityOnline");
   return `
-  <div class="card card-pad fade-up" style="--d:${d}">
-    <div class="row vcenter" style="gap:10px">
-      ${C.avatar(esc(ini(l.teacherName)), { size: "sm", bg: "var(--otr-navy)" })}
-      <div style="min-width:0;flex:1">
-        <b style="font-size:13.5px;display:block">${l.title}</b>
-        <div class="faint" style="font-size:12px;margin-top:2px">${l.teacherName}</div>
+  <div class="card lst-card fade-up" style="--d:${d}">
+    ${thumb(l.category)}
+    <div class="lst-body">
+      <div>
+        <b style="font-size:16px;font-weight:750;line-height:1.3;letter-spacing:var(--track-tight);display:block">${l.title}</b>
+        <div class="row vcenter wrap" style="gap:8px;margin-top:8px">
+          ${C.avatar(esc(ini(l.teacherName)), { size: "sm", bg: "var(--otr-navy)" })}
+          <span style="font-size:13px;font-weight:600">${l.teacherName}</span>
+          ${verified}${rating}
+        </div>
       </div>
-    </div>
-    <div class="row vcenter wrap" style="gap:6px;margin-top:10px">
-      <span class="badge">${catLabel(l.category)}</span>
-      <span class="badge">${l.modality === "presencial" ? t("lst.modalityPresencial") : l.modality === "híbrido" ? t("lst.modalityHibrido") : t("lst.modalityOnline")}</span>
-      ${verified}${rating}
-    </div>
-    ${l.description ? `<p class="muted" style="font-size:12.5px;margin-top:10px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${l.description}</p>` : ""}
-    <div class="row between vcenter" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-      <b class="tnum" style="font-size:15px">${money(l.priceCentsHour)}<span class="faint" style="font-size:11.5px;font-weight:400">${t("lst.perHour")}</span></b>
-      <button class="btn btn-primary btn-sm" data-lst-book="${esc(l.id)}">${t("lst.bookBtn")}</button>
+      ${l.description ? `<p class="muted" style="font-size:13px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${l.description}</p>` : ""}
+      <div class="row between vcenter wrap" style="gap:10px;margin-top:auto;padding-top:13px;border-top:1px solid var(--border)">
+        <div style="line-height:1.25">
+          <b class="lst-price tnum">${money(l.priceCentsHour)}</b><span class="faint" style="font-size:12px;font-weight:400">${t("lst.perHour")}</span>
+          <div class="faint" style="font-size:11.5px">${modality}</div>
+        </div>
+        <button class="btn btn-primary" data-lst-book="${esc(l.id)}">${t("lst.bookBtn")}</button>
+      </div>
     </div>
   </div>`;
 }
@@ -77,7 +117,7 @@ function resultsBody(st) {
   if (!items.length) {
     return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("lst.emptyTitle")}</h4><p>${t("lst.emptyBody")}</p></div></div>`;
   }
-  return `<div class="grid g-3" style="gap:14px">${items.map((l, i) => listingCard(l, Math.min(i, 6))).join("")}</div>`;
+  return `<div class="lst-grid">${items.map((l, i) => listingCard(l, Math.min(i, 6))).join("")}</div>`;
 }
 
 /* ================= PANTALLA ================= */
@@ -86,8 +126,10 @@ S.listings = {
     const st = lstState();
     // Chips de categoría: "Todas" + la taxonomía que el servidor reportó (o la conocida).
     const cats = st.categories || ["debate", "oratoria", "ingles", "matematicas", "ciencias", "programacion", "ai", "musica", "otros"];
-    const chips = [`<button type="button" class="chip ${st.category ? "" : "active"}" data-lst-cat="">${t("lst.allCats")}</button>`]
-      .concat(cats.map((c) => `<button type="button" class="chip ${st.category === c ? "active" : ""}" data-lst-cat="${esc(c)}">${catLabel(c)}</button>`))
+    // [UI-CURSOS U5] Chips GRANDES: elegir materia es la acción principal de esta pantalla
+    // (y el objetivo táctil de 28px se quedaba corto en móvil). Ver .chip--lg en app.css.
+    const chips = [`<button type="button" class="chip chip--lg ${st.category ? "" : "active"}" data-lst-cat="">${t("lst.allCats")}</button>`]
+      .concat(cats.map((c) => `<button type="button" class="chip chip--lg ${st.category === c ? "active" : ""}" data-lst-cat="${esc(c)}">${catLabel(c)}</button>`))
       .join("");
     return `
     <div class="page-head fade-up"><div>
@@ -97,11 +139,11 @@ S.listings = {
     </div></div>
 
     <div class="card card-pad fade-up" style="--d:1;margin-bottom:16px">
-      <div class="row vcenter" style="gap:8px">
-        <input class="input" id="lst-q" placeholder="${t("lst.searchPh")}" value="${esc(st.q || "")}" style="flex:1"/>
-        <button class="btn btn-primary btn-sm" id="lst-search">${IC.search}</button>
+      <div class="row vcenter" style="gap:10px">
+        <input class="input" id="lst-q" placeholder="${t("lst.searchPh")}" value="${esc(st.q || "")}" style="flex:1;height:46px;font-size:15px"/>
+        <button class="btn btn-primary" id="lst-search" style="height:46px;padding:0 20px">${IC.search}</button>
       </div>
-      <div class="row wrap" style="gap:8px;margin-top:12px">${chips}</div>
+      <div class="row wrap" style="gap:9px;margin-top:14px">${chips}</div>
     </div>
 
     <div class="fade-up" style="--d:2" id="lst-body">${resultsBody(st)}</div>`;
