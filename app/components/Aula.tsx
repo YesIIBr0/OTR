@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { renderShell, NAV_CLOSED_KEY } from "../lib/shell";
+import { renderShell, NAV_CLOSED_KEY, SIDEBAR_MINI_KEY } from "../lib/shell";
 import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
@@ -952,6 +952,19 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           const next = open ? cur.filter((k) => k !== key) : [...new Set([...cur, key])];
           localStorage.setItem(NAV_CLOSED_KEY, JSON.stringify(next));
         } catch { /* storage bloqueado (modo privado): el plegado sigue funcionando en sesión */ }
+        return;
+      }
+
+      // [UI-NAV N3] Plegar/desplegar el sidebar. Se aplica en el DOM (sin re-render) y se
+      // recuerda: el ancho del menú es una preferencia de trabajo, no algo que reelegir en
+      // cada visita. El shell lo re-aplica al repintar (ver applySidebarState).
+      if (t.closest("[data-sidebar-toggle]")) {
+        e.preventDefault();
+        const app = root.querySelector(".app");
+        if (!app) return;
+        const mini = !app.classList.contains("mini");
+        app.classList.toggle("mini", mini);
+        try { localStorage.setItem(SIDEBAR_MINI_KEY, mini ? "1" : "0"); } catch { /* storage bloqueado */ }
         return;
       }
 

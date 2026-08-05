@@ -79,6 +79,7 @@ const DICT: LangDict = {
     "nav.designsystem": "Design System",
     "nav.arsenal": "Arsenal",
     "nav.logout": "Salir",
+    "nav.collapse": "Plegar menú",
 
     // topbar / chrome
     "top.search": "Buscar cursos, tareas, personas…",

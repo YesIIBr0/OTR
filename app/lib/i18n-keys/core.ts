@@ -5,6 +5,8 @@ export const dict = {
   es: {
     // ── Dashboard · Next Action hero ──
     "core.heroSrTitle": "Inicio",
+    // [UI-DASH D1] Saludo de cabecera (la franja negra bajó a tarjeta).
+    "core.welcomeGreeting": "Bienvenido",
     "core.naResumeEyebrow": "Tu siguiente paso",
     "core.naResumeCta": "Continuar lección",
     "core.naResumePrefix": "Retoma",
@@ -195,6 +197,7 @@ export const dict = {
   en: {
     // ── Dashboard · Next Action hero ──
     "core.heroSrTitle": "Home",
+    "core.welcomeGreeting": "Welcome",
     "core.naResumeEyebrow": "Your next step",
     "core.naResumeCta": "Continue lesson",
     "core.naResumePrefix": "Resume",

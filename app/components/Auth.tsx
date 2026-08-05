@@ -35,6 +35,11 @@ const STR = {
     submitReset: "Guardar contraseña",
     // Rol
     roleQ: "¿Cómo quieres unirte?",
+    roleCoach: "Coach",
+    roleCoachDesc: "Enseña y cobra por tus clases",
+    coachGateTitle: "El acceso de coach es por invitación",
+    coachGateBody: "OTR entrena a menores, así que verificamos identidad y antecedentes antes de dejar a nadie dar clases. Escríbenos y te abrimos el paso.",
+    coachGateCta: "Escribir al equipo",
     roleStudent: "Estudiante",
     roleStudentDesc: "Aprende a dominar la sala",
     roleParent: "Padre/Madre",
@@ -101,6 +106,11 @@ const STR = {
     submitForgot: "Send link",
     submitReset: "Save password",
     roleQ: "How do you want to join?",
+    roleCoach: "Coach",
+    roleCoachDesc: "Teach and charge for your classes",
+    coachGateTitle: "Coach access is by invitation",
+    coachGateBody: "OTR trains minors, so we verify identity and background before letting anyone teach. Write to us and we'll open the door.",
+    coachGateCta: "Write to the team",
     roleStudent: "Student",
     roleStudentDesc: "Learn to own the room",
     roleParent: "Parent",
@@ -150,6 +160,12 @@ type Lang = keyof typeof STR;
 
 type Mode = "login" | "register" | "forgot" | "reset";
 type Role = "student" | "parent" | "teacher";
+
+// Espejo de TEACHER_SIGNUP_ENABLED (app/api/auth/register/route.ts). Vive aquí para que el
+// formulario no prometa lo que el servidor rechaza; el servidor SIGUE siendo la autoridad
+// (esta constante no abre nada por sí sola). Decisión de vetting: spec §3.2 — plataforma
+// con menores.
+const COACH_SIGNUP_ENABLED = false;
 
 export default function Auth() {
   const [mode, setMode] = useState<Mode>("login");
@@ -297,6 +313,11 @@ export default function Auth() {
           return;
         }
       }
+      // El camino de coach no envía mientras el vetting esté cerrado: el servidor lo
+      // rechaza con 403 y es peor dejar que el usuario llene todo y choque. Cuando se
+      // abra, basta encender la constante de abajo Y TEACHER_SIGNUP_ENABLED en el
+      // servidor — el envío ya está escrito.
+      if (role === "teacher" && !COACH_SIGNUP_ENABLED) { setError(T.coachGateTitle); return; }
       body = { name, email, password, role };
       if (role === "student") body.birthYear = parseInt(birthYear, 10);
       if (role === "teacher") {
@@ -430,7 +451,7 @@ export default function Auth() {
                   <label className="label">{T.roleQ}</label>
                   {/* Coaches NO se auto-registran (PRD §7.4/§7.6: Fase 1 = solo
                       coaches OTR verificados, creados por el equipo). */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                     <RoleCard
                       active={role === "student"}
                       onClick={() => setRole("student")}
@@ -443,7 +464,29 @@ export default function Auth() {
                       title={T.roleParent}
                       desc={T.roleParentDesc}
                     />
+                    {/* [AUTH-ROL] Coach visible: el marketplace necesita OFERTA, y esconder
+                        la puerta no la crea. Pero NO se auto-registra — la plataforma
+                        entrena menores y el vetting (identidad + antecedentes) es la
+                        decisión abierta del spec §3.2. Al elegirlo se dice la verdad y se
+                        ofrece el canal, en vez de dejar que el formulario choque con un
+                        403 del servidor (TEACHER_SIGNUP_ENABLED = false). */}
+                    <RoleCard
+                      active={role === "teacher"}
+                      onClick={() => setRole("teacher")}
+                      title={T.roleCoach}
+                      desc={T.roleCoachDesc}
+                    />
                   </div>
+                  {role === "teacher" && (
+                    <div className="alert info" style={{ marginTop: 10 }}>
+                      <span className="ai">{"\u2139"}</span>
+                      <div>
+                        <div className="at">{T.coachGateTitle}</div>
+                        <p style={{ margin: "4px 0 8px", fontSize: 13, lineHeight: 1.5 }}>{T.coachGateBody}</p>
+                        <a className="btn btn-soft btn-sm" href="mailto:hola@otracademy.do?subject=Quiero%20dar%20clases%20en%20OTR">{T.coachGateCta}</a>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="field" style={{ marginBottom: 14 }}>
@@ -547,7 +590,7 @@ export default function Auth() {
 
             {error && <p id="auth-error" role="alert" style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
-            <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading}>
+            <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading || (mode === "register" && role === "teacher" && !COACH_SIGNUP_ENABLED)}>
               {loading ? "…" : submitLabel}
             </button>
           </form>
