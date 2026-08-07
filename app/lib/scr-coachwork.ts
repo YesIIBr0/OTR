@@ -158,40 +158,43 @@ function getEarnings() {
 }
 
 /* ---------------- badges de estado ---------------- */
+// Una variante DISTINTA por estado (si no, todo naranja no dice nada): confirmada =
+// naranja (es lo que toca hoy), pendiente = tinte, completada = info, cancelada =
+// contorno. Mismos criterios que el panel del alumno (scr-mybookings.ts).
 function statusBadge(status) {
-  if (status === "CONFIRMED") return `<span class="badge sky"><span class="dot"></span>${t("cw.statusConfirmed")}</span>`;
-  if (status === "PENDING") return `<span class="badge warn"><span class="dot"></span>${t("cw.statusPending")}</span>`;
-  if (status === "COMPLETED") return `<span class="badge ok"><span class="dot"></span>${t("cw.statusCompleted")}</span>`;
-  if (status === "CANCELLED") return `<span class="badge">${t("cw.statusCancelled")}</span>`;
-  return status ? `<span class="badge">${esc(status)}</span>` : "";
+  if (status === "CONFIRMED") return C.chip(t("cw.statusConfirmed"), "accent");
+  if (status === "PENDING") return C.chip(t("cw.statusPending"), "tint");
+  if (status === "COMPLETED") return C.chip(t("cw.statusCompleted"), "info");
+  if (status === "CANCELLED") return C.chip(t("cw.statusCancelled"), "outline");
+  return status ? C.chip(esc(status), "outline") : "";
 }
 function escrowBadge(st) {
-  if (st === "HELD") return `<span class="badge warn">${t("cw.escrowHeld")}</span>`;
-  if (st === "RELEASED") return `<span class="badge ok">${t("cw.escrowReleased")}</span>`;
-  if (st === "REFUNDED") return `<span class="badge">${t("cw.escrowRefunded")}</span>`;
-  return st ? `<span class="badge">${esc(st)}</span>` : `<span class="faint" style="font-size:12px">—</span>`;
+  if (st === "HELD") return C.chip(t("cw.escrowHeld"), "tint");
+  if (st === "RELEASED") return C.chip(t("cw.escrowReleased"), "info");
+  if (st === "REFUNDED") return C.chip(t("cw.escrowRefunded"), "outline");
+  return st ? C.chip(esc(st), "outline") : `<span class="faint" style="font-size:12px">—</span>`;
 }
 
 /* ================= TAB 1 · AGENDA ================= */
 function bookingRow(b, opts = {}) {
   const actions = opts.actions && b.status === "CONFIRMED"
     ? `<div class="row" style="gap:8px;flex:none">
-         <button class="btn btn-soft btn-sm" data-cw-join="${esc(b.id)}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>${t("cw.joinSession")}</span></button>
-         <button class="btn btn-primary btn-sm" data-cw-complete="${esc(b.id)}">${t("cw.completeSession")}</button>
-         <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.cancel")}</button>
+         <button class="btn btn-outline btn--sm" data-cw-join="${esc(b.id)}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>${t("cw.joinSession")}</span></button>
+         <button class="btn btn-accent btn--sm" data-cw-complete="${esc(b.id)}">${t("cw.completeSession")}</button>
+         <button class="btn btn-outline btn--sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.cancel")}</button>
        </div>`
     // [COACH-01] PENDING (esperando consentimiento del padre): el coach puede RECHAZARLA.
     // Antes no se renderizaba ninguna acción y la reserva quedaba atascada en su agenda.
     : opts.actions && b.status === "PENDING"
     ? `<div class="row" style="gap:8px;flex:none">
-         <button class="btn btn-ghost btn-sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.rejectBooking")}</button>
+         <button class="btn btn-outline btn--sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.rejectBooking")}</button>
        </div>`
     // [COACH-REC] Grabación: en sesiones COMPLETED el coach adjunta el enlace de la grabación
     // (PATCH action:'recording'). Si ya hay una, además ofrece verla.
     : opts.recording && b.status === "COMPLETED"
     ? `<div class="row" style="gap:8px;flex:none">
-         ${b.recordingUrl ? `<a class="btn btn-quiet btn-sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.play}</span>${t("cw.viewRecording")}</span></a>` : ""}
-         <button class="btn btn-soft btn-sm" data-cw-recording="${esc(b.id)}">${b.recordingUrl ? t("cw.changeRecording") : t("cw.attachRecording")}</button>
+         ${b.recordingUrl ? `<a class="btn btn-outline btn--sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.play}</span>${t("cw.viewRecording")}</span></a>` : ""}
+         <button class="btn btn-outline btn--sm" data-cw-recording="${esc(b.id)}">${b.recordingUrl ? t("cw.changeRecording") : t("cw.attachRecording")}</button>
        </div>`
     : "";
   return `
@@ -219,7 +222,7 @@ function viewAgenda() {
       <div class="ill">${IC.calendar}</div>
       <h4>${t("cw.agendaEmptyHeading")}</h4>
       <p>${t("cw.agendaEmptyBody")}</p>
-      <button class="btn btn-ghost btn-sm" data-go="coach">${t("cw.agendaEmptyCta")}</button>
+      <button class="btn btn-outline btn--sm" data-go="coach">${t("cw.agendaEmptyCta")}</button>
     </div></div>`;
   }
 
@@ -232,10 +235,7 @@ function viewAgenda() {
   </div>
 
   <div class="card card-pad fade-up" style="--d:1">
-    <div class="row between vcenter">
-      <b style="font-size:14px">${t("cw.upcomingTitle")}</b>
-      <span class="badge sky">${upcoming.length}</span>
-    </div>
+    ${C.secTitle(t("cw.upcomingTitle"), { sm: true, right: C.chip(String(upcoming.length), "black") })}
     <p class="faint" style="font-size:12px;margin-top:4px">${t("cw.upcomingNote")}</p>
     ${upcoming.length
       ? `<div style="margin-top:6px">${upcoming.map((b) => bookingRow(b, { actions: true })).join("")}</div>`
@@ -243,10 +243,7 @@ function viewAgenda() {
   </div>
 
   <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
-    <div class="row between vcenter">
-      <b style="font-size:14px">${t("cw.historyTitle")}</b>
-      <span class="badge">${past.length}</span>
-    </div>
+    ${C.secTitle(t("cw.historyTitle"), { sm: true, right: C.chip(String(past.length), "outline") })}
     ${past.length
       ? `<div style="margin-top:6px">${past.map((b) => bookingRow(b, { escrow: true, recording: true })).join("")}</div>`
       : `<p class="muted" style="font-size:13px;margin-top:12px">${t("cw.historyEmpty")}</p>`}
@@ -314,7 +311,7 @@ function viewAvailability() {
       <div class="ill">${IC.user}</div>
       <h4>${t("cw.activateHeading")}</h4>
       <p>${t("cw.activateBody")}</p>
-      <button class="btn btn-primary" data-go="profile">${t("cw.activateCta")}</button>
+      <button class="btn btn-accent" data-go="profile">${t("cw.activateCta")}</button>
     </div></div>`;
   }
   const specs = String(p.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean);
@@ -326,32 +323,26 @@ function viewAvailability() {
   <div class="split rail-360">
     <div class="stack" style="gap:16px">
       <div class="card card-pad fade-up">
-        <div class="row between vcenter wrap" style="gap:10px">
-          <b style="font-size:14px">${t("cw.offerTitle")}</b>
-          ${p.active ? `<span class="badge ok"><span class="dot"></span>${t("cw.offerVisible")}</span>` : `<span class="badge warn"><span class="dot"></span>${t("cw.offerInactive")}</span>`}
-        </div>
+        ${C.secTitle(t("cw.offerTitle"), { sm: true, right: p.active ? C.chip(t("cw.offerVisible"), "accent") : C.chip(t("cw.offerInactive"), "outline") })}
         <div class="row vcenter wrap" style="gap:10px;margin-top:12px">
           <span style="font-size:13px;color:var(--text-2)">${t("cw.hourlyRate")}</span>
           <b class="brand-font" style="font-size:20px;font-weight:800">${p.hourlyCents ? money(p.hourlyCents) : "—"}</b>
           ${p.hourlyCents ? `<span class="faint" style="font-size:11.5px">${t("cw.perHour")}</span>` : ""}
         </div>
-        ${specs.length ? `<div class="row wrap" style="gap:6px;margin-top:12px">${specs.map((s) => `<span class="chip soft">${esc(s)}</span>`).join("")}</div>` : ""}
+        ${specs.length ? `<div class="row wrap" style="gap:6px;margin-top:12px">${specs.map((s) => `<span class="chip chip--outline">${esc(s)}</span>`).join("")}</div>` : ""}
         <p class="faint" style="font-size:12px;margin-top:12px">${t("cw.offerEditNote")}</p>
-        <button class="btn btn-soft btn-sm" data-go="profile" style="margin-top:10px">${t("cw.offerEditCta")}</button>
+        <button class="btn btn-outline btn--sm" data-go="profile" style="margin-top:10px">${t("cw.offerEditCta")}</button>
       </div>
 
       <div class="card card-pad fade-up" style="--d:1">
-        <div class="row between vcenter">
-          <b style="font-size:14px">${t("cw.slotsTitle")}</b>
-          <span class="badge sky">${sorted.length}</span>
-        </div>
+        ${C.secTitle(t("cw.slotsTitle"), { sm: true, right: C.chip(String(sorted.length), "black") })}
         <p class="faint" style="font-size:12px;margin-top:4px">${t("cw.slotsNote")}</p>
         ${sorted.length
           ? `<div style="margin-top:8px">${sorted.map((a) => `
             <div class="row vcenter" style="gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
-              <span style="display:inline-flex;width:15px;height:15px;color:var(--otr-sky-lo);flex:none">${IC.clock}</span>
+              <span style="display:inline-flex;width:15px;height:15px;color:var(--otr-green);flex:none">${IC.clock}</span>
               <span style="flex:1;font-size:13px;font-weight:600">${availLabel(a)}</span>
-              <button class="btn btn-quiet btn-sm" data-cw-rmav="${esc(a.id || "")}" title="${t("cw.removeSlot")}" style="color:var(--danger);padding:4px 8px"><span style="display:inline-flex;width:14px;height:14px">${IC.close}</span></button>
+              <button class="btn btn-outline btn--sm" data-cw-rmav="${esc(a.id || "")}" title="${t("cw.removeSlot")}" style="color:var(--danger);padding:4px 8px"><span style="display:inline-flex;width:14px;height:14px">${IC.close}</span></button>
             </div>`).join("")}</div>`
           : `<p class="muted" style="font-size:13px;margin-top:12px">${t("cw.slotsEmpty")}</p>`}
 
@@ -364,15 +355,15 @@ function viewAvailability() {
           <select class="select" id="cw-av-start" aria-label="${t("cw.startTime")}" style="width:auto;min-width:110px">${timeOptions(16 * 60)}</select>
           <span class="faint" style="font-size:12.5px" aria-hidden="true">${t("cw.toSep")}</span>
           <select class="select" id="cw-av-end" aria-label="${t("cw.endTime")}" style="width:auto;min-width:110px">${timeOptions(18 * 60)}</select>
-          <button class="btn btn-primary btn-sm" id="cw-av-add">${IC.plus} ${t("cw.add")}</button>
+          <button class="btn btn-accent btn--sm" id="cw-av-add">${IC.plus} ${t("cw.add")}</button>
         </div>
       </div>
     </div>
 
     <div class="stack" style="gap:16px">
       <div class="card card-pad fade-up" style="--d:1">
-        <b style="font-size:14px">${t("cw.packagesTitle")}</b>
-        <p class="faint" style="font-size:12px;margin-top:4px">${t("cw.packagesNote")}</p>
+        ${C.secTitle(t("cw.packagesTitle"), { sm: true })}
+        <p class="faint" style="font-size:12px;margin-top:-8px">${t("cw.packagesNote")}</p>
         ${pkgs.length
           ? `<div class="stack" style="gap:8px;margin-top:10px">${pkgs.map((k) => `
             <div class="tile" style="padding:11px 13px;display:flex;align-items:center;gap:10px">
@@ -380,7 +371,7 @@ function viewAvailability() {
                 <b style="font-size:13px;display:block">${esc(k.name || (Number(k.sessions) > 1 ? t("cw.packageOf").replace("{n}", String(k.sessions)) : t("cw.singleSession")))}</b>
                 <span class="faint" style="font-size:11.5px">${Number(k.sessions) || 1} ${Number(k.sessions) === 1 ? t("cw.sessionSingular") : t("cw.sessionPlural")} · ${t("cw.sessionDuration")}</span>
               </span>
-              ${Number(k.discountPct) > 0 ? `<span class="badge ok" style="flex:none">-${Number(k.discountPct)}%</span>` : ""}
+              ${Number(k.discountPct) > 0 ? `<span class="chip chip--accent" style="flex:none">-${Number(k.discountPct)}%</span>` : ""}
               <b class="cc-pct" style="font-size:14px;font-weight:800;flex:none">${money(k.priceCents)}</b>
             </div>`).join("")}</div>`
           : `<p class="muted" style="font-size:13px;margin-top:10px">${t("cw.packagesEmpty")}</p>`}
@@ -405,9 +396,9 @@ S.coachwork = {
   render(state) {
     const tab = activeTab();
     return `
-    <div class="page-head fade-up"><div>
-      <p class="eyebrow">${t("cw.eyebrow")}</p>
-      <h1 class="page-title">${t("cw.title")}</h1>
+    <div class="page-head page-head--rule fade-up"><div>
+      <p class="ph-eyebrow">${t("cw.eyebrow")}</p>
+      <h1 class="ph-title">${t("cw.title")}</h1>
       <div class="page-sub">${t("cw.subtitle")}</div>
     </div></div>
     ${subTabs(tab)}

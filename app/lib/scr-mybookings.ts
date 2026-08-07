@@ -54,20 +54,31 @@ function countdown(iso) {
   return `${t("core.countdownInPrefix")} ${days} ${days === 1 ? t("core.countdownDaySingular") : t("core.countdownDayPlural")}`;
 }
 
+// Cada estado necesita una variante DISTINTA del kit para leerse de un vistazo:
+// confirmada = naranja (lo que pasa pronto), pendiente = tinte, completada = info,
+// cancelada = contorno, disputada = negro (pide atención). Nada de pills.
 function statusBadge(status) {
-  if (status === "CONFIRMED") return `<span class="badge ok"><span class="dot"></span>${t("mb.statusConfirmed")}</span>`;
-  if (status === "PENDING") return `<span class="badge warn"><span class="dot"></span>${t("mb.statusPending")}</span>`;
-  if (status === "COMPLETED") return `<span class="badge sky"><span class="dot"></span>${t("mb.statusCompleted")}</span>`;
-  if (status === "CANCELLED") return `<span class="badge">${t("mb.statusCancelled")}</span>`;
-  if (status === "DISPUTED") return `<span class="badge warn"><span class="dot"></span>${t("mb.statusDisputed")}</span>`;
-  return status ? `<span class="badge">${esc(status)}</span>` : "";
+  if (status === "CONFIRMED") return C.chip(t("mb.statusConfirmed"), "accent");
+  if (status === "PENDING") return C.chip(t("mb.statusPending"), "tint");
+  if (status === "COMPLETED") return C.chip(t("mb.statusCompleted"), "info");
+  if (status === "CANCELLED") return C.chip(t("mb.statusCancelled"), "outline");
+  if (status === "DISPUTED") return C.chip(t("mb.statusDisputed"), "black");
+  return status ? C.chip(esc(status), "outline") : "";
 }
 
 function escrowBadge(st) {
-  if (st === "HELD") return `<span class="badge warn">${t("mb.escrowHeld")}</span>`;
-  if (st === "RELEASED") return `<span class="badge ok">${t("mb.escrowReleased")}</span>`;
-  if (st === "REFUNDED") return `<span class="badge">${t("mb.escrowRefunded")}</span>`;
+  if (st === "HELD") return C.chip(t("mb.escrowHeld"), "tint");
+  if (st === "RELEASED") return C.chip(t("mb.escrowReleased"), "info");
+  if (st === "REFUNDED") return C.chip(t("mb.escrowRefunded"), "outline");
   return "";
+}
+
+// Día/mes para el .date-box de la fila (70px). "" si el ISO no es utilizable.
+function slotDate(iso) {
+  const ts = Date.parse(iso || "");
+  if (Number.isNaN(ts)) return null;
+  const dt = new Date(ts);
+  return { d: dt.getDate(), m: dt.toLocaleDateString(undefined, { month: "short" }).replace(".", "") };
 }
 
 /* ---------------- filas ---------------- */
@@ -77,26 +88,34 @@ function upcomingRow(b) {
   // Sala on-platform: solo CONFIRMED con videoUrl ofrece el botón de unirse.
   const canJoin = b.status === "CONFIRMED" && b.videoUrl;
   const join = canJoin
-    ? `<button class="btn btn-primary btn-sm" data-mb-join="${esc(b.id)}" style="flex:none">
+    ? `<button class="btn btn-accent btn--sm" data-mb-join="${esc(b.id)}" style="flex:none">
          <span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>${t("mb.joinSession")}</span>
        </button>`
     : b.status === "PENDING"
     ? `<span class="faint" style="font-size:11.5px;flex:none">${t("mb.tutorMustApprove")}</span>`
     : "";
+  // Fila de evento del mockup: date-box de 70px + título/meta + acciones. Cuando el
+  // ISO no sirve, el hueco de la fecha lo ocupa el avatar del coach (nunca queda vacío).
+  const dt = slotDate(b.slotAtIso);
+  const lead = dt
+    ? C.dateBox(dt.d, dt.m, !!cd && cd.includes(t("core.countdownMin")))
+    : `<div class="date-box">${C.avatar(esc(b.coachInitials || "C"), { size: "sm", bg: "var(--otr-navy)" })}</div>`;
 
   return `
-  <div class="row vcenter wrap" style="gap:12px;padding:14px 0;border-bottom:1px solid var(--border)">
-    ${C.avatar(esc(b.coachInitials || "C"), { size: "sm", bg: "var(--otr-navy)" })}
-    <div style="flex:1;min-width:200px">
-      <b style="font-size:13.5px">${esc(b.coachName || t("mb.coachFallback"))}</b>
-      <div class="faint" style="font-size:12px;margin-top:2px">${meta || t("mb.coachingSession")}</div>
+  <div class="evrow">
+    ${lead}
+    <div class="ev-main">
+      <div class="ev-title" style="font-size:15px;margin:0">${esc(b.coachName || t("mb.coachFallback"))}</div>
+      <div class="ev-meta" style="margin-top:5px;gap:10px">
+        <span>${meta || t("mb.coachingSession")}</span>
+        ${cd ? `<span class="row vcenter" style="gap:5px"><span style="display:inline-flex;width:13px;height:13px">${IC.clock}</span>${esc(cd)}</span>` : ""}
+      </div>
     </div>
-    <div class="row vcenter" style="gap:8px;flex:none">
+    <div class="ev-actions wrap">
       ${statusBadge(b.status)}
-      ${cd ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.clock}</span>&nbsp;${esc(cd)}</span>` : ""}
+      ${join}
+      <button class="btn btn-outline btn--sm" data-mb-cancel="${esc(b.id)}" style="flex:none;color:var(--danger)">${t("mb.cancel")}</button>
     </div>
-    ${join}
-    <button class="btn btn-ghost btn-sm" data-mb-cancel="${esc(b.id)}" style="flex:none;color:var(--danger)">${t("mb.cancel")}</button>
   </div>`;
 }
 
@@ -111,8 +130,8 @@ function historyRow(b) {
     </div>
     ${statusBadge(b.status)}
     ${escrowBadge(b.escrowStatus)}
-    ${b.recordingUrl ? `<a class="btn btn-quiet btn-sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer" style="flex:none"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.video}</span>${t("mb.recording")}</span></a>` : ""}
-    ${b.canReview ? `<button class="btn btn-soft btn-sm" data-mb-review="${esc(b.id)}" data-coach="${esc(b.coachId)}" data-coach-name="${esc(b.coachName || "")}" style="flex:none">${t("mb.leaveReview")}</button>` : ""}
+    ${b.recordingUrl ? `<a class="btn btn-outline btn--sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer" style="flex:none"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.video}</span>${t("mb.recording")}</span></a>` : ""}
+    ${b.canReview ? `<button class="btn btn-outline btn-sm" data-mb-review="${esc(b.id)}" data-coach="${esc(b.coachId)}" data-coach-name="${esc(b.coachName || "")}" style="flex:none">${t("mb.leaveReview")}</button>` : ""}
   </div>`;
 }
 
@@ -136,11 +155,9 @@ export function renderBookings() {
 
   // Cabecera de SECCIÓN (ya no de pantalla): el <h1> y el eyebrow los pone Cursos.
   const head = `
-  <div class="row between vcenter wrap fade-up" style="gap:8px;margin:28px 0 12px">
-    <div>
-      <b style="font-size:15px;letter-spacing:var(--track-tight)">${t("mb.title")}</b>
-      <div class="faint" style="font-size:12.5px;margin-top:2px">${t("mb.subtitle")}</div>
-    </div>
+  <div class="fade-up" style="margin:28px 0 12px">
+    ${C.secTitle(t("mb.title"), { attrs: 'style="margin-bottom:4px"' })}
+    <div class="faint" style="font-size:12.5px">${t("mb.subtitle")}</div>
   </div>`;
 
   if (!all.length) {
@@ -149,27 +166,21 @@ export function renderBookings() {
       <div class="ill">${IC.calendar}</div>
       <h4>${t("mb.emptyHeading")}</h4>
       <p>${t("mb.emptyBody")}</p>
-      <button class="btn btn-primary" data-go="explore">${t("mb.emptyCta")}</button>
+      <button class="btn btn-accent" data-go="explore">${t("mb.emptyCta")}</button>
     </div></div>`;
   }
 
   return `${head}
   <div class="card card-pad fade-up" style="--d:1">
-    <div class="row between vcenter">
-      <b style="font-size:14px">${t("mb.upcomingTitle")}</b>
-      <span class="badge sky">${upcoming.length}</span>
-    </div>
+    ${C.secTitle(t("mb.upcomingTitle"), { sm: true, right: C.chip(String(upcoming.length), "black") })}
     <p class="faint" style="font-size:12px;margin-top:4px">${t("mb.videoRoomNote")}</p>
     ${upcoming.length
-      ? `<div style="margin-top:6px">${upcoming.map(upcomingRow).join("")}</div>`
-      : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.upcomingEmptyPre")} <a href="#" data-go="explore" style="color:var(--otr-sky-lo);font-weight:600">${t("mb.upcomingEmptyLink")}</a> ${t("mb.upcomingEmptyPost")}</p>`}
+      ? `<div style="margin-top:6px;--ev-bleed:22px">${upcoming.map(upcomingRow).join("")}</div>`
+      : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.upcomingEmptyPre")} <a href="#" data-go="explore" style="color:var(--otr-green-text);font-weight:700">${t("mb.upcomingEmptyLink")}</a> ${t("mb.upcomingEmptyPost")}</p>`}
   </div>
 
   <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
-    <div class="row between vcenter">
-      <b style="font-size:14px">${t("mb.historyTitle")}</b>
-      <span class="badge">${history.length}</span>
-    </div>
+    ${C.secTitle(t("mb.historyTitle"), { sm: true, right: C.chip(String(history.length), "outline") })}
     ${history.length
       ? `<div style="margin-top:6px">${history.map(historyRow).join("")}</div>`
       : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.historyEmpty")}</p>`}

@@ -50,7 +50,7 @@ function listingRow(l, d) {
     : l.modality === "híbrido" ? t("lst.modalityHibrido") : t("lst.modalityOnline");
   const rating = l.rating != null
     ? `<span class="row vcenter" style="gap:5px"><b class="tnum">${Number(l.rating).toFixed(1)}</b><span class="lst-stars" aria-hidden="true">★</span><span class="faint">(${l.reviewCount})</span></span>`
-    : `<span class="badge">${t("lst.newTeacher")}</span>`;
+    : C.chip(t("lst.newTeacher"), "tint");
   return `
   <article class="card lst-row fade-up" style="--d:${d}" role="button" tabindex="0" data-lst-open="${esc(l.id)}">
     ${/* [P5] La FOTO del profesor manda cuando existe (User.avatarUrl); si no, el emblema
@@ -61,8 +61,8 @@ function listingRow(l, d) {
         ${l.teacherAvatar
           ? `<img class="avatar sm" src="${esc(l.teacherAvatar)}" alt="" loading="lazy" decoding="async" style="object-fit:cover"/>`
           : C.avatar(esc(ini(l.teacherName)), { size: "sm", bg: "var(--otr-navy)" })}
-        <b style="font-size:15px;letter-spacing:var(--track-tight)">${l.teacherName}</b>
-        ${l.verified ? `<span class="badge ok" style="font-size:10.5px">${IC.check} ${t("lst.verifiedBadge")}</span>` : ""}
+        <b style="font-size:15px;font-weight:800;letter-spacing:-.02em">${l.teacherName}</b>
+        ${l.verified ? C.chip(t("lst.verifiedBadge"), "accent", { ic: "check" }) : ""}
       </div>
       <b class="lst-row-title">${l.title}</b>
       <div class="row vcenter wrap" style="gap:6px 10px;font-size:12.5px;color:var(--text-2)">
@@ -75,8 +75,8 @@ function listingRow(l, d) {
         <b class="lst-price tnum">${money(l.priceCentsHour)}</b>
         <div class="faint" style="font-size:12px">${t("lst.perHour1h")}</div>
       </div>
-      <button class="btn btn-primary btn-block" data-lst-book="${esc(l.id)}">${t("lst.bookBtn")}</button>
-      <button class="btn btn-soft btn-block" data-lst-open="${esc(l.id)}">${t("lst.viewBtn")}</button>
+      <button class="btn btn-accent btn-block" data-lst-book="${esc(l.id)}">${t("lst.bookBtn")}</button>
+      <button class="btn btn-outline btn-block" data-lst-open="${esc(l.id)}">${t("lst.viewBtn")}</button>
     </div>
   </article>`;
 }
@@ -109,18 +109,18 @@ S.listings = {
       .concat(cats.map((c) => `<button type="button" class="chip chip--lg ${st.category === c ? "active" : ""}" data-lst-cat="${esc(c)}">${catLabel(c)}</button>`))
       .join("");
     return `
-    <div class="page-head fade-up"><div>
-      <p class="eyebrow">${t("lst.eyebrow")}</p>
-      <h1 class="page-title">${t("lst.title")}</h1>
+    <div class="page-head page-head--rule fade-up"><div>
+      <p class="ph-eyebrow">${t("lst.eyebrow")}</p>
+      <h1 class="ph-title">${t("lst.title")}</h1>
       <div class="page-sub">${t("lst.subtitle")}</div>
     </div></div>
 
     <div class="card card-pad fade-up" style="--d:1;margin-bottom:16px">
       <div class="row vcenter" style="gap:10px">
         <input class="input" id="lst-q" placeholder="${t("lst.searchPh")}" value="${esc(st.q || "")}" style="flex:1;height:46px;font-size:15px"/>
-        <button class="btn btn-primary" id="lst-search" style="height:46px;padding:0 20px">${IC.search}</button>
+        <button class="btn btn-accent" id="lst-search" style="height:46px;padding:0 20px">${IC.search}</button>
       </div>
-      <div class="row wrap" style="gap:9px;margin-top:14px">${chips}</div>
+      <div class="mkt-fbar" style="gap:8px;margin-top:14px">${chips}</div>
     </div>
 
     <div class="fade-up" style="--d:2" id="lst-body">${resultsBody(st)}</div>`;

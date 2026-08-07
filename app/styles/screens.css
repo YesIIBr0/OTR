@@ -689,6 +689,57 @@
 .pl-track > i{display:block;height:100%;width:0;background:var(--otr-green);transition:width .25s var(--ease)}
 /* === FIN MOCKUP GRUPO APRENDIZAJE ========================================= */
 
+/* === MOCKUP GRUPO MARKETPLACE ==============================================
+   Task 7 del plan 2026-08-07-aula-redesign-mockup.md — pasada de estética sobre
+   marketplace, clases abiertas (listings), panel del profesor, coach workspace,
+   portal de familia, ajustes y hub. Solo PRESENTACIÓN: el kit compartido vive en
+   "KIT MOCKUP 2026-08" (arriba) y en app.css; aquí solo lo que es de ESTAS
+   pantallas. Contrato: chips `chip chip--*`, botones `btn btn-accent|primary|
+   outline`, `.sec-title`, `.card--dark`, `.date-box`, `.evrow`.
+   ========================================================================== */
+
+/* ---- Barra de filtros (chips-BOTÓN) ----
+   El `.chip` pelado de app.css sigue siendo pill 28px (lo usan pantallas aún sin
+   rediseñar); dentro de .mkt-fbar pasa a rectángulo r4 con activo NEGRO, que es
+   lo que manda el mockup (§3.3). Se mantiene la altura táctil de 32/40px porque
+   estos chips SON controles, no etiquetas. */
+.mkt-fbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.mkt-fbar .chip{height:32px;padding:0 13px;border-radius:var(--r-sm);border:1px solid var(--border);
+  background:var(--surface);font-size:12px;font-weight:700;letter-spacing:-.01em;color:var(--ink-400);cursor:pointer}
+.mkt-fbar .chip:hover{color:var(--text);border-color:var(--border-strong)}
+.mkt-fbar .chip.active{background:var(--otr-black);border-color:var(--otr-black);color:#fff}
+.mkt-fbar .chip--lg{height:40px;padding:0 18px;font-size:13.5px}
+
+/* ---- Hero del perfil de coach (sin vídeo) ----
+   El mockup no tiene degradados azules: el héroe es negro plano con una barra
+   naranja de 3px arriba, igual que .card--dark del kit. */
+.mkt-hero{position:relative;display:flex;align-items:center;gap:16px;padding:34px 26px;background:var(--otr-black)}
+.mkt-hero::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--otr-green)}
+
+/* ---- Clases abiertas (listings + ficha) ----
+   .lst-h era un eyebrow de 11px en versalitas; pasa al section-title del mockup
+   (barra naranja de 3×15 + 17/800). Mismo marcado, otro peso visual. */
+.lst-h{display:flex;align-items:center;gap:10px;margin:0 0 13px;font-size:17px;font-weight:800;
+  letter-spacing:-.025em;text-transform:none;color:var(--text)}
+.lst-h::before{content:"";flex:none;display:inline-block;width:3px;height:15px;background:var(--otr-green)}
+.lst-h .faint{font-size:13px;font-weight:600}
+.lst-row-title{font-weight:800;letter-spacing:-.02em}
+.lst-fact{border-top:1px solid var(--border)}
+.lst-price,.lst-price-xl{letter-spacing:-.03em}
+
+/* ---- Panel del profesor / coach workspace / familia ----
+   Cabecera de tarjeta con .sec-title dentro de .card-pad: el título ya trae su
+   propio margen inferior, así que la fila con el contador no lo duplica. */
+.sec-row + .tbl-wrap,.sec-row + .table-wrap{margin-top:0}
+.card-pad > .sec-row:first-child,.card-pad > .sec-title:first-child{margin-top:-2px}
+
+/* ---- Ajustes: selector de idioma (era pill; el mockup no tiene pills) ---- */
+.set-seg{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface)}
+.set-seg button{border:0;border-radius:var(--r-sm);padding:6px 16px;font-weight:700;font-size:12.5px;cursor:pointer;
+  background:transparent;color:var(--ink-400);transition:background .15s var(--ease),color .15s var(--ease)}
+.set-seg button[aria-pressed="true"]{background:var(--otr-black);color:#fff}
+/* === FIN MOCKUP GRUPO MARKETPLACE ========================================= */
+
 /* === MOCKUP GRUPO ADMIN/AUTH ===============================================
    Task 8 del plan 2026-08-07-aula-redesign-mockup.md: consola de admin, usuarios,
    métricas, bandeja de WhatsApp, certificado y login. El marcado ya usa el kit

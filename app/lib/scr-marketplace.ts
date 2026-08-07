@@ -47,7 +47,7 @@ const safeSrc = (u) => {
 };
 const langBadges = (languages) =>
   String(languages || "ES").split(/[,·/]/).map((l) => l.trim()).filter(Boolean).slice(0, 3)
-    .map((l) => `<span class="badge">${esc(l.toUpperCase())}</span>`).join("");
+    .map((l) => `<span class="chip chip--outline">${esc(l.toUpperCase())}</span>`).join("");
 // Etiqueta relativa simple desde un ISO ("hoy", "hace 3 días", "hace 2 meses").
 const whenAgo = (iso) => {
   const ts = Date.parse(iso || "");
@@ -219,20 +219,20 @@ function coachCard(c, i) {
       ${avatar}
       <div style="min-width:0;flex:1">
         <div class="row vcenter wrap" style="gap:7px">
-          <b style="font-size:14.5px;line-height:1.3">${c.name}</b>
-          ${c.verified ? `<span class="badge sky" style="flex:none"><span style="display:inline-flex;width:12px;height:12px">${IC.checkCircle}</span>${t("mkt.verified")}</span>` : ""}
+          <b style="font-size:15px;font-weight:800;letter-spacing:-.02em;line-height:1.3">${c.name}</b>
+          ${c.verified ? C.chip(t("mkt.verified"), "accent", { ic: "checkCircle", attrs: 'style="flex:none"' }) : ""}
         </div>
         <div class="muted" style="font-size:12px;margin-top:3px">${c.headline}</div>
         <div class="row vcenter" style="gap:6px;margin-top:6px">
           ${c.reviews > 0
             ? `${stars(c.rating, 12)}<b style="font-size:12.5px">${c.rating.toFixed(1)}</b><span class="faint" style="font-size:12px">(${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")})</span>`
-            : `<span class="badge" style="font-weight:600">${t("mkt.newCoach")}</span>`}
+            : C.chip(t("mkt.newCoach"), "tint")}
         </div>
       </div>
     </div>
     <div class="row wrap" style="gap:6px;margin-top:12px">
       ${langBadges(c.languages)}
-      ${String(c.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean).slice(0, 2).map((s) => `<span class="badge">${s}</span>`).join("")}
+      ${String(c.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean).slice(0, 2).map((s) => `<span class="chip chip--outline">${s}</span>`).join("")}
     </div>
     <div class="divider" style="margin:14px 0"></div>
     <div class="row between vcenter" style="margin-top:auto;gap:10px">
@@ -270,18 +270,18 @@ function renderGrid() {
   const specs = ["Todos", ...new Set(all.flatMap((c) => String(c.specialties).split(/[,·]/).map((s) => s.trim()).filter(Boolean)))].slice(0, 8);
   const list = applyFilters(all);
   return `
-  <div class="page-head"><div>
-    <p class="eyebrow">${t("mkt.eyebrow")}</p>
-    <h1 class="page-title">${t("mkt.title")}</h1>
+  <div class="page-head page-head--rule"><div>
+    <p class="ph-eyebrow">${t("mkt.eyebrow")}</p>
+    <h1 class="ph-title">${t("mkt.title")}</h1>
     <div class="page-sub">${t("mkt.subtitle")}</div>
   </div>
-  <span class="badge sky">${list.length} ${list.length === 1 ? t("mkt.coachUnitSingular") : t("mkt.coachUnitPlural")}</span></div>
+  <div class="stat-group">${C.statInline(list.length, list.length === 1 ? t("mkt.coachUnitSingular") : t("mkt.coachUnitPlural"))}</div></div>
 
   <div class="searchbox" style="width:100%;max-width:440px;margin-bottom:12px">
     <span style="display:flex;width:16px;height:16px">${IC.search}</span>
     <input data-mk-q placeholder="${t("mkt.searchPlaceholder")}" value="${esc(f.q || "")}" aria-label="${t("mkt.searchAria")}" style="flex:1"/>
   </div>
-  <div class="row wrap vcenter" style="gap:8px;margin-bottom:12px" id="mk-specs">
+  <div class="mkt-fbar" style="margin-bottom:12px" id="mk-specs">
     ${specs.map((s) => `<button class="chip ${f.spec === s ? "active" : ""}" data-mk-spec="${esc(s)}">${s === "Todos" ? t("mkt.specAll") : s}</button>`).join("")}
   </div>
   <div class="row wrap vcenter" style="gap:10px;margin-bottom:22px">
@@ -326,10 +326,10 @@ function heroBlock(c) {
     return `<div style="aspect-ratio:16/9;background:var(--otr-ink)">${inner}</div>`;
   }
   return `
-  <div style="background:linear-gradient(140deg,var(--otr-navy),var(--otr-ink));padding:34px 26px;display:flex;align-items:center;gap:16px">
+  <div class="mkt-hero">
     ${C.avatar(esc(c.initials), { size: "lg", bg: "rgba(255,255,255,.14)" })}
     <div>
-      <p class="eyebrow" style="color:var(--otr-sky-hi)">${t("mkt.verifiedCoachEyebrow")}</p>
+      <p class="eyebrow" style="color:var(--otr-green)">${t("mkt.verifiedCoachEyebrow")}</p>
       <div class="brand-font" style="font-size:24px;font-weight:800;color:#fff;margin-top:2px">${c.name}</div>
       <p style="color:rgba(255,255,255,.72);font-size:12.5px;margin-top:4px">${t("mkt.videoComingSoon")}</p>
     </div>
@@ -367,9 +367,9 @@ function bookedPanel(b, coachId) {
       ? t("mkt.bookedPendingBody")
       : t("mkt.bookedConfirmedBody")}</p>
     <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" data-go="course">${IC.calendar} ${t("mkt.viewMyBookings")}</button>
-      ${coachId ? `<button class="btn btn-soft btn-sm" data-mk-message="${esc(coachId)}">${IC.msg} ${t("mkt.sendMessage")}</button>` : ""}
-      <button class="btn btn-ghost btn-sm" data-mk-back>${t("mkt.viewMoreCoaches")}</button>
+      <button class="btn btn-primary btn--sm" data-go="course">${IC.calendar} ${t("mkt.viewMyBookings")}</button>
+      ${coachId ? `<button class="btn btn-outline btn--sm" data-mk-message="${esc(coachId)}">${IC.msg} ${t("mkt.sendMessage")}</button>` : ""}
+      <button class="btn btn-quiet btn-sm" data-mk-back>${t("mkt.viewMoreCoaches")}</button>
     </div>
   </div>`;
 }
@@ -394,8 +394,8 @@ function bookingCard(c, canBook, role) {
       : t("mkt.roleMsgCoach");
     return `
     <div class="card card-pad">
-      <b style="font-size:13.5px">${t("mkt.bookingsLabel")}</b>
-      <p class="muted" style="font-size:12.5px;margin-top:6px">${msg}</p>
+      ${C.secTitle(t("mkt.bookingsLabel"), { sm: true })}
+      <p class="muted" style="font-size:12.5px">${msg}</p>
     </div>`;
   }
   const sel = selState();
@@ -433,7 +433,7 @@ function bookingCard(c, canBook, role) {
 
   return `
   <div class="card card-pad">
-    <b style="font-size:14px">${t("mkt.bookSessionTitle")}</b>
+    ${C.secTitle(t("mkt.bookSessionTitle"), { sm: true })}
     ${isParent && kids.length ? `
     <p class="label" style="margin:14px 0 8px">${t("mkt.forChild")}</p>
     <select class="select" data-mk-child style="width:100%">
@@ -446,12 +446,12 @@ function bookingCard(c, canBook, role) {
         const on = pkg && p.key === pkg.key;
         const per = p.sessions > 1 ? `<span class="faint" style="font-size:11.5px">${money(Math.round(p.priceCents / p.sessions))}${t("mkt.perSessionShort")}</span>` : "";
         return `
-        <button class="tile" data-mk-pkg="${esc(p.key)}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;padding:11px 13px;${on ? "border-color:var(--otr-sky);box-shadow:var(--ring)" : ""}">
+        <button class="tile" data-mk-pkg="${esc(p.key)}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;padding:11px 13px;${on ? "border-color:var(--otr-black);box-shadow:none" : ""}">
           <span style="flex:1;min-width:0">
             <b style="font-size:13px;display:block">${esc(p.name)}</b>
             <span class="faint" style="font-size:11.5px">${p.sessions} ${p.sessions === 1 ? t("mkt.sessionUnitSingular") : t("mkt.sessionUnitPlural")} · 60 min</span>
           </span>
-          ${p.discountPct > 0 ? `<span class="badge ok" style="flex:none">-${p.discountPct}%</span>` : ""}
+          ${p.discountPct > 0 ? C.chip(`-${p.discountPct}%`, "accent", { attrs: 'style="flex:none"' }) : ""}
           <span style="flex:none;text-align:right"><b class="cc-pct" style="font-size:14px;font-weight:800">${money(p.priceCents)}</b>${per ? `<span style="display:block">${per}</span>` : ""}</span>
         </button>`;
       }).join("")}
@@ -459,12 +459,12 @@ function bookingCard(c, canBook, role) {
 
     <p class="label" style="margin:16px 0 8px">${t("mkt.step2ChooseDay")} ${generic ? `<span class="faint" style="font-weight:400">${t("mkt.suggestedScheduleHint")}</span>` : ""}</p>
     ${days.length
-      ? `<div class="row wrap" style="gap:6px">${days.slice(0, 10).map((d) => `<button class="chip ${day && d.key === day.key ? "active" : ""}" data-mk-day="${d.key}">${d.label}</button>`).join("")}</div>`
+      ? `<div class="mkt-fbar">${days.slice(0, 10).map((d) => `<button class="chip ${day && d.key === day.key ? "active" : ""}" data-mk-day="${d.key}">${d.label}</button>`).join("")}</div>`
       : `<p class="faint" style="font-size:12.5px">${t("mkt.noDaysAvailable")}</p>`}
 
     <p class="label" style="margin:16px 0 8px">${t("mkt.step3ChooseTime")}</p>
     ${slots.length
-      ? `<div class="row wrap" style="gap:6px">${slots.map((s) => `<button class="chip ${sel.slotIso === s.iso ? "active" : ""}" data-mk-slot="${s.iso}" data-mk-slot-label="${s.label}">${s.label}</button>`).join("")}</div>`
+      ? `<div class="mkt-fbar">${slots.map((s) => `<button class="chip ${sel.slotIso === s.iso ? "active" : ""}" data-mk-slot="${s.iso}" data-mk-slot-label="${s.label}">${s.label}</button>`).join("")}</div>`
       : `<p class="faint" style="font-size:12.5px">${t("mkt.noSlotsThisDay")}</p>`}
     ${soonest && (sel.dayKey !== soonest.day.key || sel.slotIso !== soonest.slot.iso)
       ? `<button class="btn btn-quiet btn-sm" data-mk-soonest style="margin-top:8px;font-size:11.5px;gap:6px"><span style="display:inline-flex;width:13px;height:13px;flex:none">${IC.clock}</span>${t("mkt.soonestSlot")} · ${soonest.day.label} ${soonest.slot.label}</button>`
@@ -481,10 +481,10 @@ function bookingCard(c, canBook, role) {
 
     ${isParent ? "" : consentGate()}
 
-    <button class="btn btn-primary btn-block" id="mk-confirm" style="margin-top:14px" ${ready ? "" : "disabled"}>
+    <button class="btn btn-accent btn-block" id="mk-confirm" style="margin-top:14px" ${ready ? "" : "disabled"}>
       ${isMinor() ? t("mkt.confirmRequestApproval") : t("mkt.confirmBooking")}
     </button>
-    <button class="btn btn-soft btn-block btn-sm" data-mk-message="${esc(c.id)}" style="margin-top:8px">${IC.msg} ${t("mkt.sendMessage")}</button>
+    <button class="btn btn-outline btn-block btn--sm" data-mk-message="${esc(c.id)}" style="margin-top:8px">${IC.msg} ${t("mkt.sendMessage")}</button>
   </div>`;
 }
 
@@ -504,7 +504,7 @@ function renderProfile(state) {
   const reviews = c.reviewsList;
 
   return `
-  <button class="btn btn-quiet btn-sm" data-mk-back style="margin-bottom:14px">${IC.chevL} ${t("mkt.backToCoaches")}</button>
+  <button class="btn btn-outline btn--sm" data-mk-back style="margin-bottom:14px">${IC.chevL} ${t("mkt.backToCoaches")}</button>
 
   <div class="card fade-up" style="overflow:hidden;margin-bottom:18px">
     ${heroBlock(c)}
@@ -512,15 +512,15 @@ function renderProfile(state) {
       <div class="row between wrap" style="gap:12px;align-items:flex-start">
         <div style="min-width:0">
           <div class="row vcenter wrap" style="gap:8px">
-            <b class="brand-font" style="font-size:19px">${c.name}</b>
-            ${c.verified ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.checkCircle}</span>${t("mkt.verified")}</span>` : ""}
+            <b class="brand-font" style="font-size:21px;font-weight:800;letter-spacing:-.025em">${c.name}</b>
+            ${c.verified ? C.chip(t("mkt.verified"), "accent", { ic: "checkCircle" }) : ""}
             ${langBadges(c.languages)}
           </div>
           <div class="muted" style="font-size:13px;margin-top:4px">${c.headline}</div>
           <div class="row vcenter wrap" style="gap:8px;margin-top:8px;font-size:12.5px">
             ${c.reviews > 0
               ? `${stars(c.rating, 13)}<b>${c.rating.toFixed(1)}</b><span class="faint">${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")}</span>`
-              : `<span class="badge" style="font-weight:600">${t("mkt.newCoach")}</span>`}
+              : C.chip(t("mkt.newCoach"), "tint")}
             ${c.bookingCount ? `<span class="dot-sep"></span><span class="faint">${t("mkt.sessionsBooked").replace("{n}", String(c.bookingCount))}</span>` : ""}
             ${c.responseTime ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${esc(c.responseTime)}</span>` : ""}
           </div>
@@ -534,14 +534,14 @@ function renderProfile(state) {
     <div class="stack" style="gap:16px">
       ${loading ? `<div class="card card-pad fade-up"><p class="muted" style="font-size:13px">${t("mkt.loadingProfile")}</p></div>` : ""}
       <div class="card card-pad fade-up" style="--d:1">
-        <b style="font-size:13.5px">${t("mkt.aboutPrefix")} ${esc(c.name.split(" ")[0] || t("mkt.theCoach"))}</b>
-        <p class="muted" style="font-size:13.5px;line-height:1.6;margin-top:8px">${c.bio ? esc(c.bio) : t("mkt.noBio")}</p>
-        ${c.credentials ? `<div class="divider"></div><b style="font-size:13px">${t("mkt.credentials")}</b><div class="stack" style="gap:6px;margin-top:8px">${String(c.credentials).split(/\n|;/).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-sky-lo);margin-top:1px">${IC.award}</span>${esc(x)}</div>`).join("")}</div>` : ""}
-        ${specs.length ? `<div class="divider"></div><b style="font-size:13px">${t("mkt.specialties")}</b><div class="row wrap" style="gap:6px;margin-top:8px">${specs.map((s) => `<span class="badge">${s}</span>`).join("")}</div>` : ""}
+        ${C.secTitle(`${t("mkt.aboutPrefix")} ${esc(c.name.split(" ")[0] || t("mkt.theCoach"))}`, { sm: true })}
+        <p class="muted" style="font-size:13.5px;line-height:1.6">${c.bio ? esc(c.bio) : t("mkt.noBio")}</p>
+        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true })}<div class="stack" style="gap:6px">${String(c.credentials).split(/\n|;/).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${esc(x)}</div>`).join("")}</div>` : ""}
+        ${specs.length ? `<div class="divider"></div>${C.secTitle(t("mkt.specialties"), { sm: true })}<div class="row wrap" style="gap:6px">${specs.map((s) => `<span class="chip chip--outline">${s}</span>`).join("")}</div>` : ""}
       </div>
 
       <div class="card card-pad fade-up" style="--d:2">
-        <div class="row between vcenter"><b style="font-size:13.5px">${t("mkt.reviewsTitle")}</b><span class="badge sky">${c.reviews}</span></div>
+        ${C.secTitle(t("mkt.reviewsTitle"), { sm: true, right: C.chip(String(c.reviews), "black") })}
         <p class="faint" style="font-size:11.5px;margin-top:4px">${t("mkt.reviewsEligibility")}</p>
         ${reviews.length ? `<div class="stack" style="gap:0;margin-top:6px">${reviews.slice(0, 6).map((r) => `
           <div style="padding:12px 0;border-bottom:1px solid var(--border)">
@@ -549,7 +549,7 @@ function renderProfile(state) {
               ${C.avatar(esc(r.initials || ini(r.author || r.name)), { size: "sm", bg: "var(--otr-sky-lo)" })}
               <b style="font-size:12.5px">${esc(r.author || r.name || t("mkt.studentFallback"))}</b>
               ${stars(Number(r.rating) || 0, 11)}
-              ${r.verified ? `<span class="badge sky" style="height:18px;font-size:10px;padding:0 6px">${t("mkt.reviewVerified")}</span>` : ""}
+              ${r.verified ? C.chip(t("mkt.reviewVerified"), "tint") : ""}
               <span class="faint" style="font-size:11.5px;margin-left:auto">${esc(r.when || "")}</span>
             </div>
             ${r.body ? `<p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:7px">${esc(r.body)}</p>` : ""}
@@ -567,7 +567,7 @@ function renderProfile(state) {
 
     <div class="stack" style="gap:16px">
       <div class="fade-up" style="--d:1" id="mk-booking">${bookingCard(c, canBook, role)}</div>
-      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2"><b style="font-size:13px">${t("mkt.cancelPolicyTitle")}</b><p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:6px">${esc(c.cancelPolicy)}</p></div>` : ""}
+      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2">${C.secTitle(t("mkt.cancelPolicyTitle"), { sm: true })}<p class="muted" style="font-size:12.5px;line-height:1.55">${esc(c.cancelPolicy)}</p></div>` : ""}
     </div>
   </div>`;
 }
