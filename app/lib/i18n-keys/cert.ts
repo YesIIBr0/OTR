@@ -6,7 +6,7 @@ export const dict = {
   es: {
     // page head
     "cert.title": "Certificado",
-    "cert.subtitle": "Diploma oficial OTR Debate Academy",
+    "cert.subtitle": "Diploma oficial OTR Debating Academy",
 
     // header actions
     "cert.print": "Imprimir",
@@ -29,7 +29,7 @@ export const dict = {
   en: {
     // page head
     "cert.title": "Certificate",
-    "cert.subtitle": "Official OTR Debate Academy diploma",
+    "cert.subtitle": "Official OTR Debating Academy diploma",
 
     // header actions
     "cert.print": "Print",
