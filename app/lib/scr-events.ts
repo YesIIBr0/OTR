@@ -8,6 +8,7 @@
    inline que hablan con POST /api/tournaments (op:create), PATCH y DELETE /api/tournaments/[id].
    El alumno ve la pantalla exactamente igual que antes. */
 import { DB } from "./data";
+import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { t, registerDict } from "./i18n";
@@ -24,23 +25,36 @@ function isStaff() {
   return r === "admin" || r === "teacher";
 }
 
-// Acento por "tone" del evento (mapea a tokens de marca; oro = logro, verde = activo).
-const toneVar = (t) => {
-  const s = String(t || "").toLowerCase();
-  if (s === "gold" || s === "oro" || s === "logro") return "var(--otr-gold)";
-  if (s === "green" || s === "verde" || s === "ok") return "var(--otr-green)";
-  if (s === "danger" || s === "live" || s === "vivo") return "var(--danger)";
-  return "var(--otr-sky)";
+/* [MOCKUP · Task 6, spec §3.4] Día + mes corto para el .date-box a partir de la etiqueta
+   ya formateada que trae el payload ("mié 12 ago · 9:00 AM"). Sin fecha reconocible
+   ("Por anunciar", "Hoy") devuelve null y la fila se pinta sin tile — nada inventado. */
+function evDateFromLabel(label) {
+  const m = /(\d{1,2})\s+([^\s·,]{3,})/.exec(String(label || ""));
+  return m ? { day: m[1], mon: m[2].replace(".", "") } : null;
+}
+// El "tone" del evento decide la variante del chip de tipo (el mockup no usa puntos de color).
+const toneChip = (tone) => {
+  const s = String(tone || "").toLowerCase();
+  if (s === "danger" || s === "live" || s === "vivo") return "black";
+  if (s === "gold" || s === "oro" || s === "logro" || s === "green" || s === "verde" || s === "ok") return "accent";
+  return "info";
 };
+const isLiveTone = (tone) => ["danger", "live", "vivo"].includes(String(tone || "").toLowerCase());
 
-function eventCard(e, i) {
-  return `<div class="lrow" style="gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
-    <span style="width:10px;height:10px;border-radius:50%;background:${toneVar(e.tone)};flex:none;margin-top:5px"></span>
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:650;font-size:14px">${esc(e.t)}</div>
-      <div class="faint" style="font-size:12.5px;margin-top:2px">${e.c ? esc(e.c) : "OTR Academy"}</div>
+function eventCard(e) {
+  const live = isLiveTone(e.tone);
+  const dt = evDateFromLabel(e.when);
+  return `<div class="evrow${live ? " evrow--live" : ""}">
+    ${dt ? C.dateBox(dt.day, dt.mon, live) : "<span></span>"}
+    <div class="ev-main">
+      ${C.chip(t("events.chipEvent"), toneChip(e.tone), { ic: "calendar" })}
+      <div class="ev-title">${esc(e.t)}</div>
+      <div class="ev-meta">
+        <span class="row vcenter" style="gap:6px">${IC.user} ${e.c ? esc(e.c) : "OTR Academy"}</span>
+        ${e.when ? `<span class="row vcenter" style="gap:6px">${IC.clock} ${esc(e.when)}</span>` : ""}
+      </div>
     </div>
-    ${e.when ? `<span class="badge sky" style="flex:none"><span style="display:inline-flex;width:12px;height:12px">${IC.calendar}</span>&nbsp;${esc(e.when)}</span>` : ""}
+    <span></span>
   </div>`;
 }
 
@@ -48,48 +62,67 @@ function eventCard(e, i) {
 // escapado: en el atributo el navegador lo decodifica al valor real para el diálogo de confirmar.
 function tnAdminBtns(tour) {
   return `<span class="row vcenter" style="gap:6px;flex:none">
-    <button class="btn btn-quiet btn-sm" data-tn-edit="${esc(tour.id)}">${t("events.tnEdit")}</button>
-    <button class="btn btn-quiet btn-sm" data-tn-delete="${esc(tour.id)}" data-tn-name="${tour.name || ""}">${t("events.tnDelete")}</button>
+    ${C.btn(t("events.tnEdit"), "outline", { size: "sm", attrs: `data-tn-edit="${esc(tour.id)}"` })}
+    ${C.btn(t("events.tnDelete"), "outline", { size: "sm", attrs: `data-tn-delete="${esc(tour.id)}" data-tn-name="${tour.name || ""}"` })}
   </span>`;
 }
 
+// [MOCKUP · Task 6] Cada torneo es una fila .evrow del kit: tile de fecha + chip de tipo
+// + título 18/700 + meta + acción a la derecha (naranja = inscribirse).
 function tournamentRow(tour, staff) {
   const open = String(tour.status || "").toLowerCase() === "upcoming";
-  // metadata = formato · región · fecha (los campos ya vienen escapados desde queries.ts).
-  const meta = [tour.format, tour.region, tour.startsLabel].filter(Boolean).join(" · ");
+  const live = String(tour.status || "").toLowerCase() === "live";
+  const dt = evDateFromLabel(tour.startsLabel);
   const reg = tour.registered
-    ? `<span class="badge ok" style="flex:none"><span class="dot"></span>${t("debate.registered")}</span>`
-    : open
-    ? `<button class="btn btn-soft btn-sm" style="flex:none" data-tn-register="${esc(tour.id)}">${t("events.tournamentRegister")}</button>`
-    : `<span class="badge" style="flex:none">${esc(tour.status || "")}</span>`;
-  return `<div class="row vcenter between wrap" style="gap:10px;padding:13px 0;border-bottom:1px solid var(--border)">
-    <div style="min-width:0"><b style="font-size:13.5px">${tour.name || t("events.tournamentFallback")}</b>
-      ${meta ? `<div class="faint" style="font-size:12px;margin-top:2px">${meta}</div>` : ""}</div>
-    <span class="row vcenter" style="gap:8px;flex:none">${reg}${staff ? tnAdminBtns(tour) : ""}</span>
+    ? C.chip(t("debate.registered"), "tint", { ic: "check" })
+    : open || live
+    ? C.btn(t("events.tournamentRegister"), "accent", { icRight: "arrowR", attrs: `data-tn-register="${esc(tour.id)}"` })
+    : C.chip(esc(tour.status || ""), "outline");
+  return `<div class="evrow${live ? " evrow--live" : ""}">
+    ${dt ? C.dateBox(dt.day, dt.mon, live) : "<span></span>"}
+    <div class="ev-main">
+      ${C.chip(t("events.chipTournament"), live ? "black" : "accent", { ic: "trophy" })}
+      <div class="ev-title">${tour.name || t("events.tournamentFallback")}</div>
+      <div class="ev-meta">
+        ${tour.startsLabel ? `<span class="row vcenter" style="gap:6px">${IC.clock} ${tour.startsLabel}</span>` : ""}
+        ${tour.format ? `<span class="row vcenter" style="gap:6px">${IC.flag} ${tour.format}</span>` : ""}
+        ${tour.region ? `<span>${tour.region}</span>` : ""}
+      </div>
+    </div>
+    <div class="ev-actions">${reg}${staff ? tnAdminBtns(tour) : ""}</div>
   </div>`;
 }
 
 // [llamada Isaac 7:54-8:21] El próximo torneo es LO PRINCIPAL de Eventos: tarjeta hero
 // con CTA primario ("el botón más grande"); el resto de torneos como filas debajo.
+// [MOCKUP · Task 6, spec §3.1] El hero pasa a card NEGRA con halo y CTA naranja h50.
 function tournamentHero(tour, staff) {
   const open = String(tour.status || "").toLowerCase() === "upcoming";
-  const meta = [tour.format, tour.region, tour.startsLabel].filter(Boolean).join(" · ");
+  const live = String(tour.status || "").toLowerCase() === "live";
+  const meta = [tour.format, tour.region].filter(Boolean).join(" · ");
   const reg = tour.registered
-    ? `<span class="badge ok" style="flex:none"><span class="dot"></span>${t("debate.registered")}</span>`
-    : open
-    ? `<button class="btn btn-primary" style="flex:none" data-tn-register="${esc(tour.id)}">${IC.trophy} ${t("events.tournamentRegister")}</button>`
-    : `<span class="badge" style="flex:none">${esc(tour.status || "")}</span>`;
-  return `<div class="card card-pad hello-card" style="margin-bottom:14px">
-    <div class="row vcenter between wrap" style="gap:14px">
-      <div class="row vcenter" style="gap:13px;min-width:0">
-        <span style="display:inline-flex;width:38px;height:38px;color:var(--otr-gold)">${IC.trophy}</span>
-        <div style="min-width:0">
-          <div class="eyebrow" style="margin-bottom:3px">${t("events.nextTournamentEyebrow")}</div>
-          <b style="font-size:17px;display:block">${tour.name || t("events.tournamentFallback")}</b>
-          ${meta ? `<div class="faint" style="font-size:12.5px;margin-top:3px">${meta}</div>` : ""}
+    ? C.chip(t("debate.registered"), "accent", { ic: "check" })
+    : open || live
+    ? C.btn(t("events.tournamentRegister"), "accent", { size: "lg", ic: "trophy", attrs: `data-tn-register="${esc(tour.id)}"` })
+    : C.chip(esc(tour.status || ""), "outline");
+  return `<div class="card card--dark card--glow" style="margin-bottom:14px">
+    <div class="card-pad" style="padding:26px 28px 28px">
+      <div class="row vcenter between wrap" style="gap:20px">
+        ${/* flex-basis 260px: en móvil el bloque de texto baja a su propia línea en vez de
+              quedar aplastado contra el CTA (que es flex:none y no cede ancho). */""}
+        <div style="flex:1 1 260px;min-width:0">
+          <div class="row vcenter" style="gap:11px;margin-bottom:14px">
+            <span class="lbl">${t("events.nextTournamentEyebrow")}</span>
+            ${live ? C.chip(t("events.tnStatusLive"), "accent") : ""}
+          </div>
+          <h2 style="margin:0;font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1.05;color:#fff">${tour.name || t("events.tournamentFallback")}</h2>
+          <div class="row vcenter wrap" style="gap:16px;margin-top:12px;font-size:14px;font-weight:600;color:var(--n-100)">
+            ${tour.startsLabel ? `<span class="row vcenter" style="gap:7px"><span style="display:inline-flex;width:16px;height:16px;color:var(--otr-green)">${IC.calendar}</span>${tour.startsLabel}</span>` : ""}
+            ${meta ? `<span style="color:var(--ink-300)">${meta}</span>` : ""}
+          </div>
         </div>
+        <span class="row vcenter" style="gap:8px;flex:none">${reg}${staff ? tnAdminBtns(tour) : ""}</span>
       </div>
-      <span class="row vcenter" style="gap:8px;flex:none">${reg}${staff ? tnAdminBtns(tour) : ""}</span>
     </div>
   </div>`;
 }
@@ -170,31 +203,37 @@ S.events = {
     const staff = isStaff();
     const [first, ...rest] = tournaments;
 
-    const head = `<div class="page-head fade-up"><div><p class="eyebrow">OTR</p>
-      <h1 class="page-title">${t("events.title")}</h1>
-      <div class="page-sub">${t("events.subtitle")}</div></div></div>`;
+    const head = `<div class="page-head page-head--rule fade-up">
+      <div><span class="ph-eyebrow">OTR</span>
+      <h1 class="ph-title">${t("events.title")}</h1>
+      <div class="page-sub" style="margin-top:8px">${t("events.subtitle")}</div></div>
+      <div class="stat-group">
+        ${C.statInline(tournaments.length, t("events.upcomingTournamentsTitle"))}
+        ${C.statInline(events.length, t("events.upcomingTitle"), { accent: true })}
+      </div></div>`;
 
     // Botón "+ Torneo" (staff) SIEMPRE visible en la cabecera, incluso con lista vacía.
-    const newBtn = staff ? `<button class="btn btn-primary btn-sm" data-tn-new="1">+ ${t("events.tnNew")}</button>` : "";
+    const newBtn = staff ? C.btn(t("events.tnNew"), "primary", { size: "sm", ic: "plus", attrs: 'data-tn-new="1"' }) : "";
 
-    const tournamentsSection = `<div class="fade-up" style="--d:0;margin-bottom:16px">
+    const tournamentsSection = `<div class="fade-up" style="--d:0;margin-bottom:22px">
       ${first ? tournamentHero(first, staff) : ""}
-      <div class="card card-pad">
-      <div class="row between vcenter"><b style="font-size:14px">${t("events.upcomingTournamentsTitle")}</b>
-        <span class="row vcenter" style="gap:8px">${newBtn}<span class="badge">${tournaments.length}</span></span></div>
+      ${C.secTitle(t("events.upcomingTournamentsTitle"), { right: newBtn || C.chip(String(tournaments.length), "outline") })}
+      <div class="card card-pad ev-list">
       ${rest.length
-        ? `<div style="margin-top:6px">${rest.slice(0, 5).map((tr) => tournamentRow(tr, staff)).join("")}</div>`
+        ? rest.slice(0, 5).map((tr) => tournamentRow(tr, staff)).join("")
         : first
-        ? `<p class="faint" style="font-size:12.5px;margin:10px 0 2px">${t("events.moreTournamentsSoon")}</p>`
+        ? `<p class="faint" style="font-size:12.5px;margin:6px 0 2px">${t("events.moreTournamentsSoon")}</p>`
         : `<div class="empty" style="padding:28px"><div class="ill">${IC.trophy}</div><h4>${t("events.emptyTournamentsTitle")}</h4><p>${t("events.emptyTournamentsBody")}</p></div>`}
       </div>
     </div>`;
 
-    const eventsSection = `<div class="card card-pad fade-up" style="--d:1">
-      <div class="row between vcenter"><b style="font-size:14px">${t("events.upcomingTitle")}</b><span class="badge sky">${events.length}</span></div>
+    const eventsSection = `<div class="fade-up" style="--d:1">
+      ${C.secTitle(t("events.upcomingTitle"), { right: C.chip(String(events.length), "outline") })}
+      <div class="card card-pad ev-list">
       ${events.length
-        ? `<div class="stack" style="gap:0;margin-top:8px">${events.map(eventCard).join("")}</div>`
+        ? events.map(eventCard).join("")
         : `<div class="empty" style="padding:28px"><div class="ill">${IC.calendar}</div><h4>${t("events.emptyEventsTitle")}</h4><p>${t("events.emptyEventsBody")}</p></div>`}
+      </div>
     </div>`;
 
     return `${head}${tournamentsSection}${eventsSection}`;
@@ -213,7 +252,7 @@ S.events = {
         try {
           await w.api("/api/tournaments", { tournamentId: id });
           w.toast && w.toast(t("events.tournamentRegistered"), "ok");
-          b.outerHTML = `<span class="badge ok" style="flex:none"><span class="dot"></span>${t("debate.registered")}</span>`;
+          b.outerHTML = C.chip(t("debate.registered"), "tint", { ic: "check" });
         } catch (e) {
           b.disabled = false;
           w.toast && w.toast((e && e.message) || t("events.tournamentRegisterError"), "warn");

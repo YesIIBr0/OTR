@@ -740,6 +740,100 @@
 .set-seg button[aria-pressed="true"]{background:var(--otr-black);color:#fff}
 /* === FIN MOCKUP GRUPO MARKETPLACE ========================================= */
 
+/* === MOCKUP GRUPO COMPETICIÓN =============================================
+   Task 6 del plan docs/superpowers/plans/2026-08-07-aula-redesign-mockup.md:
+   Debate Hub, Eventos, Comunidad, Mi trayectoria / Membresía, Perfiles y las
+   pantallas de scr-extra. TODO aquí es estética (spec §3.4/§3.5/§5): ninguna
+   regla toca datos ni handlers, y ninguna pisa el bloque de otra tarea.
+   ========================================================================= */
+
+/* ---- Debate Hub · hero de rating (card negra del mockup, spec §3.2) ---- */
+.dbt-hero{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:26px}
+.dbt-hero .dbt-id{min-width:260px;flex:1}
+.dbt-rating{font-size:64px;font-weight:800;letter-spacing:-.04em;line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+.dbt-sub{font-size:12.5px;font-weight:500;color:var(--ink-300);line-height:1.4}
+.dbt-sub b{color:var(--otr-green);font-weight:800}
+/* Racha de resultados: cuadrados r4 (el mockup no tiene pills). Victoria = naranja
+   con texto NEGRO; derrota = tile ink-700, que sobre negro lee "apagado" sin rojo. */
+.form-sq{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;
+  border-radius:var(--r-sm);font-size:13px;font-weight:800}
+.form-sq--win{background:var(--otr-green);color:var(--text-on-accent)}
+.form-sq--loss{background:var(--ink-700);color:var(--ink-300)}
+.form-d{display:inline-block;width:32px;text-align:center;font-size:11px;font-weight:700;
+  color:var(--ink-400);font-variant-numeric:tabular-nums}
+
+/* ---- Debate Hub · tira de OTR Pro (upsell libre / sello de miembro) ----
+   Era una caja de "oro" con borde color-mix; ahora tinte naranja del mockup
+   (rgba .045) + borde cálido, y el texto en el naranja accesible (#9E3211). */
+.pro-strip{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;
+  padding:12px 16px;border:1px solid var(--border);border-radius:var(--r-lg);
+  background:rgba(242,86,35,.045);color:var(--otr-green-text);font-size:13px}
+.pro-strip .ps-ic{display:inline-flex;width:18px;height:18px;flex:none;color:var(--otr-green)}
+.pro-strip .ps-txt{flex:1;min-width:200px}
+
+/* ---- Debate Hub · fila de debate del historial ---- */
+.dbt-row{border-left:3px solid var(--border-strong)}
+.dbt-row--win{border-left-color:var(--otr-green)}
+
+/* ---- Leaderboard: podio + filas sobre card negra (spec §3.5) ---- */
+.lb-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.92fr);gap:26px;align-items:start}
+@media (max-width:900px){ .lb-grid{grid-template-columns:1fr;gap:20px} }
+.podium{display:grid;grid-template-columns:1fr 1.16fr 1fr;gap:10px;align-items:end}
+.pod{background:var(--ink-700);border-radius:var(--r-md);padding:17px 12px 14px;text-align:center;min-width:0}
+.pod .pod-r{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1;color:var(--ink-300);font-variant-numeric:tabular-nums}
+.pod .pod-n{margin-top:11px;font-size:14px;font-weight:700;line-height:1.1;color:#fff;overflow-wrap:anywhere}
+.pod .pod-x{margin-top:3px;font-size:11px;font-weight:700;color:var(--ink-300);font-variant-numeric:tabular-nums}
+.pod .pod-t{margin-top:11px;padding:6px 7px;border-radius:var(--r-sm);background:rgba(255,255,255,.05);
+  font-size:10.5px;font-weight:600;line-height:1.25;color:var(--n-200)}
+/* 1º puesto: degradado 165° del mockup, todo el texto en NEGRO sobre naranja. */
+.pod--1{background:linear-gradient(165deg,var(--otr-green),var(--accent-dark));padding-bottom:15px}
+.pod--1 .pod-r{font-size:26px;color:var(--text-on-accent)}
+.pod--1 .pod-n{font-size:16px;font-weight:800;letter-spacing:-.01em;color:var(--text-on-accent)}
+.pod--1 .pod-x{font-size:12px;font-weight:800;color:var(--text-on-accent)}
+.pod--1 .pod-t{background:rgba(0,0,0,.18);font-size:11px;font-weight:700;color:var(--text-on-accent)}
+.pod .pod-c{display:inline-flex;width:22px;height:22px;margin-bottom:8px;color:var(--text-on-accent)}
+.lbrow{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;
+  padding:11px 12px;border-radius:var(--r-sm);border-left:2px solid transparent;
+  border-bottom:1px solid rgba(255,255,255,.05)}
+.lbrow:last-child{border-bottom:0}
+.lbrow .lb-r{font-size:14px;font-weight:800;text-align:center;color:var(--ink-400);font-variant-numeric:tabular-nums}
+.lbrow .lb-who{min-width:0}
+.lbrow .lb-n{display:block;font-size:13.5px;font-weight:600;letter-spacing:-.01em;color:var(--n-100);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* El tier baja a una 2ª línea en versalitas: la fila conserva las 3 columnas del mockup. */
+.lbrow .lb-t{display:block;margin-top:1px;font-size:10px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbrow .lb-x{font-size:12.5px;font-weight:700;color:var(--ink-300);white-space:nowrap;font-variant-numeric:tabular-nums}
+/* Fila propia: tinte naranja .12 + barra izquierda de 2px (spec §3.5). */
+.lbrow--you{background:rgba(242,86,35,.12);border-left-color:var(--otr-green)}
+.lbrow--you .lb-r,.lbrow--you .lb-x{color:var(--otr-green)}
+.lbrow--you .lb-n{color:#fff;font-weight:800}
+
+/* ---- Eventos: la fila .evrow del kit vive dentro de .card-pad (bleed 20px) ---- */
+.ev-list{--ev-bleed:20px}
+.ev-list .evrow:first-child{padding-top:4px}
+
+/* ---- Comunidad: foro, hilo y mensajería sin pills ---- */
+.forum-row .fr-title{font-weight:700;letter-spacing:-.01em}
+.unread-pill{border-radius:var(--r-xs);font-weight:800;font-size:10px;letter-spacing:.04em}
+.bubble{border-radius:var(--r-md) var(--r-md) var(--r-md) var(--r-xs)}
+.bubble-row.me .bubble{border-radius:var(--r-md) var(--r-md) var(--r-xs) var(--r-md)}
+.post.op .post-body{border-radius:var(--r-md)}
+.convo.active{background:rgba(242,86,35,.045)}
+
+/* ---- Trayectoria / progreso / insignias: radios y acento del mockup ---- */
+.tl-item::before{background:var(--otr-green);box-shadow:0 0 0 2px rgba(242,86,35,.14)}
+.level-node .ln-badge{border-radius:var(--r-md)}
+.level-node.cur .ln-badge{outline-color:var(--otr-green);outline-offset:2px}
+.lt-cred{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1px solid var(--border);
+  border-radius:var(--r-lg);background:var(--surface-2)}
+.lt-cred .cr-seal{flex:none;width:38px;height:38px;border-radius:var(--r-md);background:var(--otr-black);
+  color:#fff;display:inline-flex;align-items:center;justify-content:center}
+/* Membresía: la card Pro es la card negra del kit; el resto son tiles blancas. */
+.mem-card{display:flex;flex-direction:column}
+.mem-price{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+/* === FIN MOCKUP GRUPO COMPETICIÓN ========================================= */
+
 /* === MOCKUP GRUPO ADMIN/AUTH ===============================================
    Task 8 del plan 2026-08-07-aula-redesign-mockup.md: consola de admin, usuarios,
    métricas, bandeja de WhatsApp, certificado y login. El marcado ya usa el kit

@@ -73,6 +73,8 @@ export const dict = {
     "profile.exploreProgramsBtn": "Explorar programas",
     "profile.yourRank": "Tu rango",
     "profile.currentLevel": "Nivel actual",
+    // [MOCKUP 2026-08] rótulo corto dentro del anillo cónico (9px versalitas)
+    "profile.levelCap": "Nivel",
     "profile.xpToNextLevel": "XP para el siguiente nivel",
     "profile.featuredBadges": "Insignias destacadas",
     "profile.viewAll": "Ver todas",
@@ -169,6 +171,8 @@ export const dict = {
     "profile.exploreProgramsBtn": "Explore programs",
     "profile.yourRank": "Your rank",
     "profile.currentLevel": "Current level",
+    // [MOCKUP 2026-08] short caption inside the conic ring (9px uppercase)
+    "profile.levelCap": "Level",
     "profile.xpToNextLevel": "XP to the next level",
     "profile.featuredBadges": "Featured badges",
     "profile.viewAll": "View all",

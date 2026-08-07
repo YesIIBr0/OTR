@@ -80,9 +80,10 @@ function nextWeighPair() {
 
 function drillsBadge() {
   const n = drillsDone();
+  // [MOCKUP · Task 6] Chip rectangular del kit (r3, versalitas) en vez del badge-pill.
   return `
   <div class="row vcenter fade-up" style="gap:10px;margin-bottom:14px" title="${esc(t("debate.practiceSub"))}">
-    <span class="badge sky"><span class="dot"></span>${esc(t(n === 1 ? "drill.badgeCountSingular" : "drill.badgeCount").replace("{n}", String(n)))}</span>
+    ${C.chip(esc(t(n === 1 ? "drill.badgeCountSingular" : "drill.badgeCount").replace("{n}", String(n))), "tint")}
   </div>`;
 }
 
@@ -94,8 +95,8 @@ function refuteCard() {
     body = `
       <p style="font-size:13.5px;line-height:1.5;margin-bottom:14px">${esc(s.argText)}</p>
       <div class="row between vcenter" style="margin-bottom:12px">
-        <span class="eyebrow">${t("drill.timeLeft")}</span>
-        <span id="drill-refute-clock" class="tnum brand-font" style="font-size:30px;font-weight:800;color:var(--otr-green-text)" aria-live="polite">${s.secs}</span>
+        <span class="lbl">${t("drill.timeLeft")}</span>
+        <span id="drill-refute-clock" class="tnum brand-font" style="font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--otr-green)" aria-live="polite">${s.secs}</span>
       </div>
       <div class="field" style="margin-bottom:12px">
         <label class="label" for="drill-refute-input">${t("drill.textareaLabel")}</label>
@@ -105,7 +106,7 @@ function refuteCard() {
   } else if (s.phase === "review") {
     body = `
       ${s.text ? `<div class="callout" style="font-size:12.5px;white-space:pre-wrap;margin-bottom:14px">${esc(s.text)}</div>` : ""}
-      <p class="eyebrow" style="margin-bottom:10px">${t("drill.reviewTitle")}</p>
+      <p class="lbl" style="margin-bottom:10px">${t("drill.reviewTitle")}</p>
       <div class="stack" style="gap:10px;margin-bottom:14px">
         <label class="check"><input type="checkbox" data-drill-check="0"/>${t("drill.check1")}</label>
         <label class="check"><input type="checkbox" data-drill-check="1"/>${t("drill.check2")}</label>
@@ -123,7 +124,7 @@ function refuteCard() {
   }
   return `
     <div class="tile card-pad fade-up" id="drill-refute-card">
-      ${s.phase !== "idle" ? `<div class="eyebrow" style="margin-bottom:10px">${t("drill.refuteTitle")}</div>` : ""}
+      ${s.phase !== "idle" ? C.secTitle(t("drill.refuteTitle"), { sm: true }) : ""}
       ${body}
     </div>`;
 }
@@ -142,7 +143,7 @@ function weighCard() {
       </div>`;
   } else if (!s.chosen) {
     body = `
-      <div class="eyebrow" style="margin-bottom:10px">${t("drill.weighTitle")}</div>
+      ${C.secTitle(t("drill.weighTitle"), { sm: true })}
       <p class="faint" style="font-size:12.5px;margin-bottom:12px">${t("drill.chooseImpact")}</p>
       <div class="stack" style="gap:10px">
         <button type="button" class="btn btn-soft btn-block" style="height:auto;padding:12px 14px;text-align:left;white-space:normal;justify-content:flex-start" data-drill-weigh-pick="a">
@@ -155,9 +156,9 @@ function weighCard() {
   } else {
     const chosenItem = s.chosen === "a" ? s.pair.a : s.pair.b;
     body = `
-      <div class="eyebrow" style="margin-bottom:10px">${t("drill.weighTitle")}</div>
+      ${C.secTitle(t("drill.weighTitle"), { sm: true })}
       <div class="callout" style="font-size:12.5px;margin-bottom:14px"><b>${t("drill.youChose")}:</b> ${esc(pickText(chosenItem))}</div>
-      <p class="eyebrow" style="margin-bottom:8px">${t("drill.lensesTitle")}</p>
+      <p class="lbl" style="margin-bottom:8px">${t("drill.lensesTitle")}</p>
       <div class="stack" style="gap:10px;margin-bottom:14px">
         <div><b style="font-size:12.5px">${t("drill.lensMagnitude")}</b><p class="faint" style="font-size:12px;margin-top:2px;line-height:1.4">${t("drill.lensMagnitudeBody")}</p></div>
         <div><b style="font-size:12.5px">${t("drill.lensProbability")}</b><p class="faint" style="font-size:12px;margin-top:2px;line-height:1.4">${t("drill.lensProbabilityBody")}</p></div>
@@ -266,11 +267,13 @@ function deltaColor(n) {
    el deseo competitivo es visible — Leaderboard y Torneos — sin tapar el contenido ni
    duplicar el bloque grande de Analytics. data-go="membership" lo enruta el shell. */
 function proUpsellStrip(line) {
+  // [MOCKUP · Task 6] .pro-strip = tinte naranja .045 + borde cálido (spec §1.3);
+  // el CTA es el botón negro del kit. Nada de "oro": el acento único es el naranja.
   return `
-  <div class="fade-up" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:var(--r-md,14px);background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent)">
-    <span style="display:inline-flex;width:18px;height:18px;color:var(--otr-gold-text);flex:none">${IC.star}</span>
-    <span style="flex:1;min-width:200px;font-size:13px;color:var(--otr-gold-text)">${line}</span>
-    <button class="btn btn-sm" style="flex:none;background:var(--otr-black);color:#fff;font-weight:700" data-go="membership">${t("debate.seeOtrPro")}</button>
+  <div class="pro-strip fade-up">
+    <span class="ps-ic">${IC.star}</span>
+    <span class="ps-txt">${line}</span>
+    ${C.btn(t("debate.seeOtrPro"), "primary", { size: "sm", cls: "ps-cta", attrs: 'data-go="membership"' })}
   </div>`;
 }
 
@@ -282,11 +285,11 @@ function proSealStrip() {
   const tier = getMembershipTier();
   const label = tier === "elite" ? t("debate.sealElite") : t("debate.sealPro");
   return `
-  <div class="fade-up" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:var(--r-md,14px);background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent)">
-    <span style="display:inline-flex;width:18px;height:18px;color:var(--otr-gold-text);flex:none">${IC.star}</span>
-    <span style="display:inline-flex;align-items:center;gap:6px;flex:none;font-size:12px;font-weight:800;letter-spacing:.02em;color:var(--otr-gold-text);text-transform:uppercase">${label}</span>
-    <span style="flex:1;min-width:160px;font-size:13px;color:var(--otr-gold-text)">${t("debate.sealActive")}</span>
-    <span style="display:inline-flex;width:18px;height:18px;color:var(--otr-gold-text);flex:none">${IC.checkCircle}</span>
+  <div class="pro-strip fade-up">
+    <span class="ps-ic">${IC.star}</span>
+    ${C.chip(label, "accent")}
+    <span class="ps-txt">${t("debate.sealActive")}</span>
+    <span class="ps-ic">${IC.checkCircle}</span>
   </div>`;
 }
 // Tira contextual del leaderboard: upsell para free, sello para miembros.
@@ -294,39 +297,44 @@ function proStrip(upsellLine) {
   return isProMember() ? proSealStrip() : proUpsellStrip(upsellLine);
 }
 
-/* ---------------- panel HERO navy (rating GRANDE + tier) ---------------- */
+/* ---------------- panel HERO (card NEGRA del mockup: rating GRANDE + tier) ----------------
+   [MOCKUP · Task 6, spec §3.2] La tarjeta de rating es la pieza estrella del Debate Hub:
+   .card--dark (negro plano, sin sombra) + .card--glow (halo naranja de la esquina), rating
+   a 64/800 y racha de resultados en cuadrados r4 — victoria naranja con texto NEGRO. */
 function heroPanel(d) {
   const nt = nextTier(d.tier);
   const forms = d.recentForm.slice(0, 6);
   return `
-  <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
-    <div class="h-row" style="align-items:center">
-      <div style="min-width:240px">
-        <h1 class="sr-only">${t("debate.heroSrTitle")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("debate.heroEyebrow")}</p>
-        <div class="row vcenter" style="gap:14px;margin-top:6px">
-          <span class="brand-font" style="font-size:64px;font-weight:800;line-height:1;color:#fff">${d.rating}</span>
-          <div class="stack" style="gap:7px">
-            <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22)"><span class="dot" style="background:var(--otr-sky-hi)"></span>${esc(tierLabel(d.tier))}</span>
-            <span style="font-size:12.5px;color:rgba(255,255,255,.72)">±${d.rd} RD ${d.provisional ? "· " + t("debate.rdProvisional") : "· " + t("debate.rdStable")}</span>
-            ${d.speakerAvg != null ? `<span style="font-size:12.5px;color:rgba(255,255,255,.72)" title="${t("debate.speakerTitle")}">${t("debate.speakerLabel")} <b style="color:var(--otr-sky-hi)">${d.speakerAvg}</b>/100 · ${d.speakerRounds} ${d.speakerRounds === 1 ? t("debate.roundSingular") : t("debate.roundPlural")}</span>` : ""}
+  <div class="card card--dark card--glow fade-up" style="--d:0;margin-bottom:18px">
+    <div class="card-pad" style="padding:26px 28px 28px">
+      <div class="dbt-hero">
+        <div class="dbt-id">
+          <h1 class="sr-only">${t("debate.heroSrTitle")}</h1>
+          <span class="lbl">${t("debate.heroEyebrow")}</span>
+          <div class="row vcenter" style="gap:16px;margin-top:10px">
+            <span class="dbt-rating tnum">${d.rating}</span>
+            ${/* align-items:flex-start — si no, el chip (hijo flex) se estira a lo ancho. */""}
+            <div class="stack" style="gap:8px;min-width:0;align-items:flex-start">
+              ${C.chip(esc(tierLabel(d.tier)), "accent", { ic: "award" })}
+              <span class="dbt-sub">±${d.rd} RD ${d.provisional ? "· " + t("debate.rdProvisional") : "· " + t("debate.rdStable")}</span>
+              ${d.speakerAvg != null ? `<span class="dbt-sub" title="${t("debate.speakerTitle")}">${t("debate.speakerLabel")} <b>${d.speakerAvg}</b>/100 · ${d.speakerRounds} ${d.speakerRounds === 1 ? t("debate.roundSingular") : t("debate.roundPlural")}</span>` : ""}
+            </div>
           </div>
+          ${d.provisional
+            ? `<div class="alert" style="margin-top:16px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">${t("debate.provisionalTitle")}</div><span style="color:rgba(255,255,255,.78)">${t("debate.provisionalBody")}</span></div></div>`
+            : nt
+              ? `<p class="dbt-sub" style="margin-top:14px;font-size:13px">${t("debate.nextTierPrefix")} <b>${esc(tierLabel(nt))}</b> ${t("debate.nextTierSuffix")}</p>`
+              : `<p class="dbt-sub" style="margin-top:14px;font-size:13px"><b>${t("debate.topPrefix")} ${esc(tierLabel(d.tier))}.</b> ${t("debate.topSuffix")}</p>`}
         </div>
-        ${d.provisional
-          ? `<div class="alert" style="margin-top:14px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">${t("debate.provisionalTitle")}</div><span style="color:rgba(255,255,255,.78)">${t("debate.provisionalBody")}</span></div></div>`
-          : nt
-            ? `<p style="color:rgba(255,255,255,.72);font-size:13px;margin-top:12px">${t("debate.nextTierPrefix")} <b style="color:var(--otr-sky-hi)">${esc(tierLabel(nt))}</b> ${t("debate.nextTierSuffix")}</p>`
-            : `<p style="color:var(--otr-sky-hi);font-size:13px;margin-top:12px;font-weight:650">${t("debate.topPrefix")} ${esc(tierLabel(d.tier))}. ${t("debate.topSuffix")}</p>`}
-      </div>
-      <div class="stack" style="gap:12px;align-self:stretch;justify-content:center;min-width:220px">
-        <div>
-          <p class="eyebrow" style="color:var(--otr-sky-hi);margin-bottom:8px">${t("debate.recentForm")}</p>
+        <div style="flex:none;min-width:210px">
+          <span class="lbl" style="margin-bottom:10px">${t("debate.recentForm")}</span>
           ${forms.length
             ? `<div class="row" style="gap:6px;flex-wrap:wrap">${forms.map((f) => {
                 const rs = resultStyle(f.result);
-                return `<span title="${esc(f.opponent || "")} · ${deltaLabel(f.delta)}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;font-size:12px;font-weight:800;color:#fff;background:${rs.cssVar}">${rs.label[0]}</span>`;
+                return `<span class="form-sq form-sq--${rs.label === "WIN" ? "win" : "loss"}" title="${esc(f.opponent || "")} · ${deltaLabel(f.delta)}">${rs.label[0]}</span>`;
               }).join("")}</div>
-               <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${forms.map((f) => `<span class="tnum" style="width:30px;text-align:center;font-size:11px;color:${deltaColor(f.delta)};font-weight:700">${deltaLabel(f.delta)}</span>`).join("")}</div>`
-            : `<span style="font-size:12.5px;color:rgba(255,255,255,.6)">${t("debate.noRoundsForm")}</span>`}
+               <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${forms.map((f) => `<span class="form-d">${deltaLabel(f.delta)}</span>`).join("")}</div>`
+            : `<span class="dbt-sub">${t("debate.noRoundsForm")}</span>`}
         </div>
       </div>
     </div>
@@ -362,22 +370,22 @@ function viewOverview(d) {
   const recentList = d.history.slice(0, 4);
   const recentCard = `
     <div class="card">
-      <div class="card-head"><h3>${t("debate.recentDebates")}</h3><a href="#" onclick="return false" data-dtab="history" style="font-size:12.5px">${t("debate.seeAll")}</a></div>
+      <div class="card-head"><div class="sec-title sec-title--sm"><h3>${t("debate.recentDebates")}</h3></div><a href="#" onclick="return false" data-dtab="history" class="rlink" style="font-size:12.5px">${t("debate.seeAll")}</a></div>
       <div class="card-body" style="padding:6px 16px 12px">
         ${recentList.length ? recentList.map((h) => {
           const rs = resultStyle(h.result);
           return `<div class="agenda-item">
-            <span class="badge ${rs.tone}" style="min-width:54px;justify-content:center;font-weight:800">${rs.label}</span>
+            ${C.chip(rs.label, rs.label === "WIN" ? "accent" : "outline", { cls: "dbt-res" })}
             <div style="flex:1;min-width:0"><div class="ai-t">${esc(h.opponent || t("debate.fallbackOpponent"))} · ${esc(h.format || "")}</div><div class="ai-c">${esc(h.eventName || t("debate.fallbackEvent"))}${h.roundLabel ? " · " + esc(h.roundLabel) : ""}</div></div>
             <span class="ai-w tnum" style="color:${deltaColor(h.delta != null ? h.delta : 0)}">${h.ratingAfter != null ? h.ratingAfter : ""}</span>
           </div>`;
-        }).join("") : `<div style="padding:14px 0"><p class="faint" style="font-size:13px">${t("debate.historyEmpty")}</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-dtab="practice">${IC.mic} ${t("debate.goToPractice")}</button></div>`}
+        }).join("") : `<div style="padding:14px 0"><p class="faint" style="font-size:13px">${t("debate.historyEmpty")}</p><div style="margin-top:8px">${C.btn(t("debate.goToPractice"), "outline", { size: "sm", ic: "mic", attrs: 'data-dtab="practice"' })}</div></div>`}
       </div>
     </div>`;
 
   const nextEventCard = `
     <div class="card card-pad">
-      <div class="eyebrow" style="margin-bottom:2px">${t("debate.nextTournament")}</div>
+      ${C.secTitle(t("debate.nextTournament"), { sm: true })}
       ${nextEvent
         ? `<b style="font-size:15px;line-height:1.3;display:block">${esc(nextEvent.name)}</b>
            <div class="row vcenter wrap" style="gap:8px;margin-top:8px;font-size:12.5px;color:var(--text-2)">
@@ -387,8 +395,8 @@ function viewOverview(d) {
            </div>
            ${nextEvent.startsLabel ? `<div class="row vcenter" style="gap:6px;margin-top:10px;font-size:13px;color:var(--text)">${IC.calendar} ${esc(nextEvent.startsLabel)}</div>` : ""}
            ${nextEvent.registered
-             ? `<div style="margin-top:12px"><span class="badge ok"><span class="dot"></span>${t("debate.registered")}</span></div>`
-             : `<button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-tn-register="${esc(nextEvent.id)}">${t("debate.register")}</button>`}`
+             ? `<div style="margin-top:12px">${C.chip(t("debate.registered"), "tint", { ic: "check" })}</div>`
+             : `<div style="margin-top:12px">${C.btn(t("debate.register"), "accent", { block: true, icRight: "arrowR", attrs: `data-tn-register="${esc(nextEvent.id)}"` })}</div>`}`
         : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>${t("debate.noEventsTitle")}</h4><p>${t("debate.noEventsBody")}</p></div>`}
     </div>`;
 
@@ -397,7 +405,7 @@ function viewOverview(d) {
   // (sin key, sin datos personales de terceros). El récord personal es Fase-2.
   const nsdaCard = `
     <div class="card card-pad" data-nsda>
-      <div class="eyebrow" style="margin-bottom:2px">NSDA · Tabroom</div>
+      ${C.secTitle("NSDA · Tabroom", { sm: true })}
       <b style="font-size:15px;line-height:1.3;display:block">${t("debate.nsdaTitle")}</b>
       <p class="faint" style="font-size:12px;margin-top:2px">${t("debate.nsdaSub")}</p>
       <div data-nsda-body style="margin-top:10px"><p class="faint" style="font-size:12.5px">${t("debate.nsdaLoading")}</p></div>
@@ -414,18 +422,19 @@ function viewOverview(d) {
 /* ================= SECCIÓN · MIS DEBATES ================= */
 function viewHistory(d) {
   if (!d.history.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>${t("debate.historyEmptyTitle")}</h4><p>${t("debate.historyEmptyBody")}</p><div class="row vcenter" style="gap:8px;justify-content:center"><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} ${t("debate.recordDebate")}</button><button class="btn btn-soft btn-sm" data-dtab="practice">${IC.mic} ${t("debate.goToPractice")}</button></div></div></div>`;
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.flag}</div><h4>${t("debate.historyEmptyTitle")}</h4><p>${t("debate.historyEmptyBody")}</p><div class="row vcenter" style="gap:8px;justify-content:center">${C.btn(t("debate.recordDebate"), "accent", { size: "sm", ic: "plus", attrs: 'data-action="debate-record"' })}${C.btn(t("debate.goToPractice"), "outline", { size: "sm", ic: "mic", attrs: 'data-dtab="practice"' })}</div></div></div>`;
   }
   const cards = d.history.map((h, i) => {
     const rs = resultStyle(h.result);
+    const win = rs.label === "WIN";
     const src = String(h.source || "").toUpperCase() === "EXTERNAL" ? t("debate.sourceExternal") : "OTR";
     return `
-    <div class="tile click fade-up" data-debate="${esc(h.id || "")}" role="button" tabindex="0" aria-label="${t("debate.viewDebateDetail")} ${esc(h.title || "")}" style="--d:${i % 8};border-left:3px solid ${rs.cssVar}">
+    <div class="tile click fade-up dbt-row${win ? " dbt-row--win" : ""}" data-debate="${esc(h.id || "")}" role="button" tabindex="0" aria-label="${t("debate.viewDebateDetail")} ${esc(h.title || "")}" style="--d:${i % 8}">
       <div class="row between vcenter" style="gap:10px">
-        <span class="badge ${rs.tone}" style="font-weight:800;min-width:54px;justify-content:center">${rs.label}</span>
+        ${C.chip(rs.label, win ? "accent" : "outline")}
         <span class="row vcenter" style="gap:6px">
-          ${h.status === "pending" ? `<span class="badge warn">${t("debate.statusPending")}</span>` : h.status === "rejected" ? `<span class="badge danger">${t("debate.statusRejected")}</span>` : ""}
-          <span class="badge ${src === "OTR" ? "sky" : ""}">${src}</span>
+          ${h.status === "pending" ? C.chip(t("debate.statusPending"), "outline") : h.status === "rejected" ? `<span class="badge danger">${t("debate.statusRejected")}</span>` : ""}
+          ${C.chip(src, src === "OTR" ? "black" : "info")}
         </span>
       </div>
       <div style="margin-top:10px"><b style="font-size:14.5px;line-height:1.3">vs ${esc(h.opponent || t("debate.fallbackOpponent"))}</b></div>
@@ -440,13 +449,19 @@ function viewHistory(d) {
         <span class="faint" style="font-size:12px">${esc(h.when || "")}</span>
         <span class="row vcenter" style="gap:8px">
           ${h.ratingAfter != null ? `<span class="tnum" style="font-size:13px;font-weight:700">${h.ratingAfter}</span>` : ""}
-          ${h.delta != null ? `<span class="tnum badge ${Number(h.delta) >= 0 ? "ok" : "danger"}" style="font-weight:700">${deltaLabel(h.delta)}</span>` : ""}
+          ${h.delta != null ? `<span class="tnum" style="font-size:12.5px;font-weight:800;color:${deltaColor(h.delta)}">${deltaLabel(h.delta)}</span>` : ""}
         </span>
       </div>
     </div>`;
   }).join("");
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.historyEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.historyTitle")}</h1><div class="page-sub">${d.history.length} ${d.history.length === 1 ? t("debate.roundSingular") : t("debate.roundPlural")} · ${t("debate.historySubTap")}</div></div><button class="btn btn-primary btn-sm" data-action="debate-record">${IC.plus} ${t("debate.recordDebate")}</button></div>
+    <div class="page-head page-head--rule fade-up">
+      <div><span class="ph-eyebrow">${t("debate.historyEyebrow")}</span><h1 class="ph-title">${t("debate.historyTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("debate.historySubTap")}</div></div>
+      <div class="row vcenter" style="gap:16px">
+        <div class="stat-group">${C.statInline(d.history.length, d.history.length === 1 ? t("debate.roundSingular") : t("debate.roundPlural"))}</div>
+        ${C.btn(t("debate.recordDebate"), "accent", { ic: "plus", attrs: 'data-action="debate-record"' })}
+      </div>
+    </div>
     <div class="grid g-3">${cards}</div>`;
 }
 
@@ -474,50 +489,89 @@ function viewPractice() {
 
   const finder = `
     <div class="card card-pad fade-up" style="--d:1">
-      <div class="eyebrow" style="margin-bottom:2px">${t("debate.findPartner")}</div>
+      ${C.secTitle(t("debate.findPartner"), { sm: true })}
       <b style="font-size:15px">${t("debate.nearYourRating")} (${d.rating})</b>
       <div class="stack" style="gap:2px;margin-top:12px">
         ${near.length ? near.map((r) => `
           <div class="row between vcenter" style="padding:9px 0;border-bottom:1px solid var(--border)">
-            <span class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: "var(--otr-navy)" })}<span><span style="display:block;font-weight:600;font-size:13px">${r.name || t("debate.fallbackDebater")}</span><span class="faint" style="font-size:11.5px">${esc(tierLabel(r.tier || ""))}</span></span></span>
-            <span class="row vcenter" style="gap:8px"><span class="tnum" style="font-weight:700;font-size:13px">${r.rating}</span><span class="badge ${r.diff <= 50 ? "ok" : "sky"}" style="font-size:10.5px">±${r.diff}</span></span>
+            <span class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: "var(--otr-black)" })}<span><span style="display:block;font-weight:600;font-size:13px">${r.name || t("debate.fallbackDebater")}</span><span class="faint" style="font-size:11.5px">${esc(tierLabel(r.tier || ""))}</span></span></span>
+            <span class="row vcenter" style="gap:8px"><span class="tnum" style="font-weight:700;font-size:13px">${r.rating}</span>${C.chip(`±${r.diff}`, r.diff <= 50 ? "accent" : "outline")}</span>
           </div>`).join("") : `<p class="faint" style="font-size:13px">${t("debate.cohortEmptyFinder")}</p>`}
       </div>
-      <button class="btn btn-ghost btn-sm btn-block" style="margin-top:12px" data-dtab="leaderboard">${t("debate.seeFullLeaderboard")} ${IC.arrowR}</button>
+      <div style="margin-top:12px">${C.btn(t("debate.seeFullLeaderboard"), "outline", { size: "sm", block: true, icRight: "arrowR", attrs: 'data-dtab="leaderboard"' })}</div>
     </div>`;
 
   return `
-    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.practiceEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.practiceTitle")}</h1><div class="page-sub">${t("debate.practiceSub")}</div></div></div>
+    <div class="page-head page-head--rule fade-up"><div><span class="ph-eyebrow">${t("debate.practiceEyebrow")}</span><h1 class="ph-title">${t("debate.practiceTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("debate.practiceSub")}</div></div></div>
     <div class="split">${drills}<div class="stack" style="gap:16px">${finder}</div></div>`;
 }
 
-/* ================= SECCIÓN · LEADERBOARD ================= */
+/* ================= SECCIÓN · LEADERBOARD =================
+   [MOCKUP · Task 6, spec §3.5] Card NEGRA con halo: podio de 3 (1º con el degradado
+   165° naranja y TODO su texto en negro) + lista de puestos con la fila propia en
+   rgba(242,86,35,.12) y barra izquierda de 2px. Sin premios: el modelo no los tiene,
+   así que la caja `.pod-t` no se pinta (nada inventado). */
 function viewLeaderboard() {
   const lb = getLeaderboard();
   if (!lb.rows.length) {
     return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>${t("debate.lbEmptyTitle")}</h4><p>${t("debate.lbEmptyBody")}</p></div></div>`;
   }
-  const meRow = lb.me
-    ? `<div class="alert info fade-up otr-shine" style="margin-bottom:16px"><span class="ai">${IC.target}</span><div><div class="at">${t("debate.yourPosition")}</div>#${lb.me.rank} · ${lb.me.rating} ${t("debate.ofRating")} · ${esc(tierLabel(lb.me.tier || ""))}</div></div>`
-    : "";
-  const rows = lb.rows.map((r) => `
-    <tr ${r.you ? 'style="background:var(--action-soft);box-shadow:inset 3px 0 0 var(--otr-green)"' : ""}>
-      <td><span class="badge ${r.rank <= 3 ? "gold" : ""}" style="min-width:30px;justify-content:center">${r.rank}</span></td>
-      ${/* [auditoría] name/initials ya vienen esc() de queries (leaderboardRowsOut) → render crudo, sin doble-escape */""}
-      <td><div class="row vcenter" style="gap:10px">${C.avatar(r.initials || "?", { size: "sm", bg: r.you ? "var(--otr-sky-lo)" : "var(--otr-navy)" })}<b style="font-weight:600">${r.name || ""}${r.you ? ` <span class="badge sky" style="font-size:10px;margin-left:4px">${t("debate.youBadge")}</span>` : ""}</b></div></td>
-      <td>${esc(tierLabel(r.tier || ""))}</td>
-      <td class="num tnum"><b>${r.rating}</b></td>
-    </tr>`).join("");
-  return `
-    <div class="page-head fade-up"><div><p class="eyebrow">${t("debate.lbEyebrow")}</p><h1 class="page-title" style="font-size:20px">${t("debate.lbPageTitle")}</h1><div class="page-sub">${t("debate.lbSub")}</div></div></div>
-    ${proStrip(t("debate.lbUpsell"))}
-    ${meRow}
-    <div class="table-wrap scroll-m fade-up">
-      <table class="tbl">
-        <thead><tr><th style="width:60px">#</th><th>${t("debate.colDebater")}</th><th>${t("debate.colTier")}</th><th class="num">${t("debate.colRating")}</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+  // [auditoría] name/initials ya vienen esc() de queries (leaderboardRowsOut) → crudo, sin doble-escape.
+  const podTile = (r, place) => `
+    <div class="pod${place === 1 ? " pod--1" : ""}">
+      ${place === 1 ? `<span class="pod-c">${IC.trophy}</span>` : ""}
+      <div class="pod-r tnum">${r.rank}</div>
+      <div class="pod-n">${r.name || ""}${r.you ? ` · ${t("debate.youBadge")}` : ""}</div>
+      <div class="pod-x tnum">${r.rating}</div>
     </div>`;
+  const lbRow = (r) => `
+    <div class="lbrow${r.you ? " lbrow--you" : ""}">
+      <span class="lb-r tnum">${r.rank}</span>
+      <span class="lb-who">
+        <span class="lb-n">${r.name || ""}${r.you ? `  ·  ${t("debate.youBadge")}` : ""}</span>
+        ${r.tier ? `<span class="lb-t">${esc(tierLabel(r.tier))}</span>` : ""}
+      </span>
+      <span class="lb-x tnum">${r.rating}</span>
+    </div>`;
+
+  const podium = lb.rows.slice(0, 3);
+  const hasPodium = podium.length >= 3;
+  const listRows = hasPodium ? lb.rows.slice(3) : lb.rows;
+  // Si el usuario no aparece en la lista visible, su fila se añade al final para que
+  // "dónde estoy" siempre esté a la vista (misma idea que la fila "Tú" del mockup).
+  const meShown = lb.rows.some((r) => r.you);
+  const meExtra = (!meShown && lb.me)
+    ? lbRow({ rank: lb.me.rank, name: (DB.me && DB.me.name) || "", rating: lb.me.rating, tier: lb.me.tier, you: true })
+    : "";
+  const listHtml = listRows.map(lbRow).join("") + meExtra;
+
+  const stats = lb.me
+    ? `<div class="stat-group">
+         ${C.statInline(`#${lb.me.rank}`, t("debate.yourPosition"))}
+         ${C.statInline(lb.me.rating, t("debate.colRating"), { accent: true })}
+       </div>`
+    : "";
+
+  return `
+    <div class="page-head page-head--rule fade-up">
+      <div><span class="ph-eyebrow">${t("debate.lbEyebrow")}</span><h1 class="ph-title">${t("debate.lbPageTitle")}</h1></div>
+      ${stats}
+    </div>
+    ${proStrip(t("debate.lbUpsell"))}
+    <section class="card card--dark card--glow fade-up">
+      <div class="card-pad" style="padding:24px 26px 26px">
+        ${/* El h1 de la página ya dice "Leaderboard": la cabecera de la card lleva el
+              criterio del ranking (el "Faltan 24 días · Premios" del mockup), no un título repetido. */""}
+        <div class="sec-row sec-row--end">
+          <div class="sec-title sec-title--on-dark"><h3 class="row vcenter" style="gap:8px"><span style="display:inline-flex;width:19px;height:19px;color:var(--otr-green)">${IC.trophy}</span>${t("debate.lbEyebrow")}</h3></div>
+          <span class="lbl">${t("debate.lbSub")}</span>
+        </div>
+        <div class="${hasPodium && listHtml ? "lb-grid" : ""}">
+          ${hasPodium ? `<div class="podium">${podTile(podium[1], 2)}${podTile(podium[0], 1)}${podTile(podium[2], 3)}</div>` : ""}
+          ${listHtml ? `<div>${listHtml}</div>` : ""}
+        </div>
+      </div>
+    </section>`;
 }
 
 /* ---------------- router de secciones ---------------- */
@@ -656,7 +710,8 @@ S.debateHub = {
         try {
           await (window as any).api("/api/tournaments", { tournamentId: id });
           (window as any).toast?.(t("debate.registerSent"), "ok");
-          (el as any).outerHTML = `<div style="margin-top:12px"><span class="badge ok"><span class="dot"></span>${t("debate.registered")}</span></div>`;
+          // El botón vive dentro de su wrapper: se sustituye SOLO por el chip del kit.
+          (el as any).outerHTML = C.chip(t("debate.registered"), "tint", { ic: "check" });
         } catch (e) {
           (el as any).disabled = false;
           (window as any).toast?.((e && (e as any).message) || t("debate.registerError"), "warn");
@@ -690,9 +745,9 @@ async function openDebateDetail(id) {
   const body = dbt
     ? `
       <div class="row vcenter" style="gap:10px;margin-bottom:14px">
-        <span class="badge ${rs.tone}" style="font-weight:800;min-width:54px;justify-content:center">${rs.label}</span>
+        ${C.chip(rs.label, rs.label === "WIN" ? "accent" : "outline")}
         <b style="font-size:15px">vs ${esc(dbt.opponent || t("debate.fallbackOpponent"))}</b>
-        ${dbt.format ? `<span class="badge sky">${esc(dbt.format)}</span>` : ""}
+        ${dbt.format ? C.chip(esc(dbt.format), "info") : ""}
       </div>
       <div class="row vcenter wrap" style="gap:8px;font-size:12.5px;color:var(--text-2);margin-bottom:14px">
         ${dbt.eventName ? `<span>${esc(dbt.eventName)}</span>` : ""}${dbt.roundLabel ? `<span class="dot-sep"></span><span>${esc(dbt.roundLabel)}</span>` : ""}${dbt.when ? `<span class="dot-sep"></span><span>${esc(dbt.when)}</span>` : ""}
@@ -705,7 +760,7 @@ async function openDebateDetail(id) {
             return `<div class="comp-row" style="padding:9px 0"><span class="cr-name" style="width:200px">${s.flagged ? `<span style="color:var(--warn)">${IC.flag}</span> ` : ""}${esc(s.criterion || "")}</span><span class="cr-bar">${C.bar((v / 10) * 100, { cls: "navy" })}</span><span class="cr-score">${v}</span></div>`;
           }).join("")}</div>` : ""}
           ${b.comments ? `<div class="callout" style="margin-top:10px">${esc(b.comments)}</div>` : ""}
-          ${b.recordingUrl ? `<a class="btn btn-soft btn-sm" style="margin-top:10px" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener">${IC.play} ${t("debate.watchRecording")}</a>` : ""}
+          ${b.recordingUrl ? `<div style="margin-top:10px">${C.btn(t("debate.watchRecording"), "outline", { size: "sm", ic: "play", href: esc(b.recordingUrl), attrs: 'target="_blank" rel="noopener"' })}</div>` : ""}
         </div>`).join("") : `<div class="empty" style="padding:24px"><div class="ill">${IC.doc}</div><h4>${t("debate.noBallotTitle")}</h4><p>${t("debate.noBallotBody")}</p></div>`}`
     : `<div class="empty" style="padding:24px"><div class="ill">${IC.doc}</div><h4>${t("debate.loadFailedTitle")}</h4><p>${t("debate.loadFailedBody")}</p></div>`;
 
