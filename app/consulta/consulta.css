@@ -6,7 +6,7 @@
 
 .otrc {
   /* Mapea a los tokens del Aula (cargados global en app/layout.tsx → tokens.css) */
-  --c-bg: var(--otr-offwhite, #FFFFFF);
+  --c-bg: var(--otr-offwhite, #F7F7F7);
   --c-surface: var(--otr-white, #ffffff);
   --c-surface-2: var(--n-25, #FCFCFC);
   --c-brd: var(--border, #E7E7E7);
