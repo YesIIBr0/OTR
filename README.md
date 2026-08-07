@@ -1,12 +1,12 @@
-# OTR LMS · Aula (theme prototype)
+# OTR LMS · Aula
 
-Prototipo interactivo del LMS de **OTR Debate Academy** — theme hijo de *Boost* (Moodle).
-Hecho con HTML + CSS + JS vanilla (sin build), pensado para mapear 1:1 a SCSS + plantillas Mustache.
+LMS de **OTR Debating Academy**. Las pantallas del Aula son templates string en
+HTML + CSS + JS vanilla montados sobre Next.js (ver `docs/SYSTEM_MAP.md`).
 
 ## Estructura
 ```
 index.html            # shell + router + montaje de pantallas
-tokens.css            # design tokens (mapeables a variables SCSS de Boost)
+tokens.css            # design tokens (Brand Book V1.0)
 app.css               # shell + librería de componentes
 screens.css           # estilos por pantalla
 responsive.css        # mobile-first (drawer + bottom tabs)
@@ -35,11 +35,15 @@ Examen + Resultados · Reproductor · Panel del profesor · Calificador · Parti
 Progreso/Niveles · Insignias/Certificados · Perfil · Foro · Hilo · Mensajería · Design System.
 
 ## Marca
-Paleta estricta OTR (navy `#0C2340`, sky `#4FA9E8`, pale `#DCEEFB`), Inter para UI y
-Archivo Expanded para momentos de marca. Niveles: Novato → JV → Varsity → Elite.
+**OTR Brand Book V1.0 (2026)**: paleta estricta de negro `#171717`, blanco `#FFFFFF` y
+naranja `#F25623` como único acento (con moderación) sobre una rampa de grises fríos
+(`#4D4D4D`, `#DEDEDE`). Botón primario negro; **Inter** única familia (titulares 800,
+tracking -0.03em); radios 8px en controles y 12px en tarjetas; escudo monocromo.
+Niveles: Novato → JV → Varsity → Strategist → Elite (gris claro → negro → naranja).
+Valores en `app/styles/tokens.css`, detalle en `BRAND.md` y `docs/CONVENTIONS.md`;
+el test `tests/brand-palette.test.ts` bloquea cualquier resto de la paleta anterior.
 
 ## Pendiente
-- Mapeo de `tokens.css` → variables SCSS de Boost + plantillas Mustache
 - Estados vacíos/error en todas las pantallas
 - Datos reales (cursos, alumnos, notas)
 - Dark mode (fase 2) · bilingüe ES/EN dentro del aula
