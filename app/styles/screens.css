@@ -277,21 +277,24 @@
 .lesson-nav{display:flex;justify-content:space-between;gap:12px;margin-top:30px;padding-top:18px;border-top:1px solid var(--border)}
 
 /* ---------------- RECORDER (assignment) ---------------- */
-.recorder{background:linear-gradient(160deg,var(--otr-navy),var(--otr-ink));color:#fff;border-radius:var(--r-lg);padding:26px;text-align:center;position:relative;overflow:hidden}
-.recorder::before{content:"";position:absolute;inset:0;background:radial-gradient(70% 120% at 50% 0,rgba(242,86,35,.22),transparent 60%)}
+/* [MOCKUP · Task 5] El grabador es un héroe oscuro del mockup: negro plano con
+   la barra naranja de 3px a la izquierda (nada de degradado ni halo radial). */
+.recorder{background:var(--otr-black);color:#fff;border-radius:var(--r-lg);padding:26px;text-align:center;position:relative;overflow:hidden}
+.recorder::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--otr-green)}
 .rec-inner{position:relative;z-index:2}
 .rec-wave{display:flex;align-items:center;justify-content:center;gap:3px;height:80px;margin:10px 0 18px}
-.rec-wave i{width:3.5px;border-radius:3px;background:linear-gradient(var(--otr-sky-hi),var(--otr-sky-lo))}
-.rec-timer{font-family:var(--font-brand);font-weight:800;font-size:34px;letter-spacing:.02em}
+.rec-wave i{width:3.5px;border-radius:2px;background:var(--otr-green)}
+.rec-timer{font-family:var(--font-brand);font-weight:800;font-size:34px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .rec-controls{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:18px}
-.rec-btn{width:64px;height:64px;border-radius:50%;border:0;background:var(--otr-sky-lo);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -8px rgba(242,86,35,.7);transition:transform .15s,background .15s}
-.rec-btn:hover{transform:scale(1.05)}
-.rec-btn.recording{background:var(--danger)}
+/* Botón estrella: naranja con icono NEGRO + el glow del mockup. Sin escala al hover. */
+.rec-btn{width:64px;height:64px;border-radius:50%;border:0;background:var(--otr-green);color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;box-shadow:var(--sh-glow);transition:background .15s}
+.rec-btn:hover{background:var(--accent-dark)}
+.rec-btn.recording{background:var(--danger);color:#fff;box-shadow:none}
 .rec-btn .ic{width:26px;height:26px}
 .rec-mini{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;display:flex;align-items:center;justify-content:center}
 .rec-mini .ic{width:20px;height:20px}
 .dropzone{border:2px dashed var(--border-strong);border-radius:var(--r-lg);padding:26px;text-align:center;color:var(--text-2);background:var(--n-25)}
-.dropzone .ill{width:48px;height:48px;border-radius:12px;background:var(--otr-pale);color:var(--action-hover);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.dropzone .ill{width:48px;height:48px;border-radius:var(--r-md);background:rgba(242,86,35,.1);color:var(--otr-green);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
 .rubric-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
 .rubric-row:last-child{border-bottom:0}
 
@@ -306,17 +309,21 @@
 .q-opt{display:flex;align-items:center;gap:13px;padding:14px 16px;border:1.5px solid var(--border-strong);border-radius:var(--r-md);margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s}
 .q-opt:hover{border-color:var(--otr-sky);background:var(--n-25)}
 .q-opt.sel{border-color:var(--otr-sky-lo);background:var(--otr-pale)}
-.q-opt .q-key{width:26px;height:26px;border-radius:7px;border:1.5px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
-.q-opt.sel .q-key{background:var(--otr-sky-lo);border-color:var(--otr-sky-lo);color:#fff}
+.q-opt .q-key{width:26px;height:26px;border-radius:var(--r-sm);border:1.5px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:none}
+/* Opción elegida: naranja con la letra NEGRA (--text-on-accent), como el mockup. */
+.q-opt.sel .q-key{background:var(--otr-green);border-color:var(--otr-green);color:var(--text-on-accent)}
 .q-opt.correct{border-color:var(--ok);background:var(--ok-soft)}
 .q-opt.wrong{border-color:var(--danger);background:var(--danger-soft)}
 .q-dots{display:flex;gap:5px;flex-wrap:wrap}
-.q-dot{width:26px;height:26px;border-radius:7px;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text-2)}
+.q-dot{width:26px;height:26px;border-radius:var(--r-sm);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text-2)}
 .q-dot.done{background:var(--otr-navy);color:#fff;border-color:var(--otr-navy)}
 .q-dot.cur{border-color:var(--otr-sky);color:var(--action-hover);box-shadow:var(--ring)}
 
 /* score result */
-.score-hero{display:flex;align-items:center;gap:28px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;box-shadow:var(--sh-1)}
+/* [MOCKUP · Task 5] El resultado del examen es el héroe de la pantalla: card
+   NEGRA (.card--dark) con anillo naranja. Aquí solo la caja; el fondo, el
+   radio y la ausencia de sombra los pone .card--dark del kit. */
+.score-hero{display:flex;align-items:center;gap:28px;flex-wrap:wrap;padding:26px 30px 28px}
 
 /* ---------------- PLAYER ---------------- */
 .player-stage{background:var(--otr-black);border-radius:var(--r-lg);overflow:hidden;position:relative;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#fff}
@@ -621,6 +628,66 @@
 .lst-price-xl{font-size:30px;font-weight:800;letter-spacing:var(--track-tighter)}
 .lst-fact{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px dashed var(--border);font-size:13px;color:var(--text-2)}
 .lst-fact b{color:var(--text);font-weight:600;text-align:right}
+
+/* === MOCKUP GRUPO APRENDIZAJE ==============================================
+   Task 5 del plan docs/superpowers/plans/2026-08-07-aula-redesign-mockup.md:
+   pasada de estética por el grupo "Aprendizaje" — entrega/examen/resultados/
+   reproductor/calificaciones (scr-learn.ts), placement (scr-placement.ts),
+   sala de sesión (scr-room.ts) y arsenal (scr-arsenal.ts).
+   Consume el KIT MOCKUP del principio del archivo (.sec-title, .chip--*,
+   .btn-accent/primary/outline, .card--dark, .stat-inline, .lbl); aquí solo
+   vive lo específico de estas cuatro pantallas.
+   ========================================================================== */
+
+/* Barra de acento del hero del mockup (3px a la izquierda). Va en ::after
+   porque .card--glow ya se queda con ::before para el halo naranja. */
+.accent-edge::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--otr-green);pointer-events:none}
+
+/* Controles del kit SOBRE card negra: el outline gris claro y el botón
+   primario negro desaparecerían contra el fondo. */
+.card--dark .btn.btn-outline{background:transparent;border-color:rgba(255,255,255,.24);color:#fff}
+.card--dark .btn.btn-outline:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.42)}
+.card--dark .chip--outline{border-color:rgba(255,255,255,.24);color:#fff}
+.card--dark .faint{color:rgba(255,255,255,.45)}
+
+/* Chip del kit usado como CONTROL (filtros del arsenal): el <button> no hereda
+   ni la tipografía ni el cursor, y necesita estado hover propio. */
+.chip-btn{cursor:pointer;font-family:inherit;transition:background .15s var(--ease),border-color .15s var(--ease),color .15s var(--ease)}
+.chip-btn.chip--outline:hover{border-color:var(--otr-black);color:var(--text)}
+.chip-btn .n{font-weight:800;opacity:.55;margin-left:1px}
+
+/* Buscador rectangular (el .searchbox global sigue siendo pill para el resto). */
+.searchbox--sq{border-radius:var(--r-sm);height:38px;background:var(--surface);border-color:var(--border)}
+
+/* ---------------- ARSENAL ---------------- */
+.ars-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border-radius:var(--r-md);background:rgba(242,86,35,.1);color:var(--otr-green)}
+.ars-ic .ic{width:17px;height:17px}
+/* Hover del mockup: solo el borde se oscurece (nada de elevación). */
+.arsenal-card{transition:border-color .15s var(--ease)}
+.arsenal-card:hover{border-color:var(--ink-700)}
+.arsenal-card .ars-name{font-size:15px;font-weight:800;line-height:1.25;letter-spacing:-.02em;color:var(--text)}
+
+/* ---------------- SALA DE SESIÓN ---------------- */
+.room-stage{position:relative;overflow:hidden;padding:38px 30px 34px;text-align:center}
+.room-stage .rs-ic{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:var(--r-md);background:rgba(242,86,35,.12);color:var(--otr-green)}
+.room-stage .rs-ic .ic{width:24px;height:24px}
+.room-stage h3{margin:16px 0 6px;font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.room-stage p{max-width:44ch;margin:0 auto;font-size:13.5px;line-height:1.5;color:var(--ink-300)}
+.room-stage .rs-cd{margin-top:18px}
+
+/* ---------------- PLACEMENT ---------------- */
+.pl-hero{position:relative;overflow:hidden;padding:26px 30px 28px}
+.pl-hero .pl-h2{margin:10px 0 0;font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1.04;color:#fff}
+.pl-hero .pl-intro{max-width:56ch;margin:12px 0 16px;font-size:14px;font-weight:500;line-height:1.55;color:var(--ink-300)}
+@media (max-width:640px){ .pl-hero{padding:22px 18px 24px} .pl-hero .pl-h2{font-size:24px} }
+/* Valor de cada barra: rectángulo tabular; se tiñe de naranja al ubicarla
+   (la clase .sky la añade el mount de scr-placement.ts — no tocar el JS). */
+.pl-out{display:inline-flex;align-items:center;justify-content:center;min-width:52px;padding:5px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface-2);font-size:14px;font-weight:800;letter-spacing:-.01em;color:var(--ink-400);font-variant-numeric:tabular-nums;transition:background .15s var(--ease),color .15s var(--ease)}
+.pl-out.sky{background:var(--otr-green);border-color:transparent;color:var(--text-on-accent)}
+/* La pista va en --border (#E4E3DF): --bg-sunken quedaba invisible sobre el canvas greige. */
+.pl-track{height:8px;background:var(--border);border-radius:var(--r-xs);overflow:hidden}
+.pl-track > i{display:block;height:100%;width:0;background:var(--otr-green);transition:width .25s var(--ease)}
+/* === FIN MOCKUP GRUPO APRENDIZAJE ========================================= */
 
 /* === MOCKUP GRUPO ADMIN/AUTH ===============================================
    Task 8 del plan 2026-08-07-aula-redesign-mockup.md: consola de admin, usuarios,

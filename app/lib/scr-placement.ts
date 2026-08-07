@@ -4,6 +4,7 @@
 // NO es un examen — texto motivador, no hay respuestas incorrectas.
 // Al enviar: POST /api/placement {scores} → toast + go('dashboard') (que ya
 // mostrará el rank de debut y el radar poblado).
+import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { t, registerDict } from "./i18n";
@@ -38,18 +39,15 @@ S.placement = {
   render() {
     const firstName = esc((window.DB?.me?.name || "").split(" ")[0] || "");
 
+    // [MOCKUP · Task 5] Héroe oscuro del mockup (spec §3.1): card negra plana con la
+    // barra naranja de 3px a la izquierda, eyebrow en versalitas y chip del kit.
     const hero = `
-      <div class="hello-card fade-up" style="--d:0;margin-bottom:18px">
-        <div class="h-row">
-          <div style="max-width:600px">
-            <h1 class="sr-only">${t("placement.srHeading")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("placement.welcome")}${firstName ? ", " + firstName : ""}</p>
-            <h2 class="brand-font" style="margin-top:2px">${t("placement.title")}</h2>
-            <p style="color:rgba(255,255,255,.82);font-size:14.5px;margin-top:12px;line-height:1.55">
-              ${t("placement.intro")}
-            </p>
-            <span class="badge" style="margin-top:14px;display:inline-flex;height:30px;padding:0 13px;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:600">${IC.target} ${t("placement.badge")}</span>
-          </div>
-        </div>
+      <div class="card card--dark accent-edge pl-hero fade-up" style="--d:0;margin-bottom:18px">
+        <h1 class="sr-only">${t("placement.srHeading")}</h1>
+        <span class="lbl">${t("placement.welcome")}${firstName ? ", " + firstName : ""}</span>
+        <h2 class="pl-h2">${t("placement.title")}</h2>
+        <p class="pl-intro">${t("placement.intro")}</p>
+        ${C.chip(t("placement.badge"), "accent", { ic: "target" })}
       </div>`;
 
     const sliders = DIMS.map((d, i) => `
@@ -59,7 +57,7 @@ S.placement = {
             <label for="pl-${esc(d.key)}" style="display:block"><b style="font-size:14.5px">${t(d.labelKey)}</b></label>
             <p class="faint" style="font-size:12.5px;margin-top:3px;line-height:1.45">${t(d.descKey)}</p>
           </div>
-          <output class="badge pl-out" data-out="${esc(d.key)}" style="min-width:46px;text-align:center;font-variant-numeric:tabular-nums">—</output>
+          <output class="pl-out" data-out="${esc(d.key)}">—</output>
         </div>
         <input
           id="pl-${esc(d.key)}"
@@ -69,7 +67,7 @@ S.placement = {
           data-skill="${esc(d.key)}"
           aria-label="${t("placement.sliderAria").replace("{skill}", esc(d.key))}"
           aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"
-          style="width:100%;margin-top:14px;accent-color:var(--otr-sky)"
+          style="width:100%;margin-top:14px;accent-color:var(--otr-green)"
         />
       </div>`).join("");
 
@@ -82,15 +80,15 @@ S.placement = {
             <span>${t("placement.placed").replace("{count}", '<b id="pl-count" style="color:var(--text)">0</b>').replace("{total}", String(DIMS.length))}</span>
             <span class="faint">${t("placement.moveBars")}</span>
           </div>
-          <div style="height:8px;background:var(--n-150);border-radius:100px;overflow:hidden" role="progressbar" aria-valuemin="0" aria-valuemax="${DIMS.length}" aria-label="${t("placement.progressAria")}">
-            <div id="pl-progress-fill" style="height:100%;width:0;background:var(--otr-green);transition:width .25s var(--ease)"></div>
+          <div class="pl-track" role="progressbar" aria-valuemin="0" aria-valuemax="${DIMS.length}" aria-label="${t("placement.progressAria")}">
+            <i id="pl-progress-fill"></i>
           </div>
         </div>
         <div class="row between vcenter fade-up" style="--d:8;margin-top:6px;gap:12px;flex-wrap:wrap">
           <p class="faint" style="font-size:12.5px;margin:0">${t("placement.coachNote")}</p>
           <div class="row vcenter" style="gap:8px;flex:none">
-            <button class="btn btn-quiet btn-sm" id="pl-skip">${t("placement.skip")}</button>
-            <button class="btn btn-primary" id="pl-submit">${t("placement.submit")} ${IC.arrowR}</button>
+            <button class="btn btn-outline btn--sm" id="pl-skip">${t("placement.skip")}</button>
+            <button class="btn btn-accent" id="pl-submit">${t("placement.submit")} ${IC.arrowR}</button>
           </div>
         </div>
       </div>`;

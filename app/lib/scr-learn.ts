@@ -119,8 +119,8 @@ function priorQuizAttempt() {
       if (prev) {
         const graded = prev.status === "GRADED" && prev.grade != null;
         const stateBadge = graded
-          ? `<span class="badge ok" style="height:24px">${IC.checkCircle} ${t("learn.subGraded")}</span>`
-          : `<span class="badge warn" style="height:24px">${IC.clock} ${t("learn.subInReview")}</span>`;
+          ? C.chip(t("learn.subGraded"), "accent", { ic: "checkCircle" })
+          : C.chip(t("learn.subInReview"), "info", { ic: "clock" });
         // Contenido entregado: audio embebido, link a archivo, o texto.
         // prev.fileName/textBody/feedback/when/letter YA vienen esc() desde queries.ts
         // (NO re-escapar). fileUrl es safeUrl (sin esc) → se escapa para el atributo.
@@ -133,14 +133,14 @@ function priorQuizAttempt() {
           body = `<div class="prose" style="font-size:13.5px;margin-top:6px;white-space:pre-wrap">${prev.textBody}</div>`;
         }
         const gradeBlock = graded
-          ? `<div class="comp-row" style="border-bottom:0;padding-top:12px"><span class="cr-name" style="width:auto;flex:1">${t("learn.coachGrade")}</span>${C.badge(esc(String(prev.grade)) + "%", "ok")}${prev.letter && prev.letter !== "—" ? ` ${C.badge(prev.letter, prev.letter[0] === "A" ? "ok" : "sky")}` : ""}</div>`
+          ? `<div class="comp-row" style="border-bottom:0;padding-top:12px"><span class="cr-name" style="width:auto;flex:1">${t("learn.coachGrade")}</span>${C.chip(esc(String(prev.grade)) + "%", "accent")}${prev.letter && prev.letter !== "—" ? ` ${C.chip(prev.letter, prev.letter[0] === "A" ? "accent" : "outline")}` : ""}</div>`
           : "";
         const feedbackBlock = (graded && prev.feedback)
           ? `<div class="alert info" style="margin-top:12px"><span class="ai">${IC.target}</span><div><div class="at">${t("learn.coachComment")}</div>${prev.feedback}</div></div>`
           : "";
         prevCard = `
       <div class="card fade-up" style="--d:1;margin-bottom:16px">
-        <div class="card-head"><h3>${t("learn.yourSubmission")}</h3>${stateBadge}</div>
+        <div class="card-head">${C.secTitle(t("learn.yourSubmission"), { sm: true })}${stateBadge}</div>
         <div class="card-body" style="padding:6px 16px 16px">
           ${prev.when ? `<div class="faint" style="font-size:12px;margin-bottom:4px">${t("learn.submittedAtPrefix")} ${prev.when}</div>` : ""}
           ${body || `<div class="muted" style="font-size:13px">${t("learn.submissionRecorded")}</div>`}
@@ -155,16 +155,16 @@ function priorQuizAttempt() {
       // El backend ya marca done=true al entregar (app/api/submissions/route.ts), este botón
       // permite deshacerlo o marcarla sin entregar (p.ej. tarea que el coach evalúa fuera de línea).
       const doneByMe = !!(L && L.doneByMe);
-      const markBtn = L ? `<button class="btn ${doneByMe ? "btn-soft" : "btn-primary"} btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="${doneByMe ? "false" : "true"}" ${doneByMe ? `title="${t("learn.unmarkDone")}"` : ""}>${doneByMe ? `${IC.checkCircle} ${t("learn.completedUndo")}` : `${IC.check} ${t("learn.markComplete")}`}</button>` : "";
+      const markBtn = L ? `<button class="btn ${doneByMe ? "btn-outline" : "btn-primary"} btn--sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="${doneByMe ? "false" : "true"}" ${doneByMe ? `title="${t("learn.unmarkDone")}"` : ""}>${doneByMe ? `${IC.checkCircle} ${t("learn.completedUndo")}` : `${IC.check} ${t("learn.markComplete")}`}</button>` : "";
       return `
-      <div class="row between vcenter fade-up" style="--d:0;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+      <div class="page-head page-head--rule fade-up" style="--d:0">
         <div>
-          <div class="eyebrow">${t("learn.assignmentEyebrow")}</div>
-          <h1 class="page-title" style="font-size:22px;margin-top:2px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</h1>
-          ${course && course.name ? `<div class="page-sub" style="margin-top:2px">${course.name}</div>` : ''}
+          <p class="ph-eyebrow">${t("learn.assignmentEyebrow")}</p>
+          <h1 class="ph-title" style="font-size:30px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</h1>
+          ${course && course.name ? `<div class="page-sub" style="margin-top:8px">${course.name}</div>` : ''}
         </div>
-        <div class="row vcenter" style="gap:10px;align-self:flex-start;flex-wrap:wrap">
-          ${dueLabel ? `<span class="badge warn" style="height:28px">${IC.clock} ${t("learn.dueLabelPrefix")} ${dueLabel}</span>` : ''}
+        <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
+          ${dueLabel ? C.chip(`${t("learn.dueLabelPrefix")} ${dueLabel}`, "tint", { ic: "clock" }) : ''}
           ${markBtn}
         </div>
       </div>
@@ -175,9 +175,9 @@ function priorQuizAttempt() {
 
       <div class="split fade-up" style="--d:1">
         <div class="stack" style="gap:16px">
-          <div class="recorder" id="asg-recorder" data-supported="0"${showRec ? "" : ' style="display:none"'}>
+          <div class="recorder card--dark" id="asg-recorder" data-supported="0"${showRec ? "" : ' style="display:none"'}>
             <div class="rec-inner">
-              <span class="badge" style="background:rgba(255,255,255,.12);color:#fff">${IC.mic} ${t("learn.voiceRecorder")}</span>
+              ${C.chip(t("learn.voiceRecorder"), "outline", { ic: "mic" })}
               <div class="rec-wave" id="rec-wave">${bars}</div>
               <div class="rec-timer" id="rec-timer">00:00</div>
               <div class="muted" id="rec-status" style="color:rgba(255,255,255,.6);font-size:12.5px;margin-top:6px">${t("learn.recReady")}</div>
@@ -191,34 +191,34 @@ function priorQuizAttempt() {
           </div>
 
           <div class="card card-pad"${showFile ? "" : ' style="display:none"'}>
-            <div class="row between vcenter" style="margin-bottom:12px"><b>${showRec ? t("learn.orPrefix") : ""}${t("learn.uploadFile")}</b><span class="badge">${IC.file} ${t("learn.fileTypesBadge")}</span></div>
+            <div class="sec-row">${C.secTitle(`${showRec ? t("learn.orPrefix") : ""}${t("learn.uploadFile")}`, { sm: true })}<div class="sec-acts">${C.chip(t("learn.fileTypesBadge"), "outline", { ic: "file" })}</div></div>
             <div class="dropzone" id="asg-drop">
               <div class="ill">${IC.file}</div>
               <b style="color:var(--text)">${t("learn.selectYourFile")}</b>
               <p style="margin:4px 0 12px;font-size:13px">${t("learn.fileHint")}</p>
-              <button class="btn btn-ghost btn-sm" id="asg-pick" type="button">${t("learn.selectFileBtn")}</button>
+              <button class="btn btn-outline btn--sm" id="asg-pick" type="button">${t("learn.selectFileBtn")}</button>
               <input type="file" id="asg-file" data-up="submission" accept="audio/*,video/*,application/pdf,image/*,text/plain,.doc,.docx" style="display:none"/>
             </div>
             <div id="asg-filepreview" style="display:none;margin-top:12px"></div>
           </div>
 
           <div class="card card-pad"${showText ? "" : ' style="display:none"'}>
-            <div class="row between vcenter" style="margin-bottom:10px"><b>${(showRec || showFile) ? t("learn.orPrefix") : ""}${t("learn.writeYourAnswer")}</b><span class="badge">${IC.doc} ${t("learn.textBadge")}</span></div>
+            <div class="sec-row">${C.secTitle(`${(showRec || showFile) ? t("learn.orPrefix") : ""}${t("learn.writeYourAnswer")}`, { sm: true })}<div class="sec-acts">${C.chip(t("learn.textBadge"), "outline", { ic: "doc" })}</div></div>
             <textarea id="asg-text" class="input" rows="5" placeholder="${t("learn.textPlaceholder")}" style="resize:vertical;min-height:96px;font-family:inherit;line-height:1.5;width:100%"></textarea>
           </div>
         </div>
 
         <div class="stack" style="gap:16px">
           <div class="card">
-            <div class="card-head"><h3>${t("learn.gradingTitle")}</h3><span class="badge">/ ${maxPoints} pts</span></div>
+            <div class="card-head">${C.secTitle(t("learn.gradingTitle"), { sm: true })}${C.chip(`/ ${maxPoints} pts`, "outline")}</div>
             <div class="card-body" style="padding:6px 16px 14px">
               ${maxPoints === 100
                 ? [[t("learn.rubricStructure"),'30'],[t("learn.rubricClarity"),'25'],[t("learn.rubricEvidence"),'25'],[t("learn.rubricTiming"),'20']].map(r=>`
-                <div class="rubric-row"><span>${r[0]}</span><span class="badge sky" style="margin-left:auto">${r[1]} pts</span></div>`).join('')
+                <div class="rubric-row"><span>${r[0]}</span><span style="margin-left:auto">${C.chip(`${r[1]} pts`, "tint")}</span></div>`).join('')
                 : `<div class="muted" style="font-size:13px;padding:6px 0">${t("learn.pointsCustomPrefix")} <b>${maxPoints}</b> ${t("learn.pointsCustomSuffix")}</div>`}
             </div>
           </div>
-          <button class="btn btn-primary btn-lg btn-block" id="asg-submit">${prev ? t("learn.resubmit") : t("learn.submit")}</button>
+          <button class="btn btn-accent btn-lg btn-block" id="asg-submit">${prev ? t("learn.resubmit") : t("learn.submit")}</button>
           <p class="faint" style="text-align:center;font-size:12px">${prev ? t("learn.resubmitReplaces") : t("learn.canResubmitLater")}</p>
         </div>
       </div>`;
@@ -394,15 +394,15 @@ function priorQuizAttempt() {
       const quiz = currentQuiz();
       if (!quiz || !(quiz.questions && quiz.questions.length)) {
         return `
-        <div class="page-head"><div>
-          <h1 class="page-title">${t("learn.examTitle")}</h1>
-          <div class="page-sub">${t("learn.examSub")}</div>
+        <div class="page-head page-head--rule"><div>
+          <h1 class="ph-title">${t("learn.examTitle")}</h1>
+          <div class="page-sub" style="margin-top:8px">${t("learn.examSub")}</div>
         </div></div>
         <div class="card"><div class="empty">
           <div class="ill">${IC.doc}</div>
           <h4>${t("learn.examEmptyHeading")}</h4>
           <p>${t("learn.examEmptyBody")}</p>
-          <button class="btn btn-primary btn-sm" onclick="go('course')">${t("learn.backToCourse")} ${IC.arrowR}</button>
+          <button class="btn btn-primary btn--sm" onclick="go('course')">${t("learn.backToCourse")} ${IC.arrowR}</button>
         </div></div>`;
       }
       const total = quiz.questions.length;
@@ -417,25 +417,24 @@ function priorQuizAttempt() {
           <h4 style="margin:6px 0 2px">${t("learn.alreadyCompleted")}</h4>
           <p class="muted" style="font-size:13.5px">${attempt.best >= passScore ? t("learn.passed") : t("learn.toReinforce")} · ${t("learn.retryAnytime")}</p>
           <div class="row vcenter" style="gap:8px;justify-content:center;margin-top:12px">
-            <span class="badge ${attempt.best >= passScore ? "ok" : "warn"}" style="height:26px">${IC.star} ${t("learn.bestPrefix")} ${esc(String(attempt.best))}%</span>
-            <button class="btn btn-primary btn-sm" id="qz-retry">${IC.refresh} ${t("learn.retryExam")}</button>
+            ${C.chip(`${t("learn.bestPrefix")} ${esc(String(attempt.best))}%`, attempt.best >= passScore ? "accent" : "tint", { ic: "star" })}
+            <button class="btn btn-primary btn--sm" id="qz-retry">${IC.refresh} ${t("learn.retryExam")}</button>
           </div>
         </div>
       </div>` : "";
       return `
-      <div class="quiz-head fade-up" style="--d:0">
+      <div class="page-head page-head--rule fade-up" style="--d:0">
         <div>
-          <div class="eyebrow">${t("learn.unitExamEyebrow")}</div>
-          <h1 class="page-title" style="font-size:var(--fs-20);margin-top:2px">${esc(quiz.title || t("learn.examFallback"))}</h1>
-          <div class="page-sub" style="margin-top:2px">${total} ${total!==1?t("learn.questionUnitPlural"):t("learn.questionUnitSingular")} · ${t("learn.passWithPrefix")} ${esc(String(passScore))}%</div>
+          <p class="ph-eyebrow">${t("learn.unitExamEyebrow")}</p>
+          <h1 class="ph-title" style="font-size:30px">${esc(quiz.title || t("learn.examFallback"))}</h1>
+          <div class="page-sub" style="margin-top:8px">${total} ${total!==1?t("learn.questionUnitPlural"):t("learn.questionUnitSingular")} · ${t("learn.passWithPrefix")} ${esc(String(passScore))}%</div>
         </div>
-
       </div>
       ${doneBanner}
       <div id="qz-body" style="${attempt ? "display:none" : ""}">
         <div class="q-card fade-up" style="--d:1" id="qz-card"></div>
         <div class="row between vcenter" style="max-width:760px;margin:16px auto 0">
-          <button class="btn btn-ghost" id="qz-prev">${IC.chevL} ${t("learn.previous")}</button>
+          <button class="btn btn-outline" id="qz-prev">${IC.chevL} ${t("learn.previous")}</button>
           <div class="q-dots" id="qz-dots"></div>
           <button class="btn btn-primary" id="qz-next">${t("learn.next")} ${IC.arrowR}</button>
         </div>
@@ -477,7 +476,8 @@ function priorQuizAttempt() {
         prev.style.visibility = i===0 ? 'hidden' : 'visible';
         const last = i === questions.length - 1;
         next.innerHTML = last ? t("learn.finishExam") + ' ' + IC.check : t("learn.next") + ' ' + IC.arrowR;
-        next.className = last ? 'btn btn-navy' : 'btn btn-primary';
+        // [MOCKUP · Task 5] La última pregunta es el CTA estrella: naranja con texto NEGRO.
+        next.className = last ? 'btn btn-accent' : 'btn btn-primary';
       }
 
       prev.addEventListener('click', () => { if (i > 0) { i--; paint(); } });
@@ -519,14 +519,14 @@ function priorQuizAttempt() {
       const data = (window as any).__quizData;
       if (!res || !data || !(data.questions && data.questions.length)) {
         return `
-        <div class="page-head"><div>
-          <h1 class="page-title">${t("learn.resultsTitle")}</h1>
+        <div class="page-head page-head--rule"><div>
+          <h1 class="ph-title">${t("learn.resultsTitle")}</h1>
         </div></div>
         <div class="card"><div class="empty">
           <div class="ill">${IC.chart}</div>
           <h4>${t("learn.resultsEmptyHeading")}</h4>
           <p>${t("learn.resultsEmptyBody")}</p>
-          <button class="btn btn-primary btn-sm" onclick="go('course')">${t("learn.backToCourse")} ${IC.arrowR}</button>
+          <button class="btn btn-primary btn--sm" onclick="go('course')">${t("learn.backToCourse")} ${IC.arrowR}</button>
         </div></div>`;
       }
 
@@ -534,7 +534,6 @@ function priorQuizAttempt() {
       const total = res.total ?? (data.questions.length);
       const pct = res.percent != null ? res.percent : (total ? Math.round(score/total*100) : 0);
       const passed = !!res.passed;
-      const tone = passed ? (pct >= 90 ? 'ok' : 'ok') : pct >= 50 ? 'warn' : 'danger';
       const results = res.results || {};
 
       const review = data.questions.map((Q: any) => {
@@ -545,35 +544,37 @@ function priorQuizAttempt() {
         const correctOpt = opts.find((o: any) => o.id === r.correctOptionId);
         return `
           <div class="lrow" style="align-items:flex-start">
-            <span style="width:22px;height:22px;border-radius:6px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;line-height:1;background:var(--${ok?'ok':'danger'})">${ok?IC.check:'×'}</span>
+            <span style="width:22px;height:22px;border-radius:var(--r-sm);flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;line-height:1;background:var(--${ok?'ok':'danger'})">${ok?IC.check:'×'}</span>
             <div style="flex:1"><div style="font-weight:600;font-size:13.5px">${esc(Q.prompt)}</div>
               <div style="font-size:12.5px;color:var(--text-2);margin-top:3px">${correctOpt?`${t("learn.answerCorrect")} <b class="sky">${esc(correctOpt.text)}</b>`:''}${!ok?` · ${t("learn.answerYours")} <span style="color:var(--danger)">${chosenOpt?esc(chosenOpt.text):'—'}</span>`:''}</div>
             </div>
           </div>`;
       }).join('');
 
+      // [MOCKUP · Task 5] El resultado es el HÉROE de la pantalla: card negra con halo
+      // naranja + anillo conic del kit (spec §3.2). El veredicto lo lleva el chip.
       return `
-      <div class="score-hero fade-up" style="--d:0;margin-bottom:18px">
-        ${C.ring(pct,108,{color:`var(--${tone})`,label:`<b class="brand-font" style="font-size:30px">${pct}%</b><span style="font-size:11px;color:var(--text-3)">${score}/${total}</span>`})}
+      <div class="card card--dark card--glow score-hero fade-up" style="--d:0;margin-bottom:18px">
+        ${C.ringConic(pct, `${pct}%`, `${score}/${total}`)}
         <div style="flex:1;min-width:200px">
-          <div class="badge ${tone}" style="height:24px;margin-bottom:8px">${passed?(pct>=90?t("learn.passedHonors"):t("learn.passed")):t("learn.toReinforce")}</div>
-          <h2 style="font-size:22px;font-weight:800;letter-spacing:var(--track-tight)">${esc(data.title || t("learn.examFallback"))}</h2>
-          <p class="muted" style="margin-top:4px">${t("learn.gotRightPrefix")} <b class="sky">${score} ${t("learn.gotRightConnector")} ${total}</b>${t("learn.gotRightSuffix")}</p>
+          <div style="margin-bottom:10px">${C.chip(passed?(pct>=90?t("learn.passedHonors"):t("learn.passed")):t("learn.toReinforce"), passed ? "accent" : "outline")}</div>
+          <h2 style="font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.05">${esc(data.title || t("learn.examFallback"))}</h2>
+          <p class="muted" style="margin-top:6px">${t("learn.gotRightPrefix")} <b class="sky">${score} ${t("learn.gotRightConnector")} ${total}</b>${t("learn.gotRightSuffix")}</p>
           ${/* [FLW-07] Confirma que el progreso del curso avanzó (antes el alumno dudaba si "contaba"). */""}
-          ${passed && res.courseProgress != null ? `<div class="row vcenter" style="gap:8px;margin-top:10px;flex-wrap:wrap">
-            <span class="badge ok" style="height:24px">${IC.checkCircle} ${t("learn.lessonCompleted")}</span>
-            <span class="badge sky" style="height:24px">${t("learn.courseAtPrefix")} ${res.courseProgress}%</span>
-            ${res.xpGain > 0 ? `<span class="badge sky" style="height:24px">+${res.xpGain} XP</span>` : ""}
+          ${passed && res.courseProgress != null ? `<div class="row vcenter" style="gap:6px;margin-top:12px;flex-wrap:wrap">
+            ${C.chip(t("learn.lessonCompleted"), "accent", { ic: "checkCircle" })}
+            ${C.chip(`${t("learn.courseAtPrefix")} ${res.courseProgress}%`, "outline")}
+            ${res.xpGain > 0 ? C.chip(`+${res.xpGain} XP`, "outline") : ""}
           </div>` : ""}
-          <div class="row" style="gap:10px;margin-top:14px">
-            <button class="btn btn-primary" onclick="go('course')">${t("learn.continueCourse")} ${IC.arrowR}</button>
-            <button class="btn btn-ghost" onclick="go('quiz')">${t("learn.retryExam")}</button>
+          <div class="row" style="gap:10px;margin-top:18px">
+            <button class="btn btn-accent" onclick="go('course')">${t("learn.continueCourse")} ${IC.arrowR}</button>
+            <button class="btn btn-outline" onclick="go('quiz')">${t("learn.retryExam")}</button>
           </div>
         </div>
       </div>
 
       <div class="card fade-up" style="--d:2">
-        <div class="card-head"><h3>${t("learn.review")}</h3></div>
+        <div class="card-head">${C.secTitle(t("learn.review"), { sm: true })}</div>
         <div class="card-body" style="padding:8px 16px">
           ${review}
         </div>
@@ -613,7 +614,7 @@ function priorQuizAttempt() {
         : "go('course')";
       const nextLabel = nextItem ? `${t("learn.nextPrefix")} ${nextItem.t} ${IC.arrowR}` : `${t("learn.backToCourse")} ${IC.arrowR}`;
       // Marcar como completada (delegado en Aula.tsx). data-done = estado a fijar.
-      const markBtn = L ? `<button class="btn ${doneByMe ? "btn-soft" : "btn-primary"} btn-sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="${doneByMe ? "false" : "true"}" ${doneByMe ? `title="${t("learn.unmarkDone")}"` : ""}>${doneByMe ? `${IC.checkCircle} ${t("learn.completedUndo")}` : `${IC.check} ${t("learn.markComplete")}`}</button>` : "";
+      const markBtn = L ? `<button class="btn ${doneByMe ? "btn-outline" : "btn-primary"} btn--sm" data-action="mark-lesson-done" data-lesson="${esc(L.id)}" data-done="${doneByMe ? "false" : "true"}" ${doneByMe ? `title="${t("learn.unmarkDone")}"` : ""}>${doneByMe ? `${IC.checkCircle} ${t("learn.completedUndo")}` : `${IC.check} ${t("learn.markComplete")}`}</button>` : "";
 
       // Transcripción/contenido SOLO si la lección trae contentHtml real (sin inventar).
       const transcript = L && L.contentHtml ? `
@@ -626,18 +627,18 @@ function priorQuizAttempt() {
         <div class="player-stage">${stageInner}</div>
         <div class="row between vcenter" style="margin:16px 0 10px;flex-wrap:wrap;gap:10px">
           <div>
-            <h2 style="font-size:19px;font-weight:800;letter-spacing:var(--track-tight)">${title}</h2>
-            ${courseLabel ? `<div class="muted" style="font-size:13px;margin-top:2px">${courseLabel}</div>` : ""}
+            <h2 style="font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1.1">${title}</h2>
+            ${courseLabel ? `<div class="muted" style="font-size:13px;margin-top:4px">${courseLabel}</div>` : ""}
           </div>
           <div class="row" style="gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="go('course')">${IC.chevL} ${t("learn.back")}</button>
+            <button class="btn btn-outline btn--sm" onclick="go('course')">${IC.chevL} ${t("learn.back")}</button>
             ${markBtn}
           </div>
         </div>
         ${!hasVideo ? `<div class="alert info" style="margin:10px 0"><span class="ai">${IC.flag}</span><div><div class="at">${t("learn.videoInPrep")}</div>${t("learn.videoInPrepBody")}</div></div>` : ""}
         ${transcript}
         <div class="row" style="justify-content:flex-end;margin-top:18px">
-          <button class="btn btn-primary" onclick="${nextOnclick}">${nextLabel}</button>
+          <button class="btn btn-accent" onclick="${nextOnclick}">${nextLabel}</button>
         </div>
       </div>`;
     }
@@ -650,8 +651,16 @@ function priorQuizAttempt() {
       const rows = g.rows || [];
 
       const mainCourseName = (DB.courses && DB.courses[0] && DB.courses[0].name) || null;
+      // [MOCKUP · Task 5] Cabecera del mockup (spec §2.3): eyebrow + h1 de 40px y la
+      // tira de stats a la derecha (los mismos 3 números que antes eran KPI tiles).
+      const stats = g.total ? `
+        <div class="stat-group">
+          ${C.statInline(`${g.avg}%`, t("learn.kpiAvg"), { accent: true })}
+          ${C.statInline(`${g.submitted} / ${g.total}`, t("learn.kpiSubmitted"))}
+          ${C.statInline(`${g.best}%`, t("learn.kpiBest"))}
+        </div>` : "";
       const head = `
-      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">${t("learn.gradesTitle")}</h1><div class="page-sub">${mainCourseName ? esc(mainCourseName) + ' · ' : ''}${t("learn.weightedAvg")}</div></div></div>`;
+      <div class="page-head page-head--rule fade-up" style="--d:0"><div>${mainCourseName ? `<p class="ph-eyebrow">${esc(mainCourseName)}</p>` : ''}<h1 class="ph-title">${t("learn.gradesTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("learn.weightedAvg")}</div></div>${stats}</div>`;
 
       if (!g.total) {
         return `${head}
@@ -663,11 +672,6 @@ function priorQuizAttempt() {
       }
 
       return `${head}
-      <div class="grid g-3 fade-up" style="--d:1;margin-bottom:18px">
-        <div class="tile tile--hero">${C.kpi(t("learn.kpiAvg"), g.avg, {unit:'%', ic:'chart', accent:'var(--otr-green-text)'})}</div>
-        <div class="tile">${C.kpi(t("learn.kpiSubmitted"), `${g.submitted} / ${g.total}`, {ic:'checkCircle'})}</div>
-        <div class="tile">${C.kpi(t("learn.kpiBest"), g.best, {unit:'%', ic:'star'})}</div>
-      </div>
       <div class="table-wrap scroll-m fade-up" style="--d:2">
         <table class="tbl"><thead><tr><th>${t("learn.colActivity")}</th><th class="num">${t("learn.colGrade")}</th><th class="center">${t("learn.colLetter")}</th></tr></thead>
         <tbody>${rows.map(r=>{
@@ -678,7 +682,7 @@ function priorQuizAttempt() {
           const mainRow = `<tr>
             <td><b style="font-weight:600">${r.activity}</b>${r.kind?` <span class="tag-soft">${esc(r.kind)}</span>`:''}</td>
             <td class="num"><b class="${scoreCls}">${esc(String(r.score))}${numeric?'%':''}</b></td>
-            <td class="center">${r.letter==='—'?'<span class="faint">—</span>':C.badge(esc(r.letter), r.letter[0]==='A'?'ok':'sky')}</td>
+            <td class="center">${r.letter==='—'?'<span class="faint">—</span>':C.chip(esc(r.letter), r.letter[0]==='A'?'accent':'outline')}</td>
           </tr>`;
           // Fila expandible con el comentario escrito del coach (el alumno DEBE poder leerlo).
           const fbRow = hasFeedback ? `<tr class="fb-row"><td colspan="3" style="padding-top:0">
