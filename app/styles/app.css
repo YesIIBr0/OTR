@@ -8,7 +8,7 @@ body{
   font-size:var(--fs-14);
   line-height:var(--lh);
   color:var(--text);
-  background:var(--bg); /* [VIS-08] crema de marca #F7F7ED (no --bg-sunken) */
+  background:var(--bg); /* [VIS-08] blanco de marca #FFFFFF (no --bg-sunken) */
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
 }
@@ -26,11 +26,11 @@ img{display:block;max-width:100%}
   .input:focus,.select:focus,.textarea:focus{outline:2px solid Highlight;outline-offset:2px;box-shadow:none}
 }
 /* [UI · vibrancy — llamada Isaac] Sheen dinámico para elementos de LOGRO/POSICIÓN (tu fila
-   del leaderboard, tu posición). Un brillo verde que cruza lento y sutil — más vida sin gritar.
+   del leaderboard, tu posición). Un brillo naranja que cruza lento y sutil — más vida sin gritar.
    Se APAGA con prefers-reduced-motion. Requiere position:relative + overflow controlado. */
 .otr-shine{position:relative;overflow:hidden;isolation:isolate}
 .otr-shine::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(110deg,transparent 34%,color-mix(in srgb,var(--otr-green,#2CAA20) 20%,transparent) 50%,transparent 64%);
+  background:linear-gradient(110deg,transparent 34%,color-mix(in srgb,var(--otr-green,#F25623) 20%,transparent) 50%,transparent 64%);
   transform:translateX(-130%);animation:otr-sheen 4s var(--ease,cubic-bezier(.2,.7,.2,1)) 1.2s infinite}
 @media (prefers-reduced-motion: reduce){ .otr-shine::after{animation:none;display:none} }
 @keyframes otr-sheen{0%{transform:translateX(-130%)}45%{transform:translateX(130%)}100%{transform:translateX(130%)}}
@@ -82,25 +82,28 @@ svg.ic{width:18px;height:18px;flex:none}
 .app.mini .sb-logo .txt{display:none}
 /* [UI-NAV N3] Interruptor del modo compacto. Vive en la cabecera del sidebar; plegado se
    centra y gira, para que siga leyéndose como "abrir" sin depender del texto. */
-.sb-collapse{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border:0;border-radius:var(--r-sm);background:transparent;color:rgba(234,242,251,.5);cursor:pointer;transition:background .15s,color .15s,transform .2s var(--ease)}
+.sb-collapse{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border:0;border-radius:var(--r-sm);background:transparent;color:rgba(255,255,255,.5);cursor:pointer;transition:background .15s,color .15s,transform .2s var(--ease)}
 .sb-collapse:hover{background:rgba(255,255,255,.08);color:#fff}
 .sb-collapse .ic{width:16px;height:16px}
 .app.mini .sb-collapse{margin:0 auto;transform:rotate(180deg)}
 /* En móvil el sidebar es un cajón: plegarlo no aplica. */
 @media (max-width:900px){ .sb-collapse{display:none} }
 .sb-nav{flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:2px}
-.sb-group{margin-top:14px;padding:0 10px 6px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(234,242,251,.4)}
+.sb-group{margin-top:14px;padding:0 10px 6px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4)}
 /* Plegado, las cabeceras de sección se vuelven una línea divisoria: "MIS PROGRAMAS" no
    cabe en 64px y partirlo en dos renglones se lee peor que no ponerlo. Los iconos siguen
    siendo la navegación; el título vuelve al desplegar. */
 .app.mini .sb-group,.app.mini .sb-group--toggle{height:1px;min-height:0;padding:0;margin:14px 12px;overflow:hidden;color:transparent;background:rgba(255,255,255,.12);border:0;font-size:0}
 .sb-item{
   display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:var(--r-sm);
-  color:rgba(234,242,251,.78);font-weight:500;font-size:13.5px;white-space:nowrap;position:relative;
+  color:rgba(255,255,255,.78);font-weight:500;font-size:13.5px;white-space:nowrap;position:relative;
   transition:background .15s var(--ease),color .15s var(--ease);
 }
 .sb-item:hover{background:rgba(255,255,255,.07);color:#fff;text-decoration:none}
-.sb-item.active{background:rgba(44,170,32,.18);color:#fff}
+/* [BRAND V1.0 · moderación del acento] El ítem activo se marca con superficie NEUTRA
+   (blanco translúcido sobre el registro negro) + la barra naranja de la izquierda: el
+   naranja aparece una sola vez y no ensucia el negro con un tinte marrón. */
+.sb-item.active{background:rgba(255,255,255,.12);color:#fff}
 .sb-item.active::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--otr-sky)}
 .sb-item .ic{width:18px;height:18px;flex:none;opacity:.9}
 .sb-item .badge-count{margin-left:auto;background:var(--otr-sky);color:#FFFFFF;font-size:11px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill)}
@@ -108,8 +111,8 @@ svg.ic{width:18px;height:18px;flex:none}
 .app.mini .sb-item .lbl,.app.mini .sb-item .badge-count{display:none}
 /* [UI-NAV N1] Grupo DESPLEGABLE: la cabecera de sección es un botón con chevron. Hereda
    todo el aspecto de .sb-group para que abrir/cerrar no cambie la tipografía del sidebar. */
-.sb-group--toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:transparent;border:0;font:inherit;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(234,242,251,.4);cursor:pointer;text-align:left}
-.sb-group--toggle:hover{color:rgba(234,242,251,.72)}
+.sb-group--toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:transparent;border:0;font:inherit;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);cursor:pointer;text-align:left}
+.sb-group--toggle:hover{color:rgba(255,255,255,.72)}
 .sb-group--toggle .chev{display:flex;width:13px;height:13px;flex:none;transition:transform .2s var(--ease)}
 .sb-group--toggle[aria-expanded="false"] .chev{transform:rotate(-90deg)}
 .sb-sub{display:flex;flex-direction:column;gap:2px}
@@ -119,7 +122,8 @@ svg.ic{width:18px;height:18px;flex:none}
 .sb-foot{flex:none;padding:10px;border-top:1px solid rgba(255,255,255,.08);position:relative}
 .sb-user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--r-sm);cursor:pointer;width:100%;background:transparent;border:0;font:inherit;color:inherit;text-align:left}
 .sb-user:hover{background:rgba(255,255,255,.07)}
-.sb-user.active{background:rgba(44,170,32,.18)}
+/* [BRAND V1.0 · moderación] mismo criterio que .sb-item.active: superficie neutra. */
+.sb-user.active{background:rgba(255,255,255,.12)}
 .sb-user .chev{display:flex;width:13px;height:13px;flex:none;margin-left:auto;opacity:.5;transition:transform .2s var(--ease)}
 .sb-user[aria-expanded="true"] .chev{transform:rotate(180deg)}
 /* [UI-NAV N2] Menú de cuenta (Perfil · Membresía · Ajustes · Salir). Se despliega HACIA
@@ -166,11 +170,11 @@ svg.ic{width:18px;height:18px;flex:none}
    recibe foco por teclado — entonces se vuelve visible para saltar sidebar/topbar. */
 .skip-link:focus{position:fixed;top:12px;left:12px;z-index:1000;width:auto;height:auto;padding:10px 18px;margin:0;overflow:visible;clip:auto;white-space:normal;background:var(--otr-black);color:var(--otr-cream);border-radius:var(--r-sm);font-weight:700;font-size:13.5px;box-shadow:var(--sh-1)}
 .page-sub{color:var(--text-2);font-size:13.5px;margin-top:3px}
-/* [A11Y] var(--action) (#2CAA20) sobre crema/blanco da ~2.8-3.1:1 — falla AA de texto normal
-   (11px). --otr-green-text (#176B11) es el mismo verde de marca ya calibrado a ≥4.5:1 AA. */
+/* [A11Y] var(--action) (#F25623) sobre blanco da ~3.1:1 — falla AA de texto normal
+   (11px). --otr-green-text (#9E3211) es el mismo naranja de marca calibrado a ≥4.5:1 AA. */
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--otr-green-text)}
 /* [A11Y] Skip-link: oculto hasta recibir foco por teclado, luego visible arriba a la izquierda */
-.skip-link{position:fixed;top:-100px;left:12px;z-index:200;background:var(--otr-black);color:#fff;padding:10px 16px;border-radius:var(--r-sm,9px);font-weight:700;font-size:13px;text-decoration:none;transition:top .15s var(--ease,ease)}
+.skip-link{position:fixed;top:-100px;left:12px;z-index:200;background:var(--otr-black);color:#fff;padding:10px 16px;border-radius:var(--r-sm,8px);font-weight:700;font-size:13px;text-decoration:none;transition:top .15s var(--ease,ease)}
 .skip-link:focus{top:12px;outline:3px solid var(--otr-green-hi)}
 
 /* ===================== COMPONENTS ===================== */
@@ -180,19 +184,19 @@ svg.ic{width:18px;height:18px;flex:none}
   transition:background .15s var(--ease),border-color .15s,color .15s,box-shadow .15s,transform .05s;}
 .btn:active{transform:translateY(1px)}
 .btn .ic{width:16px;height:16px}
-/* OTRBRANDBOOK: botón primario NEGRO (autoridad/prestigio, contraste 21:1).
-   El verde de marca vive en acentos/links/estados activos (btn-accent). */
-.btn-primary{background:var(--otr-black);color:var(--otr-cream);box-shadow:0 1px 2px rgba(12,12,12,.25)}
+/* BRAND BOOK V1.0: botón primario NEGRO (autoridad/prestigio, contraste 21:1).
+   El naranja de marca vive en el CTA estrella, acentos, links y foco (btn-accent). */
+.btn-primary{background:var(--otr-black);color:var(--otr-cream);box-shadow:0 1px 2px rgba(23,23,23,.25)}
 .btn-primary:hover{background:#000;text-decoration:none}
 .btn-navy{background:var(--otr-black);color:var(--otr-cream)}
 .btn-navy:hover{background:#000;text-decoration:none}
-/* Acción afirmativa verde (confirmar/continuar) — el acento energético de marca. */
-.btn-accent{background:var(--otr-green);color:#fff;box-shadow:0 1px 2px rgba(30,140,22,.3)}
+/* CTA estrella naranja (confirmar/continuar) — UNA sola pieza en naranja por vista. */
+.btn-accent{background:var(--otr-green);color:#fff;box-shadow:0 1px 2px rgba(200,64,26,.3)}
 .btn-accent:hover{background:var(--otr-green-lo);text-decoration:none}
 .btn-ghost{background:var(--otr-white);border-color:var(--border-strong);color:var(--text)}
 .btn-ghost:hover{background:var(--bg-sunken);text-decoration:none}
 .btn-soft{background:var(--action-soft);color:var(--otr-green-text)}
-.btn-soft:hover{background:#d2eccf;text-decoration:none}
+.btn-soft:hover{background:#F9D8CA;text-decoration:none}
 .btn-quiet{background:transparent;color:var(--text-2)}
 .btn-quiet:hover{background:var(--otr-offwhite);color:var(--text)}
 .btn-danger{background:var(--danger);color:#fff}
@@ -221,7 +225,7 @@ svg.ic{width:18px;height:18px;flex:none}
 .input-group{position:relative;display:flex;align-items:center}
 .input-group .lead{position:absolute;left:11px;color:var(--text-3);display:flex}
 .input-group .input{padding-left:36px}
-.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235F5F56' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px}
+.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236B6B6B' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px}
 .check{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer}
 .check input{width:17px;height:17px;accent-color:var(--action)}
 
@@ -253,12 +257,12 @@ svg.ic{width:18px;height:18px;flex:none}
 .kpi .k-delta{font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
 .k-delta.up{color:var(--ok)} .k-delta.down{color:var(--danger)}
 /* [OLA-3 · vibrancy — llamada Isaac] Tile hero: LA métrica principal de cada pantalla respira
-   marca (gradiente crema→verde pálido, número mayor). AA: label en --otr-green-text (≥4.5:1).
+   marca (gradiente blanco→tinte naranja, número mayor). AA: label en --otr-green-text (≥4.5:1).
    OJO cascada: estas reglas DEBEN ir después de las base .kpi (misma especificidad — el orden decide). */
 .tile--hero{background:linear-gradient(135deg,#fff 0%,var(--action-soft) 100%);border-color:color-mix(in srgb,var(--otr-green) 35%,var(--border))}
 .tile--hero .k-val{font-size:40px}
 .tile--hero .k-label{color:var(--otr-green-text)}
-/* [OLA-4 · blueprint §6/§8] Hero de LOGRO (oro): el número-trofeo del Home (XP). El KPI
+/* [OLA-4 · blueprint §6/§8] Hero de LOGRO: el número-trofeo del Home (XP). El KPI
    protagonista ocupa 2 columnas y respira; los secundarios quedan compactos al lado. */
 .tile--hero-gold{background:linear-gradient(135deg,#fff 0%,var(--otr-gold-pale) 100%);border-color:color-mix(in srgb,var(--otr-gold) 40%,var(--border))}
 .tile--hero-gold .k-val{font-size:44px}
@@ -269,17 +273,17 @@ svg.ic{width:18px;height:18px;flex:none}
 .badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--r-pill);font-size:11.5px;font-weight:700;letter-spacing:.01em;background:var(--otr-offwhite);color:var(--text-2)}
 .badge.sky{background:var(--action-soft);color:var(--otr-green-text)}
 /* sky--alive: variante con energía (rank/posición del dashboard). Mismo brandbook
-   (verde), pero con profundidad: gradiente sutil + borde verde + realce interno.
+   (naranja), pero con profundidad: gradiente sutil + borde naranja + realce interno.
    No interactivo; solo súbele vida visual a los badges de logro de posición. */
 .badge.sky--alive{
-  background:linear-gradient(135deg,#EAF7E7 0%,var(--otr-green-pale) 55%,#D6EFD1 100%);
+  background:linear-gradient(135deg,#FDF0EB 0%,var(--otr-green-pale) 55%,#FAD9CC 100%);
   color:var(--otr-green-text);
   border:1px solid color-mix(in srgb,var(--otr-green) 32%,transparent);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 1px 3px color-mix(in srgb,var(--otr-green) 16%,transparent);
 }
 .badge.sky--alive .dot{box-shadow:0 0 0 3px color-mix(in srgb,var(--otr-green) 18%,transparent)}
 .badge.navy{background:var(--otr-navy);color:#fff}
-/* dorado = LOGRO (wins, certs, top-3, insignias ganadas) — nunca interactivo */
+/* LOGRO (wins, certs, top-3, insignias ganadas): tinte naranja — nunca interactivo */
 .badge.gold{background:var(--otr-gold-pale);color:var(--otr-gold-text)}
 .badge.ok{background:var(--ok-soft);color:var(--ok)}
 .badge.warn{background:var(--warn-soft);color:var(--otr-gold-text)}
@@ -300,7 +304,7 @@ svg.ic{width:18px;height:18px;flex:none}
 .aud-toggle button.on{background:var(--otr-navy);color:#fff}
 
 /* Avatars */
-.avatar{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;background:var(--otr-sky-lo);overflow:hidden;border:1px solid rgba(12,12,12,.06)}
+.avatar{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;background:var(--otr-sky-lo);overflow:hidden;border:1px solid rgba(23,23,23,.06)}
 .avatar.sm{width:26px;height:26px;font-size:11px}
 .avatar.lg{width:56px;height:56px;font-size:20px}
 .avatar.xl{width:84px;height:84px;font-size:30px}
@@ -310,10 +314,13 @@ svg.ic{width:18px;height:18px;flex:none}
 
 /* Progress */
 .bar{height:8px;border-radius:var(--r-pill);background:var(--n-100);overflow:hidden}
-.bar > i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--otr-sky-lo),var(--otr-sky))}
+/* [BRAND V1.0 · moderación del acento] El progreso se pinta en NEGRO/gris: una pantalla
+   muestra muchas barras a la vez (competencias, cursos, XP) y en naranja saturarían la
+   vista. El naranja queda para la variante .bar.navy (destacar UNA barra por pantalla). */
+.bar > i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--n-700),var(--otr-black))}
 .bar.thin{height:6px}
 .bar.thick{height:12px}
-.bar.navy > i{background:linear-gradient(90deg,var(--otr-navy),var(--otr-sky-lo))}
+.bar.navy > i{background:linear-gradient(90deg,var(--otr-sky-lo),var(--otr-sky))}
 .ring-wrap{position:relative;display:inline-flex}
 .ring-wrap .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 
@@ -321,7 +328,9 @@ svg.ic{width:18px;height:18px;flex:none}
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto}
 .tab{padding:10px 14px;font-size:13.5px;font-weight:600;color:var(--text-2);border-bottom:2px solid transparent;white-space:nowrap;background:transparent;border-top:0;border-left:0;border-right:0}
 .tab:hover{color:var(--text)}
-.tab.active{color:var(--action-hover);border-bottom-color:var(--action)}
+/* [BRAND V1.0 · moderación] Estado activo = NEGRO (texto + subrayado). En una pantalla con
+   tabs, chips y CTA, el naranja se reserva para la acción, no para la navegación interna. */
+.tab.active{color:var(--text);border-bottom-color:var(--otr-black)}
 .seg{display:inline-flex;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px}
 .seg button{border:0;background:transparent;padding:6px 13px;font-size:12.5px;font-weight:600;color:var(--text-2);border-radius:var(--r-xs)}
 .seg button.on{background:#fff;color:var(--text);box-shadow:var(--sh-1)}
@@ -330,9 +339,9 @@ svg.ic{width:18px;height:18px;flex:none}
 .alert{display:flex;gap:12px;padding:13px 15px;border-radius:var(--r-md);border:1px solid var(--border);background:var(--surface);font-size:13.5px}
 .alert .ai{flex:none;width:20px;height:20px}
 .alert .at{font-weight:700;margin-bottom:2px}
-.alert.info,.alert.ok{background:var(--otr-green-pale);border-color:#bfe6d2;color:#155e3f}
-.alert.warn{background:var(--warn-soft);border-color:#ecd9ad;color:#7c5614}
-.alert.danger{background:var(--danger-soft);border-color:#eeb9b4;color:#8a2f28}
+.alert.info,.alert.ok{background:var(--otr-green-pale);border-color:color-mix(in srgb,var(--otr-sky) 30%,transparent);color:var(--otr-green-text)}
+.alert.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 30%,transparent);color:var(--otr-gold-text)}
+.alert.danger{background:var(--danger-soft);border-color:color-mix(in srgb,var(--danger) 30%,transparent);color:var(--danger)}
 
 /* Tables */
 .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-1)}
@@ -359,7 +368,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 
 /* Empty / loading states */
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:54px 24px;color:var(--text-2)}
-.empty .ill{width:72px;height:72px;border-radius:20px;background:var(--otr-pale);display:flex;align-items:center;justify-content:center;color:var(--otr-sky-lo);margin-bottom:16px}
+.empty .ill{width:72px;height:72px;border-radius:var(--r-lg);background:var(--otr-pale);display:flex;align-items:center;justify-content:center;color:var(--otr-sky-lo);margin-bottom:16px}
 .empty h4{font-size:16px;color:var(--text);margin-bottom:6px}
 .empty p{max-width:34ch;font-size:13.5px;margin-bottom:16px}
 .skeleton{background:linear-gradient(100deg,var(--n-100) 30%,var(--n-50) 50%,var(--n-100) 70%);background-size:200% 100%;animation:sk 1.3s infinite;border-radius:var(--r-sm)}
@@ -423,10 +432,10 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 
 /* 5) Micro-interacción de botones ------------------------------------- */
 /* .btn ya trae transición + :active{translateY(1px)} más arriba;
-   reforzamos el primario con leve elevación (sombra navy) y un sheen sutil. */
+   reforzamos el primario con leve elevación (sombra negra) y un sheen sutil. */
 .btn-primary{position:relative;overflow:hidden}
 .btn-primary:hover{
-  box-shadow:0 4px 14px -4px rgba(12,12,12,.45),0 2px 6px -2px rgba(12,12,12,.3);
+  box-shadow:0 4px 14px -4px rgba(23,23,23,.45),0 2px 6px -2px rgba(23,23,23,.3);
   transform:translateY(-1px);
 }
 .btn-primary:active{transform:translateY(0)}
@@ -437,9 +446,9 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
   transform:skewX(-18deg);transition:left .55s var(--ease);pointer-events:none;
 }
 .btn-primary:hover::after{left:150%}
-/* El botón navy también gana una elevación discreta al hover. */
+/* El botón negro también gana una elevación discreta al hover. */
 .btn-navy:hover{
-  box-shadow:0 4px 14px -4px rgba(12,12,12,.5);
+  box-shadow:0 4px 14px -4px rgba(23,23,23,.5);
   transform:translateY(-1px);
 }
 .btn-navy:active{transform:translateY(0)}
