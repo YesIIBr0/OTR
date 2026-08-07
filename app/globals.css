@@ -1,6 +1,6 @@
 :root{
-  --otr-white:#FFFFFF; --otr-navy:#0C0C0C; --otr-ink:#000000;
-  --otr-sky:#2CAA20; --otr-sky-hi:#54C247; --otr-sky-lo:#1E8C16; --otr-pale:#E1F2DE;
+  --otr-white:#FFFFFF; --otr-navy:#171717; --otr-ink:#000000;
+  --otr-sky:#F25623; --otr-sky-hi:#F8987A; --otr-sky-lo:#C8401A; --otr-pale:#FDE7DE;
   --font-ui:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-brand:'Inter',system-ui,sans-serif;
 }
@@ -9,18 +9,18 @@ html,body{ margin:0; padding:0; }
 body{
   font-family:var(--font-ui);
   background:
-    radial-gradient(900px 500px at 70% -10%, rgba(44,170,32,.22), transparent 60%),
+    radial-gradient(900px 500px at 70% -10%, rgba(242,86,35,.18), transparent 60%),
     var(--otr-navy);
-  color:#EAF2FB; min-height:100vh; display:grid; place-items:center;
+  color:#FFFFFF; min-height:100vh; display:grid; place-items:center;
 }
 .hero{ text-align:center; padding:40px; max-width:640px; }
 .crest{ width:64px; height:72px; margin:0 auto 20px; display:block; }
 .eyebrow{ color:var(--otr-sky-hi); letter-spacing:.14em; text-transform:uppercase; font-size:12px; font-weight:700; margin:0; }
-.hero h1{ font-family:var(--font-brand); font-size:46px; line-height:1.05; margin:12px 0 14px; letter-spacing:-.01em; }
-.hero p.sub{ color:rgba(234,242,251,.72); font-size:16px; line-height:1.5; margin:0 auto; max-width:460px; }
+.hero h1{ font-family:var(--font-brand); font-size:46px; line-height:1.05; margin:12px 0 14px; letter-spacing:-.03em; }
+.hero p.sub{ color:rgba(255,255,255,.72); font-size:16px; line-height:1.5; margin:0 auto; max-width:460px; }
 .chips{ display:flex; gap:8px; justify-content:center; margin-top:26px; flex-wrap:wrap; }
-.chip{ padding:6px 14px; border-radius:999px; background:rgba(44,170,32,.16); color:var(--otr-sky-hi); font-size:13px; font-weight:600; }
+.chip{ padding:6px 14px; border-radius:999px; background:rgba(242,86,35,.16); color:var(--otr-sky-hi); font-size:13px; font-weight:600; }
 .cta{ margin-top:28px; }
-.btn{ background:var(--otr-sky); color:#FFFFFF; border:none; padding:13px 24px; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer; transition:.2s; }
+.btn{ background:var(--otr-sky); color:#FFFFFF; border:none; padding:13px 24px; border-radius:8px; font-weight:700; font-size:15px; cursor:pointer; transition:.2s; }
 .btn:hover{ background:var(--otr-sky-hi); transform:translateY(-1px); }
-.tag{ margin-top:34px; font-size:12.5px; color:rgba(234,242,251,.45); }
+.tag{ margin-top:34px; font-size:12.5px; color:rgba(255,255,255,.45); }
