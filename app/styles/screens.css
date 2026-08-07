@@ -657,3 +657,139 @@
    las tablas ya heredan el borde cálido #E4E3DF de --border (Task 1). Lo único que
    el marcado no podía dar es la regla de .card-head de arriba.
    === FIN MOCKUP GRUPO ADMIN/AUTH ========================================== */
+
+/* === DASHBOARD MOCKUP ======================================================
+   Pantalla "Inicio" del Aula reconstruida contra el mockup aprobado
+   (spec §2.4 y §3; Task 4 del plan 2026-08-07-aula-redesign-mockup.md).
+   Consume el KIT MOCKUP de arriba (.card--dark, .evrow, .ring, .chip--*,
+   .sec-title, .stat-group, .page-head--rule) y solo añade lo específico de
+   esta pantalla: rejilla de 2 columnas, hero, tarjeta de rango, grid de
+   logros, leaderboard y highlights.
+   Todos los bloques se OCULTAN desde el builder cuando no hay dato real
+   (scr-core.ts) — aquí no hay estados vacíos decorativos.
+   ========================================================================== */
+
+/* ---- Rejilla: contenido + rail de 336px (spec §2.4) ---- */
+.dash-grid{display:grid;grid-template-columns:1fr 336px;gap:22px;align-items:start}
+.dash-main{display:flex;flex-direction:column;gap:30px;min-width:0}
+.dash-aside{display:flex;flex-direction:column;gap:18px;min-width:0}
+/* Breakpoint LOCAL (no toca .split ni el shell): el rail baja bajo el contenido. */
+@media (max-width:980px){ .dash-grid{grid-template-columns:1fr} }
+
+/* ---- ② Hero "Tu próxima clase" (card negra + barra naranja de 3px) ---- */
+.dash-hero{padding:26px 30px 28px}
+.dash-hero::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--otr-green)}
+.dash-hero .dh-eyebrow{display:flex;align-items:center;gap:11px;margin-bottom:22px}
+.dash-hero .dh-eyebrow .lbl{letter-spacing:.18em;color:var(--ink-300)}
+.dash-hero .dh-body{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:end}
+.dash-hero .dh-mod{font-size:12px;font-weight:600;color:var(--ink-300);margin-bottom:10px}
+.dash-hero .dh-title{margin:0 0 20px;font-size:33px;font-weight:800;letter-spacing:-.03em;line-height:1.02;color:#fff;max-width:18ch}
+.dash-hero .dh-meta{display:flex;align-items:center;flex-wrap:wrap;gap:14px;font-size:14px;font-weight:600;color:var(--n-100)}
+.dash-hero .dh-meta .ic{width:16px;height:16px;color:var(--otr-green)}
+.dash-hero .dh-sep{width:1px;height:15px;background:rgba(255,255,255,.18)}
+.dash-hero .dh-side{display:flex;flex-direction:column;align-items:flex-end;gap:15px;flex:none}
+.dash-hero .dh-cd{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1;color:#fff}
+.dash-hero .btn.btn-accent{box-shadow:var(--sh-glow)}
+/* Punto del badge "En vivo pronto" (spec §3.1) */
+.chip--accent.chip--dot::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--text-on-accent);flex:none}
+@media (max-width:640px){
+  .dash-hero{padding:20px 20px 22px}
+  .dash-hero .dh-body{grid-template-columns:1fr;gap:20px;align-items:start}
+  .dash-hero .dh-side{align-items:flex-start}
+  .dash-hero .dh-title{font-size:25px}
+  .dash-hero .dh-cd{font-size:34px}
+}
+
+/* ---- ③ Próximos eventos: la card aporta el aire, la fila el ritmo ---- */
+.dash-events .evrow:first-child{padding-top:7px}
+.dash-events .evrow:last-child{padding-bottom:7px}
+.dash-events .evrow--live:first-child{padding-top:14px}
+.dash-events .evrow--live:last-child{padding-bottom:14px}
+/* Los filtros son botones: neutralizan el aspecto de control heredado. */
+.dash-filter{cursor:pointer;font-family:inherit;padding:5px 12px;border-radius:var(--r-sm);
+  font-size:12px;letter-spacing:0;text-transform:none;font-weight:700}
+.chip--outline.dash-filter{border-color:transparent;font-weight:600;color:var(--ink-400)}
+.chip--outline.dash-filter:hover{color:var(--text)}
+
+/* ---- ④ Aside "Tu rango" ---- */
+.dash-rank{padding:22px 20px}
+.dash-rank .dr-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:19px}
+.dash-rank .dr-body{display:flex;align-items:center;gap:18px}
+.dash-rank .dr-lvl{font-size:14px;font-weight:700;letter-spacing:-.01em;color:#fff;margin-bottom:5px}
+.dash-rank .dr-sub{margin:0;font-size:12.5px;font-weight:500;line-height:1.4;color:var(--ink-300)}
+.dash-rank .dr-sub b{color:var(--otr-green);font-weight:800}
+
+/* ---- ⑤ Aside "Logros" ---- */
+.dash-badges .db-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 18px 14px}
+.dash-badges .db-head .sec-title{margin-bottom:0}
+.dash-badges .db-count{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:var(--otr-green-text)}
+.dash-badges .db-count .ic{width:13px;height:13px;color:var(--otr-green)}
+.dash-badges .db-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 18px 18px}
+.badge-tile{display:flex;align-items:center;gap:10px;padding:11px 12px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-md);min-width:0;transition:border-color .15s var(--ease)}
+.badge-tile:hover{border-color:var(--ink-700)}
+.badge-tile .bt-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;
+  border-radius:var(--r-md);background:rgba(242,86,35,.1);color:var(--otr-green)}
+.badge-tile .bt-ic .ic{width:17px;height:17px}
+.badge-tile .bt-n{display:block;font-size:12px;font-weight:700;letter-spacing:-.01em;line-height:1.15;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge-tile .bt-s{display:block;margin-top:2px;font-size:10.5px;font-weight:600;color:var(--ink-400);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Insignia aún no ganada: tile apagado (mockup §3.6) */
+.badge-tile--off{background:var(--surface-2)}
+.badge-tile--off .bt-ic{background:var(--bg);color:var(--ink-700)}
+.badge-tile--off .bt-n{color:var(--n-600)}
+.dash-badges .db-foot{display:flex;align-items:center;justify-content:center;gap:5px;padding:13px;
+  border-top:1px solid var(--bg-sunken);font-size:12.5px;font-weight:600;color:var(--ink-400)}
+.dash-badges .db-foot:hover{color:var(--text);text-decoration:none}
+.dash-badges .db-foot .ic{width:13px;height:13px}
+
+/* ---- ⑥ Clasificación general (card negra con halo) ---- */
+.dash-lb{padding:24px 26px 26px}
+.dash-lb .dlb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:20px}
+.dash-lb .dlb-head .sec-title{margin-bottom:0}
+.dash-lb .dlb-head h3{display:flex;align-items:center;gap:9px}
+.dash-lb .dlb-head h3 .ic{width:19px;height:19px;color:var(--otr-green)}
+.dash-lb .dlb-meta{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400);flex:none}
+.dash-lb .dlb-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.92fr);gap:26px;align-items:start}
+/* Cohorte de 3 o menos: sin lista que poner al lado, el podio ocupa la card entera. */
+.dash-lb .dlb-grid--solo{grid-template-columns:1fr}
+.dash-lb .lb-podium{display:grid;grid-template-columns:1fr 1.16fr 1fr;gap:10px;align-items:end}
+.dash-lb .lb-tile{background:var(--ink-700);border-radius:var(--r-md);padding:17px 12px 14px;text-align:center;min-width:0}
+.dash-lb .lb-place{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1;color:var(--ink-300)}
+.dash-lb .lb-tname{margin-top:11px;font-size:14px;font-weight:700;line-height:1.1;color:#fff;overflow:hidden;text-overflow:ellipsis}
+.dash-lb .lb-txp{margin-top:3px;font-size:11px;font-weight:700;color:var(--ink-300)}
+.dash-lb .lb-tile--1{background:linear-gradient(165deg,var(--otr-green),var(--accent-dark));padding-bottom:15px}
+.dash-lb .lb-tile--1 .lb-crown{display:block;color:var(--text-on-accent);margin-bottom:8px}
+.dash-lb .lb-tile--1 .lb-crown .ic{width:22px;height:22px}
+.dash-lb .lb-tile--1 .lb-place{font-size:26px;color:var(--text-on-accent)}
+.dash-lb .lb-tile--1 .lb-tname{font-size:16px;font-weight:800;letter-spacing:-.01em;color:var(--text-on-accent)}
+.dash-lb .lb-tile--1 .lb-txp{font-size:12px;font-weight:800;color:var(--text-on-accent)}
+/* La posición propia también se marca cuando cae en el podio (no solo en la lista). */
+.dash-lb .lb-tile--me{box-shadow:inset 0 0 0 2px var(--otr-green)}
+.dash-lb .lb-tile--1.lb-tile--me{box-shadow:inset 0 0 0 2px var(--otr-black)}
+.dash-lb .lb-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;
+  padding:11px 12px;border-radius:var(--r-sm);border-left:2px solid transparent;border-bottom:1px solid rgba(255,255,255,.05)}
+.dash-lb .lb-row:last-child{border-bottom:0}
+.dash-lb .lb-pos{font-size:14px;font-weight:800;text-align:center;color:var(--ink-400)}
+.dash-lb .lb-name{font-size:13.5px;font-weight:600;letter-spacing:-.01em;color:var(--n-100);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-lb .lb-xp{font-size:12.5px;font-weight:700;color:var(--ink-300);white-space:nowrap}
+.dash-lb .lb-row--me{background:rgba(242,86,35,.12);border-left-color:var(--otr-green)}
+.dash-lb .lb-row--me .lb-pos,.dash-lb .lb-row--me .lb-xp{color:var(--otr-green)}
+.dash-lb .lb-row--me .lb-name{color:#fff;font-weight:800}
+@media (max-width:860px){
+  .dash-lb{padding:20px}
+  .dash-lb .dlb-grid{grid-template-columns:1fr;gap:18px}
+}
+
+/* ---- ⑦ Lo mejor de la temporada (solo si hay media real) ---- */
+.hl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.hl{position:relative;aspect-ratio:5/4;border-radius:var(--r-md);overflow:hidden;background:var(--otr-black) center/cover no-repeat}
+.hl::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(18,18,18,0) 42%,rgba(18,18,18,.9) 100%)}
+.hl .hl-tag{position:absolute;top:9px;left:9px;z-index:2;font-size:9px;letter-spacing:.06em;padding:3px 7px}
+.hl .hl-txt{position:absolute;left:12px;right:12px;bottom:11px;z-index:2}
+.hl .hl-t{font-size:13px;font-weight:700;letter-spacing:-.015em;line-height:1.2;color:#fff;margin-bottom:3px}
+.hl .hl-d{font-size:11px;font-weight:500;color:var(--ink-300)}
+@media (max-width:860px){ .hl-grid{grid-template-columns:repeat(2,1fr)} }
+/* === FIN DASHBOARD MOCKUP ================================================= */
