@@ -1,0 +1,10 @@
+<!-- Favicon OTR · Brand Book V1.0. Next lo sirve automáticamente como icono del sitio
+     (convención app/icon.svg). Escudo MONOCROMO negro #171717 sobre tile blanco rx=12:
+     a 16px la silueta del shield es lo único que sigue leyéndose, por eso va sólida y
+     sin los cuadrantes ni las letras del lockup. El path es el mismo `shield` de
+     app/lib/icons.ts (viewBox 26x30), escalado x1.8 y centrado con transform. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="OTR Debating Academy">
+  <rect width="64" height="64" rx="12" fill="#FFFFFF"/>
+  <path transform="translate(8.6 4.1) scale(1.8)" fill="#171717"
+        d="M3 2 H23 V15.5 C23 21.5 19.8 25.8 14.2 28.6 C13.45 28.97 12.55 28.97 11.8 28.6 C6.2 25.8 3 21.5 3 15.5 Z"/>
+</svg>

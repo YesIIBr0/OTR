@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./styles/tokens.css";
 import "./styles/app.css";
@@ -16,8 +16,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "OTR Aula",
-  description: "LMS de OTR Debate Academy",
+  title: "OTR Debating Academy · Aula",
+  description: "El aula de OTR Debating Academy: clases, práctica y torneos para aprender a defender tus ideas.",
+};
+
+// En Next 15 themeColor vive en el export `viewport`, no en `metadata` (moverlo a
+// metadata dispara el warning "Unsupported metadata themeColor" en cada build).
+export const viewport: Viewport = {
+  themeColor: "#171717",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

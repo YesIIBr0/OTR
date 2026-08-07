@@ -9,7 +9,7 @@ export default function NotFound() {
         <span
           aria-hidden="true"
           style={{ display: "block", margin: "0 auto 18px", width: 44, height: 50 }}
-          dangerouslySetInnerHTML={{ __html: otrCrest({ id: "nf", attrs: 'width="44" height="50" style="display:block"' }) }}
+          dangerouslySetInnerHTML={{ __html: otrCrest({ id: "nf", attrs: 'width="44" height="50" style="display:block"', ink: "#FFFFFF", paper: "#171717" }) }}
         />
         <h1 style={{ fontSize: 28, margin: "0 0 8px", fontWeight: 800 }}>Página no encontrada</h1>
         <p style={{ color: "rgba(234,242,251,.65)", margin: "0 0 22px", fontSize: 15 }}>

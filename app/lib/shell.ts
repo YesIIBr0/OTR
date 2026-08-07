@@ -226,7 +226,7 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
       <div class="sb-head">
         <a class="sb-logo" href="#dashboard" data-go="dashboard">
           ${/* Escudo OTR del brand book (sidebar, fondo negro) — markup canónico en ./icons (otrCrest) */""}
-          ${otrCrest({ id: "sb", attrs: 'class="crest"' })}
+          ${otrCrest({ id: "sb", attrs: 'class="crest"', ink: "#FFFFFF", paper: "#171717" })}
           <span class="txt">OTR <span class="sub">Aula</span></span>
         </a>
         ${/* [UI-NAV N3] Plegar el sidebar. El modo compacto (.app.mini) ya existía en CSS
