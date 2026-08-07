@@ -20,14 +20,16 @@
 6. **Secretos** (`.env.production`) viven SOLO en el VPS (gitignored). El repo es **público** — nunca commitear secretos.
 
 ## Diseño / marca
-Sistema vigente: **OTR Brand Book V1.0 (2026)**. Fuente de verdad de los valores: `app/styles/tokens.css`.
+Sistema vigente: **OTR Brand Book V1.0 (2026) + estética del mockup aprobado 2026-08-07** (spec exacto en
+`docs/superpowers/specs/2026-08-07-dashboard-mockup-spec.md`). Fuente de verdad de los valores: `app/styles/tokens.css`.
 Resumen de marca en `BRAND.md`.
 
-- **Paleta ESTRICTA:** negro `#171717` · blanco `#FFFFFF` · naranja `#F25623` como **único acento**, sobre una rampa de **grises fríos** (`#4D4D4D` dark gray, `#DEDEDE` light gray; rampa completa `#FCFCFC #F7F7F7 #EFEFEF #E7E7E7 #DEDEDE #BDBDBD #8C8C8C #6B6B6B #4D4D4D #333333 #262626 #171717`). Apoyos del naranja: `#C8401A` (hover/oscuro), `#F8987A` (sobre fondo oscuro), `#FDE7DE` (tinte), `#9E3211` (texto AA sobre tinte). **Sin verde, sin oro, sin azul, sin ámbar.**
-- **Naranja con moderación:** una sola pieza en naranja por vista. **Botón primario NEGRO** (`#171717`); el naranja queda para el CTA estrella, énfasis, foco y datos.
+- **Paleta:** negro `#171717` · blanco `#FFFFFF` · naranja `#F25623` como **único acento**, sobre grises fríos de texto (`#4D4D4D`, `#DEDEDE`…) y un **canvas greige cálido** `#F1F1EF` con bordes `#E4E3DF`/`#DCDBD6` y superficies `#FFFFFF`/`#FBFBFA` (estética mockup). Apoyos del naranja: `#CC3F13` (dark), `#F7A98C`/`#F8987A` (soft), `#FDE7DE` (tinte), `#9E3211` (texto AA — `#CC3F13` da 4.33:1 sobre greige y NO alcanza AA en texto pequeño). **Sin verde, sin oro, sin azul, sin ámbar.**
+- **Acento (regla del mockup, deroga la "una pieza por vista"):** naranja generoso — barras de sección, badges, filas en vivo, datos, podios. **Texto sobre naranja SIEMPRE negro** (`--text-on-accent:#171717`). Conviven botón primario negro y botón acento naranja (texto negro).
 - **Estados y niveles dentro de la paleta:** `--ok:#171717`/`#EFEFEF` · `--warn:#F25623`/`#FDE7DE` · `--danger:#C8401A`/`#FBDDD2` · `--info:#4D4D4D`/`#EFEFEF`. Niveles: novato `#BDBDBD` → jv `#8C8C8C` → varsity `#4D4D4D` → strategist `#171717` → elite `#F25623`.
 - **Tipografía:** **Inter única familia** en todo el sistema (UI, marca y landing). Titulares extrabold **800** con tracking **-0.03em** (`--track-tight`; `-0.035em` en display grande). Cuerpo 15–16px, base UI 14px. Mayúsculas solo en eyebrows con tracking; el resto en **sentence case**.
-- **Radios:** escala corta 0 / 4 / 8 / 12 / pill. **Controles 8px** (`--r-sm`), **tarjetas y contenedores 12px** (`--r-md`/`--r-lg`/`--r-xl`), pill 999px.
+- **Radios (mockup):** badges **3px** (`--r-xs`), botones **4px** (`--r-sm`), tiles **5px** (`--r-md`), contenedores **6px** (`--r-lg`); pill solo para círculos/avatares — **cero pills en chips y badges**. **Sombra única** `0 1px 2px rgba(23,23,23,.05)` (+ glow naranja solo en CTA/hero).
+- **Shell:** top-nav sticky de 62px (sin sidebar en desktop); main `max-width:1256px`. Kit de componentes del mockup en `screens.css` ("KIT MOCKUP 2026-08"): `.sec-title`, `.chip chip--*`, `.btn btn-*` (variantes llevan la geometría), `.card--dark`, `.evrow`, `.date-box`, `.stat-inline`, `.ring`, `.page-head--rule`.
 - **Escudo monocromo siempre:** un solo color según el fondo (negro sobre claro, blanco sobre oscuro o naranja). `otrCrest({ ink, paper })` en `app/lib/icons.ts` lo parametriza. Nunca a color sobre fondo de color, nunca sombras ni degradados en el escudo.
 - **Iconos:** familia Lucide-style, trazo 2px, `currentColor` (`app/lib/icons.ts`). **Sin emoji** en UI ni en copy.
 - **Copy de marca:** nombre visible **"OTR Debating Academy"**; CTA estrella **"Inscríbete ahora"**.
