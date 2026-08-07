@@ -1,5 +1,5 @@
 /* OTR — WebGL raymarched glass voice-orb.
-   Renders the bright sky background + a refractive navy-core metaball that
+   Renders the bright neutral background + a refractive ink-core metaball that
    breathes, ripples like a waveform, and parallaxes to the pointer.
    Falls back to the CSS .hero-fallback glow if WebGL is unavailable. */
 (function () {
@@ -28,13 +28,13 @@
     uniform float uIntro;     // 0..1 reveal
 
     // brand palette
-    const vec3 NAVY  = vec3(0.047,0.137,0.251);
-    const vec3 INK   = vec3(0.039,0.102,0.184);
-    const vec3 SKY   = vec3(0.310,0.663,0.910);
-    const vec3 SKYHI = vec3(0.498,0.784,0.949);
-    const vec3 PALE  = vec3(0.863,0.933,0.984);
+    const vec3 NAVY  = vec3(0.090,0.090,0.090);
+    const vec3 INK   = vec3(0.051,0.051,0.051);
+    const vec3 SKY   = vec3(0.949,0.337,0.137);
+    const vec3 SKYHI = vec3(0.973,0.596,0.478);
+    const vec3 PALE  = vec3(0.992,0.906,0.871);
     const vec3 WHITE = vec3(1.0);
-    const vec3 OFF   = vec3(0.953,0.969,0.988);
+    const vec3 OFF   = vec3(0.969,0.969,0.969);
 
     float hash(vec2 p){ return fract(sin(dot(p, vec2(41.3,289.1)))*43758.5453); }
     float noise(vec3 p){
