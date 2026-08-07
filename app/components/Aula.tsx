@@ -18,7 +18,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       <div style="text-align:center">
         ${/* Escudo OTR del brand book (pantalla de carga, fondo negro) — markup canónico en lib/icons (otrCrest) */""}
         ${otrCrest({ id: "load", attrs: 'style="width:48px;height:54px;margin:0 auto;display:block"', ink: "#FFFFFF", paper: "#171717" })}
-        <p style="margin-top:14px;color:rgba(234,242,251,.6)">${tr("aula.loading")}</p>
+        <p style="margin-top:14px;color:rgba(255,255,255,.6)">${tr("aula.loading")}</p>
       </div>
     </div>`;
 

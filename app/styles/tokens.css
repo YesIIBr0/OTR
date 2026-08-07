@@ -33,7 +33,7 @@
   --otr-sky-hi:var(--otr-green-hi);
   --otr-sky-lo:var(--otr-green-lo);
   --otr-pale:var(--otr-green-pale);
-  --otr-offwhite:var(--otr-cream);
+  --otr-offwhite:#F7F7F7; /* ink-50: superficies suaves; NO blanco puro (se fundiría con --bg) */
 
   /* ---- Neutrals (rampa FRÍA blanco→negro del brand book) ---- */
   --n-0:#FFFFFF;
