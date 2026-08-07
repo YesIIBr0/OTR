@@ -68,77 +68,99 @@ svg.ic{width:18px;height:18px;flex:none}
 .chapter .ic{width:16px;height:16px}
 
 /* ===================== APP LAYOUT ===================== */
-.app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;grid-template-rows:100vh;}
-.app.mini{grid-template-columns:var(--sidebar-mini) 1fr}
-
-/* ---------- Sidebar ---------- */
-.sidebar{
-  background:var(--otr-navy);color:var(--text-on-navy);
-  display:flex;flex-direction:column;min-height:0;position:relative;z-index:30;
-}
-.sb-head{display:flex;align-items:center;gap:10px;height:var(--topbar-h);padding:0 16px;flex:none;border-bottom:1px solid rgba(255,255,255,.08)}
-.sb-logo{display:flex;align-items:center;gap:10px;font-family:var(--font-brand);font-weight:800;font-size:15px;color:#fff;letter-spacing:.01em;white-space:nowrap;overflow:hidden}
-.sb-logo .sub{opacity:.5;font-weight:500}
-.app.mini .sb-logo .txt{display:none}
-/* [UI-NAV N3] Interruptor del modo compacto. Vive en la cabecera del sidebar; plegado se
-   centra y gira, para que siga leyéndose como "abrir" sin depender del texto. */
-.sb-collapse{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;flex:none;border:0;border-radius:var(--r-sm);background:transparent;color:rgba(255,255,255,.5);cursor:pointer;transition:background .15s,color .15s,transform .2s var(--ease)}
-.sb-collapse:hover{background:rgba(255,255,255,.08);color:#fff}
-.sb-collapse .ic{width:16px;height:16px}
-.app.mini .sb-collapse{margin:0 auto;transform:rotate(180deg)}
-/* En móvil el sidebar es un cajón: plegarlo no aplica. */
-@media (max-width:900px){ .sb-collapse{display:none} }
-.sb-nav{flex:1;overflow-y:auto;padding:12px 10px;display:flex;flex-direction:column;gap:2px}
-.sb-group{margin-top:14px;padding:0 10px 6px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4)}
-/* Plegado, las cabeceras de sección se vuelven una línea divisoria: "MIS PROGRAMAS" no
-   cabe en 64px y partirlo en dos renglones se lee peor que no ponerlo. Los iconos siguen
-   siendo la navegación; el título vuelve al desplegar. */
-.app.mini .sb-group,.app.mini .sb-group--toggle{height:1px;min-height:0;padding:0;margin:14px 12px;overflow:hidden;color:transparent;background:rgba(255,255,255,.12);border:0;font-size:0}
-.sb-item{
-  display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:var(--r-sm);
-  color:rgba(255,255,255,.78);font-weight:500;font-size:13.5px;white-space:nowrap;position:relative;
-  transition:background .15s var(--ease),color .15s var(--ease);
-}
-.sb-item:hover{background:rgba(255,255,255,.07);color:#fff;text-decoration:none}
-/* [BRAND V1.0 · moderación del acento] El ítem activo se marca con superficie NEUTRA
-   (blanco translúcido sobre el registro negro) + la barra naranja de la izquierda: el
-   naranja aparece una sola vez y no ensucia el negro con un tinte marrón. */
-.sb-item.active{background:rgba(255,255,255,.12);color:#fff}
-.sb-item.active::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--otr-sky)}
-.sb-item .ic{width:18px;height:18px;flex:none;opacity:.9}
-.sb-item .badge-count{margin-left:auto;background:var(--otr-sky);color:#FFFFFF;font-size:11px;font-weight:700;padding:1px 7px;border-radius:var(--r-pill)}
-.app.mini .sb-item{justify-content:center;padding:9px 0}
-.app.mini .sb-item .lbl,.app.mini .sb-item .badge-count{display:none}
-/* [UI-NAV N1] Grupo DESPLEGABLE: la cabecera de sección es un botón con chevron. Hereda
-   todo el aspecto de .sb-group para que abrir/cerrar no cambie la tipografía del sidebar. */
-.sb-group--toggle{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:transparent;border:0;font:inherit;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);cursor:pointer;text-align:left}
-.sb-group--toggle:hover{color:rgba(255,255,255,.72)}
-.sb-group--toggle .chev{display:flex;width:13px;height:13px;flex:none;transition:transform .2s var(--ease)}
-.sb-group--toggle[aria-expanded="false"] .chev{transform:rotate(-90deg)}
-.sb-sub{display:flex;flex-direction:column;gap:2px}
-.sb-sub[hidden]{display:none}
-.app.mini .sb-group--toggle .chev{display:none}
-
-.sb-foot{flex:none;padding:10px;border-top:1px solid rgba(255,255,255,.08);position:relative}
-.sb-user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--r-sm);cursor:pointer;width:100%;background:transparent;border:0;font:inherit;color:inherit;text-align:left}
-.sb-user:hover{background:rgba(255,255,255,.07)}
-/* [BRAND V1.0 · moderación] mismo criterio que .sb-item.active: superficie neutra. */
-.sb-user.active{background:rgba(255,255,255,.12)}
-.sb-user .chev{display:flex;width:13px;height:13px;flex:none;margin-left:auto;opacity:.5;transition:transform .2s var(--ease)}
-.sb-user[aria-expanded="true"] .chev{transform:rotate(180deg)}
-/* [UI-NAV N2] Menú de cuenta (Perfil · Membresía · Ajustes · Salir). Se despliega HACIA
-   ARRIBA desde el chip: es lo último del sidebar y abajo no hay sitio. */
-.sb-usermenu{display:flex;flex-direction:column;gap:2px;padding:6px;margin-bottom:6px;border-radius:var(--r-md);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
-.sb-usermenu[hidden]{display:none}
-.app.mini .sb-usermenu .lbl{display:none}
-.app.mini .sb-user .meta{display:none}
-
-/* ---------- Topbar ---------- */
+/* [MOCKUP T2] Una sola columna: la navegación subió a la top-nav (adiós sidebar y
+   --sidebar-w). El scroll sigue viviendo en .content, así que el shell no salta. */
+.app{display:grid;grid-template-columns:1fr;grid-template-rows:100vh;}
 .main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
-.topbar{
-  height:var(--topbar-h);flex:none;background:var(--otr-white);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:14px;padding:0 18px;position:sticky;top:0;z-index:20;
+
+/* ---------- Top-nav (spec §2.1: 62px, translúcida, borde cálido) ---------- */
+.topnav{
+  height:62px;flex:none;position:sticky;top:0;z-index:20;
+  background:rgba(248,248,246,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
 }
+/* El interior se alinea con el ancho del contenido (1256px): en pantallas anchas el
+   escudo queda a plomo con el título de la página, no pegado al borde del monitor. */
+.topnav-in{max-width:1256px;height:100%;margin:0 auto;padding:0 30px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.tn-left{display:flex;align-items:center;gap:38px;min-width:0}
+.tn-logo{display:flex;align-items:center;gap:10px;flex:none;color:var(--otr-black)}
+.tn-logo:hover{text-decoration:none}
+.tn-logo .crest{width:26px;height:30px}
+.tn-word{font-family:var(--font-brand);font-weight:800;font-size:18px;letter-spacing:-.03em;color:var(--otr-black)}
+
+/* Links horizontales. Activo = texto negro (700) + barra naranja de 2px abajo. */
+.tn-links{display:flex;align-items:center;gap:26px;height:100%;min-width:0;flex-wrap:nowrap;overflow:hidden}
+.tn-link{position:relative;display:inline-flex;align-items:center;gap:7px;height:100%;
+  font-size:14px;font-weight:500;letter-spacing:-.01em;color:var(--ink-400);white-space:nowrap;
+  transition:color .15s}
+.tn-link:hover{color:var(--otr-black);text-decoration:none}
+.tn-link.active{font-weight:700;color:var(--otr-black)}
+.tn-link.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--otr-sky)}
+.tn-count{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 5px;
+  border-radius:var(--r-xs);background:var(--otr-sky);color:var(--text-on-accent);font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* Desplegable "Más" (<details> nativo: sin JS nuevo). Contiene el excedente en escritorio
+   y TODA la navegación por debajo de 1025px, con la cabecera de cada grupo. */
+.tn-more{position:relative;flex:none}
+.tn-more > summary{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 10px;border-radius:var(--r-md);
+  font-size:14px;font-weight:500;letter-spacing:-.01em;color:var(--ink-400);cursor:pointer;list-style:none;transition:background .15s,color .15s}
+.tn-more > summary::-webkit-details-marker{display:none}
+.tn-more > summary:hover{background:var(--bg-sunken);color:var(--otr-black)}
+.tn-more[open] > summary{background:var(--bg-sunken);color:var(--otr-black)}
+.tn-more > summary .ic{width:17px;height:17px}
+.tn-more > summary .chev{display:flex;width:13px;height:13px;transition:transform .2s var(--ease)}
+.tn-more[open] > summary .chev{transform:rotate(180deg)}
+.tn-menu{position:absolute;top:44px;left:0;z-index:60;width:250px;max-height:min(72vh,560px);overflow-y:auto;
+  padding:7px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:0 10px 30px rgba(23,23,23,.10)}
+.tn-mgroup{padding:9px 9px 5px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-400)}
+/* Ítem de menú (menú "Más" y menú de cuenta comparten aspecto). */
+.tn-mi{display:flex;align-items:center;gap:10px;padding:8px 9px;border-radius:var(--r-sm);
+  color:var(--text-2);font-size:13.5px;font-weight:500;white-space:nowrap;transition:background .15s,color .15s}
+.tn-mi:hover{background:var(--bg-sunken);color:var(--otr-black);text-decoration:none}
+.tn-mi.active{background:var(--bg-sunken);color:var(--otr-black);font-weight:700}
+.tn-mi .ic{width:17px;height:17px;flex:none;opacity:.75}
+.tn-mi .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.tn-mi .tn-count{margin-left:auto}
+/* Lo que ya se ve como link horizontal no se repite dentro del menú (solo en escritorio). */
+@media (min-width:1025px){
+  .tn-menu .tn-dup{display:none}
+  .tn-more--dup{display:none}
+}
+
+/* ---------- Bloque derecho: XP · campana · chip de usuario ---------- */
+.tn-right{display:flex;align-items:center;gap:14px;flex:none}
+.tn-xp{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border-radius:var(--r-md);background:var(--otr-black)}
+.tn-xp .ic{width:14px;height:14px;color:var(--otr-sky)}
+.tn-xp b{font-size:13px;font-weight:700;color:#fff}
+.tn-xp .u{font-size:11px;font-weight:600;color:var(--ink-300)}
+.tn-icon{width:34px;height:34px;flex:none;border:0;border-radius:var(--r-md);background:#ECEBE7;color:var(--n-600);
+  display:inline-flex;align-items:center;justify-content:center;position:relative;transition:background .15s,color .15s}
+.tn-icon:hover{background:var(--border);color:var(--otr-black)}
+.tn-icon .ic{width:17px;height:17px}
+/* "Crear" del coach: a la altura del bloque derecho (34px como la pill y la campana); el
+   .btn-sm heredado mide 30 y quedaba corto. Selector de 2 clases a propósito: .btn-sm se
+   declara MÁS ABAJO en este mismo archivo. En móvil sigue mandando el mínimo táctil de
+   44px (regla de a11y sobre min-height) — height no lo pisa. */
+.tn-right .tn-create{height:34px;padding:0 13px;font-size:13px}
+.tn-sep{width:1px;height:24px;background:var(--border);flex:none}
+.tn-userwrap{position:relative}
+.tn-user{display:flex;align-items:center;gap:9px;padding:3px 6px 3px 3px;border:0;border-radius:var(--r-md);background:transparent;
+  font:inherit;color:inherit;text-align:left;cursor:pointer;transition:background .15s}
+.tn-user:hover,.tn-user.active{background:var(--bg-sunken)}
+.tn-av{width:34px;height:34px;font-size:13px}
+.tn-umeta{display:flex;flex-direction:column;line-height:1.15;min-width:0;max-width:150px}
+.tn-uname{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--otr-black);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn-usub{font-size:11px;font-weight:500;color:var(--ink-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* [UI-NAV N2] Menú de cuenta: mismo id (#sb-usermenu) y mismos data-*, ahora colgando
+   HACIA ABAJO del chip. */
+.tn-usermenu{position:absolute;top:46px;right:0;z-index:60;width:216px;display:flex;flex-direction:column;gap:2px;
+  padding:7px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:0 10px 30px rgba(23,23,23,.10)}
+.tn-usermenu[hidden]{display:none}
+.tn-lang{display:flex;gap:3px;padding:6px 9px;margin:2px 0;border-top:1px solid var(--bg-sunken);border-bottom:1px solid var(--bg-sunken)}
+.tn-lang button{flex:1;border:1px solid var(--border);background:transparent;color:var(--text-2);
+  font-family:inherit;font-size:11.5px;font-weight:700;padding:5px 0;border-radius:var(--r-sm);transition:.15s}
+.tn-lang button.on{background:var(--otr-black);border-color:var(--otr-black);color:#fff}
+
 .icon-btn{
   width:36px;height:36px;flex:none;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;
   display:inline-flex;align-items:center;justify-content:center;color:var(--text-2);position:relative;
@@ -146,13 +168,9 @@ svg.ic{width:18px;height:18px;flex:none}
 }
 .icon-btn:hover{background:var(--otr-offwhite);color:var(--text)}
 .icon-btn .dot{position:absolute;top:7px;right:7px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid #fff}
-.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);min-width:0}
-.crumbs .sep{color:var(--text-3)}
-.crumbs .crumb-link{color:var(--text-2);border-radius:4px}
-.crumbs .crumb-link:hover{color:var(--text);text-decoration:underline}
-.crumbs .crumb-link:focus-visible{box-shadow:var(--ring);outline:none}
-.crumbs .here{color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.topbar .spacer{flex:1}
+/* [MOCKUP T2] El panel de notificaciones colgaba del topbar de 56px; la top-nav mide 62.
+   (La regla base vive en screens.css: aquí solo se corrige el desplome.) */
+.main .notif-panel{top:70px;right:24px}
 .searchbox{display:flex;align-items:center;gap:8px;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-pill);padding:0 12px;height:36px;width:260px;color:var(--text-3)}
 .searchbox input{border:0;background:transparent;outline:none;font-size:13px;color:var(--text);width:100%}
 .role-switch{display:flex;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-pill);padding:3px}
@@ -161,7 +179,8 @@ svg.ic{width:18px;height:18px;flex:none}
 
 /* ---------- content scroll area ---------- */
 .content{flex:1;overflow-y:auto;min-height:0;scroll-behavior:smooth}
-.page{max-width:var(--maxw);margin:0 auto;padding:28px 32px 72px}
+/* [MOCKUP T2 · spec §2.2] main = 1256px centrado, aire de 30px y 72px de respiro abajo. */
+.page{max-width:1256px;margin:0 auto;padding:30px 30px 72px}
 .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:24px}
 .page-title{font-size:var(--fs-24);font-weight:800;letter-spacing:var(--track-tight);color:var(--text);line-height:1.1;margin:0}
 /* Encabezado solo para lectores de pantalla (a11y): da a cada pantalla un h1 sin cambio visual */

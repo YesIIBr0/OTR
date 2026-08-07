@@ -73,8 +73,8 @@ function sidebar(d) {
   return `
   <aside class="lst-aside">
     <div class="card card-pad">
-      <p class="eyebrow">${t("lst.fromLabel")}</p>
-      <div class="row vcenter" style="gap:6px;margin:2px 0 14px">
+      <span class="lbl">${t("lst.fromLabel")}</span>
+      <div class="row vcenter" style="gap:6px;margin:6px 0 14px">
         <b class="lst-price-xl tnum">${money(d.listing.priceCentsHour)}</b>
         <span class="faint" style="font-size:13px">${t("lst.perHour")}</span>
       </div>
@@ -82,8 +82,8 @@ function sidebar(d) {
       ${row(t("lst.factModality"), modalityLabel(d.listing.modality))}
       ${row(t("lst.factLanguages"), languagesLabel(d.listing.language))}
       ${s.sessions ? row(t("lst.factSessions"), s.sessions) : ""}
-      <button class="btn btn-primary btn-block" style="margin-top:16px" data-lst-book="${esc(d.listing.id)}">${t("lst.bookBtn")}</button>
-      <button class="btn btn-soft btn-block" style="margin-top:8px" data-lst-msg="${esc(d.teacher.id)}">
+      <button class="btn btn-accent btn-block" style="margin-top:16px" data-lst-book="${esc(d.listing.id)}">${t("lst.bookBtn")}</button>
+      <button class="btn btn-outline btn-block" style="margin-top:8px" data-lst-msg="${esc(d.teacher.id)}">
         <span class="row vcenter" style="gap:7px;justify-content:center"><span style="display:inline-flex;width:15px;height:15px">${IC.msg}</span>${t("lst.messageBtn")}</span>
       </button>
       <p class="faint" style="font-size:11.5px;margin-top:12px;line-height:1.45">${t("lst.escrowNote")}</p>
@@ -107,7 +107,7 @@ function offers(d) {
           </div>
           <div class="row vcenter" style="gap:14px;flex:none">
             <b class="tnum" style="font-size:15px">${money(o.priceCentsHour)}<span class="faint" style="font-size:11.5px;font-weight:400">${t("lst.perHour")}</span></b>
-            <span class="btn btn-quiet btn-sm">${t("lst.viewBtn")}</span>
+            <span class="btn btn-outline btn--sm">${t("lst.viewBtn")}</span>
           </div>
         </div>`).join("")}
     </div>
@@ -142,7 +142,7 @@ function body(d) {
   const s = d.stats || {};
   const ratingLine = s.rating != null
     ? `<span class="row vcenter" style="gap:6px">${stars(s.rating)}<b>${s.rating}</b><span class="faint">· ${s.reviewCount} ${t("lst.reviewsSuffix")}</span></span>`
-    : `<span class="badge">${t("lst.newTeacher")}</span>`;
+    : C.chip(t("lst.newTeacher"), "tint");
   const since = memberSince(d.teacher.memberSinceIso);
 
   return `
@@ -161,8 +161,8 @@ function body(d) {
           : C.avatar(d.teacher.initials || "?", { size: "lg", bg: "var(--otr-navy)" })}
         <div style="min-width:0">
           <div class="row vcenter wrap" style="gap:9px">
-            <b style="font-size:18px;letter-spacing:var(--track-tight)">${d.teacher.name}</b>
-            ${d.teacher.verified ? `<span class="badge ok" style="font-size:11px">${IC.check} ${t("lst.verifiedBadge")}</span>` : ""}
+            <b style="font-size:19px;font-weight:800;letter-spacing:-.025em">${d.teacher.name}</b>
+            ${d.teacher.verified ? C.chip(t("lst.verifiedBadge"), "accent", { ic: "check" }) : ""}
           </div>
           ${d.teacher.headline ? `<div class="muted" style="font-size:13.5px;margin-top:3px">${d.teacher.headline}</div>` : ""}
           <div class="row vcenter wrap" style="gap:6px 12px;margin-top:7px;font-size:13px;color:var(--text-2)">
@@ -179,7 +179,7 @@ function body(d) {
         ${d.teacher.bio ? `<p class="lst-prose">${d.teacher.bio}</p>` : ""}
         ${d.listing.description ? `<p class="lst-prose" style="margin-top:10px">${d.listing.description}</p>` : ""}
         ${d.teacher.formats ? `<div class="row wrap" style="gap:7px;margin-top:12px">${
-          String(d.teacher.formats).split(",").map((f) => `<span class="chip soft">${f.trim()}</span>`).join("")
+          String(d.teacher.formats).split(",").map((f) => `<span class="chip chip--outline">${f.trim()}</span>`).join("")
         }</div>` : ""}
       </section>` : ""}
 
@@ -195,7 +195,7 @@ S.listing = {
   render() {
     const st = detState();
     const head = `<div class="page-head fade-up"><div>
-      <p class="eyebrow"><a href="#listings" data-go="listings" style="color:inherit">${t("lst.eyebrow")}</a></p>
+      <p class="ph-eyebrow"><a href="#listings" data-go="listings" style="color:inherit">${t("lst.eyebrow")}</a></p>
     </div></div>`;
     if (st.error) {
       return `${head}<div class="card fade-up"><div class="empty">

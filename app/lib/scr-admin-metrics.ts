@@ -77,9 +77,11 @@ function miniTable(title, ic, rows, labelMap, thLabel, thCount) {
   const body = rows.length
     ? rows.map(([k, v]) => `<tr><td>${labelMap[k] || k}</td><td class="num tnum">${fmtNum(v)}</td></tr>`).join("")
     : `<tr><td colspan="2" class="faint" style="text-align:center;padding:16px 0">${t("am.tableEmpty")}</td></tr>`;
+  // [MOCKUP 2026-08] .card-head → .sec-title--sm (barra naranja 3×14 + h3 15/800). El icono
+  // se queda en gris: la pieza de acento de la cabecera ya es la barra.
   return `
   <div class="card fade-up">
-    <div class="card-head"><h3 class="row vcenter" style="gap:8px"><span style="display:inline-flex;width:16px;height:16px">${IC[ic]}</span>${title}</h3></div>
+    <div class="card-head"><div class="sec-title sec-title--sm"><h3 class="row vcenter" style="gap:7px"><span style="display:inline-flex;width:15px;height:15px;color:var(--ink-400)">${IC[ic]}</span>${title}</h3></div></div>
     <div class="table-wrap" style="border:0;border-radius:0;box-shadow:none">
       <table class="tbl">
         <thead><tr><th>${thLabel}</th><th class="num">${thCount}</th></tr></thead>
@@ -114,8 +116,8 @@ function funnelCard(funnel) {
     .join("");
   return `
   <div class="card card-pad fade-up" style="--d:2">
-    <b style="font-size:14px">${t("am.funnelTitle")}</b>
-    <p class="faint" style="font-size:12px;margin-top:2px">${t("am.funnelSub")}</p>
+    <div class="sec-title sec-title--sm" style="margin-bottom:4px"><h3>${t("am.funnelTitle")}</h3></div>
+    <p class="faint" style="font-size:12px">${t("am.funnelSub")}</p>
     <div style="margin-top:8px">${rows}</div>
   </div>`;
 }
@@ -140,8 +142,8 @@ function weeklyCard(weeks) {
     .join("");
   return `
   <div class="card card-pad fade-up" style="--d:3">
-    <b style="font-size:14px">${t("am.weeklyTitle")}</b>
-    <p class="faint" style="font-size:12px;margin-top:2px">${t("am.weeklySub")}</p>
+    <div class="sec-title sec-title--sm" style="margin-bottom:4px"><h3>${t("am.weeklyTitle")}</h3></div>
+    <p class="faint" style="font-size:12px">${t("am.weeklySub")}</p>
     <div style="display:flex;align-items:flex-end;gap:6px;margin-top:16px">${bars}</div>
     ${allZero ? `<p class="faint" style="font-size:12px;margin-top:10px;text-align:center">${t("am.weeklyEmpty")}</p>` : ""}
   </div>`;
@@ -182,10 +184,12 @@ function viewBody() {
   const totalUsers = Object.values(usersByRole).reduce((a, b) => a + (Number(b) || 0), 0);
 
   return `
+  <!-- [MOCKUP 2026-08] Fuera el brillo (.otr-shine): el mockup no tiene sheen ni elevación,
+       la jerarquía la da el contraste. Los dos KPIs estrella conservan .tile--hero. -->
   <div class="grid g-4 fade-up" style="--d:1;margin-bottom:18px">
-    <div class="tile tile--hero otr-shine" title="${esc(northStar.definition)}">${C.kpi(t("am.northStar"), fmtNum(northStar.activeStudentsWeek), { ic: "check", accent: "var(--otr-green-text)" })}</div>
+    <div class="tile tile--hero" title="${esc(northStar.definition)}">${C.kpi(t("am.northStar"), fmtNum(northStar.activeStudentsWeek), { ic: "check", accent: "var(--otr-green-text)" })}</div>
     <div class="tile">${C.kpi(t("am.kpiUsers"), fmtNum(totalUsers), { ic: "users" })}</div>
-    <div class="tile tile--hero-gold otr-shine">${C.kpi(t("am.kpiGmv"), money(bookings.gmvCents), { ic: "star", accent: "var(--otr-gold-text)" })}</div>
+    <div class="tile tile--hero-gold">${C.kpi(t("am.kpiGmv"), money(bookings.gmvCents), { ic: "star", accent: "var(--otr-gold-text)" })}</div>
     <div class="tile">${C.kpi(t("am.kpiBookings"), fmtNum(bookings.total), { ic: "calendar" })}</div>
     <div class="tile">${C.kpi(t("am.kpiDebatesPending"), fmtNum(debates.pending), { ic: "flag" })}</div>
   </div>
@@ -213,16 +217,17 @@ function viewBody() {
 S.adminMetrics = {
   render(state) {
     return `
-    <div class="page-head fade-up"><div>
-      <p class="eyebrow">${t("am.eyebrow")}</p>
-      <h1 class="page-title">${t("am.title")}</h1>
+    <!-- [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior. -->
+    <div class="page-head page-head--rule fade-up"><div>
+      <p class="ph-eyebrow">${t("am.eyebrow")}</p>
+      <h1 class="ph-title">${t("am.title")}</h1>
       <div class="page-sub">${t("am.subtitle")}</div>
     </div></div>
 
     <!-- [F6.4] Export CSV de entidades de negocio (descarga directa; filename datado en servidor). -->
     <div class="row fade-up" style="--d:1;margin-bottom:14px;justify-content:flex-end;gap:8px">
-      <a class="btn btn-ghost btn-sm" href="/api/admin/export?entity=enrollments" download>${IC.doc} ${t("am.exportEnrollments")}</a>
-      <a class="btn btn-ghost btn-sm" href="/api/admin/export?entity=bookings" download>${IC.doc} ${t("am.exportBookings")}</a>
+      <a class="btn btn-outline btn--sm" href="/api/admin/export?entity=enrollments" download>${IC.doc} ${t("am.exportEnrollments")}</a>
+      <a class="btn btn-outline btn--sm" href="/api/admin/export?entity=bookings" download>${IC.doc} ${t("am.exportBookings")}</a>
     </div>
 
     <div class="fade-up" style="--d:1" id="am-body">${viewBody()}</div>`;

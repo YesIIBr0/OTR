@@ -41,11 +41,13 @@ const isCoachRole = (r) => r === "TEACHER" || r === "COACH";
 const ini = (name) =>
   (String(name || "?").split(" ").map((w) => w[0]).join("") || "?").slice(0, 2).toUpperCase();
 
+// [MOCKUP 2026-08] Chips del kit (r3, versalitas 10/800): admin en negro sólido, coach en
+// el tinte frío del kit (chip--info) y el resto en outline neutro.
 function roleBadge(role) {
   const r = String(role || "").toUpperCase();
-  if (r === "ADMIN") return `<span class="badge navy"><span class="dot"></span>${esc(ROLE_LABEL[r] || r)}</span>`;
-  if (isCoachRole(r)) return `<span class="badge sky"><span class="dot"></span>${esc(ROLE_LABEL[r] || r)}</span>`;
-  return `<span class="badge">${esc(ROLE_LABEL[r] || r || "—")}</span>`;
+  if (r === "ADMIN") return `<span class="chip chip--black">${esc(ROLE_LABEL[r] || r)}</span>`;
+  if (isCoachRole(r)) return `<span class="chip chip--info">${esc(ROLE_LABEL[r] || r)}</span>`;
+  return `<span class="chip chip--outline">${esc(ROLE_LABEL[r] || r || "—")}</span>`;
 }
 
 /* ---------------- card de usuario ---------------- */
@@ -58,18 +60,18 @@ function userCard(u, d) {
       ${ROLE_OPTS.map((o) => `<option value="${o.v}" ${o.v === role ? "selected" : ""}>${o.l}</option>`).join("")}
     </select>`;
   const verifyBtn = isCoachRole(role)
-    ? `<button class="btn btn-sm ${verified ? "btn-ghost" : "btn-soft"}" data-user-verify="${esc(u.id)}" data-val="${verified ? "false" : "true"}">
+    ? `<button class="btn btn--sm ${verified ? "btn-outline" : "btn-primary"}" data-user-verify="${esc(u.id)}" data-val="${verified ? "false" : "true"}">
          ${verified ? t("au.unverify") : t("au.verifyCoach")}
        </button>`
     : "";
-  const suspendBtn = `<button class="btn btn-sm ${suspended ? "btn-soft" : "btn-ghost"}" data-user-suspend="${esc(u.id)}" data-val="${suspended ? "false" : "true"}" style="${suspended ? "" : "color:var(--danger)"}">
+  const suspendBtn = `<button class="btn btn--sm ${suspended ? "btn-primary" : "btn-outline"}" data-user-suspend="${esc(u.id)}" data-val="${suspended ? "false" : "true"}" style="${suspended ? "" : "color:var(--danger)"}">
         ${suspended ? t("au.reactivate") : t("au.suspend")}
       </button>`;
   // [R4] Derecho de supresión (Ley 172-13/COPPA): SOLO no-admins (el server re-valida las
   // guardas). Dos toques armados — es irreversible: anonimiza y purga datos personales.
   const eraseBtn = role === "ADMIN"
     ? ""
-    : `<button class="btn btn-ghost btn-sm" data-user-erase="${esc(u.id)}" style="color:var(--danger)">${t("au.erase")}</button>`;
+    : `<button class="btn btn-outline btn--sm" data-user-erase="${esc(u.id)}" style="color:var(--danger)">${t("au.erase")}</button>`;
 
   return `
   <div class="card card-pad fade-up" style="--d:${d}" data-user-card="${esc(u.id)}">
@@ -78,17 +80,17 @@ function userCard(u, d) {
         ${C.avatar(esc(ini(u.name)), { size: "sm", bg: "var(--otr-navy)" })}
         <div style="min-width:0">
           <div class="row vcenter" style="gap:8px;flex-wrap:wrap">
-            <b style="font-size:13.5px">${esc(u.name)}</b>
+            <b style="font-size:15px;font-weight:800;letter-spacing:-.02em">${esc(u.name)}</b>
             ${roleBadge(role)}
-            ${isCoachRole(role) && verified ? `<span class="badge sky" style="font-size:10.5px">${IC.check} ${t("au.verifiedBadge")}</span>` : ""}
-            ${suspended ? `<span class="badge warn" style="font-size:10.5px">${t("au.suspendedBadge")}</span>` : ""}
+            ${isCoachRole(role) && verified ? `<span class="chip chip--accent">${IC.check} ${t("au.verifiedBadge")}</span>` : ""}
+            ${suspended ? `<span class="chip chip--tint">${t("au.suspendedBadge")}</span>` : ""}
           </div>
           <div class="faint" style="font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}${u.ageBand === "minor" ? " · " + t("au.minorSuffix") : ""}</div>
         </div>
       </div>
     </div>
     <div class="row vcenter wrap" style="gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-      <span class="faint" style="font-size:11.5px;align-self:center">${t("au.roleLabel")}</span>
+      <span class="lbl" style="align-self:center">${t("au.roleLabel")}</span>
       ${roleSelect}
       <span style="flex:1"></span>
       ${verifyBtn}
@@ -141,18 +143,20 @@ S.adminUsers = {
       { v: "", l: t("au.filterAll") }, { v: "STUDENT", l: t("au.filterStudents") }, { v: "TEACHER", l: t("au.filterCoaches") },
       { v: "PARENT", l: t("au.filterFamilies") }, { v: "ADMIN", l: t("au.filterAdmins") },
     ];
+    // [MOCKUP 2026-08] Filtros como botones del kit (h34, r4): activo negro, resto outline.
+    // Antes eran .chip pill; el kit no tiene pills y los chips son etiquetas, no controles.
     const chips = FILTERS.map((f) =>
-      `<button type="button" class="chip ${(st.role || "") === f.v ? "active" : ""}" data-au-role="${f.v}">${f.l}</button>`).join("");
+      `<button type="button" class="btn btn--sm ${(st.role || "") === f.v ? "btn-primary" : "btn-outline"}" data-au-role="${f.v}">${f.l}</button>`).join("");
 
     // [ENT-02] Cargar más mientras la lista cargada sea menor que el total filtrado.
     const more = (st.total || 0) > users.length
-      ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="au-more">${t("au.loadMore").replace("{loaded}", String(users.length)).replace("{total}", String(st.total))}</button></div>`
+      ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="au-more">${t("au.loadMore").replace("{loaded}", String(users.length)).replace("{total}", String(st.total))}</button></div>`
       : "";
 
     return `
-    <div class="page-head fade-up"><div>
-      <p class="eyebrow">${t("au.eyebrow")}</p>
-      <h1 class="page-title">${t("au.title")}</h1>
+    <div class="page-head page-head--rule fade-up"><div>
+      <p class="ph-eyebrow">${t("au.eyebrow")}</p>
+      <h1 class="ph-title">${t("au.title")}</h1>
       <div class="page-sub">${t("au.subtitle")}</div>
     </div></div>
 
@@ -166,16 +170,17 @@ S.adminUsers = {
     <div class="card card-pad fade-up" style="--d:2;margin-bottom:16px">
       <div class="row vcenter" style="gap:8px">
         <input class="input" id="au-search" placeholder="${t("au.searchPlaceholder")}" value="${esc(st.q || "")}" style="flex:1"/>
-        <button class="btn btn-primary btn-sm" id="au-search-btn">${IC.search} ${t("au.searchBtn")}</button>
+        <button class="btn btn-primary btn--sm" id="au-search-btn">${IC.search} ${t("au.searchBtn")}</button>
       </div>
       <div class="row wrap" style="gap:8px;margin-top:12px" id="au-roles">${chips}</div>
       <!-- [F6.4] Export CSV: descarga directa del endpoint admin (la cookie de sesión viaja sola).
            Anchor nativo con download — sin JS ni estado; el servidor pone el filename datado. -->
       <div class="row" style="margin-top:12px;justify-content:flex-end">
-        <a class="btn btn-ghost btn-sm" href="/api/admin/export?entity=users" download>${IC.doc} ${t("au.exportCsv")}</a>
+        <a class="btn btn-outline btn--sm" href="/api/admin/export?entity=users" download>${IC.doc} ${t("au.exportCsv")}</a>
       </div>
     </div>
 
+    <div class="sec-title sec-title--sm"><h3>${t("au.kpiUsers")}</h3></div>
     <div class="fade-up" style="--d:3" id="au-body">${viewBody()}${more}</div>`;
   },
 

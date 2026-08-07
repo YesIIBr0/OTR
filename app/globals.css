@@ -19,8 +19,9 @@ body{
 .hero h1{ font-family:var(--font-brand); font-size:46px; line-height:1.05; margin:12px 0 14px; letter-spacing:-.03em; }
 .hero p.sub{ color:rgba(255,255,255,.72); font-size:16px; line-height:1.5; margin:0 auto; max-width:460px; }
 .chips{ display:flex; gap:8px; justify-content:center; margin-top:26px; flex-wrap:wrap; }
-.chip{ padding:6px 14px; border-radius:999px; background:rgba(242,86,35,.16); color:var(--otr-sky-hi); font-size:13px; font-weight:600; }
+.chip{ padding:6px 14px; border-radius:3px; background:rgba(242,86,35,.16); color:var(--otr-sky-hi); font-size:13px; font-weight:600; }
 .cta{ margin-top:28px; }
-.btn{ background:var(--otr-sky); color:#FFFFFF; border:none; padding:13px 24px; border-radius:8px; font-weight:700; font-size:15px; cursor:pointer; transition:.2s; }
+/* texto NEGRO sobre naranja (--text-on-accent) y radio de botón 4px, como el mockup */
+.btn{ background:var(--otr-sky); color:#171717; border:none; padding:13px 24px; border-radius:4px; font-weight:700; font-size:15px; cursor:pointer; transition:.2s; }
 .btn:hover{ background:var(--otr-sky-hi); transform:translateY(-1px); }
 .tag{ margin-top:34px; font-size:12.5px; color:rgba(255,255,255,.45); }

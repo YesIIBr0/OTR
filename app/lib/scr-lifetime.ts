@@ -92,8 +92,11 @@ function clampScore(n) { return Math.max(0, Math.min(100, Number(n) || 0)); }
 /* ================================================================
    ① HERO CLARO — identidad (quién es + desde cuándo + idiomas)
    ================================================================ */
+// [MOCKUP · Task 6] La identidad pasa a ser la cabecera de página del mockup
+// (.page-head--rule: eyebrow naranja + h1 de 40px + strip de stats a la derecha).
 function identityHero(lt) {
   const id = lt.identity;
+  const L = lt.ledger;
   const meta = [];
   // ageBand viene crudo ('minor'|'adult'): solo el caso menor aporta señal al usuario.
   if (id.ageBand === "minor") meta.push(t("lifetime.minorProtected"));
@@ -101,18 +104,22 @@ function identityHero(lt) {
   // memberSinceLabel ya incluye el prefijo ("Miembro desde octubre 2025").
   if (id.memberSinceLabel) meta.push(esc(id.memberSinceLabel));
   return `
-  <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px;background:linear-gradient(120deg,var(--otr-offwhite),#fff)">
-    <div class="row vcenter wrap" style="gap:18px">
-      ${C.avatar(esc(id.initials), { size: "lg", bg: "var(--otr-navy)" })}
-      <div style="flex:1;min-width:220px">
-        <p class="eyebrow">${t("lifetime.heroEyebrow")}</p>
-        <div class="row vcenter wrap" style="gap:10px;margin-top:3px">
-          <h1 class="brand-font" style="font-size:24px;font-weight:800;margin:0">${esc(id.name || t("lifetime.studentFallback"))}</h1>
-          ${C.levelBadge(esc(id.level))}
+  <div class="page-head page-head--rule fade-up" style="--d:0">
+    <div class="row vcenter wrap" style="gap:18px;min-width:0">
+      ${C.avatar(esc(id.initials), { size: "lg", bg: "var(--otr-black)" })}
+      <div style="min-width:0">
+        <span class="ph-eyebrow">${t("lifetime.heroEyebrow")}</span>
+        <h1 class="ph-title">${esc(id.name || t("lifetime.studentFallback"))}</h1>
+        <div class="row vcenter wrap" style="gap:6px;margin-top:12px">
+          ${C.chip(esc(id.level), "black", { ic: "levels" })}
+          ${id.languages.map((l) => C.chip(esc(l), "outline")).join("")}
         </div>
-        ${meta.length ? `<p class="muted" style="font-size:13px;margin-top:6px">${meta.join(' <span class="dot-sep"></span> ')}</p>` : ""}
-        ${id.languages.length ? `<div class="row wrap" style="gap:6px;margin-top:10px">${id.languages.map((l) => `<span class="chip soft" style="height:24px;font-size:11.5px;font-weight:600">${esc(l)}</span>`).join("")}</div>` : ""}
+        ${meta.length ? `<p class="muted" style="font-size:13px;margin-top:8px">${meta.join(' <span class="dot-sep"></span> ')}</p>` : ""}
       </div>
+    </div>
+    <div class="stat-group">
+      ${C.statInline(L.debates, t("lifetime.ledgerDebates"))}
+      ${C.statInline(L.wins, t("lifetime.ledgerWins"), { accent: true })}
     </div>
   </div>`;
 }
@@ -141,7 +148,7 @@ function radarSvg(skills) {
   const scorePts = skills.map((s, i) => pt(i, R * (clampScore(s.score) / 100)));
   const scorePoly = scorePts.map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ");
   const dots = scorePts.map((p) =>
-    `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="var(--otr-sky-lo)" stroke="#fff" stroke-width="1.6"/>`).join("");
+    `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="var(--otr-green)" stroke="#fff" stroke-width="1.6"/>`).join("");
   // Labels en las puntas
   const labels = skills.map((s, i) => {
     const [x, y] = pt(i, R + 18);
@@ -193,16 +200,13 @@ function skillGraphCard(lt) {
       <div class="ill">${IC.target}</div>
       <h4>${t("lifetime.skillEmptyTitle")}</h4>
       <p>${t("lifetime.skillEmptyBody")}</p>
-      <button class="btn btn-primary btn-sm" onclick="go('course')">${IC.book} ${t("lifetime.goToCourses")}</button>
+      ${C.btn(t("lifetime.goToCourses"), "accent", { size: "sm", ic: "book", attrs: `onclick="go('course')"` })}
     </div></div>`;
   }
   const avg = Math.round(skills.reduce((a, s) => a + clampScore(s.score), 0) / skills.length);
   return `
   <div class="card card-pad fade-up" style="--d:1;margin-bottom:18px">
-    <div class="row between vcenter wrap" style="gap:10px">
-      <div><div class="eyebrow" style="margin-bottom:2px">${t("lifetime.skillEyebrow")}</div><b style="font-size:15px">${t("lifetime.skillTitle")}</b></div>
-      <span class="badge sky">${avg} ${t("lifetime.average")}</span>
-    </div>
+    ${C.secTitle(t("lifetime.skillTitle"), { sm: true, right: C.chip(`${avg} ${t("lifetime.average")}`, "accent") })}
     <div class="row" style="gap:28px;flex-wrap:wrap;align-items:flex-start;margin-top:14px">
       <div style="flex:0 1 360px;min-width:260px">${radarSvg(skills)}</div>
       <div style="flex:1 1 300px;min-width:260px">
@@ -253,35 +257,38 @@ function sparklineSvg(history) {
   const last = pts[pts.length - 1];
   return `
   <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none" aria-hidden="true" style="display:block">
-    <polygon points="${area}" style="fill:color-mix(in srgb,var(--otr-sky) 16%, transparent)"/>
-    <polyline points="${line}" fill="none" stroke="var(--otr-sky-lo)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.2" fill="var(--otr-navy)" stroke="#fff" stroke-width="1.5"/>
+    <polygon points="${area}" style="fill:rgba(242,86,35,.18)"/>
+    <polyline points="${line}" fill="none" stroke="var(--otr-green)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.2" fill="var(--otr-green)" stroke="#fff" stroke-width="1.5"/>
   </svg>`;
 }
 
+// [MOCKUP · Task 6, spec §3.2] El rating es el dato de estatus: card NEGRA con el número
+// grande en blanco y el tier en chip naranja (texto negro).
 function performanceCard(lt) {
   const p = lt.performance;
   const hist = p.history;
   const first = hist[0], lastH = hist[hist.length - 1];
   return `
-  <div class="card card-pad">
-    <div class="eyebrow" style="margin-bottom:2px">${t("lifetime.perfEyebrow")}</div>
-    <b style="font-size:15px">${t("lifetime.perfTitle")}</b>
-    <div class="row vcenter" style="gap:12px;margin-top:12px">
-      <span class="brand-font tnum" style="font-size:42px;font-weight:800;line-height:1;color:var(--otr-navy)">${p.rating}</span>
-      <div class="stack" style="gap:5px">
-        <span class="badge sky"><span class="dot"></span>${esc(p.tier)}</span>
-        <span class="faint" style="font-size:11.5px">±${p.rd} RD · ${p.provisional ? t("lifetime.provisional") : t("lifetime.stable")}</span>
+  <div class="card card--dark card--glow">
+    <div class="card-pad">
+      <div class="sec-row"><div class="sec-title sec-title--sm sec-title--on-dark"><h3>${t("lifetime.perfTitle")}</h3></div></div>
+      <div class="row vcenter" style="gap:14px">
+        <span class="dbt-rating tnum" style="font-size:42px">${p.rating}</span>
+        <div class="stack" style="gap:6px;min-width:0;align-items:flex-start">
+          ${C.chip(esc(p.tier), "accent", { ic: "award" })}
+          <span class="dbt-sub">±${p.rd} RD · ${p.provisional ? t("lifetime.provisional") : t("lifetime.stable")}</span>
+        </div>
       </div>
+      ${hist.length >= 2
+        ? `<div style="margin-top:14px">${sparklineSvg(hist)}
+           <div class="row between" style="margin-top:4px">
+             <span class="dbt-sub" style="font-size:11px">${esc((first && first.label) || "")}</span>
+             <span class="dbt-sub" style="font-size:11px">${esc((lastH && lastH.label) || "")}${lastH && lastH.tierAfter ? ` · ${esc(lastH.tierAfter)}` : ""}</span>
+           </div></div>`
+        : `<p class="dbt-sub" style="margin-top:12px">${t("lifetime.perfEmpty")}</p>`}
+      <div style="margin-top:16px">${C.btn(t("lifetime.viewDebateHub"), "accent", { block: true, icRight: "arrowR", attrs: `onclick="go('debate')"` })}</div>
     </div>
-    ${hist.length >= 2
-      ? `<div style="margin-top:14px">${sparklineSvg(hist)}
-         <div class="row between" style="margin-top:4px">
-           <span class="faint" style="font-size:11px">${esc((first && first.label) || "")}</span>
-           <span class="faint" style="font-size:11px">${esc((lastH && lastH.label) || "")}${lastH && lastH.tierAfter ? ` · ${esc(lastH.tierAfter)}` : ""}</span>
-         </div></div>`
-      : `<p class="faint" style="font-size:12.5px;margin-top:12px">${t("lifetime.perfEmpty")}</p>`}
-    <button class="btn btn-soft btn-sm btn-block" style="margin-top:14px" onclick="go('debate')">${t("lifetime.viewDebateHub")} ${IC.arrowR}</button>
   </div>`;
 }
 
@@ -292,13 +299,12 @@ function credentialsCard(lt) {
   const creds = lt.credentials;
   return `
   <div class="card card-pad">
-    <div class="eyebrow" style="margin-bottom:2px">${t("lifetime.credEyebrow")}</div>
-    <b style="font-size:15px">${t("lifetime.credTitle")}</b>
+    ${C.secTitle(t("lifetime.credTitle"), { sm: true })}
     <div class="stack" style="gap:10px;margin-top:12px">
       ${creds.length
         ? creds.map((c) => `
-          <div class="row vcenter" style="gap:12px;border:1px solid var(--border);border-radius:var(--r-md);padding:11px 13px;background:linear-gradient(120deg,var(--otr-offwhite),#fff)">
-            <span style="flex:none;width:38px;height:38px;border-radius:50%;background:var(--otr-navy);color:#fff;display:inline-flex;align-items:center;justify-content:center"><span style="display:inline-flex;width:18px;height:18px">${IC.award}</span></span>
+          <div class="lt-cred">
+            <span class="cr-seal"><span style="display:inline-flex;width:18px;height:18px">${IC.award}</span></span>
             <div style="flex:1;min-width:0">
               <b style="font-size:13px;line-height:1.3;display:block">${esc(c.title || t("lifetime.certificateFallback"))}</b>
               ${c.issuedLabel ? `<span class="faint" style="font-size:11.5px">${t("lifetime.issued")} ${esc(c.issuedLabel)}</span>` : ""}
@@ -326,7 +332,7 @@ function journeyCard(lt) {
       <div class="ill">${IC.flag}</div>
       <h4>${t("lifetime.journeyEmptyTitle")}</h4>
       <p>${t("lifetime.journeyEmptyBody")}</p>
-      <button class="btn btn-primary btn-sm" onclick="go('course')">${IC.play} ${t("lifetime.startLearning")}</button>
+      ${C.btn(t("lifetime.startLearning"), "accent", { size: "sm", ic: "play", attrs: `onclick="go('course')"` })}
     </div></div>`;
   }
   // Agrupa cronológicamente por monthLabel (conservando el orden recibido).
@@ -339,13 +345,10 @@ function journeyCard(lt) {
   });
   return `
   <div class="card card-pad">
-    <div class="row between vcenter wrap" style="gap:10px">
-      <div><div class="eyebrow" style="margin-bottom:2px">${t("lifetime.journeyEyebrow")}</div><b style="font-size:15px">${t("lifetime.journeyTitle")}</b></div>
-      <span class="badge">${journey.length} ${journey.length === 1 ? t("lifetime.milestone") : t("lifetime.milestones")}</span>
-    </div>
+    ${C.secTitle(t("lifetime.journeyTitle"), { sm: true, right: C.chip(`${journey.length} ${journey.length === 1 ? t("lifetime.milestone") : t("lifetime.milestones")}`, "outline") })}
     <div class="stack" style="gap:4px;margin-top:16px">
       ${groups.map((g) => `
-        ${g.month ? `<div class="row vcenter" style="gap:8px;margin:6px 0 10px"><span class="badge sky" style="font-weight:700">${esc(g.month)}</span><span style="flex:1;height:1px;background:var(--border)"></span></div>` : ""}
+        ${g.month ? `<div class="row vcenter" style="gap:8px;margin:6px 0 10px">${C.chip(esc(g.month), "tint")}<span style="flex:1;height:1px;background:var(--border)"></span></div>` : ""}
         <div class="timeline" style="margin-left:6px">
           ${g.items.map((ev) => {
             const ic = IC[JOURNEY_ICON[String(ev.type || "").toLowerCase()] || "star"];
@@ -353,7 +356,7 @@ function journeyCard(lt) {
             <div class="tl-item">
               <div class="row between" style="gap:10px">
                 <div style="min-width:0">
-                  <b style="font-size:13.5px;line-height:1.35"><span style="display:inline-flex;width:13px;height:13px;color:var(--otr-sky-lo);vertical-align:-2px;margin-right:5px">${ic}</span>${esc(ev.title || "")}</b>
+                  <b style="font-size:13.5px;line-height:1.35"><span style="display:inline-flex;width:13px;height:13px;color:var(--otr-green);vertical-align:-2px;margin-right:5px">${ic}</span>${esc(ev.title || "")}</b>
                   ${ev.detail ? `<div class="muted" style="font-size:12.5px;margin-top:2px">${esc(ev.detail)}</div>` : ""}
                 </div>
                 ${ev.whenLabel ? `<span class="faint" style="font-size:11.5px;flex:none">${esc(ev.whenLabel)}</span>` : ""}
@@ -378,8 +381,7 @@ function publicProfileCard(lt) {
     </button>`;
   return `
   <div class="card card-pad">
-    <div class="eyebrow" style="margin-bottom:2px">${t("lifetime.shareEyebrow")}</div>
-    <b style="font-size:15px">${t("lifetime.publicProfileTitle")}</b>
+    ${C.secTitle(t("lifetime.publicProfileTitle"), { sm: true })}
     <p class="muted" style="font-size:12.5px;margin-top:6px">${t("lifetime.publicProfileBody")}</p>
     ${!pp.canToggle
       ? `<div class="alert info" style="margin-top:12px"><span class="ai">${IC.lock}</span><div><div class="at">${t("lifetime.requiresConsent")}</div>${esc(pp.minorNote || t("lifetime.minorConsentFallback"))}</div></div>`
@@ -391,8 +393,8 @@ function publicProfileCard(lt) {
       ${pp.enabled && absUrl ? `
         <div style="margin-top:12px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--n-25);font-family:var(--font-mono);font-size:11.5px;color:var(--text-2);word-break:break-all">${esc(absUrl)}</div>
         <div class="row wrap" style="gap:8px;margin-top:10px">
-          <button class="btn btn-soft btn-sm" id="pp-copy">${IC.doc} ${t("lifetime.copyLink")}</button>
-          <a class="btn btn-ghost btn-sm" href="${esc(absUrl)}" target="_blank" rel="noopener">${IC.eye} ${t("lifetime.viewPublicProfile")}</a>
+          ${C.btn(t("lifetime.copyLink"), "outline", { size: "sm", ic: "doc", attrs: 'id="pp-copy"' })}
+          ${C.btn(t("lifetime.viewPublicProfile"), "outline", { size: "sm", ic: "eye", href: esc(absUrl), attrs: 'target="_blank" rel="noopener"' })}
         </div>` : ""}
       <p class="faint" style="font-size:11.5px;margin-top:12px">${t("lifetime.privateByDefault")}</p>`}
   </div>`;
@@ -489,49 +491,50 @@ function featureLi(text, opts = {}) {
     <span style="flex:none;display:inline-flex;width:15px;height:15px;color:${color};margin-top:1px">${IC.check}</span><span>${text}</span></li>`;
 }
 
+// [MOCKUP · Task 6] Hero de membresía = card NEGRA con halo naranja y chip de plan.
 function membershipHero(m) {
   const label = TIER_LABEL[m.tier] || "Free";
   return `
-  <div class="hello-card fade-up" style="--d:0;margin-bottom:20px">
-    <div class="h-row">
-      <div style="max-width:560px">
-        <h1 class="sr-only">${t("lifetime.memSrTitle")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("lifetime.memEyebrow")}</p>
-        <h2 class="brand-font" style="margin-top:2px">${t("lifetime.memYourPlan")} OTR ${esc(label)}</h2>
-        <p style="color:rgba(255,255,255,.78);font-size:13.5px;margin-top:10px">${t("lifetime.memSubtitle")}</p>
-        ${m.sinceLabel ? `<p style="color:rgba(255,255,255,.6);font-size:12px;margin-top:6px">${t("lifetime.memOnThisPlan")} ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}
+  <div class="card card--dark card--glow fade-up" style="--d:0;margin-bottom:20px">
+    <div class="card-pad" style="padding:26px 28px 28px">
+      <div class="row between wrap" style="gap:18px">
+        <div style="max-width:560px;min-width:0">
+          <h1 class="sr-only">${t("lifetime.memSrTitle")}</h1>
+          <span class="lbl">${t("lifetime.memEyebrow")}</span>
+          <h2 style="margin:10px 0 0;font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.05;color:#fff">${t("lifetime.memYourPlan")} OTR ${esc(label)}</h2>
+          <p class="dbt-sub" style="font-size:13.5px;margin-top:10px">${t("lifetime.memSubtitle")}</p>
+          ${m.sinceLabel ? `<p class="dbt-sub" style="font-size:12px;margin-top:6px">${t("lifetime.memOnThisPlan")} ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}
+        </div>
+        <span style="align-self:flex-start">${C.chip(t("lifetime.memCurrentPlanBadge"), "accent", { ic: "check" })}</span>
       </div>
-      <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22);align-self:flex-start"><span class="dot" style="background:var(--otr-sky-hi)"></span>${t("lifetime.memCurrentPlanBadge")}</span>
     </div>
   </div>`;
 }
 
 function tierCards(m) {
   const cur = m.tier;
-  const btn = (tier, label, cls) => cur === tier
-    ? `<button class="btn ${cls} btn-block" disabled style="margin-top:auto;opacity:.65;cursor:default">${IC.check} ${t("lifetime.memCurrentPlanBtn")}</button>`
-    : `<button class="btn ${cls} btn-block" data-mem="${tier}" style="margin-top:auto">${label}</button>`;
+  const btn = (tier, label, variant) => `<div style="margin-top:auto">${cur === tier
+    ? C.btn(t("lifetime.memCurrentPlanBtn"), variant, { block: true, ic: "check", disabled: true })
+    : C.btn(label, variant, { block: true, attrs: `data-mem="${tier}"` })}</div>`;
 
   const freeCard = `
-  <div class="tile fade-up" style="--d:1;display:flex;flex-direction:column">
-    <div class="eyebrow" style="margin-bottom:2px">Free</div>
-    <b style="font-size:15px">${t("lifetime.memFreeTitle")}</b>
-    <div class="row vcenter" style="gap:6px;margin-top:10px"><span class="brand-font tnum" style="font-size:30px;font-weight:800;color:var(--otr-navy)">US$0</span><span class="faint" style="font-size:12px">${t("lifetime.memForever")}</span></div>
+  <div class="tile mem-card fade-up" style="--d:1">
+    ${C.secTitle(t("lifetime.memFreeTitle"), { sm: true, right: C.chip("Free", "outline") })}
+    <div class="row vcenter" style="gap:6px;margin-top:4px"><span class="mem-price tnum">US$0</span><span class="faint" style="font-size:12px">${t("lifetime.memForever")}</span></div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
       ${featureLi(t("lifetime.memFreeFeat1"))}
       ${featureLi(t("lifetime.memFreeFeat2"))}
       ${featureLi(t("lifetime.memFreeFeat3"))}
     </ul>
-    ${btn("free", t("lifetime.memSwitchToFree"), "btn-ghost")}
+    ${btn("free", t("lifetime.memSwitchToFree"), "outline")}
   </div>`;
 
   const proCard = `
-  <div class="fade-up" style="--d:2;display:flex;flex-direction:column;background:linear-gradient(150deg,var(--otr-navy),var(--otr-ink));color:#fff;border-radius:var(--r-lg);padding:18px;box-shadow:var(--sh-3);position:relative">
-    <span class="badge" style="position:absolute;top:14px;right:14px;background:var(--otr-sky);color:var(--otr-navy);font-weight:800">${t("lifetime.memRecommended")}</span>
-    <div class="eyebrow" style="color:var(--otr-sky-hi);margin-bottom:2px">Pro</div>
-    <b style="font-size:15px;color:#fff">${t("lifetime.memProTitle")}</b>
-    <div class="row vcenter wrap" style="gap:8px;margin-top:10px">
-      <span class="brand-font tnum" style="font-size:30px;font-weight:800;color:#fff">${esc(m.prices.proMonthly)}</span><span style="font-size:12px;color:rgba(255,255,255,.7)">${t("lifetime.memPerMonth")}</span>
-      <span style="font-size:12px;color:rgba(255,255,255,.7)">· ${t("lifetime.memOr")} ${esc(m.prices.proAnnual)}${t("lifetime.memPerYear")}</span>
+  <div class="card card--dark card--glow mem-card fade-up" style="--d:2;padding:18px 20px 20px">
+    <div class="sec-row"><div class="sec-title sec-title--sm sec-title--on-dark"><h3>${t("lifetime.memProTitle")}</h3></div>${C.chip(t("lifetime.memRecommended"), "accent")}</div>
+    <div class="row vcenter wrap" style="gap:8px;margin-top:2px">
+      <span class="mem-price tnum" style="color:#fff">${esc(m.prices.proMonthly)}</span><span class="dbt-sub">${t("lifetime.memPerMonth")}</span>
+      <span class="dbt-sub">· ${t("lifetime.memOr")} ${esc(m.prices.proAnnual)}${t("lifetime.memPerYear")}</span>
     </div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
       ${featureLi(t("lifetime.memProFeat1"))}
@@ -541,22 +544,21 @@ function tierCards(m) {
       ${featureLi(t("lifetime.memProFeat5"))}
     </ul>
     ${m.tier === "pro"
-      ? `<button class="btn btn-block" disabled style="margin-top:auto;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25);cursor:default">${IC.check} ${t("lifetime.memCurrentPlanBtn")}</button>`
-      : `<button class="btn btn-block" data-mem="pro" style="margin-top:auto;background:#fff;color:var(--otr-navy);font-weight:700">${IC.flame} ${t("lifetime.memUpgradePro")}</button>`}
+      ? `<div style="margin-top:auto">${C.btn(t("lifetime.memCurrentPlanBtn"), "accent", { block: true, ic: "check", disabled: true })}</div>`
+      : `<div style="margin-top:auto">${C.btn(t("lifetime.memUpgradePro"), "accent", { block: true, ic: "flame", attrs: 'data-mem="pro"' })}</div>`}
   </div>`;
 
   const eliteCard = `
-  <div class="tile fade-up" style="--d:3;display:flex;flex-direction:column;opacity:.72">
-    <div class="row between vcenter"><div class="eyebrow" style="margin-bottom:2px">Elite</div><span class="badge sky"><span class="dot"></span>${t("lifetime.memComingSoon")}</span></div>
-    <b style="font-size:15px">${t("lifetime.memEliteTitle")}</b>
-    <div class="row vcenter" style="gap:6px;margin-top:10px"><span class="brand-font" style="font-size:22px;font-weight:800;color:var(--otr-navy)">${t("lifetime.memVerySoon")}</span></div>
+  <div class="tile mem-card fade-up" style="--d:3;opacity:.72">
+    ${C.secTitle(t("lifetime.memEliteTitle"), { sm: true, right: C.chip(t("lifetime.memComingSoon"), "outline") })}
+    <div class="row vcenter" style="gap:6px;margin-top:4px"><span class="mem-price" style="font-size:22px">${t("lifetime.memVerySoon")}</span></div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
       ${featureLi(t("lifetime.memEliteFeat1"), { muted: true })}
       ${featureLi(t("lifetime.memEliteFeat2"), { muted: true })}
       ${featureLi(t("lifetime.memEliteFeat3"), { muted: true })}
       ${featureLi(t("lifetime.memEliteFeat4"), { muted: true })}
     </ul>
-    <button class="btn btn-soft btn-block" disabled style="margin-top:auto;cursor:default">${IC.lock} ${t("lifetime.memComingSoon")}</button>
+    <div style="margin-top:auto">${C.btn(t("lifetime.memComingSoon"), "outline", { block: true, ic: "lock", disabled: true })}</div>
   </div>`;
 
   return `<div class="grid g-3" style="align-items:stretch">${freeCard}${proCard}${eliteCard}</div>`;

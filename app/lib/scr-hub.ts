@@ -83,16 +83,16 @@ function programCard(c, i = 0) {
   return `
   <div class="tile program-card fade-up" data-tags="${esc(`${c.name} ${c.format || ""} ${c.modality || ""}`)}" style="display:flex;flex-direction:column;--d:${i}">
     <div class="row between vcenter" style="gap:10px"><b style="font-size:15px;line-height:1.3">${esc(c.name)}</b>
-      ${c.format ? `<span class="badge sky" style="flex:none">${esc(c.format)}</span>` : ""}</div>
+      ${c.format ? `<span class="chip chip--black" style="flex:none">${esc(c.format)}</span>` : ""}</div>
     <div class="row vcenter wrap" style="gap:8px;font-size:12px;color:var(--text-2);margin-top:8px">
       <span>${esc(c.coach || t("hub.programTeamFallback"))}</span>${c.modality ? `<span class="dot-sep"></span><span>${esc(c.modality)}</span>` : ""}
     </div>
     <div class="divider" style="margin:14px 0"></div>
     <div class="row between vcenter" style="margin-top:auto;gap:10px">
-      ${c.price > 0 ? `<span class="cc-pct" style="font-size:15px;font-weight:800">$${(c.price / 100).toFixed(0)}</span>` : `<span class="badge ok">${t("hub.programFree")}</span>`}
+      ${c.price > 0 ? `<span class="cc-pct" style="font-size:15px;font-weight:800">$${(c.price / 100).toFixed(0)}</span>` : `<span class="chip chip--accent">${t("hub.programFree")}</span>`}
       ${c.enrolled
-        ? `<span class="badge ok"><span class="dot"></span>${t("hub.programInRoute")}</span>`
-        : `<button class="btn btn-primary btn-sm" data-enroll="${c.id}">${IC.plus} ${t("hub.programEnroll")}</button>`}
+        ? `${C.chip(t("hub.programInRoute"), "accent")}`
+        : `<button class="btn btn-accent btn--sm" data-enroll="${c.id}">${IC.plus} ${t("hub.programEnroll")}</button>`}
     </div>
   </div>`;
 }
@@ -110,13 +110,13 @@ export const S = {
       <div class="hello-card fade-up" style="margin-bottom:18px">
         <div class="h-row">
           <div>
-            <p class="eyebrow" style="color:var(--otr-sky-hi)">${t("hub.homeEyebrow")}</p>
+            <p class="eyebrow" style="color:var(--otr-green)">${t("hub.homeEyebrow")}</p>
             <h2 class="brand-font">${t("hub.homeWelcome").replace("{name}", esc(name))}</h2>
             <p style="color:rgba(255,255,255,.72);font-size:13.5px;margin-top:4px">${t("hub.homeSubtitle")}</p>
           </div>
           <div class="row" style="gap:10px">
-            <button class="btn btn-primary btn-sm" data-go="catalog">${t("hub.homeExploreBtn")}</button>
-            <button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#fff" data-go="arsenal">${t("hub.homeArsenalBtn")}</button>
+            <button class="btn btn-accent btn--sm" data-go="catalog">${t("hub.homeExploreBtn")}</button>
+            <button class="btn btn-outline btn--sm" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);color:#fff" data-go="arsenal">${t("hub.homeArsenalBtn")}</button>
           </div>
         </div>
       </div>
@@ -138,17 +138,17 @@ export const S = {
         <div class="stack" style="gap:16px">
           ${role !== "teacher" ? `
           <div class="card card-pad fade-up" style="--d:1;border-color:var(--otr-sky)">
-            <div class="row between vcenter"><b style="font-size:13.5px">${t("hub.homeYourRoute")}</b><span class="badge sky">${mine.length} ${mine.length === 1 ? t("hub.xpProgramUnitSingular") : t("hub.xpProgramUnitPlural")}</span></div>
-            <div class="row wrap" style="gap:6px;margin-top:10px">${mine.length ? mine.map((c) => `<span class="badge">${esc(c.name)}</span>`).join("") : `<span class="faint" style="font-size:12.5px">${t("hub.homeNoPrograms")}</span>`}</div>
-            <button class="btn btn-soft btn-sm btn-block" style="margin-top:12px" data-go="lifetime">${IC.award} ${t("hub.homeViewJourney")}</button>
+            ${C.secTitle(t("hub.homeYourRoute"), { sm: true, right: C.chip(`${mine.length} ${mine.length === 1 ? t("hub.xpProgramUnitSingular") : t("hub.xpProgramUnitPlural")}`, "black") })}
+            <div class="row wrap" style="gap:6px">${mine.length ? mine.map((c) => `<span class="chip chip--outline">${esc(c.name)}</span>`).join("") : `<span class="faint" style="font-size:12.5px">${t("hub.homeNoPrograms")}</span>`}</div>
+            <button class="btn btn-outline btn--sm btn-block" style="margin-top:12px" data-go="lifetime">${IC.award} ${t("hub.homeViewJourney")}</button>
           </div>` : `
           <div class="card card-pad fade-up" style="--d:1;border-color:var(--otr-sky)">
-            <b style="font-size:13.5px">${t("hub.homePresenceTitle")}</b>
+            ${C.secTitle(t("hub.homePresenceTitle"), { sm: true })}
             <p class="muted" style="font-size:12.5px;margin-top:6px">${t("hub.homePresenceBody")}</p>
-            <button class="btn btn-soft btn-sm btn-block" style="margin-top:12px" data-go="profile">${IC.user} ${t("hub.homeViewCoachProfile")}</button>
+            <button class="btn btn-outline btn--sm btn-block" style="margin-top:12px" data-go="profile">${IC.user} ${t("hub.homeViewCoachProfile")}</button>
           </div>`}
           <div class="card card-pad fade-up" style="--d:2">
-            <b style="font-size:13.5px">${t("hub.homeAcademyCoaches")}</b>
+            ${C.secTitle(t("hub.homeAcademyCoaches"), { sm: true })}
             <div class="stack" style="gap:4px;margin-top:10px">
               ${coachList().slice(0, 4).map((tc) => `
                 <div class="lrow" style="padding:9px 0;cursor:pointer;border-bottom:1px solid var(--border)" data-go="coach">
@@ -158,10 +158,10 @@ export const S = {
                   <span style="flex:none;color:var(--text-3)">${IC.chevR}</span>
                 </div>`).join("")}
             </div>
-            <button class="btn btn-ghost btn-sm btn-block" style="margin-top:10px" data-go="explore">${t("hub.homeViewAllCoaches")}</button>
+            <button class="btn btn-outline btn--sm btn-block" style="margin-top:10px" data-go="explore">${t("hub.homeViewAllCoaches")}</button>
           </div>
           <div class="card card-pad fade-up" style="--d:3;background:linear-gradient(140deg,var(--otr-pale),#fff)">
-            <b style="font-size:13.5px">${t("hub.homeLifetimeTitle")}</b>
+            ${C.secTitle(t("hub.homeLifetimeTitle"), { sm: true })}
             <p class="muted" style="font-size:12.5px;margin-top:6px">${t("hub.homeLifetimeBody")}</p>
           </div>
         </div>
@@ -175,14 +175,14 @@ export const S = {
       const coaches = coachList();
       const formats = [...new Set((DB.catalog || []).map((c) => c.format).filter(Boolean))];
       return `
-      <div class="page-head"><div><p class="eyebrow">OTR Hub</p><div class="page-title">${t("hub.exploreTitle")}</div>
+      <div class="page-head page-head--rule"><div><p class="ph-eyebrow">OTR Hub</p><div class="ph-title">${t("hub.exploreTitle")}</div>
       <div class="page-sub">${t("hub.exploreSub")}</div></div></div>
 
-      <div class="row" style="gap:8px;margin-bottom:22px;flex-wrap:wrap" id="ex-filters">
+      <div class="mkt-fbar" style="margin-bottom:22px" id="ex-filters">
         ${["Todos", ...formats].map((f, i) => `<button class="chip ${i === 0 ? "active" : ""}" data-f="${f}">${i === 0 ? t("hub.exploreFilterAll") : esc(f)}</button>`).join("")}
       </div>
 
-      <div class="row between vcenter" style="margin-bottom:14px"><b style="font-size:14px">${t("hub.exploreCoachesLabel")}</b><span class="badge sky">${coaches.length}</span></div>
+      ${C.secTitle(t("hub.exploreCoachesLabel"), { right: C.chip(String(coaches.length), "black") })}
       <div class="grid g-3" style="margin-bottom:30px">
         ${coaches.map((tc, i) => `
           <div class="tile click teacher-card fade-up" data-go="coach" style="display:flex;flex-direction:column;--d:${i}">
@@ -193,13 +193,13 @@ export const S = {
                 ${tc.rating ? `<div class="row vcenter" style="gap:6px;margin-top:6px">${stars(tc.rating, 12)}<b style="font-size:12.5px">${esc(String(tc.rating))}</b><span class="faint" style="font-size:12px">(${esc(String(tc.reviews || 0))})</span></div>` : ""}
               </div>
             </div>
-            ${tc.formats ? `<div class="row wrap" style="gap:6px;margin-top:12px">${String(tc.formats).split(/[,·]/).slice(0, 3).map((s) => `<span class="badge">${esc(s.trim())}</span>`).join("")}</div>` : ""}
+            ${tc.formats ? `<div class="row wrap" style="gap:6px;margin-top:12px">${String(tc.formats).split(/[,·]/).slice(0, 3).map((s) => `<span class="chip chip--outline">${esc(s.trim())}</span>`).join("")}</div>` : ""}
             <div class="divider" style="margin:14px 0"></div>
             <div class="row between vcenter" style="margin-top:auto"><span class="faint" style="font-size:12px">${(tc.programs || []).length} ${(tc.programs || []).length === 1 ? t("hub.xpProgramUnitSingular") : t("hub.xpProgramUnitPlural")}</span><span class="sky row vcenter" style="font-size:12.5px;font-weight:600;gap:4px">${t("hub.exploreViewProfile")} <span style="display:inline-flex;width:14px;height:14px">${IC.arrowR}</span></span></div>
           </div>`).join("")}
       </div>
 
-      <div class="row between vcenter" style="margin-bottom:14px"><b style="font-size:14px">${t("hub.exploreProgramsLabel")}</b><span class="badge sky">${(DB.catalog || []).length}</span></div>
+      ${C.secTitle(t("hub.exploreProgramsLabel"), { right: C.chip(String((DB.catalog || []).length), "black") })}
       <div class="grid g-3" id="ex-programs">
         ${(DB.catalog || []).map(programCard).join("")}
       </div>`;
@@ -224,23 +224,23 @@ export const S = {
       const rest = (DB.catalog || []).filter((c) => !c.enrolled);
       const sessions = { Ligero: 1, "Estándar": 2, Intensivo: 3 }[prefs.pace] || 2;
       return `
-      <div class="page-head"><div><p class="eyebrow">OTR Hub</p><div class="page-title">${t("hub.xpTitle")}</div>
+      <div class="page-head page-head--rule"><div><p class="ph-eyebrow">OTR Hub</p><div class="ph-title">${t("hub.xpTitle")}</div>
       <div class="page-sub">${t("hub.xpSub")}</div></div>
-      <span class="badge ok"><span class="dot"></span>${t("hub.xpAutosave")}</span></div>
+      ${C.chip(t("hub.xpAutosave"), "tint")}</div>
 
       <div class="split rail-320">
         <div class="stack" style="gap:18px">
           <div>
-            <b style="font-size:14px;display:block;margin-bottom:10px">${t("hub.xpActivePrograms")}</b>
+            ${C.secTitle(t("hub.xpActivePrograms"))}
             ${mine.length ? `<div class="grid g-2">${mine.map((c, i) => `
               <div class="tile xp-prog on fade-up" style="--d:${i}">
                 <div class="row between vcenter" style="gap:10px"><b style="font-size:14px;line-height:1.3">${esc(c.name)}</b><span class="xp-check on" style="flex:none">${IC.check}</span></div>
                 <div class="faint" style="font-size:12px;margin-top:5px">${esc(c.coach || "")}${c.format ? ` · ${esc(c.format)}` : ""}</div>
               </div>`).join("")}</div>`
-            : `<div class="card"><div class="empty" style="padding:28px"><div class="ill">${IC.book}</div><h4>${t("hub.xpEmptyTitle")}</h4><p>${t("hub.xpEmptyBody")}</p><button class="btn btn-primary btn-sm" data-go="catalog">${t("hub.xpEmptyCta")}</button></div></div>`}
+            : `<div class="card"><div class="empty" style="padding:28px"><div class="ill">${IC.book}</div><h4>${t("hub.xpEmptyTitle")}</h4><p>${t("hub.xpEmptyBody")}</p><button class="btn btn-accent btn--sm" data-go="catalog">${t("hub.xpEmptyCta")}</button></div></div>`}
           </div>
           ${rest.length ? `<div>
-            <b style="font-size:14px;display:block;margin-bottom:10px">${t("hub.xpAddToRoute")}</b>
+            ${C.secTitle(t("hub.xpAddToRoute"))}
             <div class="grid g-2">${rest.map(programCard).join("")}</div>
           </div>` : ""}
 
@@ -298,7 +298,7 @@ export const S = {
         <div class="ob-card fade-up" style="max-width:680px;margin:0 auto">
           <div class="ob-head">
             <b style="font-size:14px">${t("hub.obSetupTitle")}</b>
-            <span class="badge sky">${role === "teacher" ? t("hub.obCoachProfileBadge") : t("hub.obStudentProfileBadge")}</span>
+            <span class="chip chip--black">${role === "teacher" ? t("hub.obCoachProfileBadge") : t("hub.obStudentProfileBadge")}</span>
           </div>
           <div class="ob-body">
             ${role === "teacher" ? `
@@ -322,8 +322,8 @@ export const S = {
               <div class="grid g-2">${(DB.catalog || []).slice(0, 4).map(programCard).join("")}</div>
             `}
             <div class="ob-foot">
-              <button class="btn btn-ghost" data-go="dashboard">${t("hub.obSkip")}</button>
-              <button class="btn btn-primary row vcenter" id="ob-save" style="gap:6px">${t("hub.obSaveAndEnter")} <span style="display:inline-flex;width:16px;height:16px">${IC.arrowR}</span></button>
+              <button class="btn btn-outline" data-go="dashboard">${t("hub.obSkip")}</button>
+              <button class="btn btn-accent row vcenter" id="ob-save" style="gap:6px">${t("hub.obSaveAndEnter")} <span style="display:inline-flex;width:16px;height:16px">${IC.arrowR}</span></button>
             </div>
           </div>
         </div>

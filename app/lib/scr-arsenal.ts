@@ -49,10 +49,13 @@ S.arsenal = {
     const countOf = (k) => all.filter((r) => r.kind === k).length;
 
     // ---- Chips de filtro ----
+    // [MOCKUP · Task 5] Chip del kit usado como CONTROL: rectángulo r3 en versalitas,
+    // activo NEGRO sólido (spec §3.3). `chip-btn` le devuelve al <button> la tipografía
+    // y el cursor; el conteo va en `.n`. El onclick/estado NO cambia.
     const chip = (key, label, count) =>
-      `<button type="button" class="chip ${activeKind === key ? "active" : ""}"
+      `<button type="button" class="chip chip-btn ${activeKind === key ? "chip--black active" : "chip--outline"}"
         onclick="window.__arsenalKind='${key}';go('arsenal')">${esc(label)}${
-        count != null ? ` <span class="faint" style="font-weight:600">${count}</span>` : ""
+        count != null ? `<span class="n">${count}</span>` : ""
       }</button>`;
 
     const chips = [
@@ -68,25 +71,25 @@ S.arsenal = {
       if (r.tag) tags.push(`<span class="tag-soft">${esc(r.tag)}</span>`);
       if (r.format) tags.push(`<span class="tag-soft">${esc(r.format)}</span>`);
       const gated = r.gated
-        ? `<span class="badge navy"><span class="lead" style="display:inline-flex;width:13px;height:13px;vertical-align:-2px">${IC.lock}</span> ${t("arsenal.premium")}</span>`
+        ? C.chip(t("arsenal.premium"), "black", { ic: "lock" })
         : "";
       const href = r.url ? esc(r.url) : "";
       const openable = r.locked
-        ? `<button type="button" class="btn btn-ghost btn-sm btn-block" onclick="go('catalog')"><span class="lead" style="display:inline-flex;width:14px;height:14px;vertical-align:-2px">${IC.lock}</span> ${t("arsenal.enrollToAccess")}</button>`
+        ? `<button type="button" class="btn btn-outline btn--sm btn-block" onclick="go('catalog')"><span class="lead" style="display:inline-flex;width:14px;height:14px;vertical-align:-2px">${IC.lock}</span> ${t("arsenal.enrollToAccess")}</button>`
         : href
-          ? `<a class="btn btn-soft btn-sm btn-block" href="${href}" target="_blank" rel="noopener noreferrer"><span class="lead" style="display:inline-flex;width:14px;height:14px;vertical-align:-2px">${IC.eye}</span> ${t("arsenal.open")}</a>`
-          : `<span class="btn btn-ghost btn-sm btn-block" style="opacity:.55;pointer-events:none"><span class="lead" style="display:inline-flex;width:14px;height:14px;vertical-align:-2px">${IC.doc}</span> ${t("arsenal.resource")}</span>`;
+          ? `<a class="btn btn-outline btn--sm btn-block" href="${href}" target="_blank" rel="noopener noreferrer"><span class="lead" style="display:inline-flex;width:14px;height:14px;vertical-align:-2px">${IC.eye}</span> ${t("arsenal.open")}</a>`
+          : `<span class="btn btn-outline btn--sm btn-block" style="opacity:.55;pointer-events:none"><span class="lead" style="display:inline-flex;width:14px;height:14px;vertical-align:-2px">${IC.doc}</span> ${t("arsenal.resource")}</span>`;
       return `
       <div class="tile arsenal-card fade-up" data-kind="${esc(r.kind || "")}"
         data-hay="${esc(`${r.title || ""} ${r.tag || ""} ${r.format || ""}`.toLowerCase())}"
         style="display:flex;flex-direction:column;gap:0;--d:${i}">
         <div class="row vcenter between" style="gap:10px;margin-bottom:12px">
-          <span class="ar-ic" style="display:inline-flex;width:40px;height:40px;align-items:center;justify-content:center;border-radius:12px;background:color-mix(in srgb,var(--otr-sky) 14%,white);color:var(--otr-sky-lo);flex:none">${ic}</span>
+          <span class="ars-ic">${ic}</span>
           ${gated}
         </div>
-        <div class="cc-name" style="font-size:15px;font-weight:700;line-height:1.35">${esc(r.title || t("arsenal.untitled"))}</div>
+        <div class="ars-name">${esc(r.title || t("arsenal.untitled"))}</div>
         <div class="row wrap" style="gap:6px;margin:10px 0 14px">
-          <span class="badge sky">${esc(meta.one())}</span>${tags.join("")}
+          ${C.chip(esc(meta.one()), "tint")}${tags.join("")}
         </div>
         <div class="row" style="margin-top:auto">${openable}</div>
       </div>`;
@@ -102,7 +105,7 @@ S.arsenal = {
             ? t("arsenal.emptyCoachBody")
             : t("arsenal.emptyStudentBody")
         }</p>
-        ${coach ? `<button class="btn btn-primary btn-sm" data-action="new-resource">${IC.plus} ${t("arsenal.createResource")}</button>` : ""}
+        ${coach ? C.btn(t("arsenal.createResource"), "primary", { ic: "plus", size: "sm", attrs: 'data-action="new-resource"' }) : ""}
       </div></div>`;
 
     const emptyFiltered = `
@@ -110,7 +113,7 @@ S.arsenal = {
         <div class="ill">${IC.search}</div>
         <h4>${t("arsenal.noMatchesHeading")}</h4>
         <p>${t("arsenal.noMatchesBody")}</p>
-        <button class="btn btn-ghost btn-sm" type="button"
+        <button class="btn btn-outline btn--sm" type="button"
           onclick="window.__arsenalKind='all';window.__arsenalQ='';go('arsenal')">${t("arsenal.clearFilters")}</button>
       </div></div>`;
 
@@ -118,23 +121,24 @@ S.arsenal = {
       ? emptyAll
       : items.length === 0
         ? emptyFiltered
-        : `<div class="grid g-3" id="arsenal-grid">${items.map(card).join("")}</div>`;
+        : `${C.secTitle(t("arsenal.libraryTitle"), { sm: true, right: `<span class="faint" style="font-size:13px;font-weight:600">${items.length}</span>` })}
+           <div class="grid g-3" id="arsenal-grid">${items.map(card).join("")}</div>`;
 
     return `
-    <div class="page-head"><div>
-      <p class="eyebrow">OTR Hub</p>
-      <div class="page-title">Arsenal</div>
-      <div class="page-sub">${t("arsenal.pageSub")}</div>
+    <div class="page-head page-head--rule"><div>
+      <p class="ph-eyebrow">OTR Hub</p>
+      <h1 class="ph-title">Arsenal</h1>
+      <div class="page-sub" style="margin-top:8px">${t("arsenal.pageSub")}</div>
     </div>
-    ${coach ? `<button class="btn btn-primary" data-action="new-resource">${IC.plus} ${t("arsenal.newResource")}</button>` : ""}
+    ${coach ? C.btn(t("arsenal.newResource"), "primary", { ic: "plus", attrs: 'data-action="new-resource"' }) : ""}
     </div>
 
     <div class="row between vcenter" style="margin-bottom:18px;flex-wrap:wrap;gap:12px">
-      <div class="searchbox" style="flex:1 1 240px;max-width:320px;min-width:0">
+      <div class="searchbox searchbox--sq" style="flex:1 1 240px;max-width:320px;min-width:0">
         <span style="display:flex;width:16px;height:16px;flex:none">${IC.search}</span>
         <input id="arsenal-search" placeholder="${t("arsenal.searchPlaceholder")}" value="${esc(window.__arsenalQ || "")}" autocomplete="off"/>
       </div>
-      <div class="row wrap" style="gap:8px;flex:1 1 auto;justify-content:flex-end">${chips}</div>
+      <div class="row wrap" style="gap:6px;flex:1 1 auto;justify-content:flex-end">${chips}</div>
     </div>
 
     ${body}`;

@@ -115,9 +115,11 @@ function threadPanel(st) {
   const bubbles = messages
     .map((m) => {
       const out = m.direction === "OUT";
+      // [MOCKUP 2026-08] Chip del kit (r3, versalitas): "fallido" es lo único que pide acción
+      // en el hilo, así que va en naranja sólido con texto negro.
       const statusTag =
         out && m.status === "failed"
-          ? `<span class="badge warn" style="font-size:10px;margin-left:6px">${t("wap.statusFailed")}</span>`
+          ? `<span class="chip chip--accent" style="margin-left:6px">${t("wap.statusFailed")}</span>`
           : out && m.status === "queued"
             ? `<span class="faint" style="font-size:10px;margin-left:6px">${t("wap.statusQueued")}</span>`
             : "";
@@ -145,14 +147,15 @@ S.adminWhatsapp = {
   render(state) {
     const st = waState();
     return `
-    <div class="page-head fade-up"><div>
-      <p class="eyebrow">${t("wap.eyebrow")}</p>
-      <h1 class="page-title">${t("wap.title")}</h1>
+    <!-- [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior. -->
+    <div class="page-head page-head--rule fade-up"><div>
+      <p class="ph-eyebrow">${t("wap.eyebrow")}</p>
+      <h1 class="ph-title">${t("wap.title")}</h1>
       <div class="page-sub">${t("wap.subtitle")}</div>
     </div></div>
 
     <div class="row" style="margin-bottom:14px;justify-content:flex-end">
-      <button class="btn btn-soft btn-sm" id="wap-refresh" ${st.loading ? "disabled" : ""}>${IC.refresh} ${st.loading ? t("wap.refreshing") : t("wap.refresh")}</button>
+      <button class="btn btn-outline btn--sm" id="wap-refresh" ${st.loading ? "disabled" : ""}>${IC.refresh} ${st.loading ? t("wap.refreshing") : t("wap.refresh")}</button>
     </div>
 
     <div class="msg-wrap fade-up" style="--d:1">

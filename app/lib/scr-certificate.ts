@@ -39,7 +39,7 @@ S.certificate = {
         <div class="ill">${IC.award}</div>
         <h4>${t("cert.emptyHeading")}</h4>
         <p>${t("cert.emptyBody")}</p>
-        <button class="btn btn-primary btn-sm" onclick="go('badges')">${t("cert.backToAchievements")}</button>
+        <button class="btn btn-primary btn--sm" onclick="go('badges')">${t("cert.backToAchievements")}</button>
       </div>`;
     }
 
@@ -57,9 +57,11 @@ S.certificate = {
       <h1 class="page-title">${t("cert.title")}</h1>
       <div class="page-sub">${t("cert.subtitle")}</div>
     </div>
+    <!-- [MOCKUP 2026-08] SOLO los controles adoptan el kit (h34, r4): imprimir = acción
+         principal (negro), volver = outline. La composición del diploma NO cambia. -->
     <div class="row" style="gap:8px">
-      <button class="btn btn-soft btn-sm" onclick="window.print()">${IC.download} ${t("cert.print")}</button>
-      <button class="btn btn-ghost btn-sm" onclick="go('badges')">${IC.chevL} ${t("cert.back")}</button>
+      <button class="btn btn-primary btn--sm" onclick="window.print()">${IC.download} ${t("cert.print")}</button>
+      <button class="btn btn-outline btn--sm" onclick="go('badges')">${IC.chevL} ${t("cert.back")}</button>
     </div></div>
 
     <div class="diploma-wrap fade-up" style="max-width:820px;margin:0 auto">

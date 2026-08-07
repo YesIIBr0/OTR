@@ -120,8 +120,8 @@ function consentRow(child, pc, i) {
       <div class="faint" style="font-size:12px;margin-top:2px">${esc(pc.slotLabel || "")}${pc.priceLabel ? ` · ${esc(pc.priceLabel)}` : ""}</div>
     </div>
     <div class="row" style="gap:6px;flex:none">
-      <button class="btn btn-primary btn-sm" data-consent="${esc(pc.bookingId)}" data-act="ok">${IC.check} ${t("parent.approve")}</button>
-      <button class="btn btn-ghost btn-sm" data-consent="${esc(pc.bookingId)}" data-act="no">${t("parent.reject")}</button>
+      <button class="btn btn-accent btn--sm" data-consent="${esc(pc.bookingId)}" data-act="ok">${IC.check} ${t("parent.approve")}</button>
+      <button class="btn btn-outline btn--sm" data-consent="${esc(pc.bookingId)}" data-act="no">${t("parent.reject")}</button>
     </div>
   </div>`;
 }
@@ -133,11 +133,8 @@ function pendingLinksBlock(pending) {
   if (!pending || !pending.length) return "";
   return `
   <div class="card card-pad fade-up" style="border-color:var(--otr-sky);margin-bottom:18px">
-    <div class="row between vcenter">
-      <b style="font-size:14px">${t("parent.pendingLinksTitle")}</b>
-      <span class="badge sky"><span class="dot"></span>${pending.length}</span>
-    </div>
-    <p class="muted" style="font-size:12.5px;margin-top:4px">${t("parent.pendingLinksBody")}</p>
+    ${C.secTitle(t("parent.pendingLinksTitle"), { sm: true, right: C.chip(String(pending.length), "black") })}
+    <p class="muted" style="font-size:12.5px;margin-top:-8px">${t("parent.pendingLinksBody")}</p>
     <div class="stack" style="gap:0;margin-top:6px">
       ${pending.map((pl, i) => `
       <div class="lrow fade-up" style="padding:12px 0;gap:12px;border-bottom:1px solid var(--border);--d:${i}">
@@ -154,7 +151,7 @@ function pendingLinksBlock(pending) {
             ? `<span class="faint" style="font-size:11.5px">${t("parent.waitingForStudentConfirm")}</span>`
             : pl.ageBand === "adult"
               ? `<span class="faint" style="font-size:11.5px">${t("parent.waitingForAccept").replace("{name}", esc((pl.name || t("parent.theStudent")).split(" ")[0]))}</span>`
-              : `<button class="btn btn-primary btn-sm" data-glink-confirm="${esc(pl.email)}">${IC.check} ${t("parent.confirmLink")}</button>`}
+              : `<button class="btn btn-accent btn--sm" data-glink-confirm="${esc(pl.email)}">${IC.check} ${t("parent.confirmLink")}</button>`}
         </div>
       </div>`).join("")}
     </div>
@@ -173,8 +170,8 @@ function childCard(k, i) {
         <div class="row vcenter wrap" style="gap:8px">
           <b style="font-size:15px">${esc(k.name)}</b>
           ${C.levelBadge(k.level)}
-          ${k.ageBand === "minor" ? `<span class="badge sky"><span style="display:inline-flex;width:12px;height:12px">${IC.lock}</span>${t("parent.minorProtected")}</span>` : ""}
-          ${pendingLink ? `<span class="badge warn"><span class="dot"></span>${t("parent.awaitingConsent")}</span>` : ""}
+          ${k.ageBand === "minor" ? `<span class="chip chip--black"><span style="display:inline-flex;width:12px;height:12px">${IC.lock}</span>${t("parent.minorProtected")}</span>` : ""}
+          ${pendingLink ? `<span class="chip chip--accent"><span class="dot"></span>${t("parent.awaitingConsent")}</span>` : ""}
         </div>
 
       </div>
@@ -186,31 +183,30 @@ function childCard(k, i) {
 
     <div class="divider"></div>
 
-    <b style="font-size:13px">${t("parent.skills")}</b>
+    ${C.secTitle(t("parent.skills"), { sm: true })}
     ${k.skillDeltas.length
       ? `<div class="row wrap" style="gap:6px;margin-top:8px">${k.skillDeltas.map((s) => {
           // [auditoría] SCORE real por skill (StudentSkill.score, vivo). Antes se pintaba un
           // delta '+0' fijo (placeholder) en verde para todos — un crecimiento inventado e igual.
           const score = Math.max(0, Math.min(100, Number(s.score) || 0));
-          return `<span class="badge ${score >= 75 ? "ok" : score >= 50 ? "sky" : ""}">${esc(s.name)} ${score}</span>`;
+          return C.chip(`${esc(s.name)} ${score}`, score >= 75 ? "black" : score >= 50 ? "tint" : "outline");
         }).join("")}</div>`
       : `<p class="faint" style="font-size:12px;margin-top:6px">${t("parent.skillsEmpty")}</p>`}
 
     <div class="divider"></div>
 
-    <div class="row between vcenter"><b style="font-size:13px">${t("parent.attendance")}</b>
-      <span class="faint" style="font-size:12px">${t("parent.attendedOfScheduled").replace("{attended}", String(att.attended)).replace("{scheduled}", String(att.scheduled))}</span></div>
+    ${C.secTitle(t("parent.attendance"), { sm: true, right: `<span class="faint" style="font-size:12px">${t("parent.attendedOfScheduled").replace("{attended}", String(att.attended)).replace("{scheduled}", String(att.scheduled))}</span>` })}
     <div style="margin-top:8px">${C.bar(pct)}</div>
 
     ${k.achievements.length ? `
     <div class="divider"></div>
-    <b style="font-size:13px">${t("parent.achievements")}</b>
+    ${C.secTitle(t("parent.achievements"), { sm: true })}
     <div class="row wrap" style="gap:6px;margin-top:8px">
-      ${k.achievements.slice(0, 6).map((a) => `<span class="badge"><span style="display:inline-flex;width:12px;height:12px">${IC.medal}</span>${esc(achLabel(a))}</span>`).join("")}
+      ${k.achievements.slice(0, 6).map((a) => `<span class="chip chip--outline"><span style="display:inline-flex;width:12px;height:12px">${IC.medal}</span>${esc(achLabel(a))}</span>`).join("")}
     </div>` : ""}
 
     <div class="divider"></div>
-    <b style="font-size:13px">${t("parent.upcomingSessions")}</b>
+    ${C.secTitle(t("parent.upcomingSessions"), { sm: true })}
     ${k.upcoming.length
       ? `<div class="stack" style="gap:4px;margin-top:6px">${k.upcoming.slice(0, 4).map((u) => {
           const x = upcomingLabel(u);
@@ -218,7 +214,7 @@ function childCard(k, i) {
             <span style="display:inline-flex;width:16px;height:16px;color:var(--otr-sky-lo);flex:none">${IC.calendar}</span>
             <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600">${esc(x.t)}</span>
             ${x.d ? `<span class="faint" style="font-size:12px;flex:none">${esc(x.d)}</span>` : ""}
-            ${u.id ? `<button class="btn btn-ghost btn-sm" data-pcancel="${esc(u.id)}" style="flex:none;color:var(--danger);padding:2px 9px;font-size:12px">${t("parent.cancel")}</button>` : ""}
+            ${u.id ? `<button class="btn btn-outline btn--sm" data-pcancel="${esc(u.id)}" style="flex:none;color:var(--danger);padding:2px 9px;font-size:12px">${t("parent.cancel")}</button>` : ""}
           </div>`;
         }).join("")}</div>`
       : `<p class="faint" style="font-size:12px;margin-top:6px">${t("parent.upcomingEmpty")}</p>`}
@@ -231,7 +227,7 @@ function linkForm(compact = false) {
     <label class="label">${t("parent.studentEmailLabel")}</label>
     <input class="input" id="gp-email" type="email" placeholder="${t("parent.studentEmailPh")}" maxlength="160"/>
   </div>
-  <button class="btn btn-primary ${compact ? "btn-sm " : ""}btn-block" id="gp-link">${IC.plus} ${t("parent.linkStudent")}</button>
+  <button class="btn btn-accent ${compact ? "btn--sm " : ""}btn-block" id="gp-link">${IC.plus} ${t("parent.linkStudent")}</button>
   <p class="faint" style="font-size:11.5px;margin-top:8px;line-height:1.5">${t("parent.linkFormNote")}</p>`;
 }
 
@@ -268,7 +264,7 @@ function reportCard(kids) {
         ${withId.map((k) => `<option value="${esc(k.id)}"${k.id === st.sel ? " selected" : ""}>${esc(k.name)}</option>`).join("")}
       </select>
     </div>` : ""}
-    <button class="btn btn-primary btn-sm btn-block" style="margin-top:10px" id="pr-open">${IC.chart} ${t("parent.viewReportOf").replace("{month}", esc(monthLabel))}</button>
+    <button class="btn btn-accent btn--sm btn-block" style="margin-top:10px" id="pr-open">${IC.chart} ${t("parent.viewReportOf").replace("{month}", esc(monthLabel))}</button>
   </div>`;
 }
 
@@ -295,7 +291,7 @@ function reportBody(report, lang) {
 
   const achBlock = ach.length
     ? `<div class="row wrap" style="gap:6px;margin-top:8px">
-        ${ach.map((a) => `<span class="badge"><span style="display:inline-flex;width:12px;height:12px">${IC.medal}</span>${esc(a.title)}</span>`).join("")}
+        ${ach.map((a) => `<span class="chip chip--outline"><span style="display:inline-flex;width:12px;height:12px">${IC.medal}</span>${esc(a.title)}</span>`).join("")}
       </div>`
     : `<p class="faint" style="font-size:12px;margin-top:6px">${esc(L.achievementsEmpty)}</p>`;
 
@@ -307,8 +303,8 @@ function reportBody(report, lang) {
         <span class="faint" style="font-size:12.5px">${esc(r.subtitle)}</span>
       </div>
       <div class="row" style="gap:6px;flex:none" data-noprint>
-        <button class="btn btn-soft btn-sm" id="pr-lang" data-lang="${otherLang}">${esc(otherLabel)}</button>
-        <button class="btn btn-primary btn-sm" id="pr-print-btn">${esc(L.print)}</button>
+        <button class="btn btn-outline btn--sm" id="pr-lang" data-lang="${otherLang}">${esc(otherLabel)}</button>
+        <button class="btn btn-accent btn--sm" id="pr-print-btn">${esc(L.print)}</button>
       </div>
     </div>
 
@@ -365,7 +361,7 @@ function membershipCard(kids) {
         <b class="brand-font" style="font-size:17px;font-weight:800">${esc(m.label)}</b>
         ${m.sinceLabel ? `<span class="faint" style="font-size:11.5px;display:block;margin-top:1px">${esc(m.sinceLabel)}</span>` : ""}
       </div>
-      <button class="btn btn-soft btn-sm" data-go="membership" style="flex:none">${t("parent.managePlan")}</button>
+      <button class="btn btn-outline btn--sm" data-go="membership" style="flex:none">${t("parent.managePlan")}</button>
     </div>`;
   const thresholds = (kids || []).filter((k) => k.id).map((k) => {
     const cur = thresholdValueFor(k);
@@ -427,9 +423,9 @@ S.parentPortal = {
     const kids = getChildren();
     const pending = (DB.parent && Array.isArray(DB.parent.pendingLinks)) ? DB.parent.pendingLinks : [];
     const head = `
-    <div class="page-head"><div>
-      <p class="eyebrow">${t("parent.eyebrow")}</p>
-      <h1 class="page-title">${t("parent.title")}</h1>
+    <div class="page-head page-head--rule"><div>
+      <p class="ph-eyebrow">${t("parent.eyebrow")}</p>
+      <h1 class="ph-title">${t("parent.title")}</h1>
       <div class="page-sub">${t("parent.subtitle")}</div>
     </div></div>`;
 
@@ -454,11 +450,8 @@ S.parentPortal = {
 
     ${consents.length ? `
     <div class="card card-pad fade-up" style="border-color:var(--warn);margin-bottom:18px">
-      <div class="row between vcenter">
-        <b style="font-size:14px">${t("parent.pendingApprovalsTitle")}</b>
-        <span class="badge warn"><span class="dot"></span>${consents.length} ${t("parent.toReview")}</span>
-      </div>
-      <p class="muted" style="font-size:12.5px;margin-top:4px">${t("parent.pendingApprovalsBody")}</p>
+      ${C.secTitle(t("parent.pendingApprovalsTitle"), { sm: true, right: C.chip(`${consents.length} ${t("parent.toReview")}`, "accent") })}
+      <p class="muted" style="font-size:12.5px;margin-top:-8px">${t("parent.pendingApprovalsBody")}</p>
       <div class="stack" style="gap:0;margin-top:6px">${consents.map((x, i) => consentRow(x.child, x.pc, i)).join("")}</div>
     </div>` : ""}
 
@@ -468,7 +461,7 @@ S.parentPortal = {
       </div>
       <div class="stack" style="gap:16px">
         <div class="card card-pad fade-up" style="--d:1;border-color:var(--otr-sky)">
-          <b style="font-size:13.5px">${t("parent.securityConsentTitle")}</b>
+          ${C.secTitle(t("parent.securityConsentTitle"), { sm: true })}
           <div class="stack" style="gap:9px;margin-top:10px">
             ${[
               t("parent.securityPoint1"),
@@ -484,21 +477,21 @@ S.parentPortal = {
             ${kids.filter((k) => k.id).map((k) => `
             <div class="row between vcenter" style="gap:10px">
               <span style="font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.name)}${k.publicProfile.enabled && k.publicProfile.slug ? ` · <a href="/p/${esc(k.publicProfile.slug)}" target="_blank" rel="noopener" style="color:var(--otr-sky-lo)">${t("parent.viewLink")}</a>` : ""}</span>
-              <button class="btn btn-sm ${k.publicProfile.enabled ? "btn-soft" : "btn-primary"}" data-pp-child="${esc(k.id)}" data-pp-next="${k.publicProfile.enabled ? "off" : "on"}" style="flex:none">
+              <button class="btn btn--sm ${k.publicProfile.enabled ? "btn-outline" : "btn-accent"}" data-pp-child="${esc(k.id)}" data-pp-next="${k.publicProfile.enabled ? "off" : "on"}" style="flex:none">
                 ${k.publicProfile.enabled ? t("parent.unpublish") : t("parent.enable")}
               </button>
             </div>`).join("")}
           </div>` : ""}
         </div>
         <div class="card card-pad fade-up" style="--d:2">
-          <b style="font-size:13.5px">${t("parent.coachMessagesTitle")}</b>
-          <p class="muted" style="font-size:12.5px;margin-top:6px">${t("parent.coachMessagesBody")}</p>
-          <button class="btn btn-soft btn-sm btn-block" style="margin-top:10px" data-go="messages">${IC.msg} ${t("parent.openMessages")}</button>
+          ${C.secTitle(t("parent.coachMessagesTitle"), { sm: true })}
+          <p class="muted" style="font-size:12.5px;margin-top:-8px">${t("parent.coachMessagesBody")}</p>
+          <button class="btn btn-outline btn--sm btn-block" style="margin-top:10px" data-go="messages">${IC.msg} ${t("parent.openMessages")}</button>
         </div>
         ${membershipCard(kids)}
         ${reportCard(kids)}
         <div class="card card-pad fade-up" style="--d:4">
-          <b style="font-size:13.5px">${t("parent.linkAnother")}</b>
+          ${C.secTitle(t("parent.linkAnother"), { sm: true })}
           <div style="margin-top:10px">${linkForm(true)}</div>
         </div>
       </div>
@@ -729,7 +722,7 @@ S.parentPortal = {
       const paint = () => {
         scrim.innerHTML = `<div class="modal" role="dialog" style="max-width:560px;width:100%">
           <div class="modal-body" style="max-height:78vh;overflow:auto">${reportBody(report, st.lang)}</div>
-          <div class="modal-foot" data-noprint><button class="btn btn-ghost" data-x>${t("parent.close")}</button></div>
+          <div class="modal-foot" data-noprint><button class="btn btn-outline" data-x>${t("parent.close")}</button></div>
         </div>`;
         wire();
       };

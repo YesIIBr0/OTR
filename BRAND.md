@@ -30,10 +30,11 @@ Estricta: negro, blanco, grises fríos y **un solo acento naranja**.
 
 Rampa fría completa: `#FCFCFC` `#F7F7F7` `#EFEFEF` `#E7E7E7` `#DEDEDE` `#BDBDBD` `#8C8C8C` `#6B6B6B` `#4D4D4D` `#333333` `#262626` `#171717`.
 
-**Reglas de uso**
+**Reglas de uso** (actualizadas por la estética del mockup aprobado 2026-08-07 — spec en `docs/superpowers/specs/2026-08-07-dashboard-mockup-spec.md`)
 
-- **Moderación del acento:** una sola pieza en naranja por vista. Si dos elementos pelean por el naranja, uno pasa a negro o gris.
-- **El botón primario es NEGRO.** El naranja se reserva para el CTA estrella de la pantalla.
+- **Acento generoso (mockup):** el naranja marca sección-titles, badges, filas en vivo, datos y podios — ya NO rige "una pieza por vista". **Texto sobre naranja siempre NEGRO** (`--text-on-accent`).
+- **Conviven** botón primario negro y botón acento naranja (texto negro). Texto naranja <14px sobre canvas claro usa `#9E3211` (AA; `#CC3F13` se queda corto: 4.33:1 sobre greige).
+- **Canvas greige** `#F1F1EF` con cards blancas, bordes `#E4E3DF`, radios 3/4/5/6 (cero pills en chips), sombra única + glow naranja en CTA/hero. Shell = top-nav 62px.
 - **Sin verde, sin oro, sin azul, sin ámbar.** Tampoco degradados multicolor.
 - **Estados dentro de la paleta:** ok `#171717`/`#EFEFEF` · warn `#F25623`/`#FDE7DE` · danger `#C8401A`/`#FBDDD2` · info `#4D4D4D`/`#EFEFEF`.
 - **Niveles:** novato `#BDBDBD` → JV `#8C8C8C` → Varsity `#4D4D4D` → Strategist `#171717` → Elite `#F25623`.
@@ -78,12 +79,12 @@ Escudo de cuatro cuadrantes con las letras O · T · R (`otrCrest()` en `app/lib
 
 ## Radios
 
-Escala corta: **0 · 4 · 8 · 12 · pill (999)**.
+Escala corta (mockup): **3 badges · 4 botones · 5 tiles · 6 contenedores · pill solo círculos**.
 
-- **Controles** (botones, inputs, chips): **8 px**.
-- **Tarjetas y contenedores**: **12 px**.
-- **Pill (999)**: solo para badges y toggles redondeados.
-- Nada por encima de 12 px en tarjetas; nada de radios intermedios (9, 10, 14…).
+- **Badges/chips**: **3 px** (`--r-xs`) — rectangulares, cero pills.
+- **Botones e inputs**: **4 px** (`--r-sm`).
+- **Tiles**: **5 px** (`--r-md`) · **Tarjetas y contenedores**: **6 px** (`--r-lg`).
+- **Pill (999)** SOLO círculos y avatares. Nada por encima de 6 px; nada de radios intermedios.
 
 ---
 

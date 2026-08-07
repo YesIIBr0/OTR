@@ -56,12 +56,12 @@ export const S = {};
       const tab = (typeof window!=='undefined' && (window as any).__teacherTab === 'contenido') ? 'contenido' : 'grupo';
 
       return `
-      <div class="page-head">
-        <div><p class="eyebrow">${t("teacher.eyebrow")}</p>
-        <h1 class="page-title">${t("teacher.title")}</h1>
+      <div class="page-head page-head--rule">
+        <div><p class="ph-eyebrow">${t("teacher.eyebrow")}</p>
+        <h1 class="ph-title">${t("teacher.title")}</h1>
         <div class="page-sub">${t("teacher.trackingSub").replace("{students}", `${DB.students.length} ${DB.students.length===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural")}`).replace("{courses}", `${courseCount} ${courseCount===1?t("teacher.courseUnitSingular"):t("teacher.courseUnitPlural")}`)}</div></div>
         <div class="row" style="gap:8px">
-          <button class="btn btn-ghost btn-sm" data-action="grade-subs">${IC.chart} ${t("teacher.gradeBtn")}</button>
+          <button class="btn btn-accent btn--sm" data-action="grade-subs">${IC.chart} ${t("teacher.gradeBtn")}</button>
         </div>
       </div>
 
@@ -82,14 +82,14 @@ export const S = {};
           ${/* [ENT-06] Búsqueda + filtro de riesgo (cliente), consistente con Participantes */""}
           <div class="row vcenter" style="gap:8px;margin-bottom:10px">
             <div class="searchbox" style="flex:1"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="tr-search" placeholder="${t("teacher.searchStudentPh")}" aria-label="${t("teacher.searchStudentAria")}"/></div>
-            <span class="chip" id="tr-risk" data-on="0" role="button" tabindex="0">${IC.flag} ${t("teacher.riskChip")}</span>
+            <span class="mkt-fbar" style="flex:none"><span class="chip" id="tr-risk" data-on="0" role="button" tabindex="0">${IC.flag} ${t("teacher.riskChip")}</span></span>
           </div>
           <div class="table-wrap scroll-m">
             <table class="tbl">
               <thead><tr><th>${t("teacher.thStudent")}</th><th>${t("teacher.thLevel")}</th><th class="num">${t("teacher.thGrade")}</th><th class="num">${t("teacher.thAttendance")}</th><th>${t("teacher.thEngagement")}</th><th class="center">${t("teacher.thTrend")}</th><th class="num">${t("teacher.thLastAccess")}</th></tr></thead>
               <tbody id="tr-body">
                 ${DB.students.map(s=>`<tr data-name="${esc(String(s.n).toLowerCase())}" data-risk="${s.risk?'1':'0'}">
-                  <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.badge(t("teacher.riskBadge"),'danger'):''}</div></td>
+                  <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.chip(t("teacher.riskBadge"), 'accent'):''}</div></td>
                   <td>${C.levelBadge(s.lvl)}</td>
                   <td class="num">${s.grade==null?'<span class="faint">—</span>':`<b style="color:${s.grade>=85?'var(--ok)':s.grade>=70?'var(--warn)':'var(--danger)'}">${s.grade}%</b>`}</td>
                   <td class="num tnum">${s.att==null?'—':`${s.att}%`}</td>
@@ -106,21 +106,21 @@ export const S = {};
 
         <div class="stack" style="gap:16px">
           <div class="card fade-up" style="--d:1">
-            <div class="card-head"><h3 class="row vcenter" style="gap:8px;color:var(--danger)">${IC.flag} ${t("teacher.needAttention")}</h3>${atRisk.length?`<span class="badge danger">${atRisk.length}</span>`:''}</div>
+            <div class="card-head"><h3 class="row vcenter" style="gap:8px;color:var(--danger)">${IC.flag} ${t("teacher.needAttention")}</h3>${atRisk.length?`<span class="chip chip--accent">${atRisk.length}</span>`:''}</div>
             <div class="card-body" style="padding:6px 16px 10px">
               ${atRisk.map(s=>`<div class="risk-row">${C.avatar(s.i,{size:'sm',bg:'var(--danger)'})}
                 <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px">${esc(s.n)}</div>
                 <div class="faint" style="font-size:12px">${s.att!=null&&s.att<70?t("teacher.lowAttendance"):t("teacher.noSubmissions")} · ${esc(s.last)}</div></div>
-                <button class="btn btn-soft btn-sm" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>`).join('')}
+                <button class="btn btn-outline btn-sm" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>`).join('')}
               ${atRisk.length?'':'<div class="empty" style="padding:24px 16px"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.noAlertsTitle")+'</h4><p>'+t("teacher.noAlertsBody")+'</p></div>'}
             </div>
           </div>
           <div class="card card-pad fade-up" style="--d:2">
-            <div class="row between vcenter" style="margin-bottom:12px"><b style="font-size:13.5px">${t("teacher.pendingGradingTitle")}</b><span class="badge sky">${DB.pendingSubs ?? 0}</span></div>
+            ${C.secTitle(t("teacher.pendingGradingTitle"), { sm: true, right: C.chip(String(DB.pendingSubs ?? 0), "black") })}
             ${(DB.pendingSubs ?? 0) > 0
               ? `<div class="lrow" style="padding:10px 0"><span style="display:flex;width:18px;color:var(--text-2)">${IC.mic}</span>
                 <div style="flex:1"><div style="font-weight:600;font-size:13px">${t("teacher.pendingSubsToReview").replace("{n}", `${DB.pendingSubs} ${DB.pendingSubs === 1 ? t("teacher.submissionUnitSingular") : t("teacher.submissionUnitPlural")}`)}</div><div class="faint" style="font-size:12px">${t("teacher.pendingGradingHint")}</div></div></div>
-                <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="grade-subs">${t("teacher.gradeSubmissions")}</button>`
+                <button class="btn btn-accent btn--sm btn-block" style="margin-top:12px" data-action="grade-subs">${t("teacher.gradeSubmissions")}</button>`
               : `<div class="empty" style="padding:20px 16px"><div class="ill">${IC.checkCircle}</div><h4>${t("teacher.allCaughtUpTitle")}</h4><p>${t("teacher.allCaughtUpBody")}</p></div>`}
           </div>
         </div>
@@ -148,7 +148,7 @@ export const S = {};
               <div class="faint" style="font-size:12px;margin-top:2px">${pluralize(mods.length,t("teacher.moduleUnitSingular"),t("teacher.moduleUnitPlural"))} · ${pluralize(lessons,t("teacher.lessonUnitSingular"),t("teacher.lessonUnitPlural"))} · ${pluralize(quizzes,t("teacher.quizUnitSingular"),t("teacher.quizUnitPlural"))}</div>
             </div>
           </div>
-          <button class="btn btn-soft btn-sm" onclick="go('manage')" style="flex:none">${IC.sliders} ${t("teacher.editContentBtn")}</button>
+          <button class="btn btn-outline btn-sm" onclick="go('manage')" style="flex:none">${IC.sliders} ${t("teacher.editContentBtn")}</button>
         </div>
       </div>`;
       };
@@ -158,12 +158,12 @@ export const S = {};
 
       return `
       <div class="kit-section" style="margin-top:28px">
-        <div class="page-head" style="margin-bottom:14px">
-          <div><p class="eyebrow">${t("teacher.manageEyebrow")}</p>
-          <h2 class="page-title" style="font-size:22px">${t("teacher.manageTitle")}</h2>
+        <div class="page-head page-head--rule" style="margin-bottom:14px">
+          <div><p class="ph-eyebrow">${t("teacher.manageEyebrow")}</p>
+          <h2 class="ph-title" style="font-size:22px">${t("teacher.manageTitle")}</h2>
           <div class="page-sub">${t("teacher.manageSub")}</div></div>
           <div class="row" style="gap:8px">
-            <button class="btn btn-ghost btn-sm" data-tm="resource">${IC.plus} ${t("teacher.resourceFileBtn")}</button>
+            <button class="btn btn-outline btn-sm" data-tm="resource">${IC.plus} ${t("teacher.resourceFileBtn")}</button>
             <button class="btn btn-primary btn-sm" onclick="go('manage')">${IC.sliders} ${t("teacher.fullEditorBtn")}</button>
           </div>
         </div>
@@ -253,7 +253,7 @@ export const S = {};
     scrim.innerHTML = `<div class="modal" role="dialog"${wide ? ' style="max-width:680px"' : ''}>
       <div class="modal-head"><h3>${esc(title)}</h3></div>
       <div class="modal-body">${bodyHtml}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:8px 0 0"></p></div>
-      <div class="modal-foot"><button class="btn btn-ghost" data-x>${t("teacher.cancel")}</button><button class="btn btn-primary" data-ok>${esc(okLabel)}</button></div>
+      <div class="modal-foot"><button class="btn btn-outline" data-x>${t("teacher.cancel")}</button><button class="btn btn-primary" data-ok>${esc(okLabel)}</button></div>
     </div>`;
     document.body.appendChild(scrim);
     const close = () => scrim.remove();
@@ -281,10 +281,7 @@ export const S = {};
           <input class="input" id="qz-pass" type="number" min="0" max="100" value="${existing ? existing.passScore : 60}"/>
         </div>
       </div>
-      <div class="row between vcenter" style="margin:6px 0 8px">
-        <b style="font-size:13.5px">${t("teacher.quizQuestions")}</b>
-        <button type="button" class="btn btn-soft btn-sm" id="qz-add-q">${IC.plus} ${t("teacher.quizAddQuestion")}</button>
-      </div>
+      <div style="margin:6px 0 8px">${C.secTitle(t("teacher.quizQuestions"), { sm: true, right: `<button type="button" class="btn btn-outline btn--sm" id="qz-add-q">${IC.plus} ${t("teacher.quizAddQuestion")}</button>` })}</div>
       <div id="qz-questions" class="stack" style="gap:14px"></div>`;
 
     const m = buildModal({ title: t("teacher.quizModalTitle").replace("{lesson}", esc(lessonTitle || t("teacher.lessonFallback"))), bodyHtml: head, okLabel: t("teacher.quizSaveBtn"), wide: true });
@@ -324,7 +321,7 @@ export const S = {};
           </div>
         </div>
         <div class="qz-opts"></div>
-        <button type="button" class="btn btn-ghost btn-sm qz-add-opt" style="margin-top:6px">${IC.plus} ${t("teacher.addOption")}</button>`;
+        <button type="button" class="btn btn-outline btn-sm qz-add-opt" style="margin-top:6px">${IC.plus} ${t("teacher.addOption")}</button>`;
       const optsWrap = node.querySelector(".qz-opts");
       const initialOpts = (q && q.options && q.options.length) ? q.options : [null, null];
       initialOpts.forEach((o) => optsWrap.appendChild(optionNode(qid, o)));
@@ -591,22 +588,26 @@ export const S = {};
 
       // Fila de un estudiante. data-name/data-role permiten el filtrado local en mount().
       const studentRow = (s) => `<tr data-role="student" data-risk="${s.risk?'1':'0'}" data-name="${esc(s.n.toLowerCase())}">
-        <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div><div class="nm">${esc(s.n)}</div>${s.risk?C.badge(t("teacher.riskBadge"),'danger'):''}</div></div></td>
-        <td>${C.badge(t("teacher.ptRoleStudent"))}</td>
+        <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div><div class="nm">${esc(s.n)}</div>${s.risk?C.chip(t("teacher.riskBadge"), 'accent'):''}</div></div></td>
+        <td>${C.chip(t("teacher.ptRoleStudent"), "outline")}</td>
         <td>${C.levelBadge(s.lvl)}</td>
         ${/* [auditoría] XP real del alumno (antes la barra "Progreso" era xp/55, una constante inventada que no reflejaba avance de curso) */""}
         <td class="num tnum" style="font-size:12px">${(s.xp||0).toLocaleString('es')}</td>
         <td class="num faint" style="font-size:12px">${esc(s.last)}</td>
         <td class="center"><div class="row vcenter" style="gap:6px;justify-content:flex-end">
-          <button class="btn btn-soft btn-sm" data-adjudicate="${s.id}" data-name="${esc(s.n)}">${t("teacher.adjudicate")}</button>
-          <button class="btn btn-ghost btn-sm" data-action="eval-skills" data-user="${s.id}" data-name="${esc(s.n)}">${t("teacher.evaluate")}</button>
+          <button class="btn btn-outline btn-sm" data-adjudicate="${s.id}" data-name="${esc(s.n)}">${t("teacher.adjudicate")}</button>
+          <button class="btn btn-outline btn-sm" data-action="eval-skills" data-user="${s.id}" data-name="${esc(s.n)}">${t("teacher.evaluate")}</button>
           <button class="icon-btn" style="width:30px;height:30px" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button>
         </div></td>
       </tr>`;
 
       return `
-      <div class="page-head"><div><p class="eyebrow">${t("teacher.ptEyebrow")}</p>
-      <h1 class="page-title">${t("teacher.ptTitle")}</h1><div class="page-sub">${t("teacher.ptCountsSub").replace("{students}", `${studentCount} ${studentCount===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural")}`).replace("{coaches}", `${coachCount} ${t("teacher.coachUnit")}`)}</div></div></div>
+      <div class="page-head page-head--rule"><div><p class="ph-eyebrow">${t("teacher.ptEyebrow")}</p>
+      <h1 class="ph-title">${t("teacher.ptTitle")}</h1><div class="page-sub">${t("teacher.ptCountsSub").replace("{students}", `${studentCount} ${studentCount===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural")}`).replace("{coaches}", `${coachCount} ${t("teacher.coachUnit")}`)}</div></div>
+      <div class="stat-group">
+        ${C.statInline(studentCount, studentCount===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural"))}
+        ${C.statInline(coachCount, t("teacher.coachUnit"))}
+      </div></div>
 
       ${/* [REQ-1] Cola de solicitudes de debate de los alumnos — se rellena en mount(). */""}
       <div id="dq-queue" class="stack" style="gap:10px;margin-bottom:18px"></div>
@@ -627,7 +628,7 @@ export const S = {};
           <tbody id="pt-body">
             <tr data-role="coach" data-risk="0" data-name="${coachName.toLowerCase()}">
               <td><div class="cell-user">${C.avatar(coachInit,{size:'sm',bg:'var(--otr-navy)'})}<div><div class="nm">${coachName}</div>${coach.headline?`<div class="em">${coach.headline}</div>`:''}</div></div></td>
-              <td>${C.badge(t("teacher.ptRoleCoach"),'navy')}</td><td class="faint">—</td><td class="faint">—</td><td class="num faint" style="font-size:12px">—</td><td></td></tr>
+              <td>${C.chip(t("teacher.ptRoleCoach"), "black")}</td><td class="faint">—</td><td class="faint">—</td><td class="num faint" style="font-size:12px">—</td><td></td></tr>
             ${(DB.students||[]).map(studentRow).join('')}
           </tbody>
         </table>
@@ -698,7 +699,7 @@ export const S = {};
           const reqs = (data && data.requests) || [];
           if (!reqs.length) { queueBox.innerHTML = ""; return; }
           queueBox.innerHTML =
-            `<div class="row vcenter" style="gap:8px"><h2 style="font-size:15px;font-weight:700;margin:0">${t("teacher.debateQueueTitle")}</h2><span class="chip">${reqs.length}</span></div>` +
+            C.secTitle(t("teacher.debateQueueTitle"), { sm: true, tag: "h2", right: C.chip(String(reqs.length), "black") }) +
             `<p class="faint" style="font-size:12px;margin:0 0 2px">${t("teacher.debateQueueSub")}</p>` +
             reqs.map((q) => `
               <div class="card" data-req="${esc(q.id)}" style="padding:12px 14px">
@@ -707,8 +708,8 @@ export const S = {};
                     <div class="faint" style="font-size:12px">${meta(q)}</div>
                     ${q.studentNote ? `<div class="faint" style="font-size:12px;font-style:italic;margin-top:3px">“${esc(q.studentNote)}”</div>` : ""}</div>
                   <div class="row vcenter" style="gap:6px">
-                    <button class="btn btn-primary btn-sm" data-approve="${esc(q.id)}">${t("teacher.approve")}</button>
-                    <button class="btn btn-ghost btn-sm" data-reject="${esc(q.id)}">${t("teacher.reject")}</button>
+                    <button class="btn btn-accent btn--sm" data-approve="${esc(q.id)}">${t("teacher.approve")}</button>
+                    <button class="btn btn-outline btn--sm" data-reject="${esc(q.id)}">${t("teacher.reject")}</button>
                   </div>
                 </div>
               </div>`).join("");

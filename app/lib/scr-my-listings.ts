@@ -10,6 +10,7 @@
    a revisión) — aquí solo se avisa con el toast correcto.
    Contrato de escape: title/description/rejectReason vienen escapados del servidor; se
    renderizan crudos, y en value="…" del modal el navegador los decodifica para editar. */
+import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { t, registerDict } from "./i18n";
@@ -33,7 +34,9 @@ const catLabel = (slug) => {
   return label === key ? esc(slug) : label;
 };
 
-const STATUS_TONE = { PENDING: "warn", ACTIVE: "sky", PAUSED: "", REJECTED: "warn" };
+// Variantes del kit del mockup: activo = negro sólido, pendiente/rechazado = tinte
+// naranja (aviso), pausado = contorno neutro. Sin pills: los chips son r3.
+const STATUS_TONE = { PENDING: "tint", ACTIVE: "black", PAUSED: "outline", REJECTED: "tint" };
 
 /* ---------------- campos del modal (alta/edición) ---------------- */
 function listingFields(prefill) {
@@ -78,17 +81,17 @@ function mineCard(l, d) {
     <div class="row between vcenter wrap" style="gap:10px">
       <div style="min-width:0;flex:1">
         <div class="row vcenter wrap" style="gap:8px">
-          <b style="font-size:13.5px">${l.title}</b>
-          <span class="badge ${tone}" style="font-size:10.5px">${t("lst.status" + l.status)}</span>
-          <span class="badge">${catLabel(l.category)}</span>
+          <b style="font-size:15px;font-weight:800;letter-spacing:-.02em">${l.title}</b>
+          ${C.chip(t("lst.status" + l.status), tone)}
+          <span class="chip chip--outline">${catLabel(l.category)}</span>
         </div>
         <div class="faint tnum" style="font-size:12px;margin-top:4px">${money(l.priceCentsHour)}${t("lst.perHour")}</div>
         ${l.status === "REJECTED" && l.rejectReason ? `<p class="muted" style="font-size:12px;margin-top:6px;color:var(--danger)">${t("lst.rejectedReason")}: ${l.rejectReason}</p>` : ""}
       </div>
       <div class="row vcenter" style="gap:6px;flex:none">
-        <button class="btn btn-soft btn-sm" data-lst-edit="${esc(l.id)}">${t("lst.editBtn")}</button>
-        ${canPause ? `<button class="btn btn-ghost btn-sm" data-lst-pause="${esc(l.id)}">${t("lst.pauseBtn")}</button>` : ""}
-        ${canActivate ? `<button class="btn btn-soft btn-sm" data-lst-activate="${esc(l.id)}">${t("lst.activateBtn")}</button>` : ""}
+        <button class="btn btn-outline btn--sm" data-lst-edit="${esc(l.id)}">${t("lst.editBtn")}</button>
+        ${canPause ? `<button class="btn btn-outline btn--sm" data-lst-pause="${esc(l.id)}">${t("lst.pauseBtn")}</button>` : ""}
+        ${canActivate ? `<button class="btn btn-outline btn--sm" data-lst-activate="${esc(l.id)}">${t("lst.activateBtn")}</button>` : ""}
       </div>
     </div>
   </div>`;
@@ -113,14 +116,14 @@ S.myListings = {
   render() {
     const st = mineState();
     return `
-    <div class="page-head fade-up"><div>
-      <p class="eyebrow">${t("lst.myEyebrow")}</p>
-      <h1 class="page-title">${t("lst.myTitle")}</h1>
+    <div class="page-head page-head--rule fade-up"><div>
+      <p class="ph-eyebrow">${t("lst.myEyebrow")}</p>
+      <h1 class="ph-title">${t("lst.myTitle")}</h1>
       <div class="page-sub">${t("lst.mySubtitle")}</div>
     </div></div>
 
     <div class="row fade-up" style="--d:1;margin-bottom:14px;justify-content:flex-end">
-      <button class="btn btn-primary btn-sm" id="lst-new">${IC.plus || ""} ${t("lst.newBtn")}</button>
+      <button class="btn btn-accent btn--sm" id="lst-new">${IC.plus || ""} ${t("lst.newBtn")}</button>
     </div>
 
     <div class="fade-up" style="--d:2" id="lst-mine">${mineBody(st)}</div>`;

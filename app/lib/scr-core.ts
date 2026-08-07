@@ -77,14 +77,15 @@ function activeItemsFlat() {
   return out;
 }
 
-  /* ---------------- DASHBOARD (PRD §4.2) ----------------
-     Regla del PRD: "nunca vacío, siempre exactamente UNA acción siguiente obvia".
-     Orden: ① Next Action hero · ② Skill snapshot · ③ Recommended for you;
-     RIGHT rail: ④ Upcoming sessions · ⑤ Debate Rank · ⑥ Achievements;
-     BOTTOM: tira de leaderboard del cohort. Sin emojis (IC.*), navy+sky. */
-
-  // Las 6 dimensiones del radar OTR, en orden fijo del contrato.
-  const DASH_SKILL_DIMS = ['Confianza','Estructura','Evidencia','Refutación','Cross-ex','Delivery'];
+  /* ---------------- DASHBOARD (mockup 2026-08 · Task 4) ----------------
+     Réplica del mockup aprobado (spec: docs/superpowers/specs/2026-08-07-dashboard-
+     mockup-spec.md) con DATOS REALES de window.DB. Estructura:
+       ① page-head (fecha + "Hola, {nombre}" + stats)  ② hero de la próxima clase
+       ③ Próximos eventos (filtro Todos/Clases/Torneos) ④ aside "Tu rango"
+       ⑤ aside "Logros"  ⑥ Clasificación general  ⑦ Lo mejor de la temporada
+     Regla del PRD que se conserva: "nunca vacío, siempre UNA acción siguiente obvia"
+     (el hero cae a retomar lección → explorar cursos cuando no hay clase agendada).
+     Regla del plan: sección sin dato real → NO se renderiza (nada inventado). */
 
   // Próxima lección NO completada del primer curso (para "retomar lección").
   function nextLessonItem() {
@@ -102,334 +103,367 @@ function activeItemsFlat() {
     return it.type === 'quiz' ? 'quiz' : (it.type === 'mic' || it.type === 'assign') ? 'assignment' : it.type === 'video' ? 'player' : 'lesson';
   }
 
+  /* ---- Helpers de fecha del dashboard ---------------------------------
+     Todo se deriva de datos reales: los ISO de las reservas (slotAtIso) y la
+     etiqueta ya formateada de los torneos (startsLabel, "mié 12 ago · 7:00 PM",
+     el payload del alumno no trae ISO crudo). */
+  const dashLoc = () => (getLang() === 'en' ? 'en-US' : 'es-ES');
+  // "miércoles, 6 de agosto" — .ph-eyebrow lo pone en versalitas por CSS.
+  function dashTodayLabel() {
+    try { return new Date().toLocaleDateString(dashLoc(), { weekday: 'long', day: 'numeric', month: 'long' }); }
+    catch (e) { return ''; }
+  }
+  function dashIsToday(ts) {
+    if (!ts) return false;
+    const d = new Date(ts), n = new Date();
+    return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+  }
+  // Día + mes corto para el .date-box, a partir de un ISO.
+  function dashDateFromIso(iso) {
+    const ts = Date.parse(iso || '');
+    if (Number.isNaN(ts)) return null;
+    const d = new Date(ts);
+    let mon;
+    try { mon = d.toLocaleDateString(dashLoc(), { month: 'short' }).replace('.', ''); } catch (e) { mon = ''; }
+    return { ts, day: d.getDate(), mon };
+  }
+  // Mismo par día/mes pero leído de la etiqueta del torneo ("mié 12 ago · 7:00 PM").
+  // Sin fecha reconocible (p. ej. "Por anunciar") devuelve null y la fila va sin tile.
+  function dashDateFromLabel(label) {
+    const m = /(\d{1,2})\s+([^\s·,]{3,})/.exec(String(label || ''));
+    return m ? { ts: 0, day: m[1], mon: m[2].replace('.', '') } : null;
+  }
+
   S.dashboard = {
     render() {
-      const firstName = esc((DB.me?.name || "").split(" ")[0] || "");
-      const myLevel = DB.me?.level || "OTR Initiate";
-      const order = ['OTR Initiate','OTR Apprentice','OTR Competitor','OTR Strategist','OTR Laureate'];
-      const myIdx = order.indexOf(myLevel);
-      const nextName = order[myIdx+1] || 'OTR Laureate';
-      const courses = DB.courses || [];
-      const pending = courses.reduce((s,c)=>s+(c.due||0),0);
-      const avg = courses.length ? Math.round(courses.reduce((s,c)=>s+(c.progress||0),0)/courses.length) : 0;
+      const lang = getLang();
+      const nf = (n) => Number(n || 0).toLocaleString(lang === 'en' ? 'en' : 'es');
+      // DB.me.name YA viene esc() de queries.ts (contrato de escape) → no re-escapar.
+      const firstName = (DB.me?.name || '').split(' ')[0] || '';
+      const myLevel = DB.me?.level || 'OTR Initiate';
+      // Escalera de niveles REAL (tabla Level, ya ordenada por position). El orden
+      // canónico solo entra como respaldo si el payload no trajera los niveles.
+      const levelNames = (Array.isArray(DB.levels) && DB.levels.length)
+        ? DB.levels.map((l) => l.name)
+        : ['OTR Initiate', 'OTR Apprentice', 'OTR Competitor', 'OTR Strategist', 'OTR Laureate'];
+      const lvlIdx = levelNames.indexOf(myLevel);
+      const levelNum = lvlIdx >= 0 ? lvlIdx + 1 : 1;
+      const nextLevelName = lvlIdx >= 0 ? (levelNames[lvlIdx + 1] || '') : '';
 
-      /* ---- ① NEXT ACTION (una sola acción obvia, CTA primario navy) ---- */
-      const nextL = nextLessonItem();
-      const firstCourse = courses[0];
-      let na;
-      if (nextL && firstCourse) {
-        // Retomar lección: lo más obvio si hay curso con actividad pendiente.
-        const setLesson = `${nextL.type==='quiz'?`window.__quizLesson='${nextL.id}';`:''}window.__lesson='${nextL.id}';`;
-        na = {
-          eyebrow: t("core.naResumeEyebrow"),
-          title: `${t("core.naResumePrefix")} "${esc(nextL.t)}"`,
-          sub: firstCourse ? `${firstCourse.name} · ${firstCourse.progress}${t("core.pctCompleted")}` : '',
-          cta: t("core.naResumeCta"), ic: IC.play,
-          onclick: `${setLesson}go('${destFor(nextL)}')`,
-        };
-      } else if (!courses.length) {
-        // Sin cursos: la acción obvia es explorar el catálogo.
-        na = { eyebrow: t("core.naStartEyebrow"), title: t("core.naStartTitle"),
-          sub: t("core.naStartSub"), cta: t("core.naStartCta"), ic: IC.book, onclick: `go('catalog')` };
-      } else if ((DB.debateRank?.provisional)) {
-        // [FIX activación] Rating provisional: la acción que de verdad lo mueve es que un COACH
-        // adjudique una ronda. Antes el CTA caía en la pestaña Práctica (vacía); ahora lleva al
-        // marketplace de coaches para reservar la primera sesión.
-        na = { eyebrow: t("core.naStepEyebrow"), title: t("core.naDebateTitle"),
-          sub: t("core.naDebateSub"), cta: t("core.naDebateCta"), ic: IC.mic, onclick: `go('explore')` };
+      /* ---- ① CABECERA: fecha + saludo + stats REALES ---- */
+      // Clasificación: solo si el usuario está en el leaderboard (opt-in, no menor).
+      const lbMe = DB.leaderboard && DB.leaderboard.me ? DB.leaderboard.me : null;
+      const lbRows = (DB.leaderboard && Array.isArray(DB.leaderboard.rows)) ? DB.leaderboard.rows : [];
+      const lessonsDone = DB.lifetime?.ledger?.lessonsDone ?? null;
+      const streak = DB.me?.streak ?? null;
+      const stats = [
+        lbMe ? C.statInline(`#${lbMe.rank}`, t('core.dashStatRank')) : '',
+        lessonsDone != null ? C.statInline(nf(lessonsDone), t('core.dashStatLessons')) : '',
+        streak != null ? C.statInline(nf(streak), t('core.dashStatStreak'), { accent: true }) : '',
+      ].filter(Boolean).join('');
+      const head = `
+      <div class="page-head page-head--rule fade-up" style="--d:0">
+        <div>
+          <span class="ph-eyebrow">${esc(dashTodayLabel())}</span>
+          <h1 class="ph-title">${t('core.dashHello')}, ${firstName}</h1>
+        </div>
+        ${stats ? `<div class="stat-group">${stats}</div>` : ''}
+      </div>`;
+
+      /* ---- Reservas próximas REALES (fuente del hero y del filtro "Clases") ---- */
+      const bookings = (Array.isArray(DB.myBookings) ? DB.myBookings : [])
+        .filter((b) => b && b.upcoming && (b.status === 'CONFIRMED' || b.status === 'PENDING'))
+        .sort((a, b) => (Date.parse(a.slotAtIso) || 0) - (Date.parse(b.slotAtIso) || 0));
+      const bookingTitle = (b) => b.packageName || t('core.dashSessionWith').replace('{coach}', b.coachName || 'Coach OTR');
+
+      /* ---- ② HERO "TU PRÓXIMA CLASE" ---- */
+      const nextB = bookings[0] || null;
+      const nextTs = nextB ? (Date.parse(nextB.slotAtIso) || 0) : 0;
+      const msToStart = nextTs ? nextTs - Date.now() : 0;
+      const soon = !!nextTs && msToStart > 0 && msToStart <= 60 * 60 * 1000; // < 60 min
+      const canJoin = !!(nextB && nextB.status === 'CONFIRMED' && nextB.videoUrl);
+      let hero;
+      if (nextB) {
+        const cdSecs = Math.max(0, Math.floor(msToStart / 1000));
+        const cd = `${Math.floor(cdSecs / 60)}:${String(cdSecs % 60).padStart(2, '0')}`;
+        hero = `
+        <section class="card--dark dash-hero fade-up" style="--d:1">
+          <div class="dh-eyebrow">
+            <span class="lbl">${t('core.dashNextClassEyebrow')}</span>
+            ${(soon || dashIsToday(nextTs)) ? C.chip(soon ? t('core.dashLiveSoon') : t('core.dashToday'), 'accent', { cls: 'chip--dot' }) : ''}
+          </div>
+          <div class="dh-body">
+            <div style="min-width:0">
+              <div class="dh-mod">${t('core.dashWithCoach').replace('{coach}', nextB.coachName || 'Coach OTR')}</div>
+              <h2 class="dh-title">${bookingTitle(nextB)}</h2>
+              <div class="dh-meta">
+                <span class="row vcenter" style="gap:7px">${IC.clock} ${esc(nextB.slotLabel || '')}</span>
+                ${nextB.durationMin ? `<span class="dh-sep"></span><span>${nextB.durationMin} min</span>` : ''}
+              </div>
+            </div>
+            <div class="dh-side">
+              ${soon ? `<span class="lbl">${t('core.dashStartsIn')}</span><div class="dh-cd tnum" id="dash-cd" data-at="${esc(nextB.slotAtIso)}">${cd}</div>` : ''}
+              ${canJoin
+                ? C.btn(t('core.dashJoinCta'), 'accent', { size: 'lg', ic: 'video', attrs: `data-dash-room="${esc(nextB.id)}"` })
+                : C.btn(t('core.view'), 'outline', { size: 'lg', icRight: 'arrowR', attrs: 'data-go="course"' })}
+            </div>
+          </div>
+        </section>`;
       } else {
-        // Todo al día: reservar sesión con el coach para seguir subiendo.
-        na = { eyebrow: t("core.naStepEyebrow"), title: t("core.naBookTitle"),
-          sub: t("core.naBookSub"), cta: t("core.naBookCta"), ic: IC.headset, onclick: `go('explore')` };
+        // Sin clase agendada: el hero conserva UNA acción obvia con dato real
+        // (retomar la lección pendiente) y, si no hay curso, explorar el catálogo.
+        const nextL = nextLessonItem();
+        const cta = nextL
+          ? C.btn(t('core.naResumeCta'), 'accent', { size: 'lg', ic: 'play', attrs: `data-dash-lesson="${esc(nextL.id)}" data-dash-dest="${destFor(nextL)}"` })
+          : C.btn(t('core.dashExploreCourses'), 'accent', { size: 'lg', icRight: 'arrowR', attrs: 'data-go="catalog"' });
+        hero = `
+        <section class="card--dark dash-hero fade-up" style="--d:1">
+          <div class="dh-eyebrow"><span class="lbl">${t('core.dashNoClassEyebrow')}</span></div>
+          <div class="dh-body">
+            <div style="min-width:0">
+              <h2 class="dh-title">${nextL ? t('core.dashResumeTitle').replace('{lesson}', esc(nextL.t)) : t('core.dashNoClassTitle')}</h2>
+              <div class="dh-meta"><span>${nextL ? esc(activeCourse()?.name || '') : t('core.dashNoClassSub')}</span></div>
+            </div>
+            <div class="dh-side">${cta}</div>
+          </div>
+        </section>`;
       }
 
-      // [UI-DASH D1] Arriba va SOLO el saludo. La franja negra ocupaba media pantalla para
-      // decir una frase; el trabajo del alumno (progreso, programas, sesiones) empezaba
-      // debajo del pliegue. Ahora la cabecera es una línea y la acción siguiente baja a ser
-      // una tarjeta más entre las de abajo (nextCard) — sin perder el CTA.
-      const saludo = `
-      <div class="page-head fade-up" style="--d:0">
-        ${/* Solo el saludo: cualquier subtítulo aquí repetiría lo que ya dicen los KPIs
-             de abajo, y el punto de bajar el hero era ganar esa altura. */""}
-        <div><h1 class="page-title">${t("core.welcomeGreeting")}, ${firstName}</h1></div>
-        <div class="row vcenter" style="gap:10px">
-          <span class="streak">${IC.flame} ${DB.me?.streak||0} ${t("core.streakDays")}</span>
-          ${C.levelBadge(myLevel)}
+      /* ---- ③ PRÓXIMOS EVENTOS (clases reales + torneos reales) ---- */
+      const filter = ['classes', 'tournaments'].includes((window as any).__dashFilter) ? (window as any).__dashFilter : 'all';
+      const classRows = bookings.map((b) => {
+        const dt = dashDateFromIso(b.slotAtIso);
+        const live = dt ? dashIsToday(dt.ts) : false;
+        const join = b.status === 'CONFIRMED' && b.videoUrl;
+        return {
+          kind: 'classes', sort: dt ? dt.ts : 0, live,
+          html: `
+          <div class="evrow${live ? ' evrow--live' : ''}">
+            ${dt ? C.dateBox(dt.day, dt.mon, live) : '<span></span>'}
+            <div class="ev-main">
+              ${C.chip(live ? t('core.dashChipLiveClass') : t('core.dashChipClass'), live ? 'black' : 'info', { ic: 'video' })}
+              <div class="ev-title">${bookingTitle(b)}</div>
+              <div class="ev-meta">
+                <span class="row vcenter" style="gap:6px">${IC.clock} ${esc(b.slotLabel || '')}</span>
+                <span class="row vcenter" style="gap:6px">${IC.user} ${b.coachName || 'Coach OTR'}</span>
+              </div>
+            </div>
+            <div class="ev-actions">${join
+              ? C.btn(t('core.join'), 'accent', { ic: 'video', attrs: `data-dash-room="${esc(b.id)}"` })
+              : C.btn(t('core.view'), 'outline', { icRight: 'arrowR', attrs: 'data-go="course"' })}</div>
+          </div>`,
+        };
+      });
+      const tourRows = (Array.isArray(DB.tournaments) ? DB.tournaments : []).map((tr) => {
+        const dt = dashDateFromLabel(tr.startsLabel);
+        const live = tr.status === 'LIVE';
+        return {
+          kind: 'tournaments', sort: 0, live,
+          html: `
+          <div class="evrow${live ? ' evrow--live' : ''}">
+            ${dt ? C.dateBox(dt.day, dt.mon, live) : '<span></span>'}
+            <div class="ev-main">
+              ${C.chip(t('core.dashChipTournament'), 'accent', { ic: 'trophy' })}
+              <div class="ev-title">${tr.name || ''}</div>
+              <div class="ev-meta">
+                <span class="row vcenter" style="gap:6px">${IC.clock} ${tr.startsLabel || ''}</span>
+                ${tr.format ? `<span class="row vcenter" style="gap:6px">${IC.flag} ${tr.format}</span>` : ''}
+                ${tr.modality ? `<span>${tr.modality}</span>` : ''}
+              </div>
+            </div>
+            <div class="ev-actions">${tr.registered
+              ? C.chip(t('core.dashRegistered'), 'tint', { ic: 'check' })
+              : C.btn(t('core.dashRegister'), 'primary', { icRight: 'arrowR', attrs: 'data-go="events"' })}</div>
+          </div>`,
+        };
+      });
+      const allRows = [...classRows, ...tourRows];
+      const shownRows = allRows.filter((r) => filter === 'all' || r.kind === filter);
+      const filterChip = (k, label) => `<button class="chip ${filter === k ? 'chip--black' : 'chip--outline'} dash-filter" data-dash-filter="${k}" type="button">${label}</button>`;
+      const eventsSection = allRows.length ? `
+      <section class="fade-up" style="--d:2">
+        ${C.secTitle(t('core.dashEventsTitle'), { right: `
+          ${filterChip('all', t('core.dashFilterAll'))}
+          ${classRows.length ? filterChip('classes', t('core.dashFilterClasses')) : ''}
+          ${tourRows.length ? filterChip('tournaments', t('core.dashFilterTournaments')) : ''}` })}
+        <div class="card card-pad dash-events" style="--ev-bleed:22px">
+          ${shownRows.length ? shownRows.map((r) => r.html).join('') : `<p class="faint" style="font-size:13px;padding:8px 0;margin:0">${t('core.dashEventsEmpty')}</p>`}
+        </div>
+      </section>` : '';
+
+      /* ---- ④ ASIDE · TU RANGO (nivel real + progreso de XP real + tier real) ---- */
+      const xp = DB.xp || 0;
+      const xpStart = DB.xpLevelStart || 0;
+      const xpNext = DB.xpNext || 0;
+      // Anillo: % de XP recorrido dentro del nivel actual. Sin siguiente nivel el
+      // anillo va lleno (tope de la escalera); con siguiente nivel pero sin umbral
+      // de XP en el payload, vacío — nunca un 100% inventado.
+      const pct = xpNext > xpStart
+        ? Math.max(0, Math.min(100, Math.round(((xp - xpStart) / (xpNext - xpStart)) * 100)))
+        : (nextLevelName ? 0 : 100);
+      const xpToNext = Math.max(0, xpNext - xp);
+      const tier = DB.debateRank?.tier ? tierLabel(DB.debateRank.tier) : '';
+      const rankCard = `
+      <div class="card--dark dash-rank">
+        <div class="dr-head">
+          <span class="lbl">${t('core.dashRankTitle')}</span>
+          ${tier ? C.chip(esc(tier), 'accent', { ic: 'award' }) : ''}
+        </div>
+        <div class="dr-body">
+          ${C.ringConic(pct, levelNum, t('core.dashLevelCap'))}
+          <div style="min-width:0">
+            <div class="dr-lvl">${esc(myLevel)}</div>
+            <p class="dr-sub">${!nextLevelName
+              ? t('core.dashMaxLevel')
+              : xpToNext > 0
+                ? t('core.dashXpToNext').replace('{xp}', nf(xpToNext)).replace('{level}', esc(nextLevelName))
+                : t('core.dashNextLevel').replace('{level}', esc(nextLevelName))}</p>
+          </div>
         </div>
       </div>`;
 
-      // La acción siguiente, ahora como tarjeta (conserva el contraste de la marca para que
-      // siga siendo LA acción obvia, pero sin comerse la primera pantalla).
-      const nextCard = `
-      <div class="hello-card fade-up" style="--d:1">
-        <div class="h-row">
-          <div style="max-width:560px">
-            <p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
-            <p style="color:#fff;font-size:17px;font-weight:700;margin-top:6px">${na.title}</p>
-            ${na.sub ? `<p style="color:rgba(255,255,255,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
-          </div>
-          <button class="btn btn-primary" style="align-self:center" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
+      /* ---- ⑤ ASIDE · LOGROS (badges reales; los no ganados van apagados) ---- */
+      const badges = Array.isArray(DB.badges) ? DB.badges : [];
+      const earned = badges.filter((b) => b.got);
+      const tiles = [...earned.slice(-4)];
+      if (tiles.length < 4) tiles.push(...badges.filter((b) => !b.got).slice(0, 4 - tiles.length));
+      const badgesCard = badges.length ? `
+      <div class="card dash-badges">
+        <div class="db-head">
+          ${C.secTitle(t('core.dashBadgesTitle'), { sm: true })}
+          <span class="db-count tnum">${IC.medal} ${earned.length}/${badges.length}</span>
         </div>
-      </div>`;
+        ${tiles.length ? `<div class="db-grid">${tiles.map((b) => `
+          <div class="badge-tile${b.got ? '' : ' badge-tile--off'}" title="${esc(b.d || '')}">
+            <span class="bt-ic">${IC.medal}</span>
+            <span style="min-width:0">
+              <span class="bt-n">${esc(b.n)}</span>
+              <span class="bt-s">${esc(b.d || '')}</span>
+            </span>
+          </div>`).join('')}</div>`
+        : `<p class="faint" style="font-size:12.5px;padding:0 18px 16px;margin:0">${t('core.dashBadgesEmpty')}</p>`}
+        <a class="db-foot" href="#" data-go="badges">${t('core.dashAllBadges')} ${IC.arrowR}</a>
+      </div>` : '';
 
-      /* ---- KPIs [OLA-4 · blueprint §6/§8]: XP = el trofeo (hero oro, 2 col) + 2 secundarios.
-        "Cursos activos" salió del row: ya vive como card "Programas activos" más abajo. ---- */
-      const kpis = `
-      <div class="grid g-4 fade-up" style="--d:1;margin-bottom:20px">
-        <div class="tile tile--hero-gold otr-shine kpi-hero-span">${C.kpi(t("core.kpiTotalXp"),(DB.xp||0).toLocaleString(getLang() === 'en' ? 'en' : 'es'),{ic:'flame',accent:'var(--otr-gold-text)'})}</div>
-        <div class="tile">${C.kpi(t("core.kpiAvgProgress"),String(avg),{unit:'%',ic:'chart',accent:'var(--otr-green)'})}</div>
-        <div class="tile">${C.kpi(t("core.kpiPendingSubmissions"),String(pending),{ic:'clock',accent:pending>0?'var(--warn)':'var(--text-3)'})}</div>
-      </div>`;
-
-      /* ---- ② SKILL SNAPSHOT (radar, reusa DB.skills) ---- */
-      const skillMap = {};
-      (DB.skills || []).forEach((s)=>{ skillMap[s.skill] = Math.max(0, Math.min(100, Number(s.score)||0)); });
-      const hasSkills = (DB.skills || []).length > 0;
-      const comps = DASH_SKILL_DIMS.map((n)=>[n, skillMap[n] != null ? skillMap[n] : 0]);
-      const skillAvg = hasSkills ? Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length) : 0;
-      // [Jean] Home: en vez del radar de skills (depende del programa), trackear los
-      // programas activos del estudiante — más universal para un academia multi-formato.
-      const skillCard = `
-        <div class="card card-pad">
-          <div class="row between vcenter">
-            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.coursesEyebrow")}</div><b style="font-size:15px">${t("core.coursesTitle")}</b></div>
-            ${courses.length ? `<span class="badge sky--alive">${avg}% ${t("core.avgShort")}</span>` : ''}
-          </div>
-          ${courses.length
-            ? `<div style="margin-top:14px;display:flex;flex-direction:column;gap:15px">${courses.map(c=>`
-                <div role="button" tabindex="0" aria-label="${t("core.openCourseAria").replace("{name}", esc(c.name))}" style="cursor:pointer" onclick="window.__course='${esc(c.code)}';go('course')">
-                  <div class="row between vcenter" style="margin-bottom:5px">
-                    <span class="row vcenter" style="gap:9px;min-width:0">${C.courseDot(c.color||'var(--otr-sky)')}<b style="font-size:13.5px">${c.name}</b></span>
-                    <span class="faint tnum" style="font-size:12.5px">${c.progress||0}%</span>
-                  </div>
-                  ${c.coach?`<div style="font-size:12px;color:var(--text-3);margin:0 0 7px 23px">${t("core.coachWith")} ${c.coach}</div>`:''}
-                  ${C.bar(c.progress||0,{cls:'navy'})}
-                </div>`).join('')}
-                <button class="btn btn-soft btn-sm" style="margin-top:2px" onclick="go('course')">${t("core.viewProgress")} ${IC.arrowR}</button></div>`
-            : `<div class="empty" style="padding:24px;margin-top:8px"><div class="ill">${IC.book}</div><h4>${t("core.coursesEmptyHeading")}</h4><p>${t("core.skillEnroll")}</p><button class="btn btn-soft btn-sm" style="margin-top:10px" onclick="go('catalog')">${t("core.exploreCatalog")} ${IC.arrowR}</button></div>`}
+      /* ---- ⑥ CLASIFICACIÓN (no hay ranking mensual en la DB: es la general) ----
+         Sin datos de premios en el modelo → la línea de premios NO se pinta. */
+      const podium = lbRows.slice(0, 3);
+      const listRows = lbRows.slice(3, 8);
+      const meInShown = lbRows.slice(0, 8).some((r) => r.you);
+      const lbRow = (r, mine) => `
+        <div class="lb-row${mine ? ' lb-row--me' : ''}">
+          <span class="lb-pos tnum">${r.rank}</span>
+          <span class="lb-name">${r.name || ''}${mine ? ` · ${t('core.youSuffix')}` : ''}</span>
+          <span class="lb-xp tnum">${nf(r.rating)}</span>
         </div>`;
-
-      /* ---- ③ RECOMMENDED FOR YOU (cursos no inscritos / práctica) ---- */
-      const enrolledCodes = new Set(courses.map(c=>c.code));
-      const recos = (DB.catalog || []).filter(c=>!c.enrolled && !enrolledCodes.has(c.code)).slice(0,3);
-      // [DASHBOARD-ACCESS-1 §4] Cada recomendación explica POR QUÉ se sugiere: si el
-      // programa cubre un formato que el alumno ya debate → "Para tu formato X"; si no,
-      // se enmarca como el siguiente paso para su nivel (señal real, no genérica).
-      const myFmts = new Set(courses.map(c=>String(c.format||'').toLowerCase()).filter(Boolean));
-      const recoWhy = (c)=> (c.format && myFmts.has(String(c.format).toLowerCase()))
-        ? t("core.recoWhyReinforce").replace("{format}", String(c.format))
-        : c.format
-        ? t("core.recoWhyAdd").replace("{format}", String(c.format))
-        : t("core.recoWhyNextStep").replace("{level}", esc(DB.me?.level || t("core.yourLevelFallback")));
-      const recoCards = recos.map(c=>`
-        <div class="tile course-card click" role="button" tabindex="0" onclick="go('catalog')">
-          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #171717))">
-            <span class="cc-code">${esc(c.code)}</span>
-          </div>
-          <div class="cc-body">
-            <div class="cc-name">${c.name}</div>
-            <div class="cc-coach">${c.coach}</div>
-            <div class="cc-meta">${c.format?`<span class="row vcenter" style="gap:5px">${IC.flag} ${c.format}</span>`:''}${c.modality?`<span class="dot-sep"></span><span>${c.modality}</span>`:''}</div>
-            <div class="eyebrow" style="margin-top:9px;color:var(--otr-green-text);font-size:10.5px">${recoWhy(c)}</div>
-            <button class="btn btn-soft btn-sm" style="margin-top:8px;width:100%">${t("core.viewProgram")} ${IC.arrowR}</button>
-          </div>
-        </div>`).join('');
-      // [DASHBOARD · coach reco §4] Recomienda UN coach por REGLAS (sin LLM): prioriza a quien
-      // cubre un formato que el alumno ya debate; si no, el mejor valorado. Palanca directa de
-      // la comisión del marketplace. recoWhy inline (mismo patrón que la reco de cursos de arriba).
-      const mkCoaches = (DB.marketplace && Array.isArray(DB.marketplace.coaches)) ? DB.marketplace.coaches : [];
-      const pickCoach = () => {
-        if (!mkCoaches.length) return null;
-        const fmtArr = [...myFmts].filter(Boolean);
-        const rated = [...mkCoaches].sort((a, b) => (Number(b.ratingAvg ?? b.rating ?? 0)) - (Number(a.ratingAvg ?? a.rating ?? 0)));
-        const byFmt = rated.find((c) => fmtArr.some((f) => String(c.specialties || '').toLowerCase().includes(f)));
-        const c = byFmt || rated[0];
-        if (!c) return null;
-        const matched = fmtArr.find((f) => String(c.specialties || '').toLowerCase().includes(f));
-        const why = matched
-          ? t("core.coachRecoWhySpecialist").replace("{format}", matched)
-          : (Number(c.ratingAvg ?? c.rating ?? 0) > 0 ? t("core.coachRecoWhyTopRated") : t("core.coachRecoWhyLeap"));
-        return { c, why };
-      };
-      const rc = pickCoach();
-      const coachRecoBlock = rc ? `
-        <div class="divider" style="margin:16px 0 14px"></div>
-        <div class="eyebrow" style="margin-bottom:10px">${t("core.coachRecoTitle")}</div>
-        <div class="row vcenter between" style="gap:12px;flex-wrap:wrap">
-          <div class="row vcenter" style="gap:11px;min-width:0">
-            ${C.avatar(rc.c.initials || String(rc.c.name || 'C').slice(0, 2), { size: 'md', bg: 'var(--otr-navy)' })}
-            <div style="min-width:0">
-              <div class="row vcenter" style="gap:6px"><b style="font-size:14px">${rc.c.name || 'Coach OTR'}</b>${(rc.c.coachVerified || rc.c.verified) ? `<span class="badge sky" style="height:18px;font-size:10px;padding:0 6px">${t("core.coachRecoVerified")}</span>` : ''}</div>
-              <div class="eyebrow" style="color:var(--otr-green-text);font-size:10.5px;margin-top:3px">${rc.why}</div>
-            </div>
-          </div>
-          <button class="btn btn-primary btn-sm" style="flex:none" onclick="window.__mkCoachId='${esc(rc.c.id)}';go('explore')">${t("core.coachRecoViewProfile")} ${IC.arrowR}</button>
-        </div>` : '';
-      const recoCard = `
-        <div class="card card-pad">
-          <div class="row between vcenter" style="margin-bottom:14px">
-            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.recoEyebrow")}</div><b style="font-size:15px">${t("core.recoTitle")}</b></div>
-          </div>
-          ${recos.length
-            ? `<div class="grid g-3">${recoCards}</div>`
-            : `<div class="empty" style="padding:24px"><div class="ill">${IC.target}</div><h4>${t("core.recoEmptyHeading")}</h4><p>${t("core.recoEmptyBody")}</p><button class="btn btn-soft btn-sm" onclick="go('explore')">${t("core.bookSession")} ${IC.arrowR}</button></div>`}
-          ${coachRecoBlock}
+      const podiumTile = (r, place) => `
+        <div class="lb-tile${place === 1 ? ' lb-tile--1' : ''}${r.you ? ' lb-tile--me' : ''}">
+          ${place === 1 ? `<span class="lb-crown">${IC.trophy}</span>` : ''}
+          <div class="lb-place tnum">${r.rank}</div>
+          <div class="lb-tname">${r.name || ''}${r.you ? ` · ${t('core.youSuffix')}` : ''}</div>
+          <div class="lb-txp tnum">${nf(r.rating)}</div>
         </div>`;
+      // Con un cohorte de 3 o menos, la columna de la lista quedaría vacía: el
+      // podio pasa a ocupar la card entera en vez de dejar medio bloque en blanco.
+      const listBody = (podium.length >= 3 ? listRows : lbRows.slice(0, 8)).map((r) => lbRow(r, !!r.you)).join('')
+        + ((!meInShown && lbMe) ? lbRow({ rank: lbMe.rank, name: DB.me?.name || '', rating: lbMe.rating }, true) : '');
+      const standings = lbRows.length ? `
+      <section class="card--dark card--glow dash-lb fade-up" style="--d:3">
+        <div class="dlb-head">
+          <div class="sec-title sec-title--on-dark"><h3>${IC.trophy} ${t('core.dashStandingsTitle')}</h3></div>
+          <span class="dlb-meta">${t('core.dashStandingsMeta')}</span>
+        </div>
+        <div class="dlb-grid${listBody ? '' : ' dlb-grid--solo'}">
+          ${podium.length >= 3 ? `<div class="lb-podium">
+            ${podiumTile(podium[1], 2)}${podiumTile(podium[0], 1)}${podiumTile(podium[2], 3)}
+          </div>` : ''}
+          ${listBody ? `<div class="lb-list">${listBody}</div>` : ''}
+        </div>
+      </section>` : '';
 
-      /* ---- ④ UPCOMING SESSIONS (reservas REALES del usuario, PRD §4.2 ④) ----
-         Lee DB.myBookings (STUDENT): CONFIRMED/PENDING futuras, ordenadas por
-         slotAtIso asc, máximo 3. CTA al marketplace (data-go='explore') en el
-         empty. Defensivo si no hay myBookings (rol no-STUDENT) → cae a DB.events
-         o al empty. La sala on-platform (videoUrl) abre con window.open. */
-      const nextSessions = (Array.isArray(DB.myBookings) ? DB.myBookings : [])
-        .filter(b => b && b.upcoming && (b.status === 'CONFIRMED' || b.status === 'PENDING'))
-        .sort((a,b)=> (Date.parse(a.slotAtIso)||0) - (Date.parse(b.slotAtIso)||0))
-        .slice(0,3);
-
-      // Countdown textual desde el ISO del slot ("" si no hay fecha o ya pasó).
-      const dashCountdown = (iso) => {
-        if (!iso) return '';
-        const ts = Date.parse(iso);
-        if (Number.isNaN(ts)) return '';
-        const ms = ts - Date.now();
-        if (ms <= 0) return '';
-        const min = Math.round(ms/60000);
-        if (min < 60) return `${t("core.countdownInPrefix")} ${min} ${t("core.countdownMin")}`;
-        const hours = Math.round(min/60);
-        if (hours < 24) return `${t("core.countdownInPrefix")} ${hours} ${t("core.countdownHour")}`;
-        const days = Math.round(hours/24);
-        return `${t("core.countdownInPrefix")} ${days} ${days===1?t("core.countdownDaySingular"):t("core.countdownDayPlural")}`;
-      };
-
-      // EMPTY STATE: sin reservas próximas → CTA al marketplace (PRD §4.2 ④).
-      const sessionsEmpty = `<div style="padding:10px 0"><p class="faint" style="font-size:13px">${t("core.sessionsEmptyBody")}</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-go="explore">${t("core.exploreCoaches")} ${IC.arrowR}</button></div>`;
-
-      // Si DB.myBookings no existe (rol no-STUDENT): respaldo a DB.events; si
-      // tampoco hay, empty con CTA.
-      const sessionsHasBookings = Array.isArray(DB.myBookings);
-      const sessionsBody = nextSessions.length
-        ? nextSessions.map(b=>{
-            const cd = dashCountdown(b.slotAtIso);
-            const statusBadge = b.status === 'CONFIRMED'
-              ? `<span class="badge sky"><span class="dot"></span>${t("core.statusConfirmed")}</span>`
-              : `<span class="badge warn"><span class="dot"></span>${t("core.statusPending")}</span>`;
-            const canJoin = b.status === 'CONFIRMED' && b.videoUrl;
-            const action = canJoin
-              ? `<button class="btn btn-soft btn-sm" style="flex:none" onclick="window.__room='${esc(b.id)}';go('room')">${IC.video} ${t("core.join")}</button>`
-              : `<button class="btn btn-soft btn-sm" style="flex:none" data-go="course">${t("core.view")} ${IC.arrowR}</button>`;
-            return `
-              <div class="agenda-item" style="align-items:center">
-                ${C.avatar(esc(b.coachInitials || 'C'),{size:'sm',bg:'var(--otr-navy)'})}
-                <div style="flex:1;min-width:0">
-                  <div class="ai-t">${esc(b.coachName || 'Coach OTR')}</div>
-                  <div class="ai-c">${esc(b.slotLabel || '')}${cd?` · ${esc(cd)}`:''}</div>
-                  <div class="row vcenter" style="gap:6px;margin-top:5px">${statusBadge}</div>
-                </div>
-                ${action}
-              </div>`;
-          }).join('')
-        : (!sessionsHasBookings && (DB.events||[]).length
-            ? DB.events.map(e=>`
-              <div class="agenda-item">
-                <span class="when-dot" style="background:var(--${e.tone==='warn'?'warn':e.tone==='navy'?'otr-navy':'otr-sky'})"></span>
-                <div><div class="ai-t">${esc(e.t)}</div><div class="ai-c">${esc(e.c)}</div></div>
-                <span class="ai-w">${esc(e.when)}</span>
-              </div>`).join('')
-            : sessionsEmpty);
-
-      const upcoming = `
-        <div class="card">
-          <div class="card-head"><h3>${t("core.upcomingTitle")}</h3><a href="#" data-go="course" style="font-size:12.5px">${t("core.viewAll")}</a></div>
-          <div class="card-body" style="padding:6px 16px 12px">
-            ${sessionsBody}
-          </div>
-        </div>`;
-
-      /* ---- ⑤ DEBATE RANK (atenuado: NO duplica el Debate Hub) ----
-         El Hub ya muestra rating/±rd/historial completos. Aquí solo un resumen
-         compacto (eyebrow + tier + estado) y UN CTA limpio al Hub; el rating crudo
-         vive en el Hub, no se re-muestra. Provisional → empuja a practicar. */
-      const dr = DB.debateRank || { rating: 1500, rd: 350, tier: 'Novato', provisional: true };
-      // [FIX dup] Colapsado a tier + CTA al Hub: el hero del Debate Hub ya muestra rating/forma,
-      // así que el Home no re-pinta un mini-dashboard de rank (evita la duplicación señalada).
-      const debateCard = `
-        <div class="card card-pad">
-          <div class="row between vcenter">
-            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.debateRankEyebrow")}</div><b style="font-size:15px">${esc(tierLabel(dr.tier))}</b></div>
-            <span class="badge ${dr.provisional?'':'sky--alive'}">${dr.provisional?t("core.debateProvisional"):t("core.debateStable")}</span>
-          </div>
-          <button class="btn btn-soft btn-sm" style="width:100%;margin-top:12px" onclick="go('debate')">${t("core.debateHubCta")} ${IC.arrowR}</button>
-        </div>`;
-
-      /* ---- ⑥ ACHIEVEMENTS (badges recientes + "X para el siguiente") ---- */
-      const badges = DB.badges || [];
-      const earned = badges.filter(b=>b.got);
-      const nextBadge = badges.find(b=>!b.got);
-      const xpToNext = Math.max(0, (DB.xpNext||0) - (DB.xp||0));
-      const achievements = `
-        <div class="card card-pad">
-          <div class="row between vcenter" style="margin-bottom:12px">
-            <div><div class="eyebrow" style="margin-bottom:2px">${t("core.achievementsEyebrow")}</div><b style="font-size:15px">${earned.length} ${t("core.ofConnector")} ${badges.length}</b></div>
-            <span class="badge gold">${IC.medal} ${earned.length}</span>
-          </div>
-          <div class="row wrap" style="gap:7px">
-            ${earned.slice(0,6).map(b=>`<span class="badge gold" title="${esc(b.d||'')}">${IC.medal} ${esc(b.n)}</span>`).join('') || `<span class="muted" style="font-size:12.5px">${t("core.noBadgesYet")}</span>`}
-          </div>
-          <div class="divider"></div>
-          ${C.bar(Math.max(0,Math.min(100,((DB.xp-DB.xpLevelStart)/((DB.xpNext-DB.xpLevelStart)||1))*100)),{cls:'thin navy'})}
-          <div class="row between" style="font-size:12px;color:var(--text-2);margin-top:6px">
-            <span class="tnum">${xpToNext.toLocaleString('es')} ${t("core.xpToNextPrefix")} ${nextName}</span>
-            ${nextBadge?`<span class="sky" style="font-weight:600">${t("core.nextBadgeLabel")} ${esc(nextBadge.n)}</span>`:''}
-          </div>
-          ${/* [CNV-05] CTA que cierra el gap: el loop de gamificación deja de ser decorativo
-               apuntando a la acción concreta (la misma del hero "siguiente paso"). */""}
-          <button class="btn btn-soft btn-sm" style="width:100%;margin-top:12px" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
-        </div>`;
-
-      /* ---- BOTTOM: tira de leaderboard global (por-usuario) ---- */
-      // [auditoría] Antes leía DB.students (solo lo recibe el profesor) → la tarjeta nunca
-      // aparecía para el alumno y caía siempre al fallback. Usamos el leaderboard CANÓNICO
-      // por-usuario (DB.leaderboard.rows: top por debateRating, con flag `you` + rating/tier),
-      // el mismo que consume el Debate Hub. name/initials ya vienen esc() de queries; tier es enum.
-      const lbRows = (DB.leaderboard && Array.isArray(DB.leaderboard.rows) ? DB.leaderboard.rows : []).slice(0, 5);
-      const myRank = DB.leaderboard && DB.leaderboard.me ? DB.leaderboard.me.rank : null;
-      const leaderboard = lbRows.length
-        ? `<div class="card fade-up" style="--d:4;margin-top:18px">
-            <div class="card-head"><h3>${t("core.leaderboardTitle")}</h3>${myRank ? `<span class="badge sky--alive">${t("core.yourRank")} #${myRank}</span>` : ""}</div>
-            <div class="card-body" style="padding:6px 16px 12px">
-              ${lbRows.map((r)=>`<div class="agenda-item"${r.you?' style="background:var(--action-soft);border-radius:8px"':''}>
-                <span class="badge ${r.rank<=3?'gold':r.you?'sky--alive':''}" style="min-width:26px;justify-content:center">${r.rank}</span>
-                <div class="row vcenter" style="gap:9px;flex:1">${C.avatar(r.initials||'?',{size:'sm',bg:r.you?'var(--otr-sky-lo)':'var(--otr-navy)'})}<div><div class="ai-t">${r.name||''}${r.you?` · ${t("core.youSuffix")}`:''}</div><div class="ai-c">${esc(tierLabel(r.tier||''))}</div></div></div>
-                <span class="ai-w tnum">${r.rating}</span></div>`).join('')}
-            </div>
-          </div>`
-        : `<div class="card fade-up" style="--d:4;margin-top:18px">
-            <div class="card-head"><h3>${t("core.recentActivityTitle")}</h3></div>
-            <div class="card-body" style="padding:6px 16px 12px">
-              ${(DB.activity||[]).length ? DB.activity.slice(0,5).map(a=>`<div class="agenda-item"><span class="when-dot" style="background:var(--otr-sky)"></span>
-                <div><div class="ai-t">${esc(a.title)}</div>${a.xp?`<div class="ai-c sky">+${a.xp} XP</div>`:a.detail?`<div class="ai-c">${esc(a.detail)}</div>`:''}</div>
-                <span class="ai-w">${esc(a.when)}</span></div>`).join('') : `<p class="faint" style="font-size:13px;padding:10px 0">${t("core.activityEmpty")}</p>`}
-            </div>
-          </div>`;
+      /* ---- ⑦ LO MEJOR DE LA TEMPORADA — solo con media real en la DB ---- */
+      const highlights = Array.isArray(DB.highlights) ? DB.highlights : [];
+      const highlightsSection = highlights.length ? `
+      <section class="fade-up" style="--d:4">
+        ${C.secTitle(t('core.dashHighlightsTitle'))}
+        <div class="hl-grid">
+          ${highlights.slice(0, 4).map((h) => `
+            <article class="hl" style="background-image:url('${esc(h.image || '')}')">
+              ${h.tag ? C.chip(esc(h.tag), 'accent', { cls: 'hl-tag' }) : ''}
+              <div class="hl-txt"><div class="hl-t">${esc(h.title || '')}</div><div class="hl-d">${esc(h.when || '')}</div></div>
+            </article>`).join('')}
+        </div>
+      </section>` : '';
 
       return `
-      ${saludo}
-      ${kpis}
-      <div class="split fade-up" style="--d:2">
-        <div class="stack" style="gap:16px">
-          ${/* [UI-DASH D1] La acción siguiente baja aquí: primera tarjeta de la columna
-               principal, ya no una franja que ocupa la pantalla entera. */""}
-          ${nextCard}
-          ${skillCard}
-          ${recoCard}
+      ${head}
+      <div class="dash-grid">
+        <div class="dash-main">
+          ${hero}
+          ${eventsSection}
+          ${standings}
+          ${highlightsSection}
         </div>
-        <div class="stack" style="gap:16px">
-          ${upcoming}
-          ${debateCard}
-          ${achievements}
-        </div>
-      </div>
-      ${leaderboard}`;
+        <aside class="dash-aside fade-up" style="--d:2">
+          ${rankCard}
+          ${badgesCard}
+        </aside>
+      </div>`;
+    },
+
+    mount(root, state) {
+      const w = window as any;
+      // Nunca dejar un countdown huérfano (repaint por filtro o navegación).
+      if (w.__dashTimer) { clearInterval(w.__dashTimer); w.__dashTimer = null; }
+
+      // Repinta SOLO la página (conserva el shell), igual que el Debate Hub.
+      const repaint = () => {
+        const page = root.querySelector('.page');
+        if (!page) return;
+        page.innerHTML = S.dashboard.render(state);
+        S.dashboard.mount(root, state);
+      };
+
+      // Filtro Todos / Clases / Torneos.
+      root.querySelectorAll('[data-dash-filter]').forEach((el) =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          w.__dashFilter = el.getAttribute('data-dash-filter');
+          repaint();
+        }));
+
+      // "Únete": abre la sala on-platform de esa reserva.
+      root.querySelectorAll('[data-dash-room]').forEach((el) =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          w.__room = el.getAttribute('data-dash-room');
+          if (w.go) w.go('room');
+        }));
+
+      // Fallback del hero: retomar la lección pendiente.
+      root.querySelectorAll('[data-dash-lesson]').forEach((el) =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          const id = el.getAttribute('data-dash-lesson');
+          const dest = el.getAttribute('data-dash-dest') || 'lesson';
+          w.__lesson = id;
+          if (dest === 'quiz') w.__quizLesson = id;
+          if (w.go) w.go(dest);
+        }));
+
+      // Countdown mm:ss del hero (solo se pinta si faltan < 60 min).
+      const cd = root.querySelector('#dash-cd');
+      if (cd) {
+        const at = Date.parse(cd.getAttribute('data-at') || '');
+        const tick = () => {
+          const ms = at - Date.now();
+          if (!(ms > 0)) { cd.textContent = '0:00'; clearInterval(w.__dashTimer); w.__dashTimer = null; return; }
+          const s = Math.floor(ms / 1000);
+          cd.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+        };
+        tick();
+        w.__dashTimer = setInterval(tick, 1000);
+      }
     }
   };
 

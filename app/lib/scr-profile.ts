@@ -13,7 +13,7 @@ export const S = {};
   // Fila de estrellas SOLO de lectura (rating 0-5). Rellenas hasta `rating`.
   const starsRO = (rating) => {
     const r = Math.round(Number(rating) || 0);
-    return `<span class="stars-ro" style="display:inline-flex;gap:2px;color:var(--otr-sky)">${
+    return `<span class="stars-ro" style="display:inline-flex;gap:2px;color:var(--otr-green)">${
       Array.from({ length: 5 }, (_, i) =>
         `<span style="display:inline-flex;${i < r ? '' : 'opacity:.25'}">${IC.star}</span>`
       ).join('')
@@ -21,10 +21,10 @@ export const S = {};
   };
   // Tarjeta de una reseña individual.
   const reviewCard = (rv, opts = {}) => `
-    <div class="card card-pad" style="padding:15px 16px;background:var(--otr-offwhite);border-color:transparent">
+    <div class="card card-pad" style="padding:15px 16px;background:var(--surface-2)">
       <div class="row vcenter between" style="gap:10px">
         <div class="row vcenter" style="gap:11px;min-width:0">
-          ${C.avatar(esc(rv.ini), { size: 'sm', bg: 'var(--otr-sky-lo)' })}
+          ${C.avatar(esc(rv.ini), { size: 'sm', bg: 'var(--otr-black)' })}
           <div style="min-width:0"><div style="font-weight:700;font-size:13.5px;line-height:1.2">${esc(rv.author)}</div>
           <div class="faint" style="font-size:11.5px;margin-top:2px">${esc(rv.when)}${opts.showProgram && rv.programName ? ` · ${rv.programName}` : ''}</div></div>
         </div>
@@ -41,18 +41,18 @@ export const S = {};
       </div>
       ${p.summary ? `<p class="muted" style="font-size:13px;line-height:1.5;margin-top:8px">${esc(p.summary)}</p>` : ''}
       <div class="row wrap" style="gap:6px;margin-top:11px">
-        ${p.format ? C.badge(esc(p.format), 'sky') : ''}
-        ${p.modality ? C.badge(esc(p.modality), 'navy') : ''}
+        ${p.format ? C.chip(esc(p.format), 'info') : ''}
+        ${p.modality ? C.chip(esc(p.modality), 'outline') : ''}
       </div>
       ${p.price != null ? `<div class="divider" style="margin:12px 0 0"></div><div class="row between vcenter" style="margin-top:12px">
-        <span class="brand-font" style="font-size:19px;font-weight:800;color:var(--text)">${typeof p.price === 'number' ? '$' + (p.price / 100).toLocaleString(getLang() === 'en' ? 'en' : 'es') : esc(p.price)}</span>
-        <button class="btn btn-ghost btn-sm" onclick="go('catalog')">${t("profile.viewProgram")} ${IC.chevR}</button>
+        <span class="brand-font tnum" style="font-size:21px;font-weight:800;letter-spacing:-.02em;color:var(--text)">${typeof p.price === 'number' ? '$' + (p.price / 100).toLocaleString(getLang() === 'en' ? 'en' : 'es') : esc(p.price)}</span>
+        ${C.btn(t("profile.viewProgram"), 'outline', { size: 'sm', icRight: 'chevR', attrs: `onclick="go('catalog')"` })}
       </div>` : ''}
     </div>`;
-  // Chips a partir de una lista de formatos (array de strings).
+  // Chips a partir de una lista de formatos (array de strings). [MOCKUP] chips r3 del kit.
   const formatChips = (list) => (Array.isArray(list) ? list : [])
     .filter(Boolean)
-    .map((f) => `<span class="chip soft">${esc(f)}</span>`).join('');
+    .map((f) => C.chip(esc(f), 'outline')).join('');
 
   /* ---------------- PROGRESO / NIVELES ---------------- */
   S.progress = {
@@ -80,9 +80,14 @@ export const S = {};
       const hasSkills = (DB.skills || []).length > 0;
       const comps = SKILL_DIMS.map((name) => [name, skillMap[name] != null ? skillMap[name] : 0]);
       return `
-      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">${t("profile.progressTitle")}</h1>
-      <div class="page-sub">${t("profile.progressSub")}</div></div>
-      ${C.levelBadge(curName)}</div>
+      <div class="page-head page-head--rule fade-up" style="--d:0">
+      <div><span class="ph-eyebrow">${t("profile.yourProgress")}</span><h1 class="ph-title">${t("profile.progressTitle")}</h1>
+      <div class="page-sub" style="margin-top:8px">${t("profile.progressSub")}</div></div>
+      <div class="stat-group">
+        ${C.statInline(xp.toLocaleString(getLang() === 'en' ? 'en' : 'es'), 'XP')}
+        ${C.statInline(streak, t("profile.streak"), { accent: true })}
+      </div></div>
+      <div class="row vcenter" style="gap:8px;margin-bottom:16px">${C.chip(esc(curName), 'black', { ic: 'levels' })}</div>
 
       <div class="card card-pad fade-up" style="--d:1;margin-bottom:18px">
         <div class="level-track">
@@ -99,15 +104,12 @@ export const S = {};
 
       <div class="split fade-up rail-320" style="--d:2">
         <div class="card card-pad">
-          <div class="row between vcenter"><div><div class="eyebrow" style="margin-bottom:2px">${t("profile.yourProgress")}</div><b style="font-size:15px">${nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel")}</b></div><span class="muted tnum" style="font-size:13px">${xp.toLocaleString(getLang() === 'en' ? 'en' : 'es')} / ${xpNext.toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span></div>
-          <div style="margin:14px 0 7px">${C.bar(pct,{cls:'thick navy'})}</div>
-          <div class="row between" style="font-size:12px;color:var(--text-2)"><span class="badge sky">${esc(curName)}</span><span class="tnum">${nextLevel ? toNext.toLocaleString(getLang() === 'en' ? 'en' : 'es') + ' ' + t("profile.xpToReach") + ' ' + esc(nextLevel.name) : t("profile.maxLevelReached")}</span></div>
+          ${C.secTitle(nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel"), { sm: true, right: `<span class="muted tnum" style="font-size:13px">${xp.toLocaleString(getLang() === 'en' ? 'en' : 'es')} / ${xpNext.toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span>` })}
+          <div style="margin:4px 0 7px">${C.bar(pct,{cls:'thick navy'})}</div>
+          <div class="row between vcenter" style="font-size:12px;color:var(--text-2)">${C.chip(esc(curName), 'tint')}<span class="tnum">${nextLevel ? toNext.toLocaleString(getLang() === 'en' ? 'en' : 'es') + ' ' + t("profile.xpToReach") + ' ' + esc(nextLevel.name) : t("profile.maxLevelReached")}</span></div>
 
           <div class="divider"></div>
-          <div class="row between vcenter" style="margin-bottom:4px">
-            <div><div class="eyebrow" style="margin-bottom:2px">${t("profile.radarOtr")}</div><b style="font-size:14px">${t("profile.competencies")}</b></div>
-            ${hasSkills ? `<span class="badge sky">${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} ${t("profile.avg")}</span>` : ''}
-          </div>
+          ${C.secTitle(t("profile.competencies"), { sm: true, right: hasSkills ? C.chip(`${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} ${t("profile.avg")}`, 'accent') : '' })}
           ${hasSkills
             ? `<div style="margin-top:6px">
             ${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${t(SKILL_LABEL[c[0]] || c[0])}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
@@ -117,18 +119,18 @@ export const S = {};
 
         <div class="stack" style="gap:16px">
           <div class="card card-pad" style="text-align:center">
-            <div class="eyebrow" style="margin-bottom:10px">${t("profile.streak")}</div>
-            <span class="streak" style="font-size:14px">${IC.flame} ${t("profile.streakDays").replace("{n}", streak)}</span>
+            <span class="lbl" style="margin-bottom:10px">${t("profile.streak")}</span>
+            <div class="row vcenter" style="gap:8px;justify-content:center"><span style="display:inline-flex;width:20px;height:20px;color:var(--otr-green)">${IC.flame}</span><b class="tnum" style="font-size:21px;font-weight:800;letter-spacing:-.02em">${t("profile.streakDays").replace("{n}", streak)}</b></div>
             <div style="margin-top:10px;font-size:12.5px" class="muted">${t("profile.dontBreakIt")}</div>
             <div class="row wrap" style="gap:5px;margin-top:14px;justify-content:center">
-              ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:4px;background:${i<Math.min(streak,14)?'var(--otr-sky)':'var(--n-150)'}"></span>`).join('')}
+              ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:var(--r-sm);background:${i<Math.min(streak,14)?'var(--otr-green)':'var(--n-150)'}"></span>`).join('')}
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><h3>${t("profile.recentGains")}</h3></div>
+            <div class="card-head"><div class="sec-title sec-title--sm"><h3>${t("profile.recentGains")}</h3></div></div>
             <div class="card-body" style="padding:8px 16px 12px">
               ${recent.length ? recent.map(ev=>`
-                <div class="agenda-item"><span class="when-dot" style="background:var(--otr-gold)"></span>
+                <div class="agenda-item"><span class="when-dot" style="background:var(--otr-green)"></span>
                 <div><div class="ai-t">${ev.title || ''}</div>${ev.xp ? `<div class="ai-c sky">+${ev.xp} XP</div>` : (ev.detail ? `<div class="ai-c sky">${ev.detail}</div>` : '')}</div><span class="ai-w">${ev.when || ''}</span></div>`).join('')
                 : `<div class="empty" style="padding:22px"><p class="muted" style="font-size:13px;text-align:center">${t("profile.noActivityBody")}</p></div>`}
             </div>
@@ -144,30 +146,32 @@ export const S = {};
       const got = DB.badges.filter(b=>b.got).length;
       const certs = DB.certificates || [];
       return `
-      <div class="page-head fade-up" style="--d:0"><div><h1 class="page-title">${t("profile.badgesTitle")}</h1>
-      <div class="page-sub">${t("profile.badgesProgress").replace("{got}", got).replace("{total}", DB.badges.length)}</div></div></div>
+      <div class="page-head page-head--rule fade-up" style="--d:0">
+      <div><span class="ph-eyebrow">${t("profile.achievements")}</span><h1 class="ph-title">${t("profile.badgesTitle")}</h1>
+      <div class="page-sub" style="margin-top:8px">${t("profile.badgesProgress").replace("{got}", got).replace("{total}", DB.badges.length)}</div></div>
+      <div class="stat-group">${C.statInline(got, t("profile.yourBadges"), { accent: true })}${C.statInline(certs.length, t("profile.yourCertificates"))}</div></div>
 
-      <div class="fade-up" style="--d:1;margin-bottom:12px"><div class="eyebrow" style="margin-bottom:2px">${t("profile.achievements")}</div><b style="font-size:15px;display:block">${t("profile.yourCertificates")}</b></div>
+      <div class="fade-up" style="--d:1">${C.secTitle(t("profile.yourCertificates"))}</div>
       ${certs.length
         ? `<div class="grid g-2" style="gap:14px;margin-bottom:24px">
           ${certs.map(ct=>`
           <div class="cert">
             <div class="seal">${IC.award}</div>
             <div style="flex:1;min-width:0">
-              <div class="badge gold" style="margin-bottom:7px">${t("profile.officialCert")}</div>
-              <h3 style="font-size:17px;font-weight:750;line-height:1.2">${esc(ct.title)}</h3>
+              <div style="margin-bottom:7px">${C.chip(t("profile.officialCert"), 'accent', { ic: 'award' })}</div>
+              <h3 style="font-size:17px;font-weight:800;letter-spacing:-.025em;line-height:1.2">${esc(ct.title)}</h3>
               <p class="muted" style="font-size:13px;margin-top:4px">${ct.programName}${ct.issuedAt ? ` · ${esc(ct.issuedAt)}` : ''}</p>
             </div>
-            <button class="btn btn-navy btn-sm" onclick="window.__cert='${esc(ct.id)}';go('certificate')">${t("profile.viewCertificate")}</button>
+            ${C.btn(t("profile.viewCertificate"), 'primary', { size: 'sm', attrs: `onclick="window.__cert='${esc(ct.id)}';go('certificate')"` })}
           </div>`).join('')}
         </div>`
         : `<div class="empty" style="padding:32px 24px;margin-bottom:24px"><div class="ill">${IC.award}</div><h4>${t("profile.noCertsHeading")}</h4><p>${t("profile.noCertsBody")}</p></div>`}
 
-      <div class="row between vcenter fade-up" style="--d:2;margin-bottom:12px"><div><div class="eyebrow" style="margin-bottom:2px">${t("profile.collection")}</div><b style="font-size:15px;display:block">${t("profile.yourBadges")}</b></div><span class="badge navy">${got} / ${DB.badges.length}</span></div>
+      <div class="fade-up" style="--d:2">${C.secTitle(t("profile.yourBadges"), { right: C.chip(`${got} / ${DB.badges.length}`, 'black') })}</div>
       <div class="badge-grid fade-up" style="--d:3">
         ${DB.badges.map(b=>`
           <div class="badge-card ${b.got?'':'locked'}">
-            ${b.got?`<span class="badge ok" style="position:absolute;top:12px;right:12px">${t("profile.earned")}</span>`:`<span style="position:absolute;top:12px;right:12px;color:var(--n-300)">${IC.lock}</span>`}
+            ${b.got?`<span style="position:absolute;top:12px;right:12px">${C.chip(t("profile.earned"), 'accent')}</span>`:`<span style="position:absolute;top:12px;right:12px;color:var(--n-300)">${IC.lock}</span>`}
             <div class="badge-medal ${b.got?'gold':'lock'}">${IC[b.ic]}</div>
             <div class="bn">${esc(b.n)}</div>
             <div class="bd">${esc(b.d)}</div>
@@ -209,7 +213,7 @@ export const S = {};
         ${C.avatar(esc(ini), { size: 'xl', bg: 'var(--otr-navy)' })}
         <div style="flex:1;min-width:200px">
           <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
-            <h1 style="font-size:22px;font-weight:750;margin:0">${esc(name)}</h1>${C.badge('Coach', 'navy')}
+            <h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${esc(name)}</h1>${C.chip('Coach', 'black')}
           </div>
           ${headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${esc(headline)}</div>` : ''}
           <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
@@ -219,14 +223,14 @@ export const S = {};
           </div>
           ${bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(bio)}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
-            <button class="btn btn-primary btn-sm" data-action="edit-coach">${IC.pencil} ${t("profile.editProfile")}</button>
-            <button class="btn btn-soft btn-sm" data-action="edit-coach-market">${IC.sliders} ${t("profile.marketplaceProfile")}</button>
+            ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-coach"' })}
+            ${C.btn(t("profile.marketplaceProfile"), 'outline', { size: 'sm', ic: 'sliders', attrs: 'data-action="edit-coach-market"' })}
           </div>
         </div>
-        <div class="row" style="gap:0">
-          <div class="kpi" style="text-align:center;padding:0 20px"><span class="k-val brand-font" style="font-size:24px">${programs.length}</span><span class="k-label" style="justify-content:center">${t("profile.kpiPrograms")}</span></div>
-          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${Number(rating).toFixed(1)}</span><span class="k-label" style="justify-content:center">${t("profile.kpiRating")}</span></div>
-          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${reviewCount}</span><span class="k-label" style="justify-content:center">${t("profile.kpiReviews")}</span></div>
+        <div class="stat-group">
+          ${C.statInline(programs.length, t("profile.kpiPrograms"))}
+          ${C.statInline(Number(rating).toFixed(1), t("profile.kpiRating"), { accent: true })}
+          ${C.statInline(reviewCount, t("profile.kpiReviews"))}
         </div>
       </div>
     </div>
@@ -234,20 +238,19 @@ export const S = {};
     <div class="split fade-up rail-320" style="--d:1">
       <div class="stack" style="gap:18px">
         <div class="card card-pad">
-          <div class="eyebrow" style="margin-bottom:2px">${t("profile.methodology")}</div>
-          <b style="font-size:14px">${t("profile.howIWork")}</b>
-          <p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap">${teachingStyle ? esc(teachingStyle) : t("profile.noMethodologySelf")}</p>
+          ${C.secTitle(t("profile.howIWork"), { sm: true })}
+          <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${teachingStyle ? esc(teachingStyle) : t("profile.noMethodologySelf")}</p>
         </div>
 
         <div class="card card-pad">
-          <div class="row between vcenter"><b style="font-size:14px">${t("profile.myProgramsCoach")}</b><span class="badge sky">${programs.length}</span></div>
+          ${C.secTitle(t("profile.myProgramsCoach"), { sm: true, right: C.chip(String(programs.length), 'outline') })}
           ${programs.length
             ? `<div class="grid g-2" style="margin-top:14px;gap:14px">${programs.map(programCard).join('')}</div>`
             : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>${t("profile.noProgramsCoachHeading")}</h4><p>${t("profile.noProgramsCoachBody")}</p></div>`}
         </div>
 
         <div class="card card-pad">
-          <div class="row between vcenter"><b style="font-size:14px">${t("profile.studentReviews")}</b><span class="badge navy">${reviews.length}</span></div>
+          ${C.secTitle(t("profile.studentReviews"), { sm: true, right: C.chip(String(reviews.length), 'black') })}
           ${reviews.length
             ? `<div class="stack" style="gap:12px;margin-top:14px">${reviews.map((rv) => reviewCard(rv, { showProgram: true })).join('')}</div>`
             : `<div class="empty" style="padding:24px"><div class="ill">${IC.star}</div><h4>${t("profile.noReviewsCoachHeading")}</h4><p>${t("profile.noReviewsCoachBody")}</p></div>`}
@@ -255,16 +258,15 @@ export const S = {};
       </div>
 
       <div class="stack" style="gap:16px">
-        <div class="card card-pad" style="text-align:center;background:linear-gradient(160deg,var(--otr-pale),#fff)">
-          <div class="eyebrow" style="margin-bottom:8px">${t("profile.overallRating")}</div>
-          <div class="brand-font" style="font-size:38px;font-weight:800;line-height:1;color:var(--otr-navy)">${Number(rating).toFixed(1)}</div>
+        <div class="card card-pad" style="text-align:center">
+          <span class="lbl" style="margin-bottom:8px">${t("profile.overallRating")}</span>
+          <div class="brand-font tnum" style="font-size:40px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--text)">${Number(rating).toFixed(1)}</div>
           <div style="margin-top:8px">${starsRO(rating)}</div>
           <div class="faint" style="font-size:12px;margin-top:7px">${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</div>
         </div>
         <div class="card card-pad">
-          <div class="eyebrow" style="margin-bottom:2px">${t("profile.specialty")}</div>
-          <b style="font-size:13.5px">${t("profile.whatITeach")}</b>
-          <div class="row wrap" style="gap:8px;margin-top:12px">
+          ${C.secTitle(t("profile.whatITeach"), { sm: true })}
+          <div class="row wrap" style="gap:6px">
             ${formats.length ? formatChips(formats) : `<span class="faint" style="font-size:12.5px">${t("profile.defineFormatsSelf")}</span>`}
           </div>
         </div>
@@ -277,23 +279,27 @@ export const S = {};
     const me = DB.me || {};
     const courses = DB.courses || [];
     const gotBadges = (DB.badges || []).filter((b) => b.got);
+    // [MOCKUP · Task 6] Número de nivel REAL para el anillo cónico (posición en la
+    // escalera de DB.levels, 1-based). Sin escalera cargada, cae a 1.
+    const lvlIdx = (DB.levels || []).findIndex((l) => (l.name || '').toLowerCase() === String(me.level || '').toLowerCase());
+    const levelNum = lvlIdx >= 0 ? lvlIdx + 1 : 1;
     return `
     <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
       <div class="profile-head">
         ${C.avatar(esc(me.initials), { size: 'xl', bg: 'var(--otr-sky-lo)' })}
         <div style="flex:1;min-width:200px">
-          <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:22px;font-weight:750;margin:0">${me.name}</h1>${C.levelBadge(me.level || 'OTR Initiate')}</div>
+          <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${me.name}</h1>${C.chip(esc(me.level || 'OTR Initiate'), 'black', { ic: 'levels' })}</div>
           ${me.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${me.headline}</div>` : ''}
           <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${esc(me.location)}` : ''}</div>
           ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(me.bio)}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px">
-            <button class="btn btn-primary btn-sm" data-action="edit-profile">${IC.pencil} ${t("profile.editProfile")}</button>
+            ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-profile"' })}
           </div>
         </div>
-        <div class="row" style="gap:0">
-          <div class="kpi" style="text-align:center;padding:0 20px"><span class="k-val brand-font" style="font-size:24px">${courses.length}</span><span class="k-label" style="justify-content:center">${t("profile.kpiPrograms")}</span></div>
-          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${gotBadges.length}</span><span class="k-label" style="justify-content:center">${t("profile.kpiBadges")}</span></div>
-          <div class="kpi" style="text-align:center;padding:0 20px;border-left:1px solid var(--border)"><span class="k-val brand-font" style="font-size:24px">${(me.streak || 0)}</span><span class="k-label" style="justify-content:center">${t("profile.kpiStreak")}</span></div>
+        <div class="stat-group">
+          ${C.statInline(courses.length, t("profile.kpiPrograms"))}
+          ${C.statInline(gotBadges.length, t("profile.kpiBadges"))}
+          ${C.statInline(me.streak || 0, t("profile.kpiStreak"), { accent: true })}
         </div>
       </div>
     </div>
@@ -301,7 +307,7 @@ export const S = {};
     <div class="split fade-up rail-320" style="--d:1">
       <div class="stack" style="gap:18px">
         <div class="card card-pad">
-          <div class="row between vcenter"><b style="font-size:14px">${t("profile.myProgramsStudent")}</b><button class="btn btn-ghost btn-sm" onclick="go('catalog')">${t("profile.explore")} ${IC.chevR}</button></div>
+          ${C.secTitle(t("profile.myProgramsStudent"), { sm: true, right: C.btn(t("profile.explore"), 'outline', { size: 'sm', icRight: 'chevR', attrs: `onclick="go('catalog')"` }) })}
           ${courses.length
             ? `<div class="stack" style="gap:12px;margin-top:14px">${courses.map((c) => `
               <div class="card card-pad lift" role="button" tabindex="0" aria-label="Abrir ${c.name}" style="padding:12px 14px;cursor:pointer" onclick="go('course')">
@@ -314,27 +320,31 @@ export const S = {};
                 </div>
                 ${c.progress != null ? `<div style="margin-top:10px">${C.bar(c.progress, { cls: 'navy' })}</div>` : ''}
               </div>`).join('')}</div>`
-            : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>${t("profile.notEnrolledHeading")}</h4><p>${t("profile.notEnrolledBody")}</p><button class="btn btn-primary btn-sm" onclick="go('catalog')">${t("profile.exploreProgramsBtn")}</button></div>`}
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>${t("profile.notEnrolledHeading")}</h4><p>${t("profile.notEnrolledBody")}</p>${C.btn(t("profile.exploreProgramsBtn"), 'accent', { size: 'sm', attrs: `onclick="go('catalog')"` })}</div>`}
         </div>
       </div>
 
       <div class="stack" style="gap:16px">
-        <div class="card card-pad">
-          <div class="eyebrow" style="margin-bottom:2px">${t("profile.yourRank")}</div>
-          <b style="font-size:13.5px">${t("profile.currentLevel")}</b>
-          <div class="row vcenter" style="gap:12px;margin:12px 0 14px">
-            <div class="ln-badge brand-font" style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,var(--otr-sky),var(--otr-sky-lo));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;box-shadow:var(--sh-2)">${esc((me.level || 'N')[0])}</div>
-            <div><b style="font-size:15px">${esc(me.level || 'OTR Initiate')}</b><div class="faint" style="font-size:12px;margin-top:1px">${(DB.xpNext - DB.xp)} ${t("profile.xpToNextLevel")}</div></div>
+        ${/* [MOCKUP · Task 6, spec §3.2] "Tu rango" es la card NEGRA con el anillo cónico
+              del kit: nivel real + progreso de XP real. */''}
+        <div class="card card--dark">
+          <div class="card-pad">
+            <div class="sec-row"><span class="lbl">${t("profile.yourRank")}</span>${C.chip(esc(me.level || 'OTR Initiate'), 'accent', { ic: 'levels' })}</div>
+            <div class="row vcenter" style="gap:18px">
+              ${C.ringConic(DB.xpNext > DB.xpLevelStart ? Math.round(((DB.xp - DB.xpLevelStart) / (DB.xpNext - DB.xpLevelStart)) * 100) : 0, levelNum, t("profile.levelCap"))}
+              <div style="min-width:0">
+                <b style="font-size:14px;color:#fff">${esc(me.level || 'OTR Initiate')}</b>
+                <p class="dbt-sub" style="margin-top:5px"><b>${Math.max(0, (DB.xpNext || 0) - (DB.xp || 0))}</b> ${t("profile.xpToNextLevel")}</p>
+                <p class="dbt-sub" style="margin-top:5px">${(DB.xp || 0).toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP · ${t("profile.streakDays").replace("{n}", me.streak || 0)}</p>
+              </div>
+            </div>
           </div>
-          ${C.bar(DB.xpNext > DB.xpLevelStart ? Math.round(((DB.xp - DB.xpLevelStart) / (DB.xpNext - DB.xpLevelStart)) * 100) : 0, { cls: 'navy' })}
-          <div class="row between vcenter" style="font-size:12px;color:var(--text-2);margin-top:10px"><span class="tnum">${(DB.xp || 0).toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span><span class="streak">${IC.flame} ${t("profile.streakDays").replace("{n}", me.streak || 0)}</span></div>
         </div>
         <div class="card card-pad">
-          <div class="eyebrow" style="margin-bottom:2px">${t("profile.achievements")}</div>
-          <b style="font-size:13.5px">${t("profile.featuredBadges")}</b>
+          ${C.secTitle(t("profile.featuredBadges"), { sm: true })}
           ${gotBadges.length
-            ? `<div class="row wrap" style="gap:12px;margin-top:14px">${gotBadges.slice(0, 4).map((b) => `<div class="badge-medal gold" style="width:46px;height:46px" title="${esc(b.n)}">${IC[b.ic]}</div>`).join('')}</div>
-               <button class="btn btn-ghost btn-sm btn-block" style="margin-top:16px" onclick="go('badges')">${t("profile.viewAll")} ${IC.chevR}</button>`
+            ? `<div class="row wrap" style="gap:12px;margin-top:4px">${gotBadges.slice(0, 4).map((b) => `<div class="badge-medal gold" style="width:46px;height:46px" title="${esc(b.n)}">${IC[b.ic]}</div>`).join('')}</div>
+               <div style="margin-top:16px">${C.btn(t("profile.viewAll"), 'outline', { size: 'sm', block: true, icRight: 'chevR', attrs: `onclick="go('badges')"` })}</div>`
             : `<p class="faint" style="font-size:12.5px;margin-top:10px">${t("profile.noBadgesStudent")}</p>`}
         </div>
       </div>
@@ -362,7 +372,7 @@ export const S = {};
           ${C.avatar(esc(cp.initials), { size: 'xl', bg: 'var(--otr-navy)' })}
           <div style="flex:1;min-width:200px">
             <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
-              <h1 style="font-size:22px;font-weight:750;margin:0">${cp.name}</h1>${C.badge('Coach', 'navy')}
+              <h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${cp.name}</h1>${C.chip('Coach', 'black')}
             </div>
             ${cp.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${cp.headline}</div>` : ''}
             <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
@@ -378,20 +388,19 @@ export const S = {};
       <div class="split fade-up rail-320" style="--d:1">
         <div class="stack" style="gap:18px">
           <div class="card card-pad">
-            <div class="eyebrow" style="margin-bottom:2px">${t("profile.methodology")}</div>
-            <b style="font-size:14px">${t("profile.howTheyWork")}</b>
-            <p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap">${cp.teachingStyle ? esc(cp.teachingStyle) : t("profile.noMethodologyCoach")}</p>
+            ${C.secTitle(t("profile.howTheyWork"), { sm: true })}
+            <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${cp.teachingStyle ? esc(cp.teachingStyle) : t("profile.noMethodologyCoach")}</p>
           </div>
 
           <div class="card card-pad">
-            <div class="row between vcenter"><b style="font-size:14px">${t("profile.programs")}</b><span class="badge sky">${programs.length}</span></div>
+            ${C.secTitle(t("profile.programs"), { sm: true, right: C.chip(String(programs.length), 'outline') })}
             ${programs.length
               ? `<div class="grid g-2" style="margin-top:14px;gap:14px">${programs.map(programCard).join('')}</div>`
               : `<div class="empty" style="padding:24px"><div class="ill">${IC.book}</div><h4>${t("profile.noProgramsPublished")}</h4></div>`}
           </div>
 
           <div class="card card-pad" id="reviews-block">
-            <div class="row between vcenter"><b style="font-size:14px">${t("profile.reviews")}</b><span class="badge navy">${reviews.length}</span></div>
+            ${C.secTitle(t("profile.reviews"), { sm: true, right: C.chip(String(reviews.length), 'black') })}
             ${reviews.length
               ? `<div class="stack" style="gap:12px;margin-top:14px">${reviews.map((rv) => reviewCard(rv)).join('')}</div>`
               : `<div class="empty" style="padding:24px"><div class="ill">${IC.star}</div><h4>${t("profile.noReviewsCoachHeading")}</h4><p>${t("profile.beFirstReview")}</p></div>`}
@@ -399,17 +408,16 @@ export const S = {};
         </div>
 
         <div class="stack" style="gap:16px">
-          <div class="card card-pad" style="text-align:center;background:linear-gradient(160deg,var(--otr-pale),#fff)">
-            <div class="eyebrow" style="margin-bottom:8px">${t("profile.rating")}</div>
-            <div class="brand-font" style="font-size:38px;font-weight:800;line-height:1;color:var(--otr-navy)">${Number(rating).toFixed(1)}</div>
+          <div class="card card-pad" style="text-align:center">
+            <span class="lbl" style="margin-bottom:8px">${t("profile.rating")}</span>
+            <div class="brand-font tnum" style="font-size:40px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--text)">${Number(rating).toFixed(1)}</div>
             <div style="margin-top:8px">${starsRO(rating)}</div>
             <div class="faint" style="font-size:12px;margin-top:7px">${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</div>
           </div>
 
           <div class="card card-pad">
-            <div class="eyebrow" style="margin-bottom:2px">${t("profile.specialty")}</div>
-            <b style="font-size:13.5px">${t("profile.formats")}</b>
-            <div class="row wrap" style="gap:8px;margin-top:12px">
+            ${C.secTitle(t("profile.formats"), { sm: true })}
+            <div class="row wrap" style="gap:6px">
               ${formats.length ? formatChips(formats) : `<span class="faint" style="font-size:12.5px">${t("profile.notSpecified")}</span>`}
             </div>
           </div>
@@ -444,10 +452,9 @@ export const S = {};
     // Ya reseñó: mostrar su reseña.
     if (myReview) {
       return `
-      <div class="card card-pad" style="border-color:var(--otr-sky)">
-        <div class="eyebrow" style="margin-bottom:2px">${t("profile.published")}</div>
-        <b style="font-size:13.5px">${t("profile.yourReview")}</b>
-        <div style="margin-top:10px">${starsRO(myReview.rating)}</div>
+      <div class="card card-pad" style="border-color:var(--otr-green)">
+        ${C.secTitle(t("profile.yourReview"), { sm: true, right: C.chip(t("profile.published"), 'tint') })}
+        <div>${starsRO(myReview.rating)}</div>
         ${myReview.body ? `<p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:10px;white-space:pre-wrap">${esc(myReview.body)}</p>` : ''}
       </div>`;
     }
@@ -456,19 +463,18 @@ export const S = {};
     if (!mainCourse || !isEnrolled) {
       return `
       <div class="card card-pad">
-        <b style="font-size:13.5px">${t("profile.leaveReview")}</b>
-        <p class="faint" style="font-size:12.5px;line-height:1.5;margin-top:8px">${t("profile.verifiedBookingOnly")}</p>
+        ${C.secTitle(t("profile.leaveReview"), { sm: true })}
+        <p class="faint" style="font-size:12.5px;line-height:1.5">${t("profile.verifiedBookingOnly")}</p>
       </div>`;
     }
     // Formulario de reseña.
     return `
     <div class="card card-pad">
-      <div class="eyebrow" style="margin-bottom:2px">${t("profile.yourExperience")}</div>
-      <b style="font-size:13.5px">${t("profile.leaveYourReview")}</b>
-      <div class="row" style="gap:4px;margin-top:12px" id="review-stars">
-        ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="star" data-rating="${n}" aria-label="${n} estrellas" style="background:none;border:0;padding:3px;cursor:pointer;color:var(--otr-sky);opacity:.3;display:inline-flex">${IC.star}</button>`).join('')}
+      ${C.secTitle(t("profile.leaveYourReview"), { sm: true })}
+      <div class="row" style="gap:4px" id="review-stars">
+        ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="star" data-rating="${n}" aria-label="${n} estrellas" style="background:none;border:0;padding:3px;cursor:pointer;color:var(--otr-green);opacity:.3;display:inline-flex">${IC.star}</button>`).join('')}
       </div>
       <textarea class="input" id="review-body" rows="3" placeholder="${t("profile.reviewPlaceholder")}" style="margin-top:12px;resize:vertical"></textarea>
-      <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-action="leave-review" data-course="${esc(mainCourse.id)}">${t("profile.publishReview")}</button>
+      <div style="margin-top:12px">${C.btn(t("profile.publishReview"), 'accent', { size: 'sm', block: true, attrs: `data-action="leave-review" data-course="${esc(mainCourse.id)}"` })}</div>
     </div>`;
   }

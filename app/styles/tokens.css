@@ -1,12 +1,21 @@
 /* ============================================================
-   OTR LMS · DESIGN TOKENS — OTR BRAND BOOK V1.0 (2026)
-   Paleta ESTRICTA: Negro #171717 · Blanco #FFFFFF · Naranja #F25623
-   como ÚNICO acento (con moderación: una sola pieza en naranja por
-   vista) sobre una rampa de grises FRÍOS. Sin verde, sin oro, sin azul.
-   Botón primario NEGRO; el naranja queda para el CTA estrella, énfasis,
-   foco y datos. Tipografía: solo Inter, tracking compacto (-0.03em).
-   Radios: controles 8px, tarjetas 12px, pill 999. Estética: prestigio,
-   alto rendimiento, NO escolar.
+   OTR LMS · DESIGN TOKENS — ESTÉTICA MOCKUP 2026-08-07
+   sobre OTR BRAND BOOK V1.0 (2026)
+   Paleta ESTRICTA: Negro #171717 · Naranja #F25623 como ÚNICO acento.
+   Sin verde, sin oro, sin azul.
+   Deltas del mockup (spec docs/superpowers/specs/2026-08-07-dashboard-mockup-spec.md):
+   · Canvas GREIGE cálido #F1F1EF (antes blanco puro) con bordes cálidos
+     #E4E3DF / #DCDBD6 y superficies #EDEDEA / #FBFBFA.
+   · Naranja GENEROSO (se relaja la regla de "una pieza por vista") y
+     texto SIEMPRE NEGRO sobre naranja (--text-on-accent).
+   · Radios apretados 3/4/5/6px (badges/botones/tiles/contenedores);
+     --r-pill queda SOLO para círculos reales (avatares, anillos, puntos).
+   · UNA sola sombra (--sh-1) + un glow naranja (--sh-glow) para el CTA
+     estrella. El botón primario sigue siendo NEGRO.
+   Excepción A11y (única desviación del mockup): el texto naranja pequeño
+   usa --otr-green-text/--otr-gold-text #9E3211 (6.36:1 sobre #F1F1EF);
+   #CC3F13 se queda en 4.33:1 sobre el canvas greige → NO llega a AA.
+   Tipografía: solo Inter, tracking compacto (-0.03em).
    Los nombres legacy (--otr-navy/--otr-sky/--otr-green/--otr-gold) se
    conservan como alias a la marca para re-skinear sin tocar las ~374
    referencias en pantallas: cambian los VALORES, nunca los nombres.
@@ -19,11 +28,12 @@
   --otr-green-hi:#F8987A;    /* naranja suave sobre fondo oscuro / hover claro */
   --otr-green-lo:#C8401A;    /* naranja oscuro: hover acción / link */
   --otr-green-pale:#FDE7DE;  /* tinte naranja · cards · hover suave */
-  --otr-green-text:#9E3211;  /* texto naranja SOBRE tinte pálido (--action-soft) → WCAG AA ≥4.5:1 */
+  --otr-green-text:#9E3211;  /* texto naranja pequeño sobre claro → 6.36:1 sobre el canvas greige (WCAG AA).
+                                NO usar #CC3F13 aquí: da 4.33:1 sobre #F1F1EF (falla AA) */
   --otr-gold:#F25623;        /* LOGRO: mismo acento naranja (el oro desaparece del sistema) */
   --otr-gold-lo:#C8401A;     /* naranja oscuro para fondos/iconos de logro */
   --otr-gold-pale:#FDE7DE;   /* tinte de logro = tinte naranja */
-  --otr-gold-text:#9E3211;   /* texto de logro SOBRE tinte (--otr-gold-pale) → WCAG AA */
+  --otr-gold-text:#9E3211;   /* texto de logro pequeño → 6.36:1 sobre #F1F1EF (WCAG AA) */
   --otr-white:#FFFFFF;
 
   /* ---- Alias legacy → marca (re-skinea var(--otr-navy/sky) existentes) ---- */
@@ -50,23 +60,32 @@
   --n-800:#262626;
   --n-900:#171717;
 
-  /* ---- Semantic ---- */
-  --bg:#FFFFFF;                     /* canvas blanco del brand book */
-  --bg-sunken:#F7F7F7;
+  /* ---- Escala ink del mockup (derivada de #171717; para superficies oscuras) ---- */
+  --ink-800:#202020;  /* card negra "elevada" sobre negro puro */
+  --ink-700:#2E2E2E;  /* tiles de podio · hover de borde */
+  --ink-400:#808080;  /* labels/meta sobre claro y sobre negro */
+  --ink-300:#B4B4B4;  /* texto secundario sobre negro */
+
+  /* ---- Semantic (canvas GREIGE del mockup) ---- */
+  --bg:#F1F1EF;                     /* canvas greige cálido de la pantalla */
+  --bg-sunken:#EDEDEA;              /* divisores/superficie hundida */
   --bg-raised:var(--otr-white);
-  --surface:var(--otr-white);       /* cards blancas, separadas por borde gris frío */
-  --surface-2:#FCFCFC;
+  --surface:#FFFFFF;                /* cards blancas, separadas por borde cálido */
+  --surface-2:#FBFBFA;              /* tile "apagado" sobre card blanca */
   --surface-tint:var(--otr-green-pale);
-  --border:var(--n-150);
-  --border-strong:var(--n-200);
+  --border:#E4E3DF;                 /* borde cálido de card y del header */
+  --border-strong:#DCDBD6;          /* borde de botón outline (1.5px) */
   --text:var(--otr-black);
   --text-2:var(--n-600);
   --text-3:var(--n-500);
   --text-on-navy:#FFFFFF;           /* texto sobre registro negro */
+  --text-on-accent:#171717;         /* texto NEGRO sobre naranja, SIEMPRE (8.4:1) */
 
   --action:var(--otr-green);
   --action-hover:var(--otr-green-lo);
   --action-soft:var(--otr-green-pale);
+  --accent-dark:#CC3F13;            /* naranja oscuro del mockup: hover/degradado de podio */
+  --accent-soft:#F7A98C;            /* naranja suave sobre negro */
   --focus:var(--otr-green);
   --link:var(--otr-green-lo);
 
@@ -102,20 +121,23 @@
   --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px;
   --s-6:24px; --s-8:32px; --s-10:40px; --s-12:48px; --s-16:64px;
 
-  /* ---- Radii (escala corta del brand book: controles 8, contenedores 12, pill) ---- */
-  --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:12px; --r-xl:12px; --r-pill:999px;
+  /* ---- Radii (escala apretada del mockup: badges 3, botones 4, tiles 5, contenedores 6)
+     --r-pill queda SOLO para círculos reales (avatares, anillos, puntos): NADA de
+     chips/badges/inputs en pill. ---- */
+  --r-xs:3px; --r-sm:4px; --r-md:5px; --r-lg:6px; --r-xl:6px; --r-pill:999px;
 
-  /* ---- Elevation (planas, difusas y sutiles — sin "drop shadow" duro) ---- */
-  --sh-1:0 1px 2px rgba(23,23,23,.04);
-  --sh-2:0 6px 22px -10px rgba(23,23,23,.12), 0 1px 2px rgba(23,23,23,.04);
-  --sh-3:0 10px 28px -10px rgba(23,23,23,.22);
-  --sh-pop:0 14px 40px -12px rgba(23,23,23,.28);
+  /* ---- Elevation (UNA sola sombra en toda la app + un glow naranja) ----
+     --sh-2/--sh-3/--sh-pop se colapsan a --sh-1 a propósito: el mockup no
+     tiene niveles de elevación; la profundidad viene del contraste. */
+  --sh-1:0 1px 2px rgba(23,23,23,.05);
+  --sh-2:var(--sh-1);
+  --sh-3:var(--sh-1);
+  --sh-pop:var(--sh-1);
+  --sh-glow:0 8px 24px rgba(242,86,35,.32);  /* única sombra de color: CTA estrella / hero */
   --ring:0 0 0 3px rgba(200,64,26,.55);  /* [A11Y-09] anillo de foco naranja oscuro (#C8401A) → visible sobre blanco */
 
   /* ---- Layout ---- */
-  --sidebar-w:248px;
-  --sidebar-mini:64px;
-  --topbar-h:56px;
+  --topbar-h:62px; /* alto real de la top-nav del mockup (antes 56px del topbar viejo) */
   --ctrl-h:36px;
   --ctrl-h-sm:30px;
   --row-h:44px;

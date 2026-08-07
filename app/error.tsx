@@ -8,7 +8,8 @@ export default function Error({ reset }: { error: Error; reset: () => void }) {
         <p style={{ opacity: 0.7, margin: "0 0 22px", fontSize: 15 }}>Tuvimos un problema cargando tu aula. Reintenta en un momento.</p>
         <button
           onClick={() => reset()}
-          style={{ background: "#F25623", color: "#171717", border: "none", padding: "12px 24px", borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+          /* Kit mockup: r4, 800, texto NEGRO sobre naranja (--text-on-accent). */
+          style={{ background: "#F25623", color: "#171717", border: "none", height: 44, padding: "0 24px", borderRadius: 4, fontWeight: 800, fontSize: 15, letterSpacing: "-0.01em", cursor: "pointer" }}
         >
           Reintentar
         </button>

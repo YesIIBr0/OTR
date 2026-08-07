@@ -10,6 +10,9 @@ export const dict = {
 
     // sección Próximos eventos
     "events.upcomingTitle": "Próximos eventos",
+    // [MOCKUP 2026-08] chips de tipo de la fila .evrow (versalitas, 10/800)
+    "events.chipEvent": "Evento",
+    "events.chipTournament": "Torneo",
     "events.emptyEventsTitle": "Aún no hay eventos en agenda",
     "events.emptyEventsBody": "Cuando OTR programe un seminario, sesión en vivo o workshop, aparecerá aquí.",
 
@@ -61,6 +64,9 @@ export const dict = {
 
     // Upcoming events section
     "events.upcomingTitle": "Upcoming events",
+    // [MOCKUP 2026-08] type chips of the .evrow row (uppercase, 10/800)
+    "events.chipEvent": "Event",
+    "events.chipTournament": "Tournament",
     "events.emptyEventsTitle": "No events on the calendar yet",
     "events.emptyEventsBody": "When OTR schedules a seminar, live session or workshop, it will appear here.",
 

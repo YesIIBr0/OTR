@@ -1,13 +1,17 @@
-/* OTR LMS · shell (sidebar + topbar) + login — portado de index.html / app.js
-   NAV reorganizado al MAPA TOP-LEVEL del PRD §3.1 (Fase 1 MVP):
-   Dashboard · Learn (Cursos: activos + catálogo, sección unificada) · Membresía ·
-   Debate Hub (flagship) · Marketplace (coaches) ·
-   Progress Center (Levels / Achievements) ·
-   Parent Portal (rol) · Coach Workspace (rol) · Settings.
-   Diferidos APAGADOS del nav (no se borran archivos): Comunidad/Foro general
-   ('forum') y Certificaciones como producto ('certificate' bajo Learn).
-   Las etiquetas (grupos + items + topbar) son bilingües vía i18n.t().
-   Las llaves 'k' apuntan al diccionario i18n; 'l' es el fallback en español. */
+/* OTR LMS · shell (TOP-NAV horizontal + tabbar móvil) — mockup 2026-08-07.
+   [MOCKUP T2] Adiós sidebar: la navegación vive en una barra superior sticky de 62px
+   (spec docs/superpowers/specs/2026-08-07-dashboard-mockup-spec.md §2.1). Los ÍTEMS son
+   exactamente los mismos del sidebar anterior (mismo NAV por rol, mismos `data-go`), solo
+   cambia dónde se pintan: los primeros como links horizontales y el resto —con sus grupos
+   como cabeceras— dentro del desplegable "Más" (un <details>, sin JS nuevo: la SPA delega
+   por data-*, ver components/Aula.tsx).
+   NAV = MAPA TOP-LEVEL del PRD §3.1 (Fase 1 MVP):
+   Dashboard · Learn (Cursos: activos + catálogo) · Membresía · Debate Hub (flagship) ·
+   Marketplace (coaches) · Progress Center · Parent Portal · Coach Workspace · Settings.
+   Diferidos APAGADOS del nav (no se borran archivos): Comunidad/Foro general ('forum') y
+   Certificaciones como producto ('certificate' bajo Learn).
+   Las etiquetas (grupos + items) son bilingües vía i18n.t(); 'k' es la llave del
+   diccionario y 'l' el fallback en español. */
 import { IC, otrCrest } from "./icons";
 import { DB } from "./data";
 import { t, getLang } from "./i18n";
@@ -25,10 +29,8 @@ interface NavGroup {
   gk?: string;
   group: string;
   items: NavItem[];
-  // [UI-NAV N1] Grupo DESPLEGABLE: la cabecera es un botón con chevron que colapsa sus
-  // items. `key` identifica el grupo para recordar abierto/cerrado entre navegaciones
-  // (localStorage, ver navClosed()). Un grupo que contiene la ruta activa se abre SIEMPRE:
-  // la navegación nunca esconde dónde estás.
+  // El grupo ya no colapsa (era del sidebar): ahora es la CABECERA de su bloque dentro del
+  // menú "Más". `key` se conserva porque identifica al grupo de forma estable.
   key?: string;
 }
 
@@ -46,9 +48,6 @@ const NAV: Record<Role, NavGroup[]> = {
     // reservas. Se fusionan en UN solo grupo. Mensajes se conserva como canal coach↔alumno.
     // [UI-CURSOS U4] "Mis reservas" salió del nav: sus sesiones reservadas se pintan DENTRO
     // de Cursos, bajo el curso (scr-core → renderBookings). Un destino menos, misma función.
-    // [UI-NAV N1] Pasa a DESPLEGABLE "Mis programas" y absorbe Debate Hub (venía de
-    // Principal). Los dos sub-tabs de la sección Cursos suben a items propios: "Activos"
-    // (course) y "Buscar nuevos" (catalog) — mismo destino, un clic menos.
     { gk:'group.programs', group:'Mis programas', key:'programs', items:[
       { r:'course', ic:'book', k:'nav.coursesActive', l:'Activos' },
       { r:'catalog', ic:'search', k:'nav.coursesFind', l:'Buscar nuevos' },
@@ -58,8 +57,8 @@ const NAV: Record<Role, NavGroup[]> = {
       { r:'debate', ic:'mic', k:'nav.debate', l:'Debate Hub' },
       { r:'messages', ic:'msg', k:'nav.messages', l:'Mensajes' },
     ]},
-    // [UI-NAV N1] "Centro de progreso" → desplegable "Progreso". [N2] Membresía dejó de ser
-    // grupo propio: vive en el menú del chip de usuario, junto a Ajustes y Salir.
+    // [UI-NAV N2] Membresía no es grupo propio: vive en el menú del chip de usuario, junto
+    // a Perfil, Ajustes y Salir.
     { gk:'group.progress', group:'Progreso', key:'progress', items:[
       { r:'lifetime', ic:'award', k:'nav.lifetime', l:'Trayectoria' },
       { r:'progress', ic:'levels', k:'nav.progress', l:'Niveles' },
@@ -140,45 +139,24 @@ const TABBAR: Record<Role, NavItem[]> = {
   admin: [ {r:'admin',ic:'flag',k:'nav.admin',l:'Moderación'},{r:'admin-users',ic:'users',k:'nav.users',l:'Usuarios'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
 };
 
-// [UI-NAV N1] Grupos que el usuario dejó CERRADOS. Se guardan por exclusión (solo los
-// cerrados) para que un grupo nuevo nazca abierto sin migración. Tolera SSR y storage
-// bloqueado (modo privado): sin acceso, todo abierto — el default seguro.
-export const NAV_CLOSED_KEY = "otr_nav_closed";
+// Qué ítems se pintan como links horizontales (5 como el mockup §2.1, el máximo que entra
+// sin apretar a 1256px); el resto cae en el menú "Más" con TODOS los demás.
+// El orden del NAV es de SIDEBAR (agrupado por sección); en una barra horizontal no hay
+// cabeceras de grupo, así que se eligen a mano los 5 destinos de uso diario de cada rol —
+// los que se leen solos, sin el grupo encima. Una ruta que no esté aquí no se pierde: vive
+// en "Más" y, si es la activa, sube sola a la barra.
+const TOPNAV_INLINE: Record<Role, string[]> = {
+  student: ['dashboard', 'course', 'events', 'debate', 'progress'],
+  teacher: ['teacher', 'coachwork', 'manage', 'my-listings', 'participants'],
+  parent:  ['parent', 'explore', 'listings', 'messages', 'membership'],
+  admin:   ['admin', 'admin-users', 'admin-metrics', 'manage', 'events'],
+};
+// Etiqueta del LINK HORIZONTAL cuando la del sidebar no se lee fuera de su grupo:
+// "Activos" tenía sentido bajo la cabecera "Mis programas"; suelto en la barra, no.
+// Llaves i18n YA existentes (las usa el tabbar móvil) — no se inventa vocabulario.
+const TOPNAV_LABEL: Record<string, string> = { course: 'nav.course' };
 
-// [UI-NAV N3] Sidebar plegado. Se guarda aparte de los grupos: es una preferencia de ancho
-// de trabajo, no de qué secciones te interesan.
-export const SIDEBAR_MINI_KEY = "otr_sidebar_mini";
-function sidebarMini(): boolean {
-  try {
-    return typeof localStorage !== "undefined" && localStorage.getItem(SIDEBAR_MINI_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-function navClosed(): string[] {
-  try {
-    const raw = typeof localStorage !== "undefined" ? localStorage.getItem(NAV_CLOSED_KEY) : null;
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr.filter((x) => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-// [NAV-04] Migas navegables: el primer segmento corresponde al `nav` de la pantalla
-// (p.ej. 'Mi aprendizaje'→course), así que los segmentos no-finales enrutan a la raíz
-// de sección (navRoute). role=button+tabindex reusa el activador de teclado global.
-function crumbsHtml(crumbs: string[], navRoute?: string) {
-  return crumbs.map((c,i)=>
-    i===crumbs.length-1
-      ? `<span class="here">${c}</span>`
-      : (navRoute
-          ? `<span class="crumb-link" role="button" tabindex="0" data-go="${navRoute}" style="cursor:pointer">${c}</span><span class="sep">/</span>`
-          : `<span>${c}</span><span class="sep">/</span>`)
-  ).join('');
-}
-
-export function renderShell(activeNav: string, crumbs: string[], content: string, role: Role = 'student') {
+export function renderShell(activeNav: string, _crumbs: string[], content: string, role: Role = 'student') {
   const nav = NAV[role] || NAV.student;
   const lang = getLang();
   const L = (it: NavItem) => (it.k ? t(it.k, lang) : it.l); // label bilingüe con fallback al texto 'l'
@@ -191,26 +169,41 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
     if (it.r === 'messages') return unreadMsgs > 0 ? String(unreadMsgs) : '';
     return it.badge || '';
   };
-  const navItemHtml = (it: NavItem) => `
-      <a class="sb-item ${it.r===activeNav?'active':''}" href="#${it.r}" data-go="${it.r}">
-        ${IC[it.ic]}<span class="lbl">${L(it)}</span>
-        ${navBadge(it)?`<span class="badge-count">${navBadge(it)}</span>`:''}
-      </a>`;
 
-  const sbNav = nav.map(g => {
-    const label = g.gk ? t(g.gk, lang) : g.group;
-    const items = g.items.map(navItemHtml).join('');
-    if (!g.key) return `<div class="sb-group">${label}</div>${items}`;
-    // [UI-NAV N1] Desplegable. Abierto por defecto; se recuerda cerrado en localStorage,
-    // PERO si la ruta activa vive dentro, se fuerza abierto (nunca escondemos dónde estás).
-    const hasActive = g.items.some(it => it.r === activeNav);
-    const open = hasActive || !navClosed().includes(g.key);
+  // --- Reparto de ítems: inline vs. menú "Más" -------------------------------------
+  // Si la ruta activa no estaba entre los 5 elegidos se AÑADE a los links visibles: la
+  // barra nunca esconde DÓNDE ESTÁS.
+  const flat: NavItem[] = nav.flatMap(g => g.items);
+  const wanted = TOPNAV_INLINE[role] || TOPNAV_INLINE.student;
+  const inline: NavItem[] = wanted.map(r => flat.find(it => it.r === r)).filter((it): it is NavItem => !!it);
+  const activeItem = flat.find(it => it.r === activeNav);
+  if (activeItem && !inline.includes(activeItem)) inline.push(activeItem);
+  const inlineSet = new Set(inline.map(it => it.r));
+  const overflow = flat.filter(it => !inlineSet.has(it.r)).length;
+
+  const linksHtml = inline.map(it => {
+    const b = navBadge(it);
+    const label = TOPNAV_LABEL[it.r] ? t(TOPNAV_LABEL[it.r], lang) : L(it);
     return `
-    <button type="button" class="sb-group sb-group--toggle" data-nav-toggle="${g.key}"
-            aria-expanded="${open}" aria-controls="sbg-${g.key}">
-      <span>${label}</span><span class="chev">${IC.chevD}</span>
-    </button>
-    <div class="sb-sub" id="sbg-${g.key}"${open ? '' : ' hidden'}>${items}</div>`;
+      <a class="tn-link${it.r===activeNav?' active':''}" href="#${it.r}" data-go="${it.r}"${it.r===activeNav?' aria-current="page"':''}>
+        <span class="tn-lbl">${label}</span>${/^\d+$/.test(b)?`<span class="tn-count">${b}</span>`:''}
+      </a>`;
+  }).join('');
+
+  // Menú "Más": TODOS los ítems del rol, con la cabecera de su grupo. Los que ya se ven
+  // como link horizontal se marcan .tn-dup y el CSS los esconde en escritorio; por debajo
+  // de 1025px los links se ocultan y el menú pasa a ser la navegación completa.
+  const moreHtml = nav.map(g => {
+    const label = g.gk ? t(g.gk, lang) : g.group;
+    const allDup = g.items.every(it => inlineSet.has(it.r));
+    const items = g.items.map(it => {
+      const b = navBadge(it);
+      return `
+      <a class="tn-mi${it.r===activeNav?' active':''}${inlineSet.has(it.r)?' tn-dup':''}" role="menuitem" href="#${it.r}" data-go="${it.r}">
+        ${IC[it.ic]}<span class="lbl">${L(it)}</span>${b?`<span class="tn-count">${b}</span>`:''}
+      </a>`;
+    }).join('');
+    return `<div class="tn-mgroup${allDup?' tn-dup':''}">${label}</div>${items}`;
   }).join('');
 
   const tabbar = (TABBAR[role]||TABBAR.student).map(it =>
@@ -218,63 +211,74 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
 
   const u = DB.me;
   const avBg = role === 'teacher' ? 'var(--otr-navy)' : 'var(--otr-sky-lo)';
+  const roleLabel = role==='admin'?t('role.admin',lang):role==='teacher'?t('role.teacher',lang):role==='parent'?t('role.parent',lang):t('role.student',lang);
+  // Sub del chip: "Tier · Nivel" con el dato REAL del ALUMNO (tier de debate + nombre de
+  // nivel); si falta, el rol — nunca un dato inventado. Coach/padre/admin ven su rol: el
+  // nivel es progresión de estudiante y no es su concepto (mismo criterio que el nav).
+  const tier = role === 'student' ? (DB.debateRank?.tier || '') : '';
+  const userSub = role === 'student'
+    ? ([tier ? `Tier ${tier}` : '', u?.level || ''].filter(Boolean).join(' · ') || roleLabel)
+    : roleLabel;
+  // Pill de XP: solo con XP real (>0). Un coach/admin con 0 XP no la ve.
+  const xp = typeof DB.xp === 'number' ? DB.xp : 0;
+  const xpPill = xp > 0
+    ? `<span class="tn-xp" title="${xp.toLocaleString(lang==='en'?'en':'es')} XP">${IC.flame}<b class="tnum">${xp.toLocaleString(lang==='en'?'en':'es')}</b><span class="u">XP</span></span>`
+    : '';
+  const unreadNotifs = (DB.notifications || []).filter(n => n.unread).length;
 
   return `
-  <div class="app${sidebarMini() ? " mini" : ""}">
+  <div class="app">
     <a href="#content" class="skip-link">${lang==='en'?'Skip to content':'Saltar al contenido'}</a>
-    <aside class="sidebar">
-      <div class="sb-head">
-        <a class="sb-logo" href="#dashboard" data-go="dashboard">
-          ${/* Escudo OTR del brand book (sidebar, fondo negro) — markup canónico en ./icons (otrCrest) */""}
-          ${otrCrest({ id: "sb", attrs: 'class="crest"', ink: "#FFFFFF", paper: "#171717" })}
-          <span class="txt">OTR <span class="sub">Aula</span></span>
-        </a>
-        ${/* [UI-NAV N3] Plegar el sidebar. El modo compacto (.app.mini) ya existía en CSS
-             pero no tenía interruptor: nadie podía recuperar esos 220px de ancho para el
-             contenido. Se recuerda entre sesiones (localStorage). */""}
-        <button type="button" class="sb-collapse" data-sidebar-toggle
-                aria-label="${t('nav.collapse', lang)}" title="${t('nav.collapse', lang)}">${IC.chevL}</button>
-      </div>
-      <nav class="sb-nav">${sbNav}</nav>
-      <div class="sb-foot">
-        ${/* [UI-NAV N2] Menú de cuenta: Membresía, Ajustes y Salir salieron del listado del
-             nav (eran dos grupos enteros por 3 destinos) y viven aquí, colgando del chip de
-             usuario — el sitio donde la gente ya busca "lo mío". Membresía solo para quien
-             la tiene como producto (alumno); el profesor cobra, no se suscribe. */""}
-        <div class="sb-usermenu" id="sb-usermenu" role="menu" hidden>
-          <a class="sb-item" role="menuitem" href="#profile" data-go="profile">${IC.user}<span class="lbl">${t('nav.profile', lang)}</span></a>
-          ${role === 'student' ? `<a class="sb-item" role="menuitem" href="#membership" data-go="membership">${IC.star}<span class="lbl">${t('nav.membership', lang)}</span></a>` : ''}
-          <a class="sb-item" role="menuitem" href="#settings" data-go="settings">${IC.settings}<span class="lbl">${t('nav.settings', lang)}</span></a>
-          <a class="sb-item" role="menuitem" href="#" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></a>
-        </div>
-        ${/* El chip se ilumina cuando estás en cualquier destino del menú: sin esto esas
-             rutas quedarían huérfanas (sin nada activo ni camino de vuelta visible). */""}
-        <button type="button" class="sb-user${['profile','membership','settings'].includes(activeNav) ? ' active' : ''}"
-                data-user-menu aria-expanded="false" aria-controls="sb-usermenu" aria-haspopup="menu">
-          <span class="avatar sm" style="background:${avBg}">${u.initials}</span>
-          <span class="meta" style="min-width:0">
-            <span style="display:block;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name}</span>
-            <span style="display:block;font-size:11px;color:rgba(255,255,255,.5)">${role==='admin'?t('role.admin',lang):role==='teacher'?t('role.teacher',lang):role==='parent'?t('role.parent',lang):t('role.student',lang)}</span>
-          </span>
-          <span class="chev">${IC.chevD}</span>
-        </button>
-      </div>
-    </aside>
-
     <div class="main">
-      <header class="topbar">
-        <button class="icon-btn mobile-only" id="burger" aria-label="${t('top.menu', lang)}">${IC.menu}</button>
-        <div class="crumbs" id="crumbs">${crumbsHtml(crumbs, activeNav)}</div>
-        <div class="spacer"></div>
-        <div class="searchbox desk-only">
-          <span style="display:flex;width:16px;height:16px">${IC.search}</span>
-          <input aria-label="${t('top.search', lang)}" placeholder="${t('top.search', lang)}" />
+      <header class="topnav">
+        <div class="topnav-in">
+          <div class="tn-left">
+            <a class="tn-logo" href="#dashboard" data-go="dashboard">
+              ${/* Escudo OTR del brand book (barra clara: tinta negra por defecto) — markup canónico en ./icons */""}
+              ${otrCrest({ id: "tn", attrs: 'class="crest"' })}
+              <span class="tn-word">Aula</span>
+            </a>
+            <nav class="tn-links" aria-label="${t('top.menu', lang)}">${linksHtml}</nav>
+            ${/* Desplegable "Más": <details> nativo — sin JS nuevo (la SPA solo delega data-*). */""}
+            <details class="tn-more${overflow===0?' tn-more--dup':''}">
+              <summary aria-label="${t('top.menu', lang)}">${IC.menu}<span class="lbl">${lang==='en'?'More':'Más'}</span><span class="chev">${IC.chevD}</span></summary>
+              <div class="tn-menu" role="menu">${moreHtml}</div>
+            </details>
+          </div>
+
+          <div class="tn-right">
+            ${xpPill}
+            ${role==='teacher'?`<button type="button" class="btn btn-primary btn-sm tn-create" id="create-menu">${t('top.create', lang)}</button>`:''}
+            <button type="button" class="tn-icon" id="bell" aria-label="${t('top.notifications', lang)}">${IC.bell}${unreadNotifs>0?`<span class="bell-count">${unreadNotifs}</span>`:''}</button>
+            <span class="tn-sep" aria-hidden="true"></span>
+            <div class="tn-userwrap">
+              ${/* [UI-NAV N2] El chip se ilumina cuando estás en cualquier destino de su menú:
+                   sin esto esas rutas quedarían huérfanas (sin nada activo ni vuelta visible). */""}
+              <button type="button" class="tn-user${['profile','membership','settings'].includes(activeNav) ? ' active' : ''}"
+                      data-user-menu aria-expanded="false" aria-controls="sb-usermenu" aria-haspopup="menu">
+                <span class="avatar tn-av" style="background:${avBg}">${u.initials}</span>
+                <span class="tn-umeta">
+                  <span class="tn-uname">${u.name}</span>
+                  <span class="tn-usub">${userSub}</span>
+                </span>
+              </button>
+              ${/* [UI-NAV N2] Menú de cuenta: Perfil, Membresía (solo alumno — el coach cobra, no
+                   se suscribe), Ajustes y Salir. Mismos data-* que antes: el delegador de
+                   Aula.tsx lo abre/cierra por id (#sb-usermenu) sin cambios. */""}
+              <div class="tn-usermenu" id="sb-usermenu" role="menu" hidden>
+                <a class="tn-mi" role="menuitem" href="#profile" data-go="profile">${IC.user}<span class="lbl">${t('nav.profile', lang)}</span></a>
+                ${role === 'student' ? `<a class="tn-mi" role="menuitem" href="#membership" data-go="membership">${IC.star}<span class="lbl">${t('nav.membership', lang)}</span></a>` : ''}
+                <a class="tn-mi" role="menuitem" href="#settings" data-go="settings">${IC.settings}<span class="lbl">${t('nav.settings', lang)}</span></a>
+                ${/* El selector de idioma vivía en el topbar borrado; sin él no habría forma de
+                     cambiar a EN. Usa window.otrSetLang (inline, sin delegación). */""}
+                <div class="tn-lang" role="group" aria-label="${t('top.lang', lang)}">
+                  ${['es','en'].map(lg => `<button type="button" class="${lg===lang?'on':''}" data-lang="${lg}" onclick="window.otrSetLang&&window.otrSetLang('${lg}')">${lg.toUpperCase()}</button>`).join('')}
+                </div>
+                <a class="tn-mi" role="menuitem" href="#" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></a>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="lang-toggle" role="group" aria-label="${t('top.lang', lang)}" style="display:flex;align-items:center;gap:2px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:100px;padding:3px;margin-right:8px">
-          ${['es','en'].map(lg => `<button type="button" class="${lg===lang?'on':''}" data-lang="${lg}" onclick="window.otrSetLang&&window.otrSetLang('${lg}')" style="border:0;cursor:pointer;font-family:inherit;font-weight:600;font-size:11.5px;padding:4px 9px;border-radius:100px;transition:.2s;background:${lg===lang?'var(--otr-navy)':'transparent'};color:${lg===lang?'#fff':'var(--text-2)'}">${lg.toUpperCase()}</button>`).join('')}
-        </div>
-        ${role==='teacher'?`<button class="btn btn-primary btn-sm" id="create-menu" style="height:32px;margin-right:8px">${t('top.create', lang)}</button>`:''}
-        ${(() => { const u = (DB.notifications || []).filter(n => n.unread).length; return `<button class="icon-btn" id="bell" aria-label="${t('top.notifications', lang)}">${IC.bell}${u>0?`<span class="bell-count">${u}</span>`:''}</button>`; })()}
       </header>
 
       <main class="content" id="content" tabindex="-1" aria-label="${lang==='en'?'Main content':'Contenido principal'}"><div class="page rise">${content}</div></main>
@@ -283,4 +287,3 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
     </div>
   </div>`;
 }
-

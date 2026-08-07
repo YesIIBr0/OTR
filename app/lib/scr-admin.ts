@@ -57,12 +57,14 @@ function fmtDate(v) {
   }
 }
 
+// [MOCKUP 2026-08] Chips del kit (r3, versalitas 10/800): abierto = naranja sólido (lo que
+// pide acción), revisado = negro sólido (cerrado), descartado = outline (neutro apagado).
 function statusBadge(status) {
   const s = String(status || "").toUpperCase();
-  if (s === "OPEN") return `<span class="badge warn"><span class="dot"></span>${t("admin.statusOpen")}</span>`;
-  if (s === "REVIEWED") return `<span class="badge sky"><span class="dot"></span>${t("admin.statusReviewed")}</span>`;
-  if (s === "DISMISSED") return `<span class="badge"><span class="dot"></span>${t("admin.statusDismissed")}</span>`;
-  return s ? `<span class="badge">${esc(s)}</span>` : "";
+  if (s === "OPEN") return `<span class="chip chip--accent">${t("admin.statusOpen")}</span>`;
+  if (s === "REVIEWED") return `<span class="chip chip--black">${t("admin.statusReviewed")}</span>`;
+  if (s === "DISMISSED") return `<span class="chip chip--outline">${t("admin.statusDismissed")}</span>`;
+  return s ? `<span class="chip chip--outline">${esc(s)}</span>` : "";
 }
 
 // [F2.3] Fecha + hora del slot de una reserva (la sesión sí necesita la hora, no solo el día).
@@ -96,10 +98,11 @@ function bkStatusLabel(s) {
 function contextBlock(r) {
   const c = r.context;
   if (!c || typeof c !== "object") return "";
+  // [MOCKUP 2026-08] Cita con barra naranja de 3px (mismo gesto que .sec-title / .evrow--live)
+  // y radio de contenedor del kit; el label reusa .lbl (10px versalitas .16em).
   const wrap = (inner) =>
-    `<div class="mod-ctx" style="margin-top:11px;padding:10px 12px;border:1px solid var(--border);border-left:3px solid var(--otr-sky-lo);border-radius:10px;background:var(--surface-2);font-size:12.5px;line-height:1.55">${inner}</div>`;
-  const label = (txt) =>
-    `<div class="faint" style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px">${txt}</div>`;
+    `<div class="mod-ctx" style="margin-top:11px;padding:10px 12px;border:1px solid var(--border);border-left:3px solid var(--otr-green);border-radius:var(--r-sm);background:var(--surface-2);font-size:12.5px;line-height:1.55">${inner}</div>`;
+  const label = (txt) => `<div class="lbl" style="margin-bottom:6px">${txt}</div>`;
 
   if (c.kind === "message") {
     const from = c.senderName
@@ -146,9 +149,9 @@ function reportCard(r, d) {
   <div class="card card-pad fade-up" style="--d:${d}" data-rep-card="${esc(r.id)}">
     <div class="row between vcenter wrap" style="gap:10px">
       <div class="row vcenter" style="gap:9px;min-width:0">
-        <span style="display:inline-flex;width:16px;height:16px;color:var(--otr-sky-lo);flex:none">${IC.flag}</span>
-        <b style="font-size:13.5px">${type}${r.targetName ? ` · ${esc(r.targetName)}` : ""}</b>
-        ${r.targetName ? "" : `<span class="chip soft" style="font-size:11px">${esc(r.targetId)}</span>`}
+        <span style="display:inline-flex;width:16px;height:16px;color:var(--otr-green);flex:none">${IC.flag}</span>
+        <b style="font-size:15px;font-weight:800;letter-spacing:-.02em">${type}${r.targetName ? ` · ${esc(r.targetName)}` : ""}</b>
+        ${r.targetName ? "" : `<span class="chip chip--outline">${esc(r.targetId)}</span>`}
       </div>
       ${statusBadge(r.status)}
     </div>
@@ -165,12 +168,12 @@ function reportCard(r, d) {
       </div>
       <div class="row" style="gap:8px;flex:none">
         ${!reviewed && (r.targetType === "user" || r.targetType === "coach")
-          ? `<button class="btn btn-sm" data-rep-suspend="${esc(r.id)}" style="background:var(--danger);color:#fff">${t("admin.suspendUser")}</button>`
+          ? `<button class="btn btn--sm" data-rep-suspend="${esc(r.id)}" style="background:var(--danger);color:#fff;border-color:transparent">${t("admin.suspendUser")}</button>`
           : ""}
         ${reviewed
           ? ""
-          : `<button class="btn btn-soft btn-sm" data-rep-review="${esc(r.id)}">${t("admin.markReviewed")}</button>`}
-        <button class="btn btn-ghost btn-sm" data-rep-dismiss="${esc(r.id)}">${t("admin.dismiss")}</button>
+          : `<button class="btn btn-primary btn--sm" data-rep-review="${esc(r.id)}">${t("admin.markReviewed")}</button>`}
+        <button class="btn btn-outline btn--sm" data-rep-dismiss="${esc(r.id)}">${t("admin.dismiss")}</button>
       </div>
     </div>
   </div>`;
@@ -232,17 +235,17 @@ function lstCard(l, d) {
     <div class="row between vcenter wrap" style="gap:10px">
       <div style="min-width:0;flex:1">
         <div class="row vcenter wrap" style="gap:8px">
-          <b style="font-size:13.5px">${l.title}</b>
-          <span class="badge">${esc(l.category)}</span>
-          <span class="badge tnum">${money(l.priceCentsHour)}/h</span>
-          ${l.teacherVerified ? "" : `<span class="badge warn" style="font-size:10.5px">${t("admin.lstUnverifiedTeacher")}</span>`}
+          <b style="font-size:15px;font-weight:800;letter-spacing:-.02em">${l.title}</b>
+          <span class="chip chip--outline">${esc(l.category)}</span>
+          <span class="chip chip--info tnum">${money(l.priceCentsHour)}/h</span>
+          ${l.teacherVerified ? "" : `<span class="chip chip--accent">${t("admin.lstUnverifiedTeacher")}</span>`}
         </div>
         <div class="faint" style="font-size:12px;margin-top:3px">${l.teacherName} · ${l.teacherEmail}</div>
         ${l.description ? `<p class="muted" style="font-size:12.5px;margin-top:8px;line-height:1.5">${l.description}</p>` : ""}
       </div>
       <div class="row vcenter" style="gap:6px;flex:none">
-        <button class="btn btn-primary btn-sm" data-lst-approve="${esc(l.id)}">${t("admin.lstApprove")}</button>
-        <button class="btn btn-ghost btn-sm" data-lst-reject="${esc(l.id)}" style="color:var(--danger)">${t("admin.lstReject")}</button>
+        <button class="btn btn-primary btn--sm" data-lst-approve="${esc(l.id)}">${t("admin.lstApprove")}</button>
+        <button class="btn btn-outline btn--sm" data-lst-reject="${esc(l.id)}" style="color:var(--danger)">${t("admin.lstReject")}</button>
       </div>
     </div>
   </div>`;
@@ -282,14 +285,17 @@ function fmtWhen(iso) {
 
 // action → { etiqueta, tono del badge }. Las destructivas (suspender, borrar, quitar
 // verificación) van en warn; las afirmativas (verificar, reactivar) en sky; el resto neutro.
+// [MOCKUP 2026-08] tone = variante del chip del kit: destructivas en naranja sólido
+// (chip--accent, lo que salta a la vista), afirmativas en tinte frío (chip--info) y el
+// resto en outline neutro.
 const ACTION_META = () => ({
-  "user.role_change": { l: t("admin.actRoleChange"), tone: "navy" },
-  "user.suspend": { l: t("admin.actSuspend"), tone: "warn" },
-  "user.unsuspend": { l: t("admin.actUnsuspend"), tone: "sky" },
-  "coach.verify": { l: t("admin.actCoachVerify"), tone: "sky" },
-  "coach.unverify": { l: t("admin.actCoachUnverify"), tone: "warn" },
-  "report.resolve": { l: t("admin.actReportResolve"), tone: "" },
-  "course.delete": { l: t("admin.actCourseDelete"), tone: "warn" },
+  "user.role_change": { l: t("admin.actRoleChange"), tone: "black" },
+  "user.suspend": { l: t("admin.actSuspend"), tone: "accent" },
+  "user.unsuspend": { l: t("admin.actUnsuspend"), tone: "info" },
+  "coach.verify": { l: t("admin.actCoachVerify"), tone: "info" },
+  "coach.unverify": { l: t("admin.actCoachUnverify"), tone: "accent" },
+  "report.resolve": { l: t("admin.actReportResolve"), tone: "outline" },
+  "course.delete": { l: t("admin.actCourseDelete"), tone: "accent" },
 });
 const AUDIT_TARGET_LABEL = () => ({
   user: t("admin.auditTargetUser"),
@@ -299,8 +305,8 @@ const AUDIT_TARGET_LABEL = () => ({
 
 function actionBadge(action) {
   const meta = ACTION_META()[action];
-  if (!meta) return `<span class="badge">${esc(String(action || "—"))}</span>`;
-  return `<span class="badge ${meta.tone}"><span class="dot"></span>${meta.l}</span>`;
+  if (!meta) return `<span class="chip chip--outline">${esc(String(action || "—"))}</span>`;
+  return `<span class="chip chip--${meta.tone}">${meta.l}</span>`;
 }
 
 /* ---------------- fila del rastro ---------------- */
@@ -315,7 +321,7 @@ function auditRow(e) {
     <td class="faint" style="white-space:nowrap;font-size:12px">${esc(fmtWhen(e.when))}</td>
     <td><b style="font-size:13px">${e.actorName || "—"}</b></td>
     <td>${actionBadge(e.action)}</td>
-    <td><span style="font-size:12.5px">${targetLabel}</span>${shortId ? ` <span class="chip soft" style="font-size:10.5px">${esc(shortId)}</span>` : ""}</td>
+    <td><span style="font-size:12.5px">${targetLabel}</span>${shortId ? ` <span class="chip chip--outline">${esc(shortId)}</span>` : ""}</td>
     <td style="font-size:12.5px;color:var(--text-2)">${e.detail || ""}</td>
   </tr>`;
 }
@@ -374,10 +380,11 @@ S.adminConsole = {
       ${TABS().map((tb) => `<button class="tab ${tb.k === tab ? "active" : ""}" data-mod-tab="${tb.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[tb.ic] || ""}</span>${tb.l}</span></button>`).join("")}
     </div>`;
 
+    // [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior.
     const head = `
-    <div class="page-head fade-up"><div>
-      <p class="eyebrow">${t("admin.eyebrow")}</p>
-      <h1 class="page-title">${t("admin.title")}</h1>
+    <div class="page-head page-head--rule fade-up"><div>
+      <p class="ph-eyebrow">${t("admin.eyebrow")}</p>
+      <h1 class="ph-title">${t("admin.title")}</h1>
       <div class="page-sub">${t("admin.subtitle")}</div>
     </div></div>`;
 
@@ -386,14 +393,14 @@ S.adminConsole = {
       const a = st.audit;
       const entries = Array.isArray(a.entries) ? a.entries : [];
       const more = (a.total || 0) > entries.length
-        ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="audit-more">${t("admin.loadMore")} · ${entries.length} ${t("admin.ofConnector")} ${a.total}</button></div>`
+        ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="audit-more">${t("admin.loadMore")} · ${entries.length} ${t("admin.ofConnector")} ${a.total}</button></div>`
         : "";
-      return `${head}${tabsHtml}<div class="fade-up" style="--d:2" id="audit-body">${auditBody()}${more}</div>`;
+      return `${head}${tabsHtml}<div class="sec-title sec-title--sm"><h3>${t("admin.tabAudit")}</h3></div><div class="fade-up" style="--d:2" id="audit-body">${auditBody()}${more}</div>`;
     }
 
     // [F-MKT M2-UI] Pestaña Clases: cola de vetting del marketplace abierto.
     if (tab === "lst") {
-      return `${head}${tabsHtml}<div class="fade-up" style="--d:2" id="lst-queue">${lstQueueBody()}</div>`;
+      return `${head}${tabsHtml}<div class="sec-title sec-title--sm"><h3>${t("admin.tabListings")}</h3></div><div class="fade-up" style="--d:2" id="lst-queue">${lstQueueBody()}</div>`;
     }
 
     // Pestaña Reportes (comportamiento original).
@@ -403,7 +410,8 @@ S.adminConsole = {
       <div class="tile">${C.kpi(t("admin.kpiQueue"), String(st.total || reports.length), { ic: "doc" })}</div>
     </div>
 
-    <div class="fade-up" style="--d:3" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-soft btn-sm" id="mod-more">${t("admin.loadMore")} · ${reports.length} ${t("admin.ofConnector")} ${st.total}</button></div>` : ""}</div>`;
+    <div class="sec-title sec-title--sm"><h3>${t("admin.tabReports")}</h3></div>
+    <div class="fade-up" style="--d:3" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="mod-more">${t("admin.loadMore")} · ${reports.length} ${t("admin.ofConnector")} ${st.total}</button></div>` : ""}</div>`;
   },
 
   mount(root, state) {

@@ -29,13 +29,15 @@ export const S = {};
           </div>
         </div>`;
       return `
-      <div class="page-head"><div><div class="page-title">${t("comm.forum.title")}</div>
-      <div class="page-sub">${t("comm.forum.sub")}</div></div>
-      <button class="btn btn-primary" data-action="new-thread">${IC.plus} ${t("comm.forum.newThread")}</button></div>
+      <div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("comm.msg.eyebrow")}</span>
+      <h1 class="ph-title">${t("comm.forum.title")}</h1>
+      <div class="page-sub" style="margin-top:8px">${t("comm.forum.sub")}</div></div>
+      ${C.btn(t("comm.forum.newThread"), "accent", { ic: "plus", attrs: 'data-action="new-thread"' })}</div>
 
       <div class="row between vcenter" style="margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <div class="searchbox" style="width:280px;max-width:100%"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input placeholder="${t("comm.forum.searchPh")}"/></div>
-        <div class="row wrap" style="gap:8px"><span class="chip active">${t("comm.forum.filterAll")}</span><span class="chip">${t("comm.forum.filterUnanswered")}</span><span class="chip">${t("comm.forum.filterResources")}</span><span class="chip">${t("comm.forum.filterMyThreads")}</span></div>
+        ${/* [MOCKUP · Task 6] Filtros = chips rectangulares del kit: activo NEGRO, resto outline. */""}
+        <div class="row wrap" style="gap:4px">${C.chip(t("comm.forum.filterAll"), "black")}${C.chip(t("comm.forum.filterUnanswered"), "outline")}${C.chip(t("comm.forum.filterResources"), "outline")}${C.chip(t("comm.forum.filterMyThreads"), "outline")}</div>
       </div>
 
       <div class="card fade-up" style="overflow:hidden">
@@ -65,23 +67,23 @@ export const S = {};
         </div>`;
       return `
       <div class="row between vcenter" style="margin-bottom:14px">
-        <button class="btn btn-ghost btn-sm" onclick="go('forum')">${IC.chevL} ${t("comm.thread.backToForum")}</button>
-        <span class="tag-soft">${esc(th.tag)}</span>
+        ${C.btn(t("comm.thread.backToForum"), "outline", { size: "sm", ic: "chevL", attrs: `onclick="go('forum')"` })}
+        ${C.chip(esc(th.tag), "outline")}
       </div>
-      <h1 class="page-title" style="font-size:24px;margin-bottom:18px">${esc(th.title)}</h1>
+      <div class="page-head page-head--rule"><div><h1 class="ph-title" style="font-size:30px">${esc(th.title)}</h1></div></div>
       <div class="card card-pad fade-up" style="display:flex;flex-direction:column;gap:4px">
         ${th.posts.map(post).join('<div class="divider" style="margin:14px 0"></div>')}
       </div>
 
       <div class="card card-pad fade-up" style="--d:1;margin-top:16px">
-        <b style="font-size:13.5px">${t("comm.thread.yourReply")}</b>
+        ${C.secTitle(t("comm.thread.yourReply"), { sm: true })}
         <div class="editor-toolbar">
           ${['B','I','“ ”',t("comm.thread.toolbarList"),t("comm.thread.toolbarLink")].map(b=>`<button class="et-btn">${b}</button>`).join('')}
         </div>
         <textarea class="textarea" id="reply-box" placeholder="${t("comm.thread.replyPh")}"></textarea>
         <div class="row between vcenter" style="margin-top:12px">
           <span class="faint" style="font-size:12px">${t("comm.thread.beRespectful")}</span>
-          <button class="btn btn-primary" id="reply-send">${t("comm.thread.postReply")}</button>
+          ${C.btn(t("comm.thread.postReply"), "accent", { attrs: 'id="reply-send"' })}
         </div>
       </div>`;
     },
@@ -117,8 +119,8 @@ export const S = {};
           <div class="bubble">${esc(c.body)}<span class="b-time">${esc(c.when)}</span></div>
         </div>`).join('');
       return `
-      <div class="page-head" style="margin-bottom:14px"><div><div class="eyebrow">${t("comm.msg.eyebrow")}</div><h1 class="page-title" style="margin-top:2px">${t("comm.msg.title")}</h1>
-      <div class="page-sub">${t("comm.msg.sub")}</div></div></div>
+      <div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("comm.msg.eyebrow")}</span><h1 class="ph-title">${t("comm.msg.title")}</h1>
+      <div class="page-sub" style="margin-top:8px">${t("comm.msg.sub")}</div></div></div>
       <div class="msg-wrap fade-up">
         <aside class="msg-list">
           <div class="searchbox" style="width:100%;margin-bottom:10px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input placeholder="${t("comm.msg.searchPh")}"/></div>

@@ -67,7 +67,7 @@ function row(icon, title, desc, right) {
 }
 
 function card(title, inner, d = 0) {
-  return `<div class="card card-pad fade-up" style="--d:${d};margin-bottom:16px"><b style="font-size:14px">${title}</b><div style="margin-top:4px">${inner}</div></div>`;
+  return `<div class="card card-pad fade-up" style="--d:${d};margin-bottom:16px">${C.secTitle(title, { sm: true })}<div>${inner}</div></div>`;
 }
 
 // [BUG vínculo-padre §11.3] El lado del ALUMNO que faltaba: un padre/madre reclamó un vínculo
@@ -81,7 +81,7 @@ function guardianRequestsBlock(requests) {
   <div class="card card-pad fade-up" style="border-color:var(--otr-sky);margin-bottom:16px">
     <div class="row between vcenter">
       <b style="font-size:14px">${t("settings.guardianRequestsTitle")}</b>
-      <span class="badge sky"><span class="dot"></span>${requests.length}</span>
+      ${C.chip(String(requests.length), "black")}
     </div>
     <p class="muted" style="font-size:12.5px;margin-top:4px">${t("settings.guardianRequestsBody")}</p>
     <div class="stack" style="gap:0;margin-top:6px">
@@ -93,8 +93,8 @@ function guardianRequestsBlock(requests) {
           <div class="faint" style="font-size:12px;margin-top:2px">${esc(r.parentEmail || "")}</div>
         </div>
         <div class="row" style="gap:6px;flex:none">
-          <button class="btn btn-primary btn-sm" data-guardian-confirm="${esc(r.id)}">${IC.check} ${t("settings.guardianConfirm")}</button>
-          <button class="btn btn-ghost btn-sm" data-guardian-reject="${esc(r.id)}">${t("settings.guardianReject")}</button>
+          <button class="btn btn-accent btn--sm" data-guardian-confirm="${esc(r.id)}">${IC.check} ${t("settings.guardianConfirm")}</button>
+          <button class="btn btn-outline btn--sm" data-guardian-reject="${esc(r.id)}">${t("settings.guardianReject")}</button>
         </div>
       </div>`).join("")}
     </div>
@@ -119,8 +119,8 @@ function totpRow() {
       </div>
       <div class="row vcenter" style="gap:8px;margin-top:10px;flex-wrap:wrap">
         <input class="input" id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456" style="max-width:130px"/>
-        <button class="btn btn-primary btn-sm" data-totp="enable">${t("settings.totpConfirm")}</button>
-        <button class="btn btn-ghost btn-sm" data-totp="cancel">${t("settings.totpCancel")}</button>
+        <button class="btn btn-accent btn--sm" data-totp="enable">${t("settings.totpConfirm")}</button>
+        <button class="btn btn-outline btn--sm" data-totp="cancel">${t("settings.totpCancel")}</button>
       </div>
     </div>`;
   }
@@ -130,12 +130,12 @@ function totpRow() {
       <div class="row between vcenter" style="gap:10px;flex-wrap:wrap">
         <div>
           <b style="font-size:13.5px">${t("settings.totpTitle")}</b>
-          <span class="badge sky" style="font-size:10.5px;margin-left:8px"><span class="dot"></span>${t("settings.totpOn")}</span>
+          <span style="margin-left:8px">${C.chip(t("settings.totpOn"), "accent")}</span>
           <p class="muted" style="font-size:12.5px;margin-top:4px">${t("settings.totpOnDesc")}</p>
         </div>
         <div class="row vcenter" style="gap:8px">
           <input class="input" id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456" style="max-width:130px"/>
-          <button class="btn btn-ghost btn-sm" data-totp="disable" style="color:var(--danger)">${t("settings.totpDisable")}</button>
+          <button class="btn btn-outline btn--sm" data-totp="disable" style="color:var(--danger)">${t("settings.totpDisable")}</button>
         </div>
       </div>
     </div>`;
@@ -146,7 +146,7 @@ function totpRow() {
       <b style="font-size:13.5px">${t("settings.totpTitle")}</b>
       <p class="muted" style="font-size:12.5px;margin-top:4px">${t("settings.totpOffDesc")}</p>
     </div>
-    <button class="btn btn-soft btn-sm" data-totp="setup">${t("settings.totpEnable")}</button>
+    <button class="btn btn-outline btn--sm" data-totp="setup">${t("settings.totpEnable")}</button>
   </div>`;
 }
 
@@ -166,14 +166,15 @@ S.settings = {
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:16px;letter-spacing:var(--track-tight)">${esc(me.name || "")}</div>
         <div class="faint" style="font-size:13px">${esc(me.email || "")}</div>
-        <div style="margin-top:7px">${C.badge(roleLabel, role === "TEACHER" || role === "ADMIN" ? "navy" : "sky")}</div>
+        <div style="margin-top:7px">${C.chip(roleLabel, role === "TEACHER" || role === "ADMIN" ? "black" : "outline")}</div>
       </div>
-      <button class="btn btn-soft btn-sm" data-go="profile" style="flex:none">${IC.user} ${t("settings.editProfile")}</button>
+      <button class="btn btn-outline btn--sm" data-go="profile" style="flex:none">${IC.user} ${t("settings.editProfile")}</button>
     </div>`;
 
-    const langCtrl = `<div class="row" style="gap:3px;border:1px solid var(--border);border-radius:100px;padding:3px;display:inline-flex">
-      ${["es", "en"].map((lg) => `<button type="button" data-set-lang="${lg}"
-        style="border:0;border-radius:100px;padding:5px 15px;font-weight:600;font-size:12.5px;cursor:pointer;transition:.2s var(--ease);background:${lg === lang ? "var(--otr-navy)" : "transparent"};color:${lg === lang ? "#fff" : "var(--text-2)"}">${lg.toUpperCase()}</button>`).join("")}
+    // Segmented control del mockup (.set-seg en screens.css): rectángulo r5, activo
+    // NEGRO. Era una pill con estilos inline; el mockup no tiene pills.
+    const langCtrl = `<div class="set-seg">
+      ${["es", "en"].map((lg) => `<button type="button" data-set-lang="${lg}" aria-pressed="${lg === lang}">${lg.toUpperCase()}</button>`).join("")}
     </div>`;
 
     const notif = NOTIF.map((n) => row(IC.bell, t(n.labelKey), t(n.descKey), toggle(n.k, notifOn(n.k, n.def)))).join("");
@@ -190,10 +191,10 @@ S.settings = {
       : "";
     const privacy = [
       role === "PARENT"
-        ? row(IC.lock, t("settings.childPrivacyTitle"), t("settings.childPrivacyDesc"), `<button class="btn btn-soft btn-sm" data-go="parent">${t("settings.manage")}</button>`)
-        : row(IC.lock, t("settings.publicProfileTitle"), t("settings.publicProfileDesc"), `<button class="btn btn-soft btn-sm" data-go="lifetime">${t("settings.myJourney")} ${IC.arrowR}</button>`),
+        ? row(IC.lock, t("settings.childPrivacyTitle"), t("settings.childPrivacyDesc"), `<button class="btn btn-outline btn--sm" data-go="parent">${t("settings.manage")}</button>`)
+        : row(IC.lock, t("settings.publicProfileTitle"), t("settings.publicProfileDesc"), `<button class="btn btn-outline btn--sm" data-go="lifetime">${t("settings.myJourney")} ${IC.arrowR}</button>`),
       leaderboardRow,
-      row(IC.doc, t("settings.passwordTitle"), t("settings.passwordDesc"), `<button class="btn btn-soft btn-sm" data-action="change-pw">${t("settings.changePassword")}</button>`),
+      row(IC.doc, t("settings.passwordTitle"), t("settings.passwordDesc"), `<button class="btn btn-outline btn--sm" data-action="change-pw">${t("settings.changePassword")}</button>`),
       // [R5] 2FA TOTP — solo para ADMIN (la llave de los datos de menores no puede ser solo
       // una contraseña). El flujo entero vive en window.__totp2fa + los handlers del mount.
       ...(role === "ADMIN" ? [totpRow()] : []),
@@ -204,27 +205,27 @@ S.settings = {
     const guardianRequests = role === "STUDENT" && Array.isArray(DB.pendingGuardianRequests) ? DB.pendingGuardianRequests : [];
 
     return `
-    <div class="page-head fade-up"><div><p class="eyebrow">${t("settings.eyebrow")}</p>
-      <h1 class="page-title">${t("settings.title")}</h1>
+    <div class="page-head page-head--rule fade-up"><div><p class="ph-eyebrow">${t("settings.eyebrow")}</p>
+      <h1 class="ph-title">${t("settings.title")}</h1>
       <div class="page-sub">${t("settings.subtitle")}</div></div></div>
 
     ${guardianRequestsBlock(guardianRequests)}
     ${card(t("settings.cardAccount"), account, 0)}
     ${card(t("settings.cardLanguage"), row("", t("settings.languageTitle"), t("settings.languageDesc"), langCtrl), 1)}
     ${card(t("settings.cardNotifications"), notif, 2)}
-    ${card(t("settings.cardMembership"), row(IC.star, t("settings.planTitle"), t("settings.planDesc"), `<button class="btn btn-soft btn-sm" data-go="membership">${t("settings.manageMembership")} ${IC.arrowR}</button>`), 3)}
+    ${card(t("settings.cardMembership"), row(IC.star, t("settings.planTitle"), t("settings.planDesc"), `<button class="btn btn-outline btn--sm" data-go="membership">${t("settings.manageMembership")} ${IC.arrowR}</button>`), 3)}
     ${card(t("settings.cardPrivacy"), privacy, 4)}
 
     <div class="card card-pad fade-up" style="--d:5;border-color:color-mix(in srgb,var(--danger) 30%,transparent)">
       <div class="row vcenter between" style="gap:14px;flex-wrap:wrap">
         <div><b style="font-size:14px">${t("settings.logoutTitle")}</b><div class="faint" style="font-size:12px;margin-top:2px">${t("settings.logoutDesc")}</div></div>
-        <button class="btn btn-ghost btn-sm" data-action="logout" style="color:var(--danger);flex:none">${IC.logout} ${t("settings.logout")}</button>
+        <button class="btn btn-outline btn--sm" data-action="logout" style="color:var(--danger);flex:none">${IC.logout} ${t("settings.logout")}</button>
       </div>
       <!-- [GOAL G4] Revocación server-side: mata TODAS las sesiones de la cuenta (móvil, otro
            navegador, o la de alguien con la cookie robada). Dos toques: es irreversible. -->
       <div class="row vcenter between" style="gap:14px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
         <div><b style="font-size:14px">${t("settings.logoutAllTitle")}</b><div class="faint" style="font-size:12px;margin-top:2px">${t("settings.logoutAllDesc")}</div></div>
-        <button class="btn btn-ghost btn-sm" data-logout-all="1" style="color:var(--danger);flex:none">${t("settings.logoutAll")}</button>
+        <button class="btn btn-outline btn--sm" data-logout-all="1" style="color:var(--danger);flex:none">${t("settings.logoutAll")}</button>
       </div>
     </div>`;
   },

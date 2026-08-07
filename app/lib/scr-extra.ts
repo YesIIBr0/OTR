@@ -30,18 +30,19 @@ function saveChip(root, state) {
 function lessonRow(l, mid, edit) {
   const isQuiz = l.type === "quiz";
   const quizInDb = (DB.quizByLesson || {})[l.id];
+  // [MOCKUP · Task 6] Los sellos de la fila son chips rectangulares del kit (r3, versalitas).
   const quizBadge = isQuiz
     ? (quizInDb
-        ? `<span class="badge ok" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.check} ${quizInDb.questions?.length || 0} ${t("extra.questionsAbbrev")}</span>`
-        : `<span class="badge warn" style="height:18px;font-size:10px;flex:none">${t("extra.noQuestions")}</span>`)
+        ? C.chip(`${quizInDb.questions?.length || 0} ${t("extra.questionsAbbrev")}`, "tint", { ic: "check" })
+        : C.chip(t("extra.noQuestions"), "outline"))
     : "";
   const videoBadge = l.videoKind && l.videoKind !== "none"
-    ? `<span class="badge sky" style="height:18px;font-size:10px;gap:3px;flex:none">${IC.video} ${l.videoKind === "youtube" ? "YouTube" : "Stream"}</span>`
+    ? C.chip(l.videoKind === "youtube" ? "YouTube" : "Stream", "info", { ic: "video" })
     : "";
   const isAssign = l.type === "assign" || l.type === "mic";
-  const dueBadge = isAssign && l.dueAt ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${IC.calendar || ""} ${t("extra.dueBadge").replace("{date}", fmtDue(l.dueAt))}</span>` : "";
-  const ptsBadge = isAssign && l.maxPoints != null ? `<span class="badge" style="height:18px;font-size:10px;flex:none">${l.maxPoints} ${t("extra.pointsAbbrev")}</span>` : "";
-  const hiddenBadge = l.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">${t("extra.hidden")}</span>` : "";
+  const dueBadge = isAssign && l.dueAt ? C.chip(t("extra.dueBadge").replace("{date}", fmtDue(l.dueAt)), "outline", { ic: "calendar" }) : "";
+  const ptsBadge = isAssign && l.maxPoints != null ? C.chip(`${l.maxPoints} ${t("extra.pointsAbbrev")}`, "outline") : "";
+  const hiddenBadge = l.hidden ? C.chip(t("extra.hidden"), "outline") : "";
   const grip = edit ? `<span class="drag-grip" title="${t("extra.dragToReorder")}">${IC.grip}</span>` : "";
   const titleSpan = `<span class="lrow-title" ${edit ? `data-inline-rename="lesson:${l.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}" ${edit ? `title="${t("extra.dblClickRename")}"` : ""}>${esc(l.title)}</span>`;
   const controls = edit
@@ -65,7 +66,8 @@ function sectionBlock(m, cid, edit) {
   return `<div class="secblk" data-sec="${m.id}" ${edit ? `draggable="true" data-drag="module:${m.id}:${cid}"` : ""} style="border-top:1px solid var(--border);padding:12px 0 6px${m.hidden ? ";opacity:.55" : ""}">
     <div class="row between vcenter" style="margin-bottom:4px;gap:6px">
       ${grip}
-      <b class="row vcenter" data-acc-sec="${m.id}" style="gap:7px;font-size:13.5px;cursor:pointer;min-width:0;flex:1"><span class="sec-chev" style="display:flex;width:12px;color:var(--text-3);transition:transform .2s;flex:none">${IC.chevD}</span><span style="display:flex;width:14px;color:var(--text-3);flex:none">${IC.grid}</span><span class="sec-title" ${edit ? `data-inline-rename="module:${m.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}">${esc(m.title)}</span>${m.hidden ? `<span class="badge warn" style="height:18px;font-size:10px;flex:none">${t("extra.hidden")}</span>` : ""}</b>${ctrls}
+      <b class="row vcenter" data-acc-sec="${m.id}" style="gap:7px;font-size:13.5px;cursor:pointer;min-width:0;flex:1"><span class="sec-chev" style="display:flex;width:12px;color:var(--text-3);transition:transform .2s;flex:none">${IC.chevD}</span><span style="display:flex;width:14px;color:var(--text-3);flex:none">${IC.grid}</span>${/* [MOCKUP · Task 6] Antes esta clase era `sec-title`: choca con el .sec-title del KIT
+      (barra naranja + 17/800). El título de sección del constructor pasa a `secblk-title`. */""}<span class="secblk-title" ${edit ? `data-inline-rename="module:${m.id}"` : ""} style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap${edit ? ";cursor:text" : ""}">${esc(m.title)}</span>${m.hidden ? C.chip(t("extra.hidden"), "outline") : ""}</b>${ctrls}
     </div>
     <div class="sec-body" data-sec-body="${m.id}">${rows}${add}</div>
   </div>`;
@@ -203,19 +205,20 @@ export const S = {
               ? `<button class="btn btn-soft btn-sm" style="margin-top:10px" data-welcome-video data-wv-kind="${esc(c.welcomeVideoKind)}" data-wv-src="${esc(c.welcomeVideoSrc)}" data-wv-name="${c.name}">${IC.play} ${t("extra.welcomeVideoBtn")}</button>`
               : ""}
             <div class="cc-foot" style="margin-top:16px">
-              ${c.price > 0 ? `<span class="cc-pct">$${(c.price / 100).toFixed(0)}</span>` : `<span class="badge ok">${t("extra.free")}</span>`}
+              ${c.price > 0 ? `<span class="cc-pct">$${(c.price / 100).toFixed(0)}</span>` : C.chip(t("extra.free"), "outline")}
               ${c.enrolled
-                ? `<span class="badge ok"><span class="dot"></span>${t("extra.enrolled")}</span>`
-                : `<button class="btn btn-primary btn-sm" data-enroll="${c.id}">${IC.plus} ${t("extra.enroll")}</button>`}
+                ? C.chip(t("extra.enrolled"), "tint", { ic: "check" })
+                : C.btn(t("extra.enroll"), "accent", { size: "sm", ic: "plus", attrs: `data-enroll="${c.id}"` })}
             </div>
           </div>
         </div>`;
       return `
-      <div class="page-head"><div>
-        <p class="eyebrow">${t("extra.eyebrowAcademy")}</p>
-        <h1 class="page-title">${t("extra.catalogTitle")}</h1>
-        <div class="page-sub">${t("extra.catalogSub")}</div>
-      </div></div>
+      <div class="page-head page-head--rule"><div>
+        <span class="ph-eyebrow">${t("extra.eyebrowAcademy")}</span>
+        <h1 class="ph-title">${t("extra.catalogTitle")}</h1>
+        <div class="page-sub" style="margin-top:8px">${t("extra.catalogSub")}</div>
+      </div>
+      <div class="stat-group">${C.statInline(courses.length, t("extra.coursesSection"))}</div></div>
       ${courses.length
         ? `<div class="grid g-3">${courses.map(card).join("")}</div>`
         : `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.catalogEmptyHeading")}</h4><p>${t("extra.catalogEmptyBody")}</p></div></div>`}`;
@@ -246,16 +249,16 @@ export const S = {
   manage: {
     render() {
       const courses = DB.teacherCourses || [];
-      const head = `<div class="page-head"><div><p class="eyebrow">${t("extra.eyebrowTeacher")}</p><h1 class="page-title">${t("extra.myCoursesTitle")}</h1>
-        <div class="page-sub">${t("extra.myCoursesSub")}</div></div></div>
-        <div class="row" style="margin-bottom:14px"><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} ${t("extra.newCourse")}</button></div>`;
+      const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowTeacher")}</span><h1 class="ph-title">${t("extra.myCoursesTitle")}</h1>
+        <div class="page-sub" style="margin-top:8px">${t("extra.myCoursesSub")}</div></div>
+        ${C.btn(t("extra.newCourse"), "accent", { ic: "plus", attrs: 'data-action="new-course"' })}</div>`;
       if (!courses.length) {
-        return head + `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.myCoursesEmptyHeading")}</h4><p>${t("extra.myCoursesEmptyBody")}</p><button class="btn btn-primary btn-sm" data-action="new-course">${IC.plus} ${t("extra.newCourse")}</button></div></div>`;
+        return head + `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.myCoursesEmptyHeading")}</h4><p>${t("extra.myCoursesEmptyBody")}</p>${C.btn(t("extra.newCourse"), "accent", { size: "sm", ic: "plus", attrs: 'data-action="new-course"' })}</div></div>`;
       }
       const card = (c, i) => {
         const mods = c.modules || [];
         const lessons = mods.reduce((n, m) => n + ((m.lessons || []).length), 0);
-        const pub = c.published === false ? `<span class="badge warn" style="flex:none">${t("extra.draft")}</span>` : `<span class="badge ok" style="flex:none">${t("extra.published")}</span>`;
+        const pub = c.published === false ? C.chip(t("extra.draft"), "outline") : C.chip(t("extra.published"), "accent", { ic: "check" });
         return `<div class="card card-pad fade-up" style="margin-bottom:12px;--d:${Math.min(i, 6)}">
           <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
             <div class="row vcenter" style="gap:11px;min-width:0">${C.courseDot(c.color)}
@@ -263,8 +266,8 @@ export const S = {
               <div class="faint" style="font-size:12px;margin-top:2px">${mods.length} ${mods.length === 1 ? t("extra.section") : t("extra.sections")} · ${lessons} ${lessons === 1 ? t("extra.activity") : t("extra.activities")}${c.format ? ` · ${c.format}` : ""}</div></div>
             </div>
             <div class="row" style="gap:6px;flex:none">
-              <button class="btn btn-primary btn-sm" data-go-builder="${c.id}">${IC.sliders} ${t("extra.buildCourse")}</button>
-              <button class="btn btn-ghost btn-sm" data-edit-course="${c.id}" data-name="${c.name}">${IC.pencil} ${t("extra.settings")}</button>
+              ${C.btn(t("extra.buildCourse"), "accent", { size: "sm", ic: "sliders", attrs: `data-go-builder="${c.id}"` })}
+              ${C.btn(t("extra.settings"), "outline", { size: "sm", ic: "pencil", attrs: `data-edit-course="${c.id}" data-name="${c.name}"` })}
               <button class="btn btn-quiet btn-sm" data-del="course:${c.id}" style="color:var(--danger)">${IC.flag} ${t("extra.delete")}</button>
             </div>
           </div>
@@ -286,22 +289,23 @@ export const S = {
       if (!id && typeof window !== "undefined") { try { id = sessionStorage.getItem("otr_builder_course") || ""; window.__builderCourseId = id; } catch {} }
       const c = courses.find((x) => x.id === id);
       if (!c) {
-        return `<div class="page-head"><div><p class="eyebrow">${t("extra.eyebrowTeacher")}</p><h1 class="page-title">${t("extra.builderTitle")}</h1>
-          <div class="page-sub">${t("extra.builderPickSub")}</div></div></div>
-          <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.builderSelectHeading")}</h4><p>${t("extra.builderSelectBody")}</p><button class="btn btn-primary btn-sm" data-go="manage">${t("extra.viewMyCourses")}</button></div></div>`;
+        return `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowTeacher")}</span><h1 class="ph-title">${t("extra.builderTitle")}</h1>
+          <div class="page-sub" style="margin-top:8px">${t("extra.builderPickSub")}</div></div></div>
+          <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.builderSelectHeading")}</h4><p>${t("extra.builderSelectBody")}</p>${C.btn(t("extra.viewMyCourses"), "accent", { size: "sm", attrs: 'data-go="manage"' })}</div></div>`;
       }
       const edit = typeof window !== "undefined" ? window.__editMode !== false : true;
       const mods = c.modules || [];
       const lessons = mods.reduce((n, m) => n + ((m.lessons || []).length), 0);
-      const pub = c.published === false ? `<span class="badge warn" style="flex:none">${t("extra.draft")}</span>` : `<span class="badge ok" style="flex:none">${t("extra.published")}</span>`;
-      const head = `<div class="page-head"><div><p class="eyebrow">${t("extra.eyebrowTeacherBuilder")}</p><h1 class="page-title">${esc(c.code)} · ${c.name}</h1>
-        <div class="page-sub">${edit ? t("extra.editModeActiveSub") : t("extra.readOnlySub")}</div></div></div>`;
+      const pub = c.published === false ? C.chip(t("extra.draft"), "outline") : C.chip(t("extra.published"), "accent", { ic: "check" });
+      const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowTeacherBuilder")}</span><h1 class="ph-title" style="font-size:30px">${esc(c.code)} · ${c.name}</h1>
+        <div class="page-sub" style="margin-top:8px">${edit ? t("extra.editModeActiveSub") : t("extra.readOnlySub")}</div></div>
+        <div class="stat-group">${C.statInline(mods.length, mods.length === 1 ? t("extra.section") : t("extra.sections"))}${C.statInline(lessons, lessons === 1 ? t("extra.activity") : t("extra.activities"), { accent: true })}</div></div>`;
       const hero = `
       <div class="card card-pad fade-up" style="margin-bottom:16px;--d:0">
-        <div style="margin-bottom:10px"><button class="btn btn-quiet btn-sm" data-go="manage">${IC.chevL} ${t("extra.myCoursesTitle")}</button></div>
+        <div style="margin-bottom:10px">${C.btn(t("extra.myCoursesTitle"), "outline", { size: "sm", ic: "chevL", attrs: 'data-go="manage"' })}</div>
         <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
           <div class="row vcenter" style="gap:12px;min-width:0">${C.courseDot(c.color)}
-            <div style="min-width:0"><div class="row vcenter" style="gap:9px;flex-wrap:wrap"><h2 style="font-size:19px;font-weight:750">${esc(c.code)} · ${c.name}</h2>${pub}</div>
+            <div style="min-width:0"><div class="row vcenter" style="gap:9px;flex-wrap:wrap"><h2 style="font-size:19px;font-weight:800;letter-spacing:-.025em">${esc(c.code)} · ${c.name}</h2>${pub}</div>
             <div class="faint" style="font-size:12.5px;margin-top:3px">${mods.length} ${mods.length === 1 ? t("extra.section") : t("extra.sections")} · ${lessons} ${lessons === 1 ? t("extra.activity") : t("extra.activities")}${c.format ? ` · ${c.format}` : ""}${c.modality ? ` · ${c.modality}` : ""}</div></div>
           </div>
           <div class="row vcenter" style="gap:6px;flex:none">
@@ -337,8 +341,8 @@ export const S = {
       let _sec = 0;
       const section = (title, count, body) => body ? `<div class="kit-section fade-up" style="--d:${_sec++}"><h3 class="row between vcenter"><span>${title}</span><span class="badge-count">${count}</span></h3>${body}</div>` : "";
       return `
-      <div class="page-head"><div><p class="eyebrow">${t("extra.searchEyebrow")}</p><h1 class="page-title">${t("extra.searchResultsFor")} "${esc(window.__q || "")}"</h1>
-      <div class="page-sub">${total} ${total === 1 ? t("extra.resultSingular") : t("extra.resultPlural")}</div></div></div>
+      <div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.searchEyebrow")}</span><h1 class="ph-title" style="font-size:30px">${t("extra.searchResultsFor")} "${esc(window.__q || "")}"</h1></div>
+      <div class="stat-group">${C.statInline(total, total === 1 ? t("extra.resultSingular") : t("extra.resultPlural"), { accent: true })}</div></div>
       ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("extra.noResults")}</h4><p>${t("extra.searchEmptyPrefix")}"${esc(window.__q || "")}${t("extra.searchEmptySuffix")}</p></div></div>` : ""}
       ${section(t("extra.coursesSection"), courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#171717)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div></div></div>`).join("")}</div>` : "")}
       ${section(t("extra.peopleSection"), people.length, people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="gap:11px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1;min-width:0"><b style="font-weight:600">${esc(s.n)}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}`;

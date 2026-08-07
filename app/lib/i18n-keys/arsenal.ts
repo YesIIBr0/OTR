@@ -12,6 +12,8 @@ export const dict = {
     // search + filter chips
     "arsenal.searchPlaceholder": "Buscar recursos…",
     "arsenal.chipAll": "Todos",
+    // título de sección sobre la rejilla de recursos (kit .sec-title)
+    "arsenal.libraryTitle": "Recursos",
 
     // resource kind labels (plural = chip, singular = card badge)
     "arsenal.kindBriefs": "Briefs",
@@ -52,6 +54,8 @@ export const dict = {
     // search + filter chips
     "arsenal.searchPlaceholder": "Search resources…",
     "arsenal.chipAll": "All",
+    // section title above the resource grid (.sec-title kit)
+    "arsenal.libraryTitle": "Resources",
 
     // resource kind labels (plural = chip, singular = card badge)
     "arsenal.kindBriefs": "Briefs",
