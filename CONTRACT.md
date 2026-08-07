@@ -76,4 +76,4 @@ Upsert: si la lección ya tiene quiz, borra sus questions/options y recrea. Veri
 - Escapar SIEMPRE texto de usuario con `esc()`.
 - Navegación entre pantallas: `window.go('ruta')` o `data-go="ruta"`.
 
-## Branding (ver BRAND.md): negro `#0A0A0B`, ámbar `#F5A623`→`#FF9D2E`, blanco. Lema "By Students, For Students".
+## Branding (ver BRAND.md): negro `#171717`, naranja `#F25623` (único acento), grises fríos, blanco. Lema "By Students, For Students".
