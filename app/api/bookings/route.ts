@@ -288,7 +288,7 @@ export async function POST(req: Request) {
       db.user.findUnique({ where: { id: bStudent.id }, select: { name: true } }),
     ]);
     if (parent?.email) {
-      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;"><strong>${esc(student?.name ?? "Tu hijo/a")}</strong> reservó una sesión de coaching con <strong>${esc(coachName)}</strong> para el ${esc(dLabel)} · ${esc(tLabel)}. Necesita tu aprobación para confirmarse.</p>
+      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4D4D4D;"><strong>${esc(student?.name ?? "Tu hijo/a")}</strong> reservó una sesión de coaching con <strong>${esc(coachName)}</strong> para el ${esc(dLabel)} · ${esc(tLabel)}. Necesita tu aprobación para confirmarse.</p>
           ${emailButton("Revisar en el Aula", `${origin}/aula`)}`;
       await sendMail({
         to: parent.email,
@@ -299,7 +299,7 @@ export async function POST(req: Request) {
   } else if (booking.status === "CONFIRMED") {
     const student = await db.user.findUnique({ where: { id: bStudent.id }, select: { email: true } });
     if (student?.email) {
-      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">Tu sesión de coaching con <strong>${esc(coachName)}</strong> quedó confirmada para el ${esc(dLabel)} · ${esc(tLabel)}.</p>
+      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4D4D4D;">Tu sesión de coaching con <strong>${esc(coachName)}</strong> quedó confirmada para el ${esc(dLabel)} · ${esc(tLabel)}.</p>
           ${emailButton("Ver mi reserva", `${origin}/aula`)}`;
       await sendMail({
         to: student.email,

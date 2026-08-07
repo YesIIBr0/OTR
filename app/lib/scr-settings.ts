@@ -46,14 +46,14 @@ function currentPrefs() {
 function toggle(key, on) {
   return `<button type="button" role="switch" aria-checked="${on}" data-notif="${key}" aria-label="${t("settings.toggleAria")}"
     style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-green)" : "var(--n-200)"}">
-    <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(12,12,12,.25)"></span></button>`;
+    <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(23,23,23,.25)"></span></button>`;
 }
 
 // [GAMIFICATION-1 §9] Switch para el opt-in de la clasificación pública (persiste en backend).
 function lbToggle(on) {
   return `<button type="button" role="switch" aria-checked="${on}" data-leaderboard="1" aria-label="${t("settings.leaderboardAria")}"
     style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-green)" : "var(--n-200)"}">
-    <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(12,12,12,.25)"></span></button>`;
+    <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(23,23,23,.25)"></span></button>`;
 }
 
 function row(icon, title, desc, right) {

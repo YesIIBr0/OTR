@@ -254,7 +254,7 @@ export function renderShell(activeNav: string, crumbs: string[], content: string
           <span class="avatar sm" style="background:${avBg}">${u.initials}</span>
           <span class="meta" style="min-width:0">
             <span style="display:block;font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name}</span>
-            <span style="display:block;font-size:11px;color:rgba(234,242,251,.5)">${role==='admin'?t('role.admin',lang):role==='teacher'?t('role.teacher',lang):role==='parent'?t('role.parent',lang):t('role.student',lang)}</span>
+            <span style="display:block;font-size:11px;color:rgba(255,255,255,.5)">${role==='admin'?t('role.admin',lang):role==='teacher'?t('role.teacher',lang):role==='parent'?t('role.parent',lang):t('role.student',lang)}</span>
           </span>
           <span class="chev">${IC.chevD}</span>
         </button>

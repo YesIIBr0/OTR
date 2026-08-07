@@ -110,7 +110,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     // [TAREA-D] Email al alumno con el motivo, fuera de la tx, best-effort (sendMail nunca lanza).
     if (student.email) {
-      const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">Tu solicitud de debate${record.opponent ? ` vs ${esc(record.opponent)}` : ""} fue rechazada.${reason ? ` Motivo: ${esc(reason)}.` : ""}</p>`;
+      const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4D4D4D;">Tu solicitud de debate${record.opponent ? ` vs ${esc(record.opponent)}` : ""} fue rechazada.${reason ? ` Motivo: ${esc(reason)}.` : ""}</p>`;
       await sendMail({
         to: student.email,
         subject: "Tu debate fue rechazado · OTR Academy",
@@ -162,7 +162,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   // [TAREA-D] Email al alumno con el delta de rating, fuera de la tx, best-effort.
   if (student.email) {
     const delta = Math.round(next.rating - ratingBefore);
-    const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">Tu coach aprobó tu ronda de debate${record.opponent ? ` vs ${esc(record.opponent)}` : ""}. Tu rating pasó de <strong>${Math.round(ratingBefore)}</strong> a <strong>${Math.round(next.rating)}</strong> (${delta >= 0 ? "+" : ""}${delta}).</p>`;
+    const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4D4D4D;">Tu coach aprobó tu ronda de debate${record.opponent ? ` vs ${esc(record.opponent)}` : ""}. Tu rating pasó de <strong>${Math.round(ratingBefore)}</strong> a <strong>${Math.round(next.rating)}</strong> (${delta >= 0 ? "+" : ""}${delta}).</p>`;
     await sendMail({
       to: student.email,
       subject: "Tu debate fue aprobado · OTR Academy",

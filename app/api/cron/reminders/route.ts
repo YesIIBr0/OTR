@@ -54,7 +54,7 @@ async function remind(u: Participant, counterpart: string, when: string, appUrl:
 
   // Email on-brand (datos dinámicos ya escapados con esc(), como pide el contrato de emailShell).
   if (u.email) {
-    const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">${lead} Prepárate y conéctate a tiempo.</p>
+    const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4D4D4D;">${lead} Prepárate y conéctate a tiempo.</p>
           ${emailButton("Ver mi sesión", `${appUrl}/aula`)}`;
     await sendMail({ to: u.email, subject: "Recordatorio de sesión · OTR Academy", html: emailShell(title, body) });
   }

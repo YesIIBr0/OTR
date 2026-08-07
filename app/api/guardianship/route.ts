@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
       // [TAREA-D] Email al alumno, fuera de la tx, best-effort (sendMail nunca lanza).
       if (student.email) {
-        const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;"><strong>${esc(user.name)}</strong> confirmó el vínculo de tutor/a con tu cuenta de OTR Academy.</p>`;
+        const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4D4D4D;"><strong>${esc(user.name)}</strong> confirmó el vínculo de tutor/a con tu cuenta de OTR Academy.</p>`;
         await sendMail({
           to: student.email,
           subject: "Tu tutor confirmó el vínculo · OTR Academy",
@@ -198,7 +198,7 @@ async function patchStudentConfirm(req: Request, user: { id: string; name: strin
 
   // Email al padre, fuera de la tx, best-effort (sendMail nunca lanza).
   if (parent?.email) {
-    const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;"><strong>${esc(user.name)}</strong> confirmó tu solicitud de vínculo de tutor/a en OTR Academy. Ya puedes ver su progreso desde el Portal de familia.</p>`;
+    const emailBody = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4D4D4D;"><strong>${esc(user.name)}</strong> confirmó tu solicitud de vínculo de tutor/a en OTR Academy. Ya puedes ver su progreso desde el Portal de familia.</p>`;
     await sendMail({
       to: parent.email,
       subject: "Tu hijo/a confirmó el vínculo · OTR Academy",

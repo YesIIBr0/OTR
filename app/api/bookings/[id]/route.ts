@@ -87,7 +87,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     // [TAREA-D] Email al alumno: fuera de la transacción, best-effort (sendMail nunca lanza).
     const student = await db.user.findUnique({ where: { id: booking.studentId }, select: { email: true } });
     if (student?.email) {
-      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#44443D;">Tu tutor aprobó tu sesión de coaching. Quedó confirmada para el ${esc(dateLabel(booking.slotAt))} · ${esc(timeLabel(booking.slotAt))}.</p>
+      const body = `<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#4D4D4D;">Tu tutor aprobó tu sesión de coaching. Quedó confirmada para el ${esc(dateLabel(booking.slotAt))} · ${esc(timeLabel(booking.slotAt))}.</p>
           ${emailButton("Ver mi reserva", `${process.env.APP_URL || req.headers.get("origin") || ""}/aula`)}`;
       await sendMail({
         to: student.email,
