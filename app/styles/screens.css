@@ -2,6 +2,163 @@
    OTR LMS · SCREEN STYLES
    ============================================================ */
 
+/* === KIT MOCKUP 2026-08 ===================================================
+   Componentes compartidos de la estética del mockup "Dashboard UI redesign"
+   (spec: docs/superpowers/specs/2026-08-07-dashboard-mockup-spec.md, Task 3 del
+   plan 2026-08-07-aula-redesign-mockup.md). Los consumen el dashboard (Task 4) y
+   la pasada de pantallas (Tasks 5-8) POR ESTOS NOMBRES: no renombrar.
+
+   CASCADA — por qué las bases .btn/.chip/.card/.page-head NO se reescriben aquí:
+   viven en app/styles/app.css (propiedad de otra tarea en paralelo). screens.css
+   se importa DESPUÉS de app.css (app/layout.tsx), así que:
+     · los modificadores nuevos (.chip--*, .card--dark, .btn-outline) llevan la
+       geometría completa del mockup y ganan por orden a igual especificidad;
+     · los que redefinen un estilo existente (.btn-accent, .btn-primary) usan
+       .btn.btn-x (0,2,0) para ganar sin tocar app.css;
+     · se re-declaran .btn.btn-sm/.btn-lg para que los tamaños existentes NO
+       queden atrapados por la nueva altura 44px.
+   REGLA DE USO: los chips SIEMPRE se escriben `class="chip chip--variante"`
+   (el .chip pelado conserva su aspecto viejo, que aún usan ~22 pantallas).
+
+   A11y: el naranja #F25623 solo se usa como TEXTO a ≥14px/700 o sobre negro;
+   el texto naranja pequeño va en --otr-green-text (#9E3211, 6.36:1 sobre el
+   canvas greige). Sobre naranja, el texto es SIEMPRE negro (--text-on-accent).
+   ========================================================================== */
+
+/* ---- Section title: barra naranja + título ---- */
+.sec-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:13px}
+.sec-row--end{align-items:flex-end}
+.sec-row .sec-acts{display:flex;align-items:center;gap:4px;flex:none}
+.sec-title{display:flex;align-items:center;gap:10px;margin-bottom:13px;min-width:0}
+.sec-row > .sec-title{margin-bottom:0}
+/* La barra es un ::before (el mockup usa un <span>: mismo resultado, menos marcado) */
+.sec-title::before{content:"";flex:none;display:inline-block;width:3px;height:15px;background:var(--otr-green)}
+.sec-title > h2,.sec-title > h3,.sec-title > h4{margin:0;font-size:17px;font-weight:800;letter-spacing:-.025em;line-height:1.15;color:var(--text)}
+.sec-title--sm{gap:9px}
+.sec-title--sm::before{height:14px}
+.sec-title--sm > h2,.sec-title--sm > h3,.sec-title--sm > h4{font-size:15px;letter-spacing:-.02em}
+/* Dentro de una card negra (leaderboard, rango) el título va en blanco */
+.sec-title--on-dark > h2,.sec-title--on-dark > h3,.sec-title--on-dark > h4,
+.card--dark .sec-title > h2,.card--dark .sec-title > h3,.card--dark .sec-title > h4{color:#fff}
+
+/* ---- Label / eyebrow compartido (10px versalitas) ---- */
+.lbl{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-400)}
+.card--dark .lbl{color:rgba(255,255,255,.55)}
+
+/* ---- Chips (rectangulares 3px, versalitas 10/800; CERO pills) ----
+   Cada variante trae la base completa: así el .chip de app.css (pill 28px) queda
+   intacto para las pantallas que aún no han pasado por el rediseño. */
+.chip--black,.chip--accent,.chip--outline,.chip--tint,.chip--info{
+  display:inline-flex;align-items:center;gap:5px;height:auto;min-height:0;padding:3px 8px;
+  border:0;border-radius:var(--r-xs);font-size:10px;font-weight:800;letter-spacing:.07em;
+  line-height:1.4;text-transform:uppercase;white-space:nowrap;
+}
+.chip--black .ic,.chip--accent .ic,.chip--outline .ic,.chip--tint .ic,.chip--info .ic{width:12px;height:12px}
+.chip--black{background:var(--otr-black);color:#fff}
+.chip--accent{background:var(--otr-green);color:var(--text-on-accent)}
+.chip--outline{background:transparent;border:1px solid var(--border-strong);color:var(--n-600)}
+.chip--tint{background:rgba(242,86,35,.045);color:var(--otr-green-text)}
+.chip--info{background:#E7EBEE;color:#3F5566}
+/* [A11Y] El media query de móvil de app.css estira .chip a min-height:44px; estos
+   chips son etiquetas (no controles táctiles), así que conservan su altura. */
+@media (max-width:640px){
+  .chip--black,.chip--accent,.chip--outline,.chip--tint,.chip--info{min-height:0}
+}
+
+/* ---- Botones (h44, r4, 15/700; texto NEGRO sobre naranja) ---- */
+.btn.btn-accent,.btn.btn-primary,.btn.btn-outline{
+  height:44px;padding:0 20px;border-radius:var(--r-sm);font-size:15px;font-weight:700;letter-spacing:-.01em;
+}
+.btn.btn-accent{background:var(--otr-green);color:var(--text-on-accent);border-color:transparent;font-weight:800;box-shadow:none}
+.btn.btn-accent:hover{background:var(--otr-green);color:var(--text-on-accent);box-shadow:var(--sh-glow)}
+.btn.btn-primary{background:var(--otr-black);color:#fff;border-color:transparent;box-shadow:none}
+.btn.btn-primary:hover{background:var(--ink-800);box-shadow:none;transform:none}
+/* El mockup no tiene brillos ni elevación al hover: solo color. */
+.btn.btn-primary::after{display:none}
+.btn.btn-outline{background:var(--otr-white);border:1.5px solid var(--border-strong);color:var(--text)}
+.btn.btn-outline:hover{background:var(--surface-2);border-color:var(--n-400);text-decoration:none}
+/* Tamaños: --sm nuevo (34px) y compat con el .btn-sm/.btn-lg existentes */
+.btn.btn--sm,.btn.btn-sm{height:34px;padding:0 14px;font-size:13.5px;border-radius:var(--r-sm)}
+.btn.btn-lg{height:50px;padding:0 24px;font-size:16px;font-weight:800}
+.btn.btn-accent .ic,.btn.btn-primary .ic,.btn.btn-outline .ic{width:17px;height:17px}
+.btn.btn--sm .ic,.btn.btn-sm .ic{width:14px;height:14px}
+
+/* ---- Cards ----
+   .card (blanca, r6, borde #E4E3DF, --sh-1, .card-pad 20/22) ya cumple el mockup
+   desde app.css + los tokens de Task 1: aquí solo se añade la variante negra. */
+.card--dark{position:relative;overflow:hidden;background:var(--otr-black);border-color:transparent;border-radius:var(--r-lg);color:#fff;box-shadow:none}
+.card--dark h1,.card--dark h2,.card--dark h3,.card--dark h4,.card--dark b,.card--dark strong{color:#fff}
+.card--dark .card-head{border-bottom-color:rgba(255,255,255,.1)}
+.card--dark .card-pad,.card--dark .card-body{padding:22px 20px}
+.card--dark .k-label,.card--dark .muted{color:rgba(255,255,255,.55)}
+.card--dark .stat-inline .si-n{color:#fff}
+.card--dark .stat-inline .si-l{color:rgba(255,255,255,.55)}
+/* Halo naranja decorativo (esquina superior derecha) para héroes/leaderboard */
+.card--dark.card--glow::before{content:"";position:absolute;top:-60px;right:-30px;width:220px;height:220px;background:radial-gradient(circle,rgba(242,86,35,.18),transparent 68%);pointer-events:none}
+
+/* ---- Date box (70px) ---- */
+.date-box{width:70px;flex:none;text-align:center;background:var(--bg);border-radius:var(--r-md);padding:9px 4px}
+.date-box .db-d{display:block;font-size:20px;font-weight:800;letter-spacing:-.03em;line-height:1.05;color:var(--text);font-variant-numeric:tabular-nums}
+.date-box .db-m{display:block;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-400)}
+/* En vivo: el número (20/800) aguanta el naranja puro; el mes, a 10px, va en el
+   naranja oscuro accesible (#9E3211) sobre el tinte claro. */
+.date-box--live{background:rgba(242,86,35,.1)}
+.date-box--live .db-d{color:var(--otr-green)}
+.date-box--live .db-m{color:var(--otr-green-text)}
+
+/* ---- Fila de evento ---- */
+.evrow{display:grid;grid-template-columns:70px 1fr auto;gap:16px;align-items:center;padding:14px 0;border-left:3px solid transparent;border-bottom:1px solid var(--bg-sunken);transition:background .15s var(--ease)}
+.evrow:last-child{border-bottom:0}
+.evrow .ev-main{min-width:0}
+.evrow .ev-title{font-size:18px;font-weight:700;letter-spacing:-.02em;line-height:1.15;color:var(--text);margin:7px 0}
+.evrow .ev-meta{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;font-weight:500;color:var(--ink-400)}
+.evrow .ev-meta .ic{width:14px;height:14px}
+.evrow .ev-actions{display:flex;align-items:center;gap:8px}
+/* El margen negativo compensa el borde+padding para que la fila en vivo NO
+   desalinee la columna de fechas respecto a las filas normales. Ajusta el sangrado
+   al padding del contenedor con --ev-bleed (p. ej. 22px dentro de .card-pad). */
+.evrow--live{background:rgba(242,86,35,.045);border-left-color:var(--otr-green);
+  margin:0 calc(-1 * var(--ev-bleed,14px));
+  padding-left:calc(var(--ev-bleed,14px) - 3px);padding-right:var(--ev-bleed,14px)}
+.evrow:hover{background:var(--surface-2)}
+@media (max-width:640px){
+  .evrow{grid-template-columns:56px 1fr;gap:12px}
+  .evrow .ev-actions{grid-column:2}
+  .evrow .date-box{width:56px}
+}
+
+/* ---- Stat inline (número + label, con divisores) ---- */
+.stat-group{display:flex;align-items:center;gap:26px}
+.stat-inline{position:relative;display:flex;flex-direction:column;align-items:flex-end}
+.stat-group > .stat-inline + .stat-inline::before{content:"";position:absolute;left:-13px;top:50%;transform:translateY(-50%);width:1px;height:30px;background:var(--border)}
+.stat-inline .si-n{font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+.stat-inline .si-l{margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-400)}
+.stat-inline--accent .si-n{color:var(--otr-green)}
+@media (max-width:640px){ .stat-group{gap:18px} .stat-group > .stat-inline + .stat-inline::before{left:-9px} }
+
+/* ---- Anillo de progreso (conic-gradient, sin SVG) ----
+   Uso: <span class="ring" style="--deg:223deg"><span class="ring-cap">Nivel</span>
+        <b class="ring-num">7</b></span>  ·  deg = pct * 3.6 */
+.ring{position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:96px;height:96px;flex:none;border-radius:var(--r-pill);line-height:1}
+.ring::before{content:"";position:absolute;inset:0;border-radius:inherit;
+  background:conic-gradient(var(--otr-green) var(--deg,0deg),rgba(255,255,255,.14) 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 9px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 9px));}
+.ring .ring-num{position:relative;font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1;color:#fff;font-variant-numeric:tabular-nums}
+.ring .ring-cap{position:relative;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-400);margin-bottom:3px}
+/* Sobre fondo claro: pista gris y número en tinta */
+.ring--light::before{background:conic-gradient(var(--otr-green) var(--deg,0deg),var(--n-150) 0)}
+.ring--light .ring-num{color:var(--text)}
+
+/* ---- Cabecera de página del mockup ----
+   .page-head (flex, space-between) ya existe en app.css; aquí van el eyebrow, el
+   h1 de 40px y el modificador --rule (línea inferior + respiración del mockup). */
+.page-head--rule{align-items:flex-end;gap:24px;padding-bottom:20px;margin-bottom:26px;border-bottom:1px solid var(--border)}
+.page-head .ph-eyebrow{display:block;margin-bottom:9px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--otr-green-text)}
+.page-head .ph-title{margin:6px 0 0;font-size:40px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--text)}
+@media (max-width:640px){ .page-head .ph-title{font-size:30px} }
+/* === FIN KIT MOCKUP 2026-08 =============================================== */
+
 /* ---------------- LOGIN ---------------- */
 .login{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr}
 .login-brand{position:relative;background:linear-gradient(160deg,var(--otr-navy),var(--otr-ink));color:#fff;padding:34px 40px;display:flex;flex-direction:column;overflow:hidden}

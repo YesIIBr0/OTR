@@ -27,6 +27,37 @@ interface KpiOpts {
   ic?: string;
   accent?: string;
 }
+/* ---- KIT MOCKUP 2026-08 (Task 3) ----
+   Helpers de la estética del mockup. Las clases que emiten viven en la sección
+   "KIT MOCKUP 2026-08" de app/styles/screens.css. Son ADICIONES: ninguna firma
+   existente cambia. */
+interface BtnOpts {
+  ic?: string;           // clave de IC (icono a la izquierda)
+  icRight?: string;      // clave de IC (icono a la derecha)
+  size?: "sm" | "lg" | string;
+  href?: string;         // si viene, se renderiza <a> en vez de <button>
+  block?: boolean;
+  disabled?: boolean;
+  cls?: string;          // clases extra
+  attrs?: string;        // atributos crudos (data-*, aria-*, onclick…)
+}
+interface ChipOpts {
+  ic?: string;
+  cls?: string;
+  attrs?: string;
+}
+interface SecTitleOpts {
+  sm?: boolean;          // variante compacta (dentro de card)
+  onDark?: boolean;      // título blanco sobre card negra
+  right?: string;        // HTML de acciones a la derecha (filtros, "Ver todo")
+  tag?: "h2" | "h3" | "h4" | string;
+  cls?: string;
+  attrs?: string;
+}
+interface StatOpts {
+  accent?: boolean;      // número en naranja (racha)
+  attrs?: string;
+}
 
 export const C = {
   avatar(initials: string, opts: AvatarOpts = {}) {
@@ -82,5 +113,60 @@ export const C = {
   typeIcon(type: string) {
     const m: Record<string, string> = { video:'play', lesson:'book', quiz:'doc', assign:'pencil', mic:'mic', file:'file' };
     return IC[m[type] || 'doc'];
+  },
+
+  /* ================= KIT MOCKUP 2026-08 ================= */
+
+  /** Botón del mockup: h44/r4/15px (h34 con size:'sm', h50 con 'lg').
+   *  variant: 'accent' (naranja, texto NEGRO) · 'primary' (negro) · 'outline'
+   *  (blanco, borde 1.5px) · o cualquier variante existente ('ghost','quiet'…).
+   *  Acepta también el nombre completo de la clase ('btn-accent'). */
+  btn(label: string, variant: string = 'primary', opts: BtnOpts = {}) {
+    const v = variant ? (variant.startsWith('btn-') ? variant : `btn-${variant}`) : '';
+    const size = opts.size === 'sm' ? ' btn--sm' : opts.size === 'lg' ? ' btn-lg' : '';
+    const cls = `btn ${v}${size}${opts.block ? ' btn-block' : ''}${opts.cls ? ` ${opts.cls}` : ''}`.trim();
+    const ic = opts.ic && IC[opts.ic] ? IC[opts.ic] : '';
+    const icR = opts.icRight && IC[opts.icRight] ? IC[opts.icRight] : '';
+    const attrs = opts.attrs ? ` ${opts.attrs}` : '';
+    if (opts.href) return `<a class="${cls}" href="${opts.href}"${attrs}>${ic}${label}${icR}</a>`;
+    return `<button class="${cls}"${opts.disabled ? ' disabled' : ''}${attrs}>${ic}${label}${icR}</button>`;
+  },
+
+  /** Chip/badge rectangular del mockup (versalitas 10/800, radio 3px).
+   *  variant: 'black' | 'accent' | 'outline' | 'tint' | 'info'. */
+  chip(text: string, variant: string = 'outline', opts: ChipOpts = {}) {
+    const v = variant ? (variant.startsWith('chip--') ? variant : `chip--${variant}`) : '';
+    const ic = opts.ic && IC[opts.ic] ? IC[opts.ic] : '';
+    const attrs = opts.attrs ? ` ${opts.attrs}` : '';
+    return `<span class="chip ${v}${opts.cls ? ` ${opts.cls}` : ''}"${attrs}>${ic}${text}</span>`;
+  },
+
+  /** Título de sección con barra naranja. Con opts.right devuelve la fila
+   *  completa (.sec-row) con las acciones alineadas a la derecha. */
+  secTitle(txt: string, opts: SecTitleOpts = {}) {
+    const tag = opts.tag || (opts.sm ? 'h4' : 'h3');
+    const cls = `sec-title${opts.sm ? ' sec-title--sm' : ''}${opts.onDark ? ' sec-title--on-dark' : ''}${opts.cls ? ` ${opts.cls}` : ''}`;
+    const attrs = opts.attrs ? ` ${opts.attrs}` : '';
+    const title = `<div class="${cls}"${attrs}><${tag}>${txt}</${tag}></div>`;
+    if (!opts.right) return title;
+    return `<div class="sec-row${opts.sm ? '' : ' sec-row--end'}">${title}<div class="sec-acts">${opts.right}</div></div>`;
+  },
+
+  /** Tile de fecha de 70px (día grande + mes en versalitas). live = en curso. */
+  dateBox(day: string | number, mon: string, live: boolean = false) {
+    return `<div class="date-box${live ? ' date-box--live' : ''}"><span class="db-d">${day}</span><span class="db-m">${mon}</span></div>`;
+  },
+
+  /** Stat de la cabecera de página (21/800 + label en versalitas).
+   *  Agrúpalos dentro de <div class="stat-group"> para los divisores. */
+  statInline(value: string | number, label: string, opts: StatOpts = {}) {
+    const attrs = opts.attrs ? ` ${opts.attrs}` : '';
+    return `<div class="stat-inline${opts.accent ? ' stat-inline--accent' : ''}"${attrs}><span class="si-n">${value}</span><span class="si-l">${label}</span></div>`;
+  },
+
+  /** Anillo de progreso conic-gradient (96px, aro 9px). pct 0-100. */
+  ringConic(pct: number, num: string | number, cap: string = '', opts: { light?: boolean } = {}) {
+    const deg = Math.round(Math.max(0, Math.min(100, pct)) * 3.6);
+    return `<span class="ring${opts.light ? ' ring--light' : ''}" style="--deg:${deg}deg">${cap ? `<span class="ring-cap">${cap}</span>` : ''}<b class="ring-num">${num}</b></span>`;
   },
 };
