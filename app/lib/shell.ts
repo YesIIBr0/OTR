@@ -139,13 +139,6 @@ const TABBAR: Record<Role, NavItem[]> = {
   admin: [ {r:'admin',ic:'flag',k:'nav.admin',l:'Moderación'},{r:'admin-users',ic:'users',k:'nav.users',l:'Usuarios'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
 };
 
-// [MOCKUP T2] Llaves de preferencia del sidebar viejo. El sidebar ya no existe, pero se
-// conservan EXPORTADAS: components/Aula.tsx las importa y sus handlers (data-nav-toggle /
-// data-sidebar-toggle) siguen en el delegador. Sin marcado que los dispare son inertes;
-// borrarlos es tarea de limpieza aparte (tocaría Aula.tsx, fuera del alcance de esta tarea).
-export const NAV_CLOSED_KEY = "otr_nav_closed";
-export const SIDEBAR_MINI_KEY = "otr_sidebar_mini";
-
 // Qué ítems se pintan como links horizontales (5 como el mockup §2.1, el máximo que entra
 // sin apretar a 1256px); el resto cae en el menú "Más" con TODOS los demás.
 // El orden del NAV es de SIDEBAR (agrupado por sección); en una barra horizontal no hay

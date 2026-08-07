@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { renderShell, NAV_CLOSED_KEY, SIDEBAR_MINI_KEY } from "../lib/shell";
+import { renderShell } from "../lib/shell";
 import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
@@ -935,39 +935,6 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const t = e.target as HTMLElement;
       if (t.closest("#create-menu")) { e.stopPropagation(); openCreateMenu(); return; }
 
-      // [UI-NAV N1] Abrir/cerrar un grupo desplegable del sidebar. Se hace en el DOM (sin
-      // re-render): así no parpadea la pantalla por plegar un menú. Solo se PERSISTEN los
-      // grupos cerrados — un grupo nuevo nace abierto sin migrar nada.
-      const navToggle = t.closest("[data-nav-toggle]") as HTMLElement | null;
-      if (navToggle) {
-        e.preventDefault();
-        const key = navToggle.getAttribute("data-nav-toggle") || "";
-        const panel = document.getElementById(`sbg-${key}`);
-        if (!panel) return;
-        const open = navToggle.getAttribute("aria-expanded") !== "true";
-        navToggle.setAttribute("aria-expanded", String(open));
-        panel.hidden = !open;
-        try {
-          const cur: string[] = JSON.parse(localStorage.getItem(NAV_CLOSED_KEY) || "[]");
-          const next = open ? cur.filter((k) => k !== key) : [...new Set([...cur, key])];
-          localStorage.setItem(NAV_CLOSED_KEY, JSON.stringify(next));
-        } catch { /* storage bloqueado (modo privado): el plegado sigue funcionando en sesión */ }
-        return;
-      }
-
-      // [UI-NAV N3] Plegar/desplegar el sidebar. Se aplica en el DOM (sin re-render) y se
-      // recuerda: el ancho del menú es una preferencia de trabajo, no algo que reelegir en
-      // cada visita. El shell lo re-aplica al repintar (ver applySidebarState).
-      if (t.closest("[data-sidebar-toggle]")) {
-        e.preventDefault();
-        const app = root.querySelector(".app");
-        if (!app) return;
-        const mini = !app.classList.contains("mini");
-        app.classList.toggle("mini", mini);
-        try { localStorage.setItem(SIDEBAR_MINI_KEY, mini ? "1" : "0"); } catch { /* storage bloqueado */ }
-        return;
-      }
-
       // [UI-NAV N2] Menú de cuenta del chip de usuario. Se cierra al elegir (el data-go
       // navega y el shell se repinta) o al clicar fuera — ver el else de más abajo.
       const userMenuBtn = t.closest("[data-user-menu]") as HTMLElement | null;
@@ -1128,7 +1095,6 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         return;
       }
       if (t.closest('[data-action="edit-profile"]')) { e.preventDefault(); openEditProfile(); return; }
-      if (t.closest("#burger")) { root.querySelector(".app")?.classList.toggle("drawer-open"); return; }
       if (t.closest("#bell")) { e.stopPropagation(); toggleNotif(); return; }
       if (notifOpen && !t.closest("#notif-panel") && !t.closest("#bell")) toggleNotif(false);
       if (t.closest('[data-action="new-resource"]')) { e.preventDefault(); openNewResource(); return; }

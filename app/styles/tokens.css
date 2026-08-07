@@ -137,9 +137,7 @@
   --ring:0 0 0 3px rgba(200,64,26,.55);  /* [A11Y-09] anillo de foco naranja oscuro (#C8401A) → visible sobre blanco */
 
   /* ---- Layout ---- */
-  --sidebar-w:248px;
-  --sidebar-mini:64px;
-  --topbar-h:56px;
+  --topbar-h:62px; /* alto real de la top-nav del mockup (antes 56px del topbar viejo) */
   --ctrl-h:36px;
   --ctrl-h-sm:30px;
   --row-h:44px;

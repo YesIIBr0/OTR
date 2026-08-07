@@ -17,7 +17,7 @@ win.go = () => {};
 win.toast = () => {};
 
 import { DB } from "../app/lib/data";
-import { renderShell, SIDEBAR_MINI_KEY } from "../app/lib/shell";
+import { renderShell } from "../app/lib/shell";
 import { S as SCore } from "../app/lib/scr-core";
 import { t } from "../app/lib/i18n";
 
@@ -98,10 +98,6 @@ describe("A · la navegación vive en una top-nav horizontal", () => {
     expect(movil).toContain(".tn-word");   // sin wordmark ni nombre: solo escudo/XP/campana/avatar
   });
 
-  // La llave del sidebar plegado sigue exportada: Aula.tsx la importa (handler legado).
-  it("SIDEBAR_MINI_KEY sigue exportada para no romper el delegador", () => {
-    expect(SIDEBAR_MINI_KEY).toBe("otr_sidebar_mini");
-  });
 });
 
 /* ================= C · dashboard ================= */
