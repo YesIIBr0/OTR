@@ -44,7 +44,7 @@ S.placement = {
           <div style="max-width:600px">
             <h1 class="sr-only">${t("placement.srHeading")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("placement.welcome")}${firstName ? ", " + firstName : ""}</p>
             <h2 class="brand-font" style="margin-top:2px">${t("placement.title")}</h2>
-            <p style="color:rgba(234,242,251,.82);font-size:14.5px;margin-top:12px;line-height:1.55">
+            <p style="color:rgba(255,255,255,.82);font-size:14.5px;margin-top:12px;line-height:1.55">
               ${t("placement.intro")}
             </p>
             <span class="badge" style="margin-top:14px;display:inline-flex;height:30px;padding:0 13px;gap:7px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:13px;font-weight:600">${IC.target} ${t("placement.badge")}</span>

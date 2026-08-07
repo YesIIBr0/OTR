@@ -89,7 +89,7 @@ export const S = {};
           ${levels.map((l, i) => {
             const cur = i === curIndex, done = i < curIndex, locked = i > curIndex;
             return `<div class="level-node ${cur?'cur':''} ${locked?'locked':''}">
-              <div class="ln-badge" style="background:${cur?'linear-gradient(135deg,var(--otr-sky),var(--otr-sky-lo))':done?'linear-gradient(135deg,#B4B4A7,#89897D)':'linear-gradient(135deg,'+l.color+','+l.color+')'}">${esc((l.name||'')[0])}</div>
+              <div class="ln-badge" style="background:${cur?'linear-gradient(135deg,var(--otr-sky),var(--otr-sky-lo))':done?'linear-gradient(135deg,#BDBDBD,#8C8C8C)':'linear-gradient(135deg,'+l.color+','+l.color+')'}">${esc((l.name||'')[0])}</div>
               <div class="ln-name">${esc(l.name)}${done?` <span style="display:inline-flex;width:14px;height:14px;color:var(--ok);vertical-align:-2px">${IC.check}</span>`:''}</div>
               <div class="ln-range">${esc(l.range)}</div>
             </div>`;

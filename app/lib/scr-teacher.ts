@@ -74,7 +74,7 @@ export const S = {};
         <div class="tile fade-up" style="--d:1">${C.kpi(t("teacher.kpiAttendance"),String(k.attendance),{unit:'%',ic:'users'})}</div>
         ${/* [auditoría] el valor deriva de Enrollment.engagement (Alto/Medio/Bajo→%), no de entregas vs dueAt: se etiqueta como engagement, no como puntualidad medida */""}
         <div class="tile fade-up" style="--d:2">${C.kpi(t("teacher.kpiEngagement"),String(k.onTime),{unit:'%',ic:'chart'})}</div>
-        <div class="tile fade-up" style="--d:3;border-color:#eeb9b4;background:var(--danger-soft)">${C.kpi(t("teacher.kpiAtRisk"),String(k.atRisk),{ic:'flag'})}</div>
+        <div class="tile fade-up" style="--d:3;border-color:color-mix(in srgb,var(--danger) 32%,transparent);background:var(--danger-soft)">${C.kpi(t("teacher.kpiAtRisk"),String(k.atRisk),{ic:'flag'})}</div>
       </div>
 
       <div class="split rail-320">

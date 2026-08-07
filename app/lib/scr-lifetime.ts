@@ -15,7 +15,7 @@
      DB.membership = { tier, sinceLabel, prices:{ proMonthly:'US$9', proAnnual:'US$79' } }
 
    Patrón de la casa: render(state)->string + mount(root,state) opcional; IC.* iconos,
-   esc() en todo texto de usuario, navy #0C0C0C + sky #2CAA20, claro, fade-up, sin emojis.
+   esc() en todo texto de usuario, negro #171717 + naranja #F25623, claro, fade-up, sin emojis.
    Acciones del cliente vía los globales de Aula.tsx: go(), api(url,body,method), toast(). */
 import { DB } from "./data";
 import { C } from "./components";
@@ -374,7 +374,7 @@ function publicProfileCard(lt) {
   const toggle = `
     <button id="pp-switch" role="switch" aria-checked="${pp.enabled ? "true" : "false"}" aria-label="${t("lifetime.publicProfileAria")}"
       style="flex:none;width:46px;height:26px;padding:0;border-radius:999px;border:1px solid var(--border-strong);background:${pp.enabled ? "var(--otr-sky-lo)" : "var(--n-150)"};position:relative;cursor:pointer;transition:background .18s">
-      <span style="position:absolute;top:2.5px;left:${pp.enabled ? "23px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(12,12,12,.28);transition:left .18s"></span>
+      <span style="position:absolute;top:2.5px;left:${pp.enabled ? "23px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(23,23,23,.28);transition:left .18s"></span>
     </button>`;
   return `
   <div class="card card-pad">
@@ -497,8 +497,8 @@ function membershipHero(m) {
       <div style="max-width:560px">
         <h1 class="sr-only">${t("lifetime.memSrTitle")}</h1><p class="eyebrow" style="color:var(--otr-sky-hi)">${t("lifetime.memEyebrow")}</p>
         <h2 class="brand-font" style="margin-top:2px">${t("lifetime.memYourPlan")} OTR ${esc(label)}</h2>
-        <p style="color:rgba(234,242,251,.78);font-size:13.5px;margin-top:10px">${t("lifetime.memSubtitle")}</p>
-        ${m.sinceLabel ? `<p style="color:rgba(234,242,251,.6);font-size:12px;margin-top:6px">${t("lifetime.memOnThisPlan")} ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}
+        <p style="color:rgba(255,255,255,.78);font-size:13.5px;margin-top:10px">${t("lifetime.memSubtitle")}</p>
+        ${m.sinceLabel ? `<p style="color:rgba(255,255,255,.6);font-size:12px;margin-top:6px">${t("lifetime.memOnThisPlan")} ${esc(String(m.sinceLabel).charAt(0).toLowerCase() + String(m.sinceLabel).slice(1))}</p>` : ""}
       </div>
       <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22);align-self:flex-start"><span class="dot" style="background:var(--otr-sky-hi)"></span>${t("lifetime.memCurrentPlanBadge")}</span>
     </div>
@@ -530,8 +530,8 @@ function tierCards(m) {
     <div class="eyebrow" style="color:var(--otr-sky-hi);margin-bottom:2px">Pro</div>
     <b style="font-size:15px;color:#fff">${t("lifetime.memProTitle")}</b>
     <div class="row vcenter wrap" style="gap:8px;margin-top:10px">
-      <span class="brand-font tnum" style="font-size:30px;font-weight:800;color:#fff">${esc(m.prices.proMonthly)}</span><span style="font-size:12px;color:rgba(234,242,251,.7)">${t("lifetime.memPerMonth")}</span>
-      <span style="font-size:12px;color:rgba(234,242,251,.7)">· ${t("lifetime.memOr")} ${esc(m.prices.proAnnual)}${t("lifetime.memPerYear")}</span>
+      <span class="brand-font tnum" style="font-size:30px;font-weight:800;color:#fff">${esc(m.prices.proMonthly)}</span><span style="font-size:12px;color:rgba(255,255,255,.7)">${t("lifetime.memPerMonth")}</span>
+      <span style="font-size:12px;color:rgba(255,255,255,.7)">· ${t("lifetime.memOr")} ${esc(m.prices.proAnnual)}${t("lifetime.memPerYear")}</span>
     </div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
       ${featureLi(t("lifetime.memProFeat1"))}

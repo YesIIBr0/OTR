@@ -400,7 +400,7 @@ export default function Auth() {
           <span
             aria-hidden="true"
             style={{ display: "flex", flex: "none" }}
-            dangerouslySetInnerHTML={{ __html: otrCrest({ id: "auth", attrs: 'class="crest" style="width:34px;height:39px"' }) }}
+            dangerouslySetInnerHTML={{ __html: otrCrest({ id: "auth", attrs: 'class="crest" style="width:34px;height:39px"', ink: "#FFFFFF", paper: "#171717" }) }}
           />
           <span className="brand-font" style={{ color: "#fff", fontSize: 16 }}>OTR <span style={{ opacity: 0.5, fontWeight: 600 }}>Aula</span></span>
         </div>
@@ -432,8 +432,8 @@ export default function Auth() {
                   padding: "3px 10px",
                   borderRadius: 100,
                   transition: ".2s",
-                  background: lang === lg ? "var(--otr-navy, #0C0C0C)" : "transparent",
-                  color: lang === lg ? "#fff" : "var(--text-2, #555)",
+                  background: lang === lg ? "var(--otr-navy, #171717)" : "transparent",
+                  color: lang === lg ? "#fff" : "var(--text-2, #4D4D4D)",
                 }}
               >
                 {lg.toUpperCase()}
@@ -468,7 +468,7 @@ export default function Auth() {
 
           {notice && (
             <p style={{
-              color: "var(--otr-green-text, #176B11)", background: "var(--ok-soft, #E1F2DE)",
+              color: "var(--otr-green-text, #9E3211)", background: "var(--ok-soft, #EFEFEF)",
               border: "1px solid color-mix(in srgb, var(--otr-green) 30%, transparent)", borderRadius: 10,
               fontSize: 13, padding: "10px 12px", marginBottom: 14, lineHeight: 1.45,
             }}>{notice}</p>
@@ -496,7 +496,7 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setRole(role === "parent" ? "student" : "parent")}
-                      style={{ background: "none", border: 0, padding: 0, font: "inherit", color: "var(--link, #1E8C16)", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                      style={{ background: "none", border: 0, padding: 0, font: "inherit", color: "var(--link, #C8401A)", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
                     >
                       {role === "parent" ? T.roleStudent : T.roleParent}
                     </button>
@@ -614,7 +614,7 @@ export default function Auth() {
           {mode === "login" && (
             <p style={{ textAlign: "center", marginTop: 14, fontSize: 12.5 }}>
               <button type="button" onClick={() => switchMode("forgot")}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--otr-green-text, #176B11)", fontWeight: 600 }}>
+                style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "var(--otr-green-text, #9E3211)", fontWeight: 600 }}>
                 {T.forgotLink}
               </button>
             </p>

@@ -112,7 +112,7 @@ export const S = {
           <div>
             <p class="eyebrow" style="color:var(--otr-sky-hi)">${t("hub.homeEyebrow")}</p>
             <h2 class="brand-font">${t("hub.homeWelcome").replace("{name}", esc(name))}</h2>
-            <p style="color:rgba(234,242,251,.72);font-size:13.5px;margin-top:4px">${t("hub.homeSubtitle")}</p>
+            <p style="color:rgba(255,255,255,.72);font-size:13.5px;margin-top:4px">${t("hub.homeSubtitle")}</p>
           </div>
           <div class="row" style="gap:10px">
             <button class="btn btn-primary btn-sm" data-go="catalog">${t("hub.homeExploreBtn")}</button>

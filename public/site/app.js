@@ -11,7 +11,7 @@
       hero_eyebrow:'Academia #1 del circuito de debate dominicano',
       hero_h1_a:'Domina', hero_h1_b:'la sala.', hero_sig:'Own the Room.',
       hero_sub:'Convertimos estudiantes en líderes que hablan con autoridad, claridad y dominio de cada escenario.',
-      hero_cta1:'Reserva tu consulta gratis', hero_cta2:'Mira las transformaciones',
+      hero_cta1:'Inscríbete ahora', hero_cta2:'Mira las transformaciones',
       mp1_b:"Harvard JV '25", mp1_t:'Campeones', mp2_b:"Blue Key '24", mp2_t:'Octofinalistas · Top Speakers', mp3:'Resultados visibles en menos de 30 días',
       scroll:'Desliza', verified:'Academia verificada · #1 del circuito dominicano',
       stat_conf:'Tasa de mejora en confianza de nuestros estudiantes.',
@@ -74,7 +74,7 @@
       hero_eyebrow:'#1 academy of the Dominican debate circuit',
       hero_h1_a:'Own', hero_h1_b:'the room.', hero_sig:'Domina la sala.',
       hero_sub:'We turn students into leaders who speak with authority, clarity and command of every stage.',
-      hero_cta1:'Book your free consultation', hero_cta2:'See the transformations',
+      hero_cta1:'Enroll now', hero_cta2:'See the transformations',
       mp1_b:"Harvard JV '25", mp1_t:'Champions', mp2_b:"Blue Key '24", mp2_t:'Octofinalists · Top Speakers', mp3:'Visible results in under 30 days',
       scroll:'Scroll', verified:'Verified academy · #1 in the Dominican circuit',
       stat_conf:'Confidence improvement rate across our students.',
@@ -417,7 +417,7 @@
     sx.save();
     sx.translate(W / 2, H / 2 + 6);
     sx.scale(1.9, 1.0);
-    sx.font = '900 190px "Archivo Expanded", sans-serif';
+    sx.font = '800 190px "Inter", sans-serif';
     sx.textAlign = 'center'; sx.textBaseline = 'middle';
     sx.fillText('OTR', 0, 0);
     sx.restore();
@@ -448,7 +448,7 @@
       ctx.clearRect(0, 0, W, H);
       const mid = H / 2;
       const grad = ctx.createLinearGradient(0, 0, W, 0);
-      grad.addColorStop(0, '#2E8BD0'); grad.addColorStop(0.5, '#7FC8F2'); grad.addColorStop(1, '#2E8BD0');
+      grad.addColorStop(0, '#C8401A'); grad.addColorStop(0.5, '#F8987A'); grad.addColorStop(1, '#C8401A');
       ctx.strokeStyle = grad; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
       const slow = t * 0.016;
       for (let c = 0; c < cols; c++) {
@@ -526,7 +526,7 @@
       const p = Math.min(1, (now - t0) / DUR);
       const e = 1 - Math.pow(1 - p, 3);
       ctx.clearRect(0, 0, introCanvas.width, introCanvas.height);
-      ctx.fillStyle = '#0C2340';
+      ctx.fillStyle = '#171717';
       parts.forEach((pt) => {
         const x = pt.x + (pt.tx - pt.x) * e;
         const y = pt.y + (pt.ty - pt.y) * e;

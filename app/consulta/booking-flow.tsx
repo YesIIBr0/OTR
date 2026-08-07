@@ -1013,7 +1013,7 @@ function CheckTick() {
 /* ----------------------------------- Confetti ----------------------------------- */
 function Confetti() {
   const pieces = useMemo(() => {
-    const colors = ["#4FA9E8", "#2E8BD0", "#7FC8F2", "#0C2340"];
+    const colors = ["#171717", "#4D4D4D", "#F25623", "#8C8C8C"];
     return Array.from({ length: 28 }, (_, i) => ({
       left: Math.random() * 100,
       delay: Math.random() * 0.5,

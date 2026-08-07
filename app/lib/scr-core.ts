@@ -166,7 +166,7 @@ function activeItemsFlat() {
           <div style="max-width:560px">
             <p class="eyebrow" style="color:var(--otr-sky-hi)">${na.eyebrow}</p>
             <p style="color:#fff;font-size:17px;font-weight:700;margin-top:6px">${na.title}</p>
-            ${na.sub ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
+            ${na.sub ? `<p style="color:rgba(255,255,255,.72);font-size:13px;margin-top:3px">${na.sub}</p>` : ''}
           </div>
           <button class="btn btn-primary" style="align-self:center" onclick="${na.onclick}">${na.ic} ${na.cta}</button>
         </div>
@@ -223,7 +223,7 @@ function activeItemsFlat() {
         : t("core.recoWhyNextStep").replace("{level}", esc(DB.me?.level || t("core.yourLevelFallback")));
       const recoCards = recos.map(c=>`
         <div class="tile course-card click" role="button" tabindex="0" onclick="go('catalog')">
-          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C0C0C))">
+          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #171717))">
             <span class="cc-code">${esc(c.code)}</span>
           </div>
           <div class="cc-body">

@@ -20,7 +20,7 @@ const otrSeal = () => `
       <circle cx="60" cy="60" r="56" fill="var(--otr-navy)"/>
       <circle cx="60" cy="60" r="50" fill="none" stroke="var(--otr-gold)" stroke-width="1.6" stroke-dasharray="2 4"/>
       <circle cx="60" cy="60" r="42" fill="none" stroke="var(--otr-gold)" stroke-width="1.2"/>
-      ${otrCrest({ id: "seal", attrs: 'x="43" y="40.5" width="34" height="39"' })}
+      ${otrCrest({ id: "seal", attrs: 'x="43" y="40.5" width="34" height="39"', ink: "#FFFFFF", paper: "#171717" })}
     </svg>
   </span>`;
 
@@ -102,7 +102,7 @@ S.certificate = {
 
           <div class="row between vcenter" style="max-width:520px;margin:0 auto;gap:16px">
             <div style="text-align:center;flex:1">
-              <div class="brand-font" style="font-size:18px;color:var(--otr-navy);border-bottom:1.5px solid var(--otr-navy);padding-bottom:6px">OTR Debate Academy</div>
+              <div class="brand-font" style="font-size:18px;color:var(--otr-navy);border-bottom:1.5px solid var(--otr-navy);padding-bottom:6px">OTR Debating Academy</div>
               <div class="faint" style="font-size:11px;margin-top:7px;letter-spacing:.08em;text-transform:uppercase">${t("cert.signature")}</div>
             </div>
             <div style="text-align:center;flex:1">

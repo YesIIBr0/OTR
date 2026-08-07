@@ -270,7 +270,7 @@ function proUpsellStrip(line) {
   <div class="fade-up" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:var(--r-md,14px);background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent)">
     <span style="display:inline-flex;width:18px;height:18px;color:var(--otr-gold-text);flex:none">${IC.star}</span>
     <span style="flex:1;min-width:200px;font-size:13px;color:var(--otr-gold-text)">${line}</span>
-    <button class="btn btn-sm" style="flex:none;background:var(--otr-gold);color:#0C0C0C;font-weight:700" data-go="membership">${t("debate.seeOtrPro")}</button>
+    <button class="btn btn-sm" style="flex:none;background:var(--otr-black);color:#fff;font-weight:700" data-go="membership">${t("debate.seeOtrPro")}</button>
   </div>`;
 }
 
@@ -307,14 +307,14 @@ function heroPanel(d) {
           <span class="brand-font" style="font-size:64px;font-weight:800;line-height:1;color:#fff">${d.rating}</span>
           <div class="stack" style="gap:7px">
             <span class="badge" style="background:color-mix(in srgb,var(--otr-sky) 26%, transparent);color:#fff;border:1px solid rgba(255,255,255,.22)"><span class="dot" style="background:var(--otr-sky-hi)"></span>${esc(tierLabel(d.tier))}</span>
-            <span style="font-size:12.5px;color:rgba(234,242,251,.72)">±${d.rd} RD ${d.provisional ? "· " + t("debate.rdProvisional") : "· " + t("debate.rdStable")}</span>
-            ${d.speakerAvg != null ? `<span style="font-size:12.5px;color:rgba(234,242,251,.72)" title="${t("debate.speakerTitle")}">${t("debate.speakerLabel")} <b style="color:var(--otr-sky-hi)">${d.speakerAvg}</b>/100 · ${d.speakerRounds} ${d.speakerRounds === 1 ? t("debate.roundSingular") : t("debate.roundPlural")}</span>` : ""}
+            <span style="font-size:12.5px;color:rgba(255,255,255,.72)">±${d.rd} RD ${d.provisional ? "· " + t("debate.rdProvisional") : "· " + t("debate.rdStable")}</span>
+            ${d.speakerAvg != null ? `<span style="font-size:12.5px;color:rgba(255,255,255,.72)" title="${t("debate.speakerTitle")}">${t("debate.speakerLabel")} <b style="color:var(--otr-sky-hi)">${d.speakerAvg}</b>/100 · ${d.speakerRounds} ${d.speakerRounds === 1 ? t("debate.roundSingular") : t("debate.roundPlural")}</span>` : ""}
           </div>
         </div>
         ${d.provisional
-          ? `<div class="alert" style="margin-top:14px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">${t("debate.provisionalTitle")}</div><span style="color:rgba(234,242,251,.78)">${t("debate.provisionalBody")}</span></div></div>`
+          ? `<div class="alert" style="margin-top:14px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">${t("debate.provisionalTitle")}</div><span style="color:rgba(255,255,255,.78)">${t("debate.provisionalBody")}</span></div></div>`
           : nt
-            ? `<p style="color:rgba(234,242,251,.72);font-size:13px;margin-top:12px">${t("debate.nextTierPrefix")} <b style="color:var(--otr-sky-hi)">${esc(tierLabel(nt))}</b> ${t("debate.nextTierSuffix")}</p>`
+            ? `<p style="color:rgba(255,255,255,.72);font-size:13px;margin-top:12px">${t("debate.nextTierPrefix")} <b style="color:var(--otr-sky-hi)">${esc(tierLabel(nt))}</b> ${t("debate.nextTierSuffix")}</p>`
             : `<p style="color:var(--otr-sky-hi);font-size:13px;margin-top:12px;font-weight:650">${t("debate.topPrefix")} ${esc(tierLabel(d.tier))}. ${t("debate.topSuffix")}</p>`}
       </div>
       <div class="stack" style="gap:12px;align-self:stretch;justify-content:center;min-width:220px">
@@ -326,7 +326,7 @@ function heroPanel(d) {
                 return `<span title="${esc(f.opponent || "")} · ${deltaLabel(f.delta)}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;font-size:12px;font-weight:800;color:#fff;background:${rs.cssVar}">${rs.label[0]}</span>`;
               }).join("")}</div>
                <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${forms.map((f) => `<span class="tnum" style="width:30px;text-align:center;font-size:11px;color:${deltaColor(f.delta)};font-weight:700">${deltaLabel(f.delta)}</span>`).join("")}</div>`
-            : `<span style="font-size:12.5px;color:rgba(234,242,251,.6)">${t("debate.noRoundsForm")}</span>`}
+            : `<span style="font-size:12.5px;color:rgba(255,255,255,.6)">${t("debate.noRoundsForm")}</span>`}
         </div>
       </div>
     </div>

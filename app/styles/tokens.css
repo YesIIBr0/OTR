@@ -1,24 +1,29 @@
 /* ============================================================
-   OTR LMS · DESIGN TOKENS — OTRBRANDBOOK 2026
-   Paleta ESTRICTA del brand book: Negro #0C0C0C · Crema #F7F7ED ·
-   Verde #2CAA20 · Amarillo #F2B814. Tipografía: solo Inter, tracking
-   compacto. Estética: prestigio, alto rendimiento, NO escolar.
-   Los nombres legacy (--otr-navy/--otr-sky) se conservan como alias a
-   la marca para re-skinear sin tocar 125 referencias en pantallas.
+   OTR LMS · DESIGN TOKENS — OTR BRAND BOOK V1.0 (2026)
+   Paleta ESTRICTA: Negro #171717 · Blanco #FFFFFF · Naranja #F25623
+   como ÚNICO acento (con moderación: una sola pieza en naranja por
+   vista) sobre una rampa de grises FRÍOS. Sin verde, sin oro, sin azul.
+   Botón primario NEGRO; el naranja queda para el CTA estrella, énfasis,
+   foco y datos. Tipografía: solo Inter, tracking compacto (-0.03em).
+   Radios: controles 8px, tarjetas 12px, pill 999. Estética: prestigio,
+   alto rendimiento, NO escolar.
+   Los nombres legacy (--otr-navy/--otr-sky/--otr-green/--otr-gold) se
+   conservan como alias a la marca para re-skinear sin tocar las ~374
+   referencias en pantallas: cambian los VALORES, nunca los nombres.
    ============================================================ */
 :root{
-  /* ---- Brand palette (OTRBRANDBOOK — estricta) ---- */
-  --otr-black:#0C0C0C;       /* autoridad · texto · registro "arena" */
-  --otr-cream:#F7F7ED;       /* fondo crema premium (canvas) */
-  --otr-green:#2CAA20;       /* acción · acento interactivo */
-  --otr-green-hi:#54C247;    /* gradiente claro / hover sobre oscuro */
-  --otr-green-lo:#1E8C16;    /* hover acción / gradiente oscuro */
-  --otr-green-pale:#E1F2DE;  /* tintes · cards · hover suave */
-  --otr-green-text:#176B11;  /* texto verde SOBRE tinte pálido (--action-soft) → WCAG AA ≥4.5:1 */
-  --otr-gold:#F2B814;        /* LOGRO: wins · badges · rank-ups · certs (sobrio) */
-  --otr-gold-lo:#C8920C;     /* dorado para fondos/iconos (NO texto sobre pálido: 2.4:1) */
-  --otr-gold-pale:#FBEFCB;   /* tinte de logro */
-  --otr-gold-text:#5A4206;   /* texto dorado SOBRE tinte de logro (--otr-gold-pale) → WCAG AA ~6.8:1 */
+  /* ---- Brand palette (Brand Book V1.0 — estricta) ---- */
+  --otr-black:#171717;       /* autoridad · texto · registro "arena" · botón primario */
+  --otr-cream:#FFFFFF;       /* canvas de página (blanco puro) */
+  --otr-green:#F25623;       /* NARANJA de marca: acción · acento interactivo */
+  --otr-green-hi:#F8987A;    /* naranja suave sobre fondo oscuro / hover claro */
+  --otr-green-lo:#C8401A;    /* naranja oscuro: hover acción / link */
+  --otr-green-pale:#FDE7DE;  /* tinte naranja · cards · hover suave */
+  --otr-green-text:#9E3211;  /* texto naranja SOBRE tinte pálido (--action-soft) → WCAG AA ≥4.5:1 */
+  --otr-gold:#F25623;        /* LOGRO: mismo acento naranja (el oro desaparece del sistema) */
+  --otr-gold-lo:#C8401A;     /* naranja oscuro para fondos/iconos de logro */
+  --otr-gold-pale:#FDE7DE;   /* tinte de logro = tinte naranja */
+  --otr-gold-text:#9E3211;   /* texto de logro SOBRE tinte (--otr-gold-pale) → WCAG AA */
   --otr-white:#FFFFFF;
 
   /* ---- Alias legacy → marca (re-skinea var(--otr-navy/sky) existentes) ---- */
@@ -28,36 +33,36 @@
   --otr-sky-hi:var(--otr-green-hi);
   --otr-sky-lo:var(--otr-green-lo);
   --otr-pale:var(--otr-green-pale);
-  --otr-offwhite:var(--otr-cream);
+  --otr-offwhite:#F7F7F7; /* ink-50: superficies suaves; NO blanco puro (se fundiría con --bg) */
 
-  /* ---- Neutrals (rampa CÁLIDA neutra crema→negro, sin tinte azul) ---- */
+  /* ---- Neutrals (rampa FRÍA blanco→negro del brand book) ---- */
   --n-0:#FFFFFF;
-  --n-25:#FAFAF7;
-  --n-50:#F7F7ED;
-  --n-100:#EFEFE5;
-  --n-150:#E4E4D9;
-  --n-200:#D3D3C7;
-  --n-300:#B4B4A7;
-  --n-400:#89897D;
-  --n-500:#5F5F56;
-  --n-600:#44443D;
-  --n-700:#2E2E29;
-  --n-800:#1A1A17;
-  --n-900:#0C0C0C;
+  --n-25:#FCFCFC;
+  --n-50:#F7F7F7;
+  --n-100:#EFEFEF;
+  --n-150:#E7E7E7;
+  --n-200:#DEDEDE;
+  --n-300:#BDBDBD;
+  --n-400:#8C8C8C;
+  --n-500:#6B6B6B;
+  --n-600:#4D4D4D;
+  --n-700:#333333;
+  --n-800:#262626;
+  --n-900:#171717;
 
   /* ---- Semantic ---- */
-  --bg:var(--otr-cream);            /* canvas crema del brand book */
-  --bg-sunken:#F1F1E4;
+  --bg:#FFFFFF;                     /* canvas blanco del brand book */
+  --bg-sunken:#F7F7F7;
   --bg-raised:var(--otr-white);
-  --surface:var(--otr-white);       /* cards blancas resaltan sobre crema */
-  --surface-2:#FAFAF7;
+  --surface:var(--otr-white);       /* cards blancas, separadas por borde gris frío */
+  --surface-2:#FCFCFC;
   --surface-tint:var(--otr-green-pale);
   --border:var(--n-150);
   --border-strong:var(--n-200);
   --text:var(--otr-black);
   --text-2:var(--n-600);
   --text-3:var(--n-500);
-  --text-on-navy:var(--otr-cream);  /* texto sobre registro negro */
+  --text-on-navy:#FFFFFF;           /* texto sobre registro negro */
 
   --action:var(--otr-green);
   --action-hover:var(--otr-green-lo);
@@ -65,18 +70,18 @@
   --focus:var(--otr-green);
   --link:var(--otr-green-lo);
 
-  /* ---- Status ---- */
-  --ok:#1E8C16; --ok-soft:#E1F2DE;             /* éxito = verde de marca */
-  --warn:#C8920C; --warn-soft:var(--otr-gold-pale); /* aviso = familia dorada */
-  --danger:#C2453C; --danger-soft:#F7E0DE;
-  --info:var(--otr-green-lo); --info-soft:var(--otr-green-pale);
+  /* ---- Status (dentro de la paleta estricta: negro/gris/naranja) ---- */
+  --ok:#171717; --ok-soft:#EFEFEF;              /* éxito = negro sobre gris claro */
+  --warn:#F25623; --warn-soft:#FDE7DE;          /* aviso = acento naranja */
+  --danger:#C8401A; --danger-soft:#FBDDD2;      /* peligro = naranja oscuro */
+  --info:#4D4D4D; --info-soft:#EFEFEF;          /* info = gris frío */
 
-  /* ---- Niveles (competencias): gris → verde → negro ---- */
-  --lvl-novato:#89897D;
-  --lvl-jv:#54C247;
-  --lvl-varsity:#2CAA20;
-  --lvl-strategist:#C8920C;
-  --lvl-elite:#0C0C0C;
+  /* ---- Niveles (competencias): gris claro → negro → naranja (elite) ---- */
+  --lvl-novato:#BDBDBD;
+  --lvl-jv:#8C8C8C;
+  --lvl-varsity:#4D4D4D;
+  --lvl-strategist:#171717;
+  --lvl-elite:#F25623;
 
   /* ---- Typography (solo Inter, tracking compacto del brand book) ----
      --font-inter la inyecta next/font (Inter self-hosteada) desde layout.tsx;
@@ -84,8 +89,8 @@
   --font-ui:var(--font-inter),'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-brand:var(--font-inter),'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   --font-mono:ui-monospace,SFMono-Regular,Menlo,monospace;
-  --track-tight:-0.06em;   /* tracking -60 del brand book para títulos */
-  --track-tighter:-0.065em;/* display grande */
+  --track-tight:-0.03em;   /* tracking -30 del Brand Book V1.0 para titulares */
+  --track-tighter:-0.035em;/* display grande */
 
   /* compact scale */
   --fs-11:11px; --fs-12:12px; --fs-13:13px; --fs-14:14px;
@@ -97,15 +102,15 @@
   --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:20px;
   --s-6:24px; --s-8:32px; --s-10:40px; --s-12:48px; --s-16:64px;
 
-  /* ---- Radii (suaves, estilo SaaS premium — Finta/TrustKeith) ---- */
-  --r-xs:6px; --r-sm:9px; --r-md:12px; --r-lg:16px; --r-xl:22px; --r-pill:999px;
+  /* ---- Radii (escala corta del brand book: controles 8, contenedores 12, pill) ---- */
+  --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:12px; --r-xl:12px; --r-pill:999px;
 
   /* ---- Elevation (planas, difusas y sutiles — sin "drop shadow" duro) ---- */
-  --sh-1:0 1px 2px rgba(12,12,12,.04);
-  --sh-2:0 6px 22px -10px rgba(12,12,12,.12), 0 1px 2px rgba(12,12,12,.04);
-  --sh-3:0 10px 28px -10px rgba(12,12,12,.22);
-  --sh-pop:0 14px 40px -12px rgba(12,12,12,.28);
-  --ring:0 0 0 3px rgba(23,107,17,.55);  /* [A11Y-09] anillo de foco más oscuro/opaco (#176B11) → visible sobre crema */
+  --sh-1:0 1px 2px rgba(23,23,23,.04);
+  --sh-2:0 6px 22px -10px rgba(23,23,23,.12), 0 1px 2px rgba(23,23,23,.04);
+  --sh-3:0 10px 28px -10px rgba(23,23,23,.22);
+  --sh-pop:0 14px 40px -12px rgba(23,23,23,.28);
+  --ring:0 0 0 3px rgba(200,64,26,.55);  /* [A11Y-09] anillo de foco naranja oscuro (#C8401A) → visible sobre blanco */
 
   /* ---- Layout ---- */
   --sidebar-w:248px;

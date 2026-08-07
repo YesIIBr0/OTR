@@ -180,7 +180,7 @@ function priorQuizAttempt() {
               <span class="badge" style="background:rgba(255,255,255,.12);color:#fff">${IC.mic} ${t("learn.voiceRecorder")}</span>
               <div class="rec-wave" id="rec-wave">${bars}</div>
               <div class="rec-timer" id="rec-timer">00:00</div>
-              <div class="muted" id="rec-status" style="color:rgba(234,242,251,.6);font-size:12.5px;margin-top:6px">${t("learn.recReady")}</div>
+              <div class="muted" id="rec-status" style="color:rgba(255,255,255,.6);font-size:12.5px;margin-top:6px">${t("learn.recReady")}</div>
               <div class="rec-controls">
                 <button class="rec-mini" id="rec-reset" title="${t("learn.recDiscard")}">${IC.refresh}</button>
                 <button class="rec-btn" id="rec-toggle" title="${t("learn.recRecord")}">${IC.mic}</button>

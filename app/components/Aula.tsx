@@ -17,8 +17,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     <div style="min-height:100vh;display:grid;place-items:center;background:var(--otr-navy);color:#fff;font-family:var(--font-ui)">
       <div style="text-align:center">
         ${/* Escudo OTR del brand book (pantalla de carga, fondo negro) — markup canónico en lib/icons (otrCrest) */""}
-        ${otrCrest({ id: "load", attrs: 'style="width:48px;height:54px;margin:0 auto;display:block"' })}
-        <p style="margin-top:14px;color:rgba(234,242,251,.6)">${tr("aula.loading")}</p>
+        ${otrCrest({ id: "load", attrs: 'style="width:48px;height:54px;margin:0 auto;display:block"', ink: "#FFFFFF", paper: "#171717" })}
+        <p style="margin-top:14px;color:rgba(255,255,255,.6)">${tr("aula.loading")}</p>
       </div>
     </div>`;
 
@@ -445,8 +445,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         { name: "modality", label: tr("aula.modality"), type: "select", value: "online", options: [
           { value: "online", label: tr("aula.modalityOnline") }, { value: "presencial", label: tr("aula.modalityPresential") }, { value: "híbrido", label: tr("aula.modalityHybrid") }] },
         { name: "capacity", label: tr("aula.capacityOpt"), ph: "20" },
-        { name: "color", label: tr("aula.courseColor"), type: "select", value: "#2E8BD0", options: [
-          { value: "#2E8BD0", label: tr("aula.colorSky") }, { value: "#0C2340", label: tr("aula.colorNavy") }, { value: "#4FA9E8", label: tr("aula.colorLightBlue") }, { value: "#2CAA20", label: tr("aula.colorGreen") }, { value: "#64748B", label: tr("aula.colorGray") }] },
+        { name: "color", label: tr("aula.courseColor"), type: "select", value: "#171717", options: [
+          { value: "#171717", label: tr("aula.colorNavy") }, { value: "#4D4D4D", label: tr("aula.colorGray") }, { value: "#F25623", label: tr("aula.colorSky") }, { value: "#8C8C8C", label: tr("aula.colorLightBlue") }, { value: "#C8401A", label: tr("aula.colorGreen") }] },
         { name: "next", label: tr("aula.nextTopicOpt"), ph: tr("aula.nextTopicPh") },
         { name: "summary", label: tr("aula.programSummary"), type: "textarea", value: tpl ? tpl.summary : "", ph: tr("aula.programSummaryPh") },
         { name: "published", label: tr("aula.status"), type: "select", value: "false", options: [

@@ -187,14 +187,14 @@ export const S = {
       const courses = DB.catalog || [];
       const card = (c, i = 0) => `
         <div class="tile click course-card fade-up" style="--d:${i}">
-          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #0C0C0C))">
+          <div class="cc-top" style="background:linear-gradient(120deg,${c.color},color-mix(in srgb,${c.color} 55%, #171717))">
             <span class="cc-code">${esc(c.code)}</span>
           </div>
           <div class="cc-body">
             <div class="cc-name">${c.name}</div>
             <div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div>
             ${c.rating != null
-              ? `<div class="row vcenter" style="gap:5px;margin-top:6px;font-size:12.5px"><span style="color:var(--otr-gold,#F2B814)">★</span><b>${Number(c.rating).toFixed(1)}</b>${c.reviewCount ? `<span class="faint">· ${c.reviewCount}</span>` : ""}</div>`
+              ? `<div class="row vcenter" style="gap:5px;margin-top:6px;font-size:12.5px"><span style="color:var(--otr-gold,#F25623)">★</span><b>${Number(c.rating).toFixed(1)}</b>${c.reviewCount ? `<span class="faint">· ${c.reviewCount}</span>` : ""}</div>`
               : ""}
             ${c.summary
               ? `<p class="faint" style="font-size:12px;line-height:1.45;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${c.summary}</p>`
@@ -340,7 +340,7 @@ export const S = {
       <div class="page-head"><div><p class="eyebrow">${t("extra.searchEyebrow")}</p><h1 class="page-title">${t("extra.searchResultsFor")} "${esc(window.__q || "")}"</h1>
       <div class="page-sub">${total} ${total === 1 ? t("extra.resultSingular") : t("extra.resultPlural")}</div></div></div>
       ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("extra.noResults")}</h4><p>${t("extra.searchEmptyPrefix")}"${esc(window.__q || "")}${t("extra.searchEmptySuffix")}</p></div></div>` : ""}
-      ${section(t("extra.coursesSection"), courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#0C0C0C)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div></div></div>`).join("")}</div>` : "")}
+      ${section(t("extra.coursesSection"), courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#171717)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div></div></div>`).join("")}</div>` : "")}
       ${section(t("extra.peopleSection"), people.length, people.length ? `<div class="card">${people.map((s) => `<div class="lrow" style="gap:11px">${C.avatar(s.i, { size: "sm" })}<div style="flex:1;min-width:0"><b style="font-weight:600">${esc(s.n)}</b></div>${C.levelBadge(s.lvl)}</div>`).join("")}</div>` : "")}`;
     },
   },

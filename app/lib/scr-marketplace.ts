@@ -331,7 +331,7 @@ function heroBlock(c) {
     <div>
       <p class="eyebrow" style="color:var(--otr-sky-hi)">${t("mkt.verifiedCoachEyebrow")}</p>
       <div class="brand-font" style="font-size:24px;font-weight:800;color:#fff;margin-top:2px">${c.name}</div>
-      <p style="color:rgba(234,242,251,.72);font-size:12.5px;margin-top:4px">${t("mkt.videoComingSoon")}</p>
+      <p style="color:rgba(255,255,255,.72);font-size:12.5px;margin-top:4px">${t("mkt.videoComingSoon")}</p>
     </div>
   </div>`;
 }
