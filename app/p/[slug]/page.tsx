@@ -31,10 +31,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     where: { publicSlug: slug },
     select: { name: true, publicProfile: true },
   });
-  if (!user || !user.publicProfile) return { title: "Perfil · OTR Academy" };
+  if (!user || !user.publicProfile) return { title: "Perfil · OTR Debating Academy" };
   return {
-    title: `${user.name} · OTR Academy`,
-    description: `Perfil verificado de ${user.name} en OTR Academy: habilidades, credenciales y trayectoria de debate.`,
+    title: `${user.name} · OTR Debating Academy`,
+    description: `Perfil verificado de ${user.name} en OTR Debating Academy: habilidades, credenciales y trayectoria de debate.`,
   };
 }
 
@@ -222,7 +222,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           )}
         </section>
 
-        <footer className="pp-footer">Perfil verificado por OTR Academy · otr-academy.com</footer>
+        <footer className="pp-footer">Perfil verificado por OTR Debating Academy · otr-academy.com</footer>
       </main>
     </div>
   );
