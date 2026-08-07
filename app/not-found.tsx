@@ -15,7 +15,8 @@ export default function NotFound() {
         <p style={{ color: "rgba(255,255,255,.65)", margin: "0 0 22px", fontSize: 15 }}>
           La página que buscas no existe o fue movida.
         </p>
-        <a href="/" style={{ display: "inline-block", background: "var(--otr-sky, #F25623)", color: "#171717", fontWeight: 700, textDecoration: "none", padding: "11px 22px", borderRadius: 8 }}>
+        {/* Kit mockup: r4, 800, texto NEGRO sobre naranja (--text-on-accent). */}
+        <a href="/" style={{ display: "inline-flex", alignItems: "center", background: "var(--otr-sky, #F25623)", color: "#171717", fontWeight: 800, fontSize: 15, letterSpacing: "-0.01em", textDecoration: "none", height: 44, padding: "0 24px", borderRadius: 4 }}>
           Volver al inicio
         </a>
       </div>

@@ -621,3 +621,39 @@
 .lst-price-xl{font-size:30px;font-weight:800;letter-spacing:var(--track-tighter)}
 .lst-fact{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px dashed var(--border);font-size:13px;color:var(--text-2)}
 .lst-fact b{color:var(--text);font-weight:600;text-align:right}
+
+/* === MOCKUP GRUPO ADMIN/AUTH ===============================================
+   Task 8 del plan 2026-08-07-aula-redesign-mockup.md: consola de admin, usuarios,
+   métricas, bandeja de WhatsApp, certificado y login. El marcado ya usa el kit
+   (.sec-title, .chip--*, .btn-accent/primary/outline, .page-head--rule); aquí solo
+   viven los ajustes que el kit no puede cubrir desde el marcado.
+   ========================================================================== */
+
+/* ---- .sec-title dentro de una cabecera de card ----
+   .card-head ya aporta su propio padding y borde inferior; el margen de 13px del
+   título de sección duplicaría el aire. (Métricas: las tres mini-tablas.) */
+.card-head .sec-title{margin-bottom:0}
+
+/* ---- Login (app/components/Auth.tsx) ----
+   El panel de formulario pasa al canvas greige del mockup (#F1F1EF) para que la
+   tarjeta blanca se recorte igual que las cards del Aula; antes era #F7F7F7 frío. */
+.login-form{background:var(--bg)}
+.lf-card{border-radius:var(--r-lg);box-shadow:var(--sh-1);border-color:var(--border)}
+.lf-card h2{font-size:26px;letter-spacing:-.035em;line-height:1.05}
+.lf-card .muted{font-size:14px}
+/* El toggle Estudiante|Coach era una pastilla de 999px: el kit no tiene pills.
+   Se re-escribe SOLO dentro de la tarjeta de login (el .aud-toggle de app.css
+   sigue disponible para cualquier otra pantalla que aún no haya pasado). */
+.lf-card .aud-toggle{border-radius:var(--r-sm);background:var(--bg);border-color:var(--border)}
+.lf-card .aud-toggle button{border-radius:var(--r-xs);font-weight:700;font-size:13.5px}
+.lf-card .aud-toggle button.on{background:var(--otr-black);color:#fff}
+/* Los botones de la tarjeta son los del kit (h44, r4): el ancho completo lo pone
+   .btn-block, pero .btn nace inline-flex y necesita el alto explícito al apilarse. */
+.lf-card .btn.btn-block{width:100%;justify-content:center}
+
+/* ---- Admin ----
+   Sin reglas propias: la consola, usuarios, métricas y WhatsApp se resuelven enteras
+   con el kit desde el marcado (.sec-title--sm, .chip--*, .btn-*, .page-head--rule) y
+   las tablas ya heredan el borde cálido #E4E3DF de --border (Task 1). Lo único que
+   el marcado no podía dar es la regla de .card-head de arriba.
+   === FIN MOCKUP GRUPO ADMIN/AUTH ========================================== */

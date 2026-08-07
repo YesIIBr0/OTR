@@ -423,14 +423,15 @@ export default function Auth() {
                 type="button"
                 onClick={() => pickLang(lg)}
                 aria-pressed={lang === lg}
+                /* [MOCKUP 2026-08] Radio del sistema (--r-sm, 4px): el kit no tiene pills. */
                 style={{
                   border: "1px solid var(--border, rgba(0,0,0,0.12))",
                   cursor: "pointer",
                   fontFamily: "inherit",
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: 11.5,
-                  padding: "3px 10px",
-                  borderRadius: 100,
+                  padding: "4px 10px",
+                  borderRadius: "var(--r-sm, 4px)",
                   transition: ".2s",
                   background: lang === lg ? "var(--otr-navy, #171717)" : "transparent",
                   color: lang === lg ? "#fff" : "var(--text-2, #4D4D4D)",
@@ -469,7 +470,7 @@ export default function Auth() {
           {notice && (
             <p style={{
               color: "var(--otr-green-text, #9E3211)", background: "var(--ok-soft, #EFEFEF)",
-              border: "1px solid color-mix(in srgb, var(--otr-green) 30%, transparent)", borderRadius: 10,
+              border: "1px solid color-mix(in srgb, var(--otr-green) 30%, transparent)", borderRadius: "var(--r-sm, 4px)",
               fontSize: 13, padding: "10px 12px", marginBottom: 14, lineHeight: 1.45,
             }}>{notice}</p>
           )}
@@ -487,7 +488,7 @@ export default function Auth() {
                     <div>
                       <div className="at">{T.coachGateTitle}</div>
                       <p style={{ margin: "4px 0 8px", fontSize: 13, lineHeight: 1.5 }}>{T.coachGateBody}</p>
-                      <a className="btn btn-soft btn-sm" href="mailto:hola@otracademy.do?subject=Quiero%20dar%20clases%20en%20OTR">{T.coachGateCta}</a>
+                      <a className="btn btn-outline btn--sm" href="mailto:hola@otracademy.do?subject=Quiero%20dar%20clases%20en%20OTR">{T.coachGateCta}</a>
                     </div>
                   </div>
                 )}
@@ -605,7 +606,8 @@ export default function Auth() {
 
             {error && <p id="auth-error" role="alert" style={{ color: "var(--danger)", fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
-            <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading || (mode === "register" && role === "teacher" && !COACH_SIGNUP_ENABLED)}>
+            {/* [MOCKUP 2026-08] Altura de control del kit (44px), no el 50 del CTA de hero. */}
+            <button className="btn btn-primary btn-block" type="submit" disabled={loading || (mode === "register" && role === "teacher" && !COACH_SIGNUP_ENABLED)}>
               {loading ? "…" : submitLabel}
             </button>
           </form>
@@ -624,7 +626,7 @@ export default function Auth() {
           {(mode === "login" || mode === "register") && (
             <>
               <div className="lf-or"><span>{T.orSep}</span></div>
-              <button className="btn btn-ghost btn-block" type="button" onClick={() => switchMode(mode === "login" ? "register" : "login")}>
+              <button className="btn btn-outline btn-block" type="button" onClick={() => switchMode(mode === "login" ? "register" : "login")}>
                 {mode === "login" ? T.toRegister : T.toLogin}
               </button>
             </>
@@ -632,7 +634,7 @@ export default function Auth() {
 
           {/* Volver a login desde forgot / reset */}
           {(mode === "forgot" || mode === "reset") && (
-            <button className="btn btn-ghost btn-block" type="button" style={{ marginTop: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }} onClick={() => switchMode("login")}>
+            <button className="btn btn-outline btn-block" type="button" style={{ marginTop: 16, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }} onClick={() => switchMode("login")}>
               <ChevL />
               {T.backToLogin}
             </button>
