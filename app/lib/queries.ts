@@ -310,7 +310,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     levels, meEnrollments, badges, notifications, events,
     threads, mainThread, convos, allCourses, allModules, taughtCourses,
     myStudentSkills, myCertificates, coachProfiles,
-    seasonPrizes, highlightRows,
+    seasonPrizes, highlightRows, adminCourseRows,
   ] = await Promise.all([
     // [GOAL G3] Global e idéntico para todos → micro-caché (ver lib/cache.ts).
     cached("levels", GLOBAL_TTL_MS, () => db.level.findMany({ orderBy: { position: "asc" } })),
@@ -392,6 +392,21 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // decorativo ⇒ sin él la franja simplemente no se pinta (la vista ya lo contempla).
     optionalRows("highlight", () =>
       cached("highlights", GLOBAL_TTL_MS, () => db.highlight.findMany({ orderBy: { position: "asc" }, take: 12 }))),
+    // [GOAL-E4 #9] Catálogo COMPLETO (con dueño y conteos) para la pantalla "Cursos" del ADMIN.
+    // Ver el bloque `base.adminCourses` al final del archivo para el porqué del campo propio.
+    // [revisión · minor 6] Va DENTRO de este Promise.all, no en un await suelto después: así no
+    // añade un round-trip en serie. Para cualquier rol que no sea ADMIN resuelve [] sin consultar.
+    me?.role === "ADMIN"
+      ? db.course.findMany({
+          orderBy: { position: "asc" },
+          select: {
+            id: true, code: true, name: true, nameEn: true, color: true, published: true,
+            format: true, modality: true, coachName: true,
+            teacher: { select: { id: true, name: true } },
+            modules: { select: { _count: { select: { lessons: true } } } },
+          },
+        })
+      : Promise.resolve([] as any[]),
   ]);
 
   // [fix nivel] El rango (Novato 0-999 · JV 1000-2499 · Varsity 2500-4999 · Elite 5000+) se
@@ -2050,19 +2065,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // consumen también el constructor de cursos y el perfil de coach, y meterle cursos ajenos
   // abriría mutaciones sobre contenido de otro dueño que aquí no se piden.
   // Alcance: LISTAR con su dueño (incluidos los borradores, que es lo que un admin necesita
-  // ver). La reasignación de dueño NO se implementa — no existe endpoint para ella.
-  // Coste: una query extra que SOLO se ejecuta para el rol ADMIN.
+  // ver) y REASIGNARLO — el endpoint existe: PATCH /api/courses/[id] acepta `teacherId` solo
+  // para ADMIN, valida el destino contra OWNER_ROLES, mueve el snapshot `coachName` y deja
+  // rastro `course.reassign` en la auditoría (app/api/courses/[id]/route.ts:69-86, F6.3). Por
+  // eso viaja también `ownerId`: es el valor que el selector de la tarjeta preselecciona.
+  // La query vive en el Promise.all de arriba y solo consulta para ADMIN.
   if (me?.role === "ADMIN") {
-    const adminCourseRows = await db.course.findMany({
-      orderBy: { position: "asc" },
-      select: {
-        id: true, code: true, name: true, nameEn: true, color: true, published: true,
-        format: true, modality: true, coachName: true,
-        teacher: { select: { name: true } },
-        modules: { select: { _count: { select: { lessons: true } } } },
-      },
-    });
-    base.adminCourses = adminCourseRows.map((c: any) => ({
+    base.adminCourses = (adminCourseRows as any[]).map((c: any) => ({
       id: c.id,
       code: c.code,
       name: esc(pickLang(c.name, c.nameEn)),
@@ -2071,6 +2080,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       format: esc(c.format || ""),
       modality: esc(c.modality || ""),
       // Dueño real (relación) con caída al denormalizado `coachName` de la fila.
+      ownerId: c.teacher?.id || "",
       ownerName: esc(c.teacher?.name || c.coachName || ""),
       moduleCount: c.modules.length,
       lessonCount: c.modules.reduce((n: number, m: any) => n + (m._count?.lessons || 0), 0),

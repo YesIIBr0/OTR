@@ -183,15 +183,82 @@ function mountBuilder(root) {
   });
 }
 
-/* [GOAL-E4 #9] "Cursos" para el ADMIN: catálogo COMPLETO de la plataforma con su coach dueño.
-   Vista de solo lectura a propósito — ver el comentario de S.manage.render. */
+/* [GOAL-E4 #9] "Cursos" para el ADMIN: catálogo COMPLETO de la plataforma con su coach dueño
+   y la reasignación de ese dueño — ver el comentario de S.manage.render. */
+
+/* [revisión · Important-2] Coaches elegibles como dueño. Se bajan UNA vez y on-demand (al abrir
+   el diálogo de reasignar), nunca en el payload inicial: es una lista que solo el admin usa y
+   solo cuando actúa. Mismo endpoint y misma estrategia que el selector de dueño del modal de
+   "Nuevo curso" (Aula.tsx, F6.3), cuyo helper es local a ese componente y no se puede reusar. */
+let adminCoachCache = null;
+async function loadOwnerOptions() {
+  if (adminCoachCache) return adminCoachCache;
+  const w = window;
+  // /api/admin/users?role=TEACHER devuelve TEACHER + COACH: justo OWNER_ROLES del backend.
+  const d = await w.api("/api/admin/users?role=TEACHER", undefined, "GET");
+  adminCoachCache = (d && Array.isArray(d.users) ? d.users : []).map((u) => ({ id: u.id, name: u.name }));
+  return adminCoachCache;
+}
+
+/* Handler de "Reasignar dueño". PATCH /api/courses/[id] con `teacherId` — la ruta lo acepta
+   SOLO para ADMIN, valida el destino, mueve el snapshot `coachName` y escribe el rastro
+   `course.reassign` en la auditoría. Al volver, actualiza el modelo local y repinta (mismo
+   patrón que el `patch()+repaint()` de scr-admin-users). */
+function mountAdminCourses(root) {
+  const w = typeof window !== "undefined" ? window : null;
+  if (!w || typeof w.otrFormModal !== "function") return;
+  root.querySelectorAll("[data-reassign-course]").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-reassign-course");
+      if (!id) return;
+      // getAttribute DECODIFICA las entidades, así que lo que vuelve es texto crudo: hay que
+      // volver a escaparlo antes de inyectarlo en el HTML del modal.
+      const courseName = esc(btn.getAttribute("data-course-name") || "");
+      const ownerId = btn.getAttribute("data-owner-id") || "";
+      btn.disabled = true;
+      let coaches = [];
+      try {
+        coaches = await loadOwnerOptions();
+      } catch (e) {
+        w.toast?.((e && e.message) || t("extra.reassignLoadFail"), "danger");
+        return;
+      } finally {
+        btn.disabled = false;
+      }
+      if (!coaches.length) { w.toast?.(t("extra.reassignNoCoaches"), "warn"); return; }
+      w.otrFormModal(
+        t("extra.reassignTitle").split("{course}").join(courseName),
+        [{
+          name: "teacherId",
+          label: t("extra.reassignField"),
+          type: "select",
+          value: ownerId,
+          options: coaches.map((c) => ({ value: c.id, label: esc(c.name) })),
+        }],
+        async (v) => {
+          // Sin cambio real: no se molesta al servidor (el backend también lo ignoraría).
+          if (!v.teacherId || v.teacherId === ownerId) return;
+          await w.api(`/api/courses/${id}`, { teacherId: v.teacherId }, "PATCH");
+          const chosen = coaches.find((c) => c.id === v.teacherId);
+          const row = (DB.adminCourses || []).find((c) => c.id === id);
+          if (row && chosen) { row.ownerId = chosen.id; row.ownerName = esc(chosen.name); }
+          w.toast?.(t("extra.reassignOk"), "ok");
+          if (typeof w.go === "function") w.go("manage");
+        },
+      );
+    }),
+  );
+}
+
 function renderAdminCourses() {
   const courses = DB.adminCourses || [];
   const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowAdmin")}</span><h1 class="ph-title">${t("extra.allCoursesTitle")}</h1>
     <div class="page-sub" style="margin-top:8px">${t("extra.allCoursesSub")}</div></div>
     ${C.btn(t("extra.newCourse"), "accent", { ic: "plus", attrs: 'data-action="new-course"' })}</div>`;
   if (!courses.length) {
-    return head + `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.allCoursesEmptyHeading")}</h4><p>${t("extra.allCoursesEmptyBody")}</p></div></div>`;
+    // [revisión · minor 5] h2, no h4: el único encabezado por encima es el h1 de la cabecera,
+    // así que un h4 dejaría dos niveles vacíos en medio (mismo precedente que F3).
+    return head + `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h2>${t("extra.allCoursesEmptyHeading")}</h2><p>${t("extra.allCoursesEmptyBody")}</p></div></div>`;
   }
   const card = (c, i) => {
     const pub = c.published === false ? C.chip(t("extra.draft"), "outline") : C.chip(t("extra.published"), "accent", { ic: "check" });
@@ -203,9 +270,10 @@ function renderAdminCourses() {
           <div style="min-width:0"><div class="row vcenter" style="gap:8px;flex-wrap:wrap"><b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${c.name}</b>${pub}</div>
           <div class="faint" style="font-size:12px;margin-top:2px">${mods} ${mods === 1 ? t("extra.section") : t("extra.sections")} · ${lessons} ${lessons === 1 ? t("extra.activity") : t("extra.activities")}${c.format ? ` · ${c.format}` : ""}</div></div>
         </div>
-        <div class="row vcenter" style="gap:8px;flex:none">
+        <div class="row vcenter wrap" style="gap:8px;flex:none">
           <span class="lbl">${t("extra.courseOwner")}</span>
-          <b style="font-size:13px">${c.ownerName || t("extra.courseOwnerNone")}</b>
+          <b style="font-size:13px" data-owner-of="${esc(c.id)}">${c.ownerName || t("extra.courseOwnerNone")}</b>
+          ${C.btn(t("extra.reassignOwner"), "outline", { size: "sm", ic: "users", attrs: `data-reassign-course="${esc(c.id)}" data-owner-id="${esc(c.ownerId || "")}" data-course-name="${c.name}" aria-label="${t("extra.reassignAria").split("{course}").join(c.name)}"` })}
         </div>
       </div>
     </div>`;
@@ -314,7 +382,9 @@ export const S = {
       };
       return head + courses.map(card).join("");
     },
-    mount(root) { mountQuizButtons(root); },
+    // [revisión · Important-2] mountAdminCourses no necesita saber el rol: engancha por
+    // [data-reassign-course], que solo existe en la cara de admin de esta pantalla.
+    mount(root) { mountQuizButtons(root); mountAdminCourses(root); },
   },
 
   // Constructor de curso (estilo página de curso de Moodle): secciones (módulos) con

@@ -365,16 +365,20 @@ export const S = {};
 
   /* --- Cabecera de identidad compartida por las caras MINIMAL (familia y admin) ---
      Avatar + nombre + chip de rol + correo + "Editar perfil". Sin KPIs, sin rango, sin XP:
-     ninguno de los dos roles tiene progreso de alumno que mostrar. */
+     ninguno de los dos roles tiene progreso de alumno que mostrar.
+     [revisión · minor 7] Contrato de escape: queries.ts escapa UNA vez y el builder pinta
+     crudo. `initials`, `name` y `location` YA vienen escapados (queries.ts:1753/1756) → van
+     crudos; `email` NO se escapa allí → es el único que lleva esc() aquí. (Las caras de alumno
+     y de coach sí re-escapan: está reportado aparte, es previo a este trabajo.) */
   function identityHead(roleChip) {
     const me = DB.me || {};
     return `
     <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
       <div class="profile-head">
-        ${C.avatar(esc(me.initials), { size: 'xl', bg: 'var(--otr-navy)' })}
+        ${C.avatar(me.initials || '', { size: 'xl', bg: 'var(--otr-navy)' })}
         <div style="flex:1;min-width:200px">
           <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${me.name}</h1>${roleChip}</div>
-          <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${esc(me.location)}` : ''}</div>
+          <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${me.location}` : ''}</div>
           <div class="row" style="gap:8px;margin-top:12px">
             ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-profile"' })}
           </div>
@@ -394,7 +398,9 @@ export const S = {};
       <div class="card card-pad" style="padding:12px 14px;background:var(--surface-2)">
         <div class="row vcenter between" style="gap:10px;flex-wrap:wrap">
           <div class="row vcenter" style="gap:11px;min-width:0">
-            ${C.avatar(esc(k.initials || ''), { size: 'sm', bg: 'var(--otr-black)' })}
+            ${/* Mismo contrato: children[].initials/name ya vienen escapados de queries.ts;
+                  `level` lo compone levelNameForXp() sin escapar, así que ese sí lleva esc(). */''}
+            ${C.avatar(k.initials || '', { size: 'sm', bg: 'var(--otr-black)' })}
             <div style="min-width:0">
               <div style="font-weight:700;font-size:14px;line-height:1.2">${k.name}</div>
               ${k.level ? `<div class="faint" style="font-size:12px;margin-top:2px">${esc(k.level)}</div>` : ''}

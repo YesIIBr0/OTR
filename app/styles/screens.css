@@ -1274,3 +1274,10 @@
   .am-exports{justify-content:stretch}
   .am-exports > .btn{flex:1 1 100%;justify-content:center}
 }
+
+/* [revisión · minor 5] Los estados vacíos del kit estilan `.empty h4` (app.css:407). Cuando el
+   nivel correcto de la jerarquía es h2 —caso del vacío de "Cursos" del admin, cuyo único
+   encabezado superior es el h1 de la cabecera— el h4 dejaría dos niveles vacíos en medio. Se
+   le da a h2 EXACTAMENTE la misma pinta que a h4 (y se anula el margen del user-agent) para
+   que subir de nivel semántico no cambie un pixel. */
+.empty h2{font-size:16px;color:var(--text);margin:0 0 6px}
