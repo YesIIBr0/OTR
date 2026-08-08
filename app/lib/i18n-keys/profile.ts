@@ -27,6 +27,10 @@ export const dict = {
     "profile.recentGains": "Subidas recientes",
     "profile.noActivityBody": "Aún sin actividad — completa lecciones, exámenes y debates para ver tus subidas aquí.",
 
+    // ── [GOAL F3 · A5] Salidas de "Progreso y niveles" ──
+    "profile.progressGoBadges": "Ver insignias",
+    "profile.progressGoDebate": "Debate Hub",
+
     // ── Insignias y certificados ──
     "profile.badgesTitle": "Insignias y certificados",
     "profile.achievements": "Logros",
@@ -124,6 +128,10 @@ export const dict = {
     "profile.dontBreakIt": "Don't break it!",
     "profile.recentGains": "Recent gains",
     "profile.noActivityBody": "No activity yet — complete lessons, exams and debates to see your gains here.",
+
+    // ── [GOAL F3 · A5] Exits from "Progress and levels" ──
+    "profile.progressGoBadges": "View badges",
+    "profile.progressGoDebate": "Debate Hub",
 
     // ── Badges and certificates ──
     "profile.badgesTitle": "Badges and certificates",

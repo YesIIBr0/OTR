@@ -136,6 +136,14 @@ export const S = {};
             </div>
           </div>
         </div>
+      </div>
+      ${/* [GOAL F3 · A5] La pantalla era 100% lectura: ni un control, ninguna salida.
+            Dos destinos naturales del progreso —las insignias que el XP desbloquea y
+            el Debate Hub donde se gana— con el kit (btn-outline sm) y la navegación
+            in-app de siempre (go('<ruta>')). Rutas reales de ROUTES: badges y debate. */''}
+      <div class="row wrap fade-up progress-exits" style="--d:3;gap:10px;margin-top:20px">
+        ${C.btn(t("profile.progressGoBadges"), 'outline', { size: 'sm', icRight: 'arrowR', attrs: `onclick="go('badges')"` })}
+        ${C.btn(t("profile.progressGoDebate"), 'outline', { size: 'sm', icRight: 'arrowR', attrs: `onclick="go('debate')"` })}
       </div>`;
     }
   };
