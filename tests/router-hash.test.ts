@@ -6,6 +6,10 @@ import {
   resolveHashRoute,
   defaultRouteForRole,
   isRouteAllowed,
+  isInPageAnchor,
+  routeNeedsContext,
+  contextFallbackRoute,
+  CONTEXT_PARENT,
 } from "../app/lib/router";
 
 // [ROUTER-HASH] El SPA de /aula navegaba con window.go() puro: la URL NUNCA cambiaba, así
@@ -132,5 +136,76 @@ describe("resolveHashRoute()", () => {
 
   it("conserva la ruta cuando el hash trae parámetro", () => {
     expect(resolveHashRoute("#lesson/L-101", "student")).toBe("lesson");
+  });
+});
+
+// [post-revisión · Critical-1] En runtime hay que distinguir ANCLA IN-PAGE de RUTA: el propio
+// producto usa anclas nativas (skip-link #content en shell.ts, índice de lección #s1/#s2/#s3 en
+// scr-core.ts). Un hashchange de ancla NO es navegación; uno de ruta SIEMPRE repinta (aunque
+// sea la ruta actual: ese es el refresco tras mutación de go('events') & co.).
+describe("isInPageAnchor()", () => {
+  it("reconoce las anclas nativas del propio producto", () => {
+    expect(isInPageAnchor("#content")).toBe(true); // skip-link (shell.ts)
+    expect(isInPageAnchor("#s1")).toBe(true);      // índice de lección (scr-core.ts)
+    expect(isInPageAnchor("#s2")).toBe(true);
+    expect(isInPageAnchor("#s3")).toBe(true);
+  });
+
+  it("una RUTA no es un ancla", () => {
+    expect(isInPageAnchor("#events")).toBe(false);
+    expect(isInPageAnchor("#admin-users")).toBe(false);
+    expect(isInPageAnchor("#lesson/L-101")).toBe(false);
+  });
+
+  it("el hash vacío no es un ancla (no hay a dónde saltar)", () => {
+    expect(isInPageAnchor("")).toBe(false);
+    expect(isInPageAnchor("#")).toBe(false);
+  });
+});
+
+// [post-revisión · Important-1] Pantallas cuyo render depende de una global fijada justo antes
+// de navegar (window.__lesson/__listing/__cert/__room). Ese contexto no viaja en la URL: al
+// volver con Atrás o recargar se pintaría el ítem de otra visita → se cae al padre.
+describe("contexto de pantalla (CONTEXT_PARENT)", () => {
+  it("marca las pantallas que dependen de una global", () => {
+    for (const r of ["lesson", "assignment", "player", "quiz", "quiz-results", "listing", "certificate", "room"]) {
+      expect(routeNeedsContext(r)).toBe(true);
+    }
+  });
+
+  it("NO marca las pantallas que se bastan solas", () => {
+    // course-builder recupera su id de sessionStorage y course-index/search caen a un
+    // estado propio: marcarlas rompería una recuperación que HOY funciona.
+    for (const r of ["dashboard", "course", "events", "listings", "badges", "course-builder", "course-index", "search", "profile"]) {
+      expect(routeNeedsContext(r)).toBe(false);
+    }
+  });
+
+  it("cada pantalla con contexto cae en el padre de SU sección", () => {
+    expect(contextFallbackRoute("lesson", "student")).toBe("course");
+    expect(contextFallbackRoute("assignment", "student")).toBe("course");
+    expect(contextFallbackRoute("player", "student")).toBe("course");
+    expect(contextFallbackRoute("quiz", "student")).toBe("course");
+    expect(contextFallbackRoute("quiz-results", "student")).toBe("course");
+    expect(contextFallbackRoute("listing", "student")).toBe("listings");
+    expect(contextFallbackRoute("listing", "parent")).toBe("listings");
+    expect(contextFallbackRoute("certificate", "student")).toBe("badges");
+  });
+
+  it("sin padre natural cae al home del rol", () => {
+    // 'room' no tiene sección en el nav (nav:''), así que su fallback es el home.
+    expect(contextFallbackRoute("room", "student")).toBe("dashboard");
+    expect(contextFallbackRoute("room", "teacher")).toBe("teacher");
+    expect(contextFallbackRoute("room", "admin")).toBe("admin");
+  });
+
+  it("todo padre declarado es una ruta REAL y no necesita contexto él mismo", () => {
+    for (const [route, parent] of Object.entries(CONTEXT_PARENT)) {
+      expect(ROUTES[route]).toBeTruthy();
+      if (parent) {
+        expect(ROUTES[parent]).toBeTruthy();
+        expect(routeNeedsContext(parent)).toBe(false); // sin cadenas de fallback
+      }
+    }
   });
 });

@@ -17,7 +17,8 @@
    no rompa la navegación (la ruta manda; el param queda disponible para quien lo consuma). */
 import { ROUTES } from "./screens";
 
-/** Pantalla inicial de cada rol (espejo de ROLE_HOME en components/Aula.tsx). */
+/** Pantalla inicial de cada rol. Definición ÚNICA: Aula.tsx la consume vía
+    defaultRouteForRole (arranque y guard de rol) en vez de duplicar el mapa. */
 const ROLE_HOME: Record<string, string> = {
   admin: "admin",
   teacher: "teacher",
@@ -70,5 +71,55 @@ export function parseHash(hash: string): ParsedHash | null {
 export function resolveHashRoute(hash: string, role: string): string {
   const parsed = parseHash(hash);
   if (parsed && isRouteAllowed(parsed.route, role)) return parsed.route;
+  return defaultRouteForRole(role);
+}
+
+/**
+ * ¿El hash es un ANCLA IN-PAGE y no una ruta? El propio producto los usa: el skip-link
+ * `href="#content"` (shell.ts, primer tab-stop de toda pantalla) y el índice de lección
+ * `#s1/#s2/#s3` (scr-core.ts). Un hashchange así NO es navegación: ni repinta ni redirige
+ * en runtime — es el navegador saltando dentro del documento.
+ */
+export function isInPageAnchor(hash: string): boolean {
+  const raw = (hash || "").replace(/^#/, "");
+  return raw.length > 0 && parseHash(hash) === null;
+}
+
+/**
+ * PANTALLAS CON CONTEXTO: su render depende de una global que quien navega fija JUSTO antes
+ * (window.__lesson = X; go('lesson')). Ese contexto NO viaja en la URL, así que al volver con
+ * Atrás/Adelante o al recargar sobre una de estas rutas la global está vacía o —peor— trae el
+ * ÍTEM DE OTRA VISITA: se pintaría algo que el usuario no pidió. Regla: si el render lo dispara
+ * el historial/arranque y el contexto no viene sellado por go(), se cae al PADRE de la sección.
+ * Valor '' = sin padre natural (la ruta no tiene sección en el nav) → home del rol.
+ *
+ * Deliberadamente FUERA:
+ *  · 'course-builder' → __builderCourseId tiene respaldo en sessionStorage: el F5 sí recupera.
+ *  · 'course-index'   → activeCourse() cae al curso activo, no a un curso ajeno.
+ *  · 'search'         → __q es la búsqueda que el propio usuario escribió, no otro ítem.
+ */
+export const CONTEXT_PARENT: Record<string, string> = {
+  lesson:         'course',    // window.__lesson
+  assignment:     'course',    // window.__lesson
+  player:         'course',    // window.__lesson
+  quiz:           'course',    // window.__quizLesson
+  'quiz-results': 'course',    // window.__quizResult / __quizData
+  listing:        'listings',  // window.__listing
+  certificate:    'badges',    // window.__cert (sin match pinta el PRIMER certificado)
+  room:           '',          // window.__room (nav vacío → home del rol)
+};
+
+/** ¿Esta ruta necesita un contexto que no viaja en la URL? */
+export function routeNeedsContext(route: string): boolean {
+  return Object.prototype.hasOwnProperty.call(CONTEXT_PARENT, route);
+}
+
+/**
+ * A dónde cae una pantalla-con-contexto abierta SIN contexto fresco: al padre de su sección
+ * si el rol puede verlo; si no hay padre (o no es suyo), al home del rol.
+ */
+export function contextFallbackRoute(route: string, role: string): string {
+  const parent = CONTEXT_PARENT[route];
+  if (parent && isRouteAllowed(parent, role)) return parent;
   return defaultRouteForRole(role);
 }
