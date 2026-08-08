@@ -123,6 +123,11 @@ svg.ic{width:18px;height:18px;flex:none}
 .tn-mi .ic{width:17px;height:17px;flex:none;opacity:.75}
 .tn-mi .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .tn-mi .tn-count{margin-left:auto}
+/* [A11Y · GOAL 2026-08 · K-11] "Salir" pasó de <a href="#"> a <button> (es una acción, no un
+   destino). El aspecto lo da .tn-mi —selector de CLASE, no de elemento—, así que aquí solo se
+   neutralizan los estilos de user-agent del botón: borde, fondo, ancho de shrink-to-fit y
+   centrado del texto. Resultado: idéntico a sus vecinos enlace. */
+button.tn-mi{width:100%;border:0;background:transparent;appearance:none;-webkit-appearance:none;text-align:left}
 /* Lo que ya se ve como link horizontal no se repite dentro del menú (solo en escritorio). */
 @media (min-width:1025px){
   .tn-menu .tn-dup{display:none}
