@@ -5,7 +5,7 @@
 //   C · [MOCKUP T4, 2026-08-07] el dashboard se reconstruye contra el mockup: cabecera
 //       con la fecha + "Hola, <nombre>" + stats, hero negro de la próxima clase y rail
 //       derecho (rango + logros). Las secciones sin dato real NO se pintan.
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -86,7 +86,8 @@ describe("A · la navegación vive en una top-nav horizontal", () => {
     expect(css).not.toMatch(/\.app\.mini\{/);
     expect(css).not.toContain("var(--sidebar-w)");
     // main del mockup v2: 1120px centrado con 80px de respiro abajo (antes 1256/72)
-    expect(css).toMatch(/\.page\{max-width:1120px;margin:0 auto;padding:30px 30px 80px\}/);
+    // 1180 = los 1120px de CONTENIDO del mockup + los 30px de padding a cada lado.
+    expect(css).toMatch(/\.page\{max-width:1180px;margin:0 auto;padding:30px 30px 80px\}/);
     // la top-nav va A SANGRE: su interior ya no lleva contenedor centrado
     expect(css).not.toMatch(/\.topnav-in\{[^}]*max-width/);
   });
@@ -147,6 +148,10 @@ describe("C · el dashboard replica el mockup con datos reales", () => {
   // El seed no tiene ninguna reserva a menos de 60 min, así que la ruta "en vivo"
   // (countdown + badge + fila --live) se cubre aquí con una reserva sintética.
   it("una clase a <60 min saca countdown, badge 'En vivo pronto' y fila en vivo", () => {
+    // Reloj FIJO al mediodía: con `Date.now()` real, entre las 23:40 y medianoche la
+    // reserva de +20 min caía al día siguiente y `dashIsToday()` apagaba la fila viva.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 7, 12, 0, 0));
     const iso = new Date(Date.now() + 20 * 60 * 1000).toISOString();
     (DB as any).myBookings = [{
       id: "bk-1", status: "CONFIRMED", upcoming: true, coachName: "Saúl Méndez",
@@ -160,6 +165,7 @@ describe("C · el dashboard replica el mockup con datos reales", () => {
     expect(html).toContain(t("core.dashJoinCta"));             // CTA solo con videoUrl real
     expect(html).toContain("evrow--live");                     // la fila de hoy va en vivo
     expect(html).toContain("date-box--live");
+    vi.useRealTimers();
   });
 
   it("sin URL de sala el CTA del hero NO ofrece unirse", () => {

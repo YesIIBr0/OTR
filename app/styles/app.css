@@ -185,7 +185,11 @@ svg.ic{width:18px;height:18px;flex:none}
 .content{flex:1;overflow-y:auto;min-height:0;scroll-behavior:smooth}
 /* [MOCKUP V2 · deltas §1] main = 1120px centrado (antes 1256), aire de 30px y 80px de
    respiro abajo (antes 72). Es el cambio nº1 de "más espacio en blanco". */
-.page{max-width:1120px;margin:0 auto;padding:30px 30px 80px}
+/* Los 1120px del mockup son el ancho del CONTENIDO (la rejilla), no de la caja: el
+   padding lateral va por fuera. Medido en el mockup a alta resolución: rejilla 1120
+   = principal 801 + 18 de aire + rail 300. Con max-width:1120 en border-box la
+   principal se quedaba en 742 y el héroe se veía apretado. */
+.page{max-width:1180px;margin:0 auto;padding:30px 30px 80px}
 .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:24px}
 .page-title{font-size:var(--fs-24);font-weight:800;letter-spacing:var(--track-tight);color:var(--text);line-height:1.1;margin:0}
 /* Encabezado solo para lectores de pantalla (a11y): da a cada pantalla un h1 sin cambio visual */
