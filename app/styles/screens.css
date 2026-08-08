@@ -809,9 +809,8 @@
 .lbrow--you .lb-r,.lbrow--you .lb-x{color:var(--otr-green)}
 .lbrow--you .lb-n{color:#fff;font-weight:800}
 
-/* ---- Eventos: la fila .evrow del kit vive dentro de .card-pad (bleed 20px) ---- */
-.ev-list{--ev-bleed:20px}
-.ev-list .evrow:first-child{padding-top:4px}
+/* ---- Eventos: la card de lista ya NO lleva padding (mockup v2 §7): las filas
+   traen el suyo. La geometría vive en la sección "MOCKUP V2" del final. ---- */
 
 /* ---- Comunidad: foro, hilo y mensajería sin pills ---- */
 .forum-row .fr-title{font-weight:700;letter-spacing:-.01em}
@@ -912,11 +911,8 @@
   .dash-hero .dh-cd{font-size:34px}
 }
 
-/* ---- ③ Próximos eventos: la card aporta el aire, la fila el ritmo ---- */
-.dash-events .evrow:first-child{padding-top:7px}
-.dash-events .evrow:last-child{padding-bottom:7px}
-.dash-events .evrow--live:first-child{padding-top:14px}
-.dash-events .evrow--live:last-child{padding-bottom:14px}
+/* ---- ③ Próximos eventos: la card no aporta padding, la fila trae el suyo
+   (mockup v2 §7; la geometría vive en la sección "MOCKUP V2" del final) ---- */
 /* Los filtros son botones: neutralizan el aspecto de control heredado. */
 .dash-filter{cursor:pointer;font-family:inherit;padding:5px 12px;border-radius:var(--r-sm);
   font-size:12px;letter-spacing:0;text-transform:none;font-weight:700}
@@ -1005,3 +1001,82 @@
 .hl .hl-d{font-size:11px;font-weight:500;color:var(--ink-300)}
 @media (max-width:860px){ .hl-grid{grid-template-columns:repeat(2,1fr)} }
 /* === FIN DASHBOARD MOCKUP ================================================= */
+
+/* === MOCKUP V2 · foto de héroe + densidad ==================================
+   Deltas medidos del mockup v2 aprobado por Isaac
+   (docs/superpowers/specs/2026-08-07-mockup-v2-deltas.md §1 ritmo, §2 escala
+   tipográfica, §6 foto de fondo, §7 densidad de cards). Traduce los tres
+   pedidos del cliente: "fotos en el fondo", "esos textos están muy grandes",
+   "más espacio en blanco".
+
+   POR QUÉ AL FINAL DEL ARCHIVO: estas reglas re-declaran valores que ya
+   existen arriba (KIT MOCKUP, DASHBOARD MOCKUP). A igual especificidad gana
+   la última, así que van aquí y NO se edita el kit compartido.
+   Alcance: Inicio (scr-core) y Eventos (scr-events).
+   ========================================================================== */
+
+/* ---- §6 · FOTO DE FONDO DEL HÉROE -----------------------------------------
+   El mockup apila sobre el negro: (1) la foto a opacity .6 y (2) encima un
+   degradado HORIZONTAL que protege el texto de la izquierda y deja ver la
+   foto a la derecha.
+
+   Aquí las dos capas viven en UN solo ::before con tres capas de background,
+   no en dos pseudo-elementos, por dos razones: `opacity` sobre el pseudo
+   diluiría también el degradado de protección, y ::after ya está ocupado por
+   el canto naranja de 3px de .dash-hero.
+   La capa plana rgba(23,23,23,.4) sobre la foto es EXACTAMENTE equivalente a
+   pintar la foto al 60% sobre #171717 (.6·foto + .4·ink = mismo resultado).
+
+   --hero-img: si el dato trae imagen propia, esa gana; si no cae la foto de
+   marca (/img/hero-speaking.jpg). El recorte `center 26%` está calibrado para
+   ella: al cambiar de imagen hay que recalibrar.
+   A11y: el texto blanco se lee sobre #121212 al 95% de alpha en la zona
+   izquierda (>15:1), muy por encima de AAA. */
+.hero-photo{position:relative;overflow:hidden;background:var(--otr-black)}
+.hero-photo::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(100deg,rgba(18,18,18,.95) 0%,rgba(18,18,18,.80) 48%,rgba(18,18,18,.22) 100%),
+    linear-gradient(rgba(23,23,23,.4),rgba(23,23,23,.4)),
+    var(--hero-img,url("/img/hero-speaking.jpg"));
+  background-size:cover;background-position:center 26%;background-repeat:no-repeat;
+}
+/* El contenido se apila por encima de la foto (mismo z-index que el canto). */
+.hero-photo > *{position:relative;z-index:1}
+/* En móvil la foto se encuadra más al centro: a 390px el recorte 26% deja el
+   micrófono fuera y el degradado tapa casi todo. */
+@media (max-width:640px){
+  .hero-photo::before{background-position:center 34%}
+}
+
+/* ---- §2 · TIPOGRAFÍA: "esos textos están muy grandes" ---------------------
+   h1 de page-head 40→38 y sin margin-top; h2 del héroe 33→31 a 16ch. */
+.page-head .ph-title{margin:0;font-size:38px}
+.dash-hero .dh-title{margin:0 0 16px;font-size:31px;line-height:1.04;max-width:16ch}
+@media (max-width:640px){
+  .dash-hero .dh-title{font-size:25px;max-width:none}
+}
+
+/* ---- §1 · RITMO VERTICAL: "más espacio en blanco" ------------------------
+   El v2 NO usa un gap uniforme: 34px tras el héroe y 26px entre secciones.
+   Con flex-gap eso se expresa como gap 26 + 8px extra bajo el héroe. */
+.dash-main{gap:26px}
+.dash-main > .dash-hero{margin-bottom:8px} /* 26 + 8 = 34px tras el héroe */
+
+/* ---- §7 · CARD DE LISTA SIN PADDING --------------------------------------
+   La card no aporta padding: cada fila trae el suyo (17px 20px 17px 17px) y
+   va a sangre hasta el borde. Eso elimina el truco de --ev-bleed / márgenes
+   negativos que usaba la fila en vivo para no desalinear la columna de fecha:
+   todas las filas llevan el mismo borde izquierdo de 3px (transparente en las
+   normales, naranja en la viva), así que ya alinean solas. */
+.dash-events,.ev-list{padding:0}
+.dash-events .evrow,.ev-list .evrow{padding:17px 20px 17px 17px}
+.dash-events .evrow--live,.ev-list .evrow--live{margin:0;padding-left:17px;padding-right:20px}
+/* Avisos y estados vacíos sueltos dentro de la card sin padding. */
+.dash-events > p,.ev-list > p{margin:0;padding:17px 20px}
+@media (max-width:640px){
+  .dash-events .evrow,.ev-list .evrow,
+  .dash-events .evrow--live,.ev-list .evrow--live{padding:15px 14px 15px 13px}
+  .dash-events > p,.ev-list > p{padding:15px 14px}
+}
+/* === FIN MOCKUP V2 ======================================================== */

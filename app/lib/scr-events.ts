@@ -93,9 +93,19 @@ function tournamentRow(tour, staff) {
   </div>`;
 }
 
+/* [MOCKUP V2 §6] Foto de fondo del héroe. La foto de marca es el FALLBACK y vive en
+   el CSS (.hero-photo); esto solo emite --hero-img cuando el DATO trae imagen propia.
+   Solo rutas del propio sitio o https (misma política que safeUrl en el servidor). */
+function heroImgVar(url) {
+  const u = String(url || "");
+  return /^(\/|https:\/\/)[^'"()\s]+$/.test(u) ? `;--hero-img:url('${esc(u)}')` : "";
+}
+
 // [llamada Isaac 7:54-8:21] El próximo torneo es LO PRINCIPAL de Eventos: tarjeta hero
 // con CTA primario ("el botón más grande"); el resto de torneos como filas debajo.
-// [MOCKUP · Task 6, spec §3.1] El hero pasa a card NEGRA con halo y CTA naranja h50.
+// [MOCKUP V2 §2/§6] El hero usa la MISMA pieza que el del dashboard (.dash-hero +
+// .hero-photo): foto de marca de fondo, canto naranja de 3px y h2 de 31px a 16ch.
+// El halo decorativo (.card--glow) sobra: ahora el fondo lo da la foto.
 function tournamentHero(tour, staff) {
   const open = String(tour.status || "").toLowerCase() === "upcoming";
   const live = String(tour.status || "").toLowerCase() === "live";
@@ -105,26 +115,22 @@ function tournamentHero(tour, staff) {
     : open || live
     ? C.btn(t("events.tournamentRegister"), "accent", { size: "lg", ic: "trophy", attrs: `data-tn-register="${esc(tour.id)}"` })
     : C.chip(esc(tour.status || ""), "outline");
-  return `<div class="card card--dark card--glow" style="margin-bottom:14px">
-    <div class="card-pad" style="padding:26px 28px 28px">
-      <div class="row vcenter between wrap" style="gap:20px">
-        ${/* flex-basis 260px: en móvil el bloque de texto baja a su propia línea en vez de
-              quedar aplastado contra el CTA (que es flex:none y no cede ancho). */""}
-        <div style="flex:1 1 260px;min-width:0">
-          <div class="row vcenter" style="gap:11px;margin-bottom:14px">
-            <span class="lbl">${t("events.nextTournamentEyebrow")}</span>
-            ${live ? C.chip(t("events.tnStatusLive"), "accent") : ""}
-          </div>
-          <h2 style="margin:0;font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1.05;color:#fff">${tour.name || t("events.tournamentFallback")}</h2>
-          <div class="row vcenter wrap" style="gap:16px;margin-top:12px;font-size:14px;font-weight:600;color:var(--n-100)">
-            ${tour.startsLabel ? `<span class="row vcenter" style="gap:7px"><span style="display:inline-flex;width:16px;height:16px;color:var(--otr-green)">${IC.calendar}</span>${tour.startsLabel}</span>` : ""}
-            ${meta ? `<span style="color:var(--ink-300)">${meta}</span>` : ""}
-          </div>
-        </div>
-        <span class="row vcenter" style="gap:8px;flex:none">${reg}${staff ? tnAdminBtns(tour) : ""}</span>
-      </div>
+  return `<section class="card--dark dash-hero hero-photo" style="margin-bottom:34px${heroImgVar(tour.coverUrl || tour.image)}">
+    <div class="dh-eyebrow">
+      <span class="lbl">${t("events.nextTournamentEyebrow")}</span>
+      ${live ? C.chip(t("events.tnStatusLive"), "accent") : ""}
     </div>
-  </div>`;
+    <div class="dh-body">
+      <div style="min-width:0">
+        <h2 class="dh-title">${tour.name || t("events.tournamentFallback")}</h2>
+        <div class="dh-meta">
+          ${tour.startsLabel ? `<span class="row vcenter" style="gap:7px">${IC.calendar} ${tour.startsLabel}</span>` : ""}
+          ${meta ? `<span class="dh-sep"></span><span>${meta}</span>` : ""}
+        </div>
+      </div>
+      <div class="dh-side">${reg}${staff ? tnAdminBtns(tour) : ""}</div>
+    </div>
+  </section>`;
 }
 
 // --- Modal de gestión de torneo (staff) ---------------------------------------------------
@@ -215,21 +221,23 @@ S.events = {
     // Botón "+ Torneo" (staff) SIEMPRE visible en la cabecera, incluso con lista vacía.
     const newBtn = staff ? C.btn(t("events.tnNew"), "primary", { size: "sm", ic: "plus", attrs: 'data-tn-new="1"' }) : "";
 
-    const tournamentsSection = `<div class="fade-up" style="--d:0;margin-bottom:22px">
+    // [MOCKUP V2 §1] Ritmo del v2: 34px tras el héroe (los pone el propio hero) y 26px
+    // entre secciones. Y §7: la card de lista ya NO lleva .card-pad.
+    const tournamentsSection = `<div class="fade-up" style="--d:0;margin-bottom:26px">
       ${first ? tournamentHero(first, staff) : ""}
       ${C.secTitle(t("events.upcomingTournamentsTitle"), { right: newBtn || C.chip(String(tournaments.length), "outline") })}
-      <div class="card card-pad ev-list">
+      <div class="card ev-list">
       ${rest.length
         ? rest.slice(0, 5).map((tr) => tournamentRow(tr, staff)).join("")
         : first
-        ? `<p class="faint" style="font-size:12.5px;margin:6px 0 2px">${t("events.moreTournamentsSoon")}</p>`
+        ? `<p class="faint" style="font-size:12.5px">${t("events.moreTournamentsSoon")}</p>`
         : `<div class="empty" style="padding:28px"><div class="ill">${IC.trophy}</div><h4>${t("events.emptyTournamentsTitle")}</h4><p>${t("events.emptyTournamentsBody")}</p></div>`}
       </div>
     </div>`;
 
     const eventsSection = `<div class="fade-up" style="--d:1">
       ${C.secTitle(t("events.upcomingTitle"), { right: C.chip(String(events.length), "outline") })}
-      <div class="card card-pad ev-list">
+      <div class="card ev-list">
       ${events.length
         ? events.map(eventCard).join("")
         : `<div class="empty" style="padding:28px"><div class="ill">${IC.calendar}</div><h4>${t("events.emptyEventsTitle")}</h4><p>${t("events.emptyEventsBody")}</p></div>`}

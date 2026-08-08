@@ -134,6 +134,15 @@ function activeItemsFlat() {
     return m ? { ts: 0, day: m[1], mon: m[2].replace('.', '') } : null;
   }
 
+  /* [MOCKUP V2 §6] Foto de fondo del héroe. La foto de marca es el FALLBACK y
+     vive en el CSS (.hero-photo); esto solo emite la variable --hero-img cuando
+     el DATO trae imagen propia — nada inventado. Solo se aceptan rutas del
+     propio sitio o https (misma política que safeUrl en el servidor). */
+  function heroImgVar(url) {
+    const u = String(url || '');
+    return /^(\/|https:\/\/)[^'"()\s]+$/.test(u) ? `;--hero-img:url('${esc(u)}')` : '';
+  }
+
   S.dashboard = {
     render() {
       const lang = getLang();
@@ -187,7 +196,7 @@ function activeItemsFlat() {
         const cdSecs = Math.max(0, Math.floor(msToStart / 1000));
         const cd = `${Math.floor(cdSecs / 60)}:${String(cdSecs % 60).padStart(2, '0')}`;
         hero = `
-        <section class="card--dark dash-hero fade-up" style="--d:1">
+        <section class="card--dark dash-hero hero-photo fade-up" style="--d:1${heroImgVar(nextB.coverUrl || nextB.image)}">
           <div class="dh-eyebrow">
             <span class="lbl">${t('core.dashNextClassEyebrow')}</span>
             ${(soon || dashIsToday(nextTs)) ? C.chip(soon ? t('core.dashLiveSoon') : t('core.dashToday'), 'accent', { cls: 'chip--dot' }) : ''}
@@ -217,7 +226,7 @@ function activeItemsFlat() {
           ? C.btn(t('core.naResumeCta'), 'accent', { size: 'lg', ic: 'play', attrs: `data-dash-lesson="${esc(nextL.id)}" data-dash-dest="${destFor(nextL)}"` })
           : C.btn(t('core.dashExploreCourses'), 'accent', { size: 'lg', icRight: 'arrowR', attrs: 'data-go="catalog"' });
         hero = `
-        <section class="card--dark dash-hero fade-up" style="--d:1">
+        <section class="card--dark dash-hero hero-photo fade-up" style="--d:1${heroImgVar(activeCourse()?.image)}">
           <div class="dh-eyebrow"><span class="lbl">${t('core.dashNoClassEyebrow')}</span></div>
           <div class="dh-body">
             <div style="min-width:0">
@@ -286,8 +295,10 @@ function activeItemsFlat() {
           ${filterChip('all', t('core.dashFilterAll'))}
           ${classRows.length ? filterChip('classes', t('core.dashFilterClasses')) : ''}
           ${tourRows.length ? filterChip('tournaments', t('core.dashFilterTournaments')) : ''}` })}
-        <div class="card card-pad dash-events" style="--ev-bleed:22px">
-          ${shownRows.length ? shownRows.map((r) => r.html).join('') : `<p class="faint" style="font-size:13px;padding:8px 0;margin:0">${t('core.dashEventsEmpty')}</p>`}
+        ${/* [MOCKUP V2 §7] La card NO lleva .card-pad: cada .evrow trae su propio
+              padding y va a sangre hasta el borde (adiós --ev-bleed). */''}
+        <div class="card dash-events">
+          ${shownRows.length ? shownRows.map((r) => r.html).join('') : `<p class="faint" style="font-size:13px">${t('core.dashEventsEmpty')}</p>`}
         </div>
       </section>` : '';
 
