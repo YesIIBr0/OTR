@@ -78,7 +78,14 @@
   --surface-2:#FBFBFA;              /* tile "apagado" sobre card blanca */
   --surface-tint:var(--otr-green-pale);
   --border:#E4E3DF;                 /* borde cálido de card y del header */
-  --border-strong:#DCDBD6;          /* borde de botón outline (1.5px) */
+  --border-strong:#DCDBD6;          /* borde de botón outline (1.5px) · SOLO decorativo (1,39:1) */
+  /* [K-03] Borde de CONTROL de formulario (input/select/textarea). WCAG 1.4.11 pide 3:1
+     para el contorno de un control, y --border-strong (#DCDBD6) da 1,39:1 sobre blanco.
+     #8C8B86 = mismo gris cálido de la familia (R-G=1, G-B=5, igual que #DCDBD6) pero
+     oscurecido hasta 3,41:1 sobre #FFFFFF (luminancia relativa WCAG 2.1: L=0,2577;
+     (1,05)/(0,2577+0,05)=3,41). NO se toca --border-strong porque lo usan separadores
+     y bordes decorativos, que no tienen ese mínimo. */
+  --border-field:#8C8B86;
   --text:var(--otr-black);
   --text-2:var(--n-600);
   --text-3:var(--n-500);
@@ -138,7 +145,11 @@
   --sh-3:var(--sh-1);
   --sh-pop:var(--sh-1);
   --sh-glow:0 8px 24px rgba(242,86,35,.32);  /* única sombra de color: CTA estrella / hero */
-  --ring:0 0 0 3px rgba(200,64,26,.55);  /* [A11Y-09] anillo de foco naranja oscuro (#C8401A) → visible sobre blanco */
+  /* [K-02] Anillo de foco. El alpha .55 componía a #E19681 → 2,37:1 sobre blanco y
+     2,25:1 sobre el greige: por debajo del 3:1 que WCAG 1.4.11 exige a un indicador de
+     estado. A color PLENO (#C8401A = --otr-green-lo) mide 4,99:1 sobre #FFFFFF,
+     4,42:1 sobre el greige #F1F1EF y 3,59:1 sobre el botón negro #171717. */
+  --ring:0 0 0 3px var(--otr-green-lo);
 
   /* ---- Layout ---- */
   --topbar-h:62px; /* alto real de la top-nav del mockup (antes 56px del topbar viejo) */
