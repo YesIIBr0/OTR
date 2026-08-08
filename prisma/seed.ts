@@ -1336,6 +1336,54 @@ async function main() {
   });
 
   // ----------------------------------------------------------------
+  //  8.9) ACTIVIDAD DEL MES EN CURSO — alimenta el ranking de XP del
+  //       dashboard ("Clasificación de {mes}"). Sin filas de ESTE mes
+  //       la tarjeta degrada al ranking por rating, así que el seed
+  //       tiene que dejar un mes vivo.
+  // ----------------------------------------------------------------
+  // Reparte los eventos por la parte YA TRANSCURRIDA del mes en curso: sea cual sea el
+  // día en que se siembre, ninguna fila cae en el futuro ni se escapa al mes anterior
+  // (sembrando el día 1, todas caen en el día 1).
+  const seedNow = new Date();
+  const thisMonthAt = (frac: number) =>
+    new Date(seedNow.getFullYear(), seedNow.getMonth(), Math.max(1, Math.round(seedNow.getDate() * frac)), 12, 0, 0, 0);
+  // El orden del mes NO copia al del rating a propósito: Analía viene de un mes fuerte
+  // (subió a Gold y ganó la final de New Horizons) y adelanta a Silvana, aunque siga
+  // por debajo de ella en rating de por vida. Son dos rankings distintos.
+  // Aaron/Sigmund/Camila son MENORES: suman XP real pero el ranking público nunca los
+  // muestra (regla de privacidad) — sirven para comprobar que el filtro funciona.
+  await db.activityEvent.createMany({
+    data: [
+      // Isabella Guzmán (u-is) — 840 XP
+      { userId: "u-is", type: "lesson_done", source: "course", title: "Completó “Cross-ex: preguntas que rompen el caso”", detail: "Public Forum I · Unidad 3", xp: 40, createdAt: thisMonthAt(0.15) },
+      { userId: "u-is", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 96%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.3) },
+      { userId: "u-is", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Loyola", detail: "Scrim OTR · Ronda 2", xp: 120, createdAt: thisMonthAt(0.45) },
+      { userId: "u-is", type: "debate_logged", source: "debate", title: "Ganó vs Saint Joseph", detail: "Scrim OTR · Ronda 4", xp: 120, createdAt: thisMonthAt(0.6) },
+      { userId: "u-is", type: "rank_up", source: "debate", title: "Subió a Platinum", detail: "Rating 1850 — mejor del circuito dominicano", xp: 180, createdAt: thisMonthAt(0.75) },
+      { userId: "u-is", type: "tournament_result", source: "debate", title: "Campeona del interno OTR", detail: "Final Varsity · récord 5-0", xp: 320, createdAt: thisMonthAt(0.95) },
+
+      // Analía Reyes (u-ar) — 560 XP
+      { userId: "u-ar", type: "lesson_done", source: "course", title: "Completó “Final focus: cerrar en el impacto”", detail: "Public Forum I · Unidad 3", xp: 40, createdAt: thisMonthAt(0.2) },
+      { userId: "u-ar", type: "session_done", source: "marketplace", title: "Sesión 1:1 con Coach Saúl", detail: "Trabajo de cross-ex y priorización de voters", xp: 80, createdAt: thisMonthAt(0.4) },
+      { userId: "u-ar", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Quisqueya", detail: "Scrim OTR · Ronda 1", xp: 120, createdAt: thisMonthAt(0.55) },
+      { userId: "u-ar", type: "debate_logged", source: "debate", title: "Ganó vs Saint George", detail: "Scrim OTR · Ronda 3", xp: 120, createdAt: thisMonthAt(0.7) },
+      { userId: "u-ar", type: "tournament_result", source: "debate", title: "Semifinalista del interno OTR", detail: "Semifinal Varsity · récord 4-1", xp: 200, createdAt: thisMonthAt(0.9) },
+
+      // Silvana Espaillat (u-si) — 360 XP
+      { userId: "u-si", type: "lesson_done", source: "course", title: "Completó “Cross-ex: preguntas que rompen el caso”", detail: "Public Forum I · Unidad 3", xp: 40, createdAt: thisMonthAt(0.25) },
+      { userId: "u-si", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 88%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.5) },
+      { userId: "u-si", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Loyola", detail: "Scrim OTR · Ronda 3", xp: 120, createdAt: thisMonthAt(0.65) },
+      { userId: "u-si", type: "tournament_result", source: "debate", title: "Cuartofinalista del interno OTR", detail: "Cuartos Varsity · récord 3-2", xp: 140, createdAt: thisMonthAt(0.85) },
+
+      // Menores (fuera del ranking público por edad, con actividad real igualmente)
+      { userId: "u-aa", type: "lesson_done", source: "course", title: "Completó “Construir el segundo contention”", detail: "Public Forum I · Unidad 2", xp: 40, createdAt: thisMonthAt(0.3) },
+      { userId: "u-aa", type: "debate_logged", source: "debate", title: "Ganó vs Babeque", detail: "Scrim OTR · Ronda 2", xp: 120, createdAt: thisMonthAt(0.6) },
+      { userId: "u-sg", type: "lesson_done", source: "course", title: "Completó “Claim · Warrant · Impact en video”", detail: "Public Forum I · Unidad 1", xp: 40, createdAt: thisMonthAt(0.45) },
+      { userId: "u-cn", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Estructura · 84%", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.7) },
+    ],
+  });
+
+  // ----------------------------------------------------------------
   //  9) REVIEWS reales — los testimonios del sitio (rating 5)
   //     Un review por (curso, estudiante). Todos sobre PF-101/Saúl.
   // ----------------------------------------------------------------
@@ -1652,7 +1700,7 @@ async function main() {
   console.log(`  · Matrículas:    ${enrollments}`);
   console.log(`  · Debate Hub:    ${debates} rondas · ${tournaments} torneos`);
   console.log(`  · Marketplace:   ${coachProfiles} coaches · ${bookings} bookings (escrow demo)`);
-  console.log(`  · Lifetime §8:   ${certificates} certificados · ${journeyEvents} eventos de journey (Analía)`);
+  console.log(`  · Lifetime §8:   ${certificates} certificados · ${journeyEvents} eventos de journey (con el mes en curso)`);
   console.log("  · Membresía §13: Analía PRO (simulada) · perfil público /p/analia-reyes");
   console.log("  · Login demo:    saul@otr.do / analia.reyes@otr.do — password: ver arriba (SEED_PASSWORD o la generada)");
 }

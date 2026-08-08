@@ -150,6 +150,40 @@ export function computeRosterMetrics(input: RosterMetricsInput): RosterMetrics {
 // Etiqueta legible mes + año en español, tipo "jun 2026" (texto generado por nosotros).
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+// [DASHBOARD] Nombre del mes para el periodo del ranking mensual. Tabla propia (no Intl):
+// el resto del archivo ya genera sus etiquetas así, sin depender del ICU del runtime.
+const MONTHS_EN_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+function monthNameLabel(d: Date, wantEnglish: boolean): string {
+  return (wantEnglish ? MONTHS_EN_FULL : MONTHS_ES_FULL)[d.getMonth()] || "";
+}
+// Días que faltan para que cierre el mes de `d` (0 = hoy es el último día).
+function daysLeftInMonth(d: Date): number {
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  return Math.max(0, lastDay - d.getDate());
+}
+
+/**
+ * Consulta OPCIONAL: la que alimenta adornos (premios del podio, highlights, ranking
+ * mensual). Si falla —modelo ausente en un Prisma Client sin regenerar, tabla que aún no
+ * migró, error de query— devuelve [] en vez de tumbar TODO /api/app-data.
+ *
+ * Sin esto, un `db.seasonPrize` undefined lanza "Cannot read properties of undefined
+ * (reading 'findMany')" DENTRO del Promise.all y el Aula entera se queda en "Cargando…"
+ * con un 500: una franja decorativa se lleva por delante clases, tareas y mensajes.
+ *
+ * El `await` dentro del try es deliberado: atrapa TANTO el throw síncrono (el modelo que
+ * no existe en el cliente) COMO la promesa rechazada (la tabla que no existe en la DB);
+ * un `.catch()` encadenado solo cubriría el segundo caso. Y siempre deja traza en consola
+ * — degradar no es esconder: el operador tiene que ver que falta correr la migración.
+ */
+async function optionalRows<T>(label: string, run: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await run();
+  } catch (err) {
+    console.warn(`[app-data] '${label}' no disponible — se degrada a lista vacía (¿falta migrar o regenerar el cliente?):`, err);
+    return [];
+  }
+}
 function monthYearLabel(d?: Date | null): string {
   if (!d) return "";
   const date = d instanceof Date ? d : new Date(d);
@@ -350,10 +384,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       take: 500,
     }),
     // [DASHBOARD] Premios del podio de la temporada. Catálogo global e idéntico para
-    // todos → micro-caché, igual que levels/events.
-    cached("seasonPrizes", GLOBAL_TTL_MS, () => db.seasonPrize.findMany({ orderBy: { rank: "asc" }, take: 10 })),
-    // [DASHBOARD] "Lo mejor de la temporada": logros de la marca. También global.
-    cached("highlights", GLOBAL_TTL_MS, () => db.highlight.findMany({ orderBy: { position: "asc" }, take: 12 })),
+    // todos → micro-caché, igual que levels/events. Adorno ⇒ optionalRows: si la tabla
+    // no está migrada, el podio sale sin cajita de premio y el Aula sigue en pie.
+    optionalRows("seasonPrize", () =>
+      cached("seasonPrizes", GLOBAL_TTL_MS, () => db.seasonPrize.findMany({ orderBy: { rank: "asc" }, take: 10 }))),
+    // [DASHBOARD] "Lo mejor de la temporada": logros de la marca. También global y también
+    // decorativo ⇒ sin él la franja simplemente no se pinta (la vista ya lo contempla).
+    optionalRows("highlight", () =>
+      cached("highlights", GLOBAL_TTL_MS, () => db.highlight.findMany({ orderBy: { position: "asc" }, take: 12 }))),
   ]);
 
   // [fix nivel] El rango (Novato 0-999 · JV 1000-2499 · Varsity 2500-4999 · Elite 5000+) se
@@ -449,6 +487,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const rosterNowMs = Date.now();
   const rosterActivityCutoff = new Date(rosterNowMs - ROSTER_RISK_INACTIVE_DAYS * 86400000);
 
+  // [DASHBOARD] Ventana del MES EN CURSO para el ranking de XP de la tarjeta del Aula.
+  // Se fija una sola vez por request (el mes no puede cambiar a mitad del cálculo).
+  const nowForMonth = new Date();
+  const monthStart = new Date(nowForMonth.getFullYear(), nowForMonth.getMonth(), 1);
+  const monthEnd = new Date(nowForMonth.getFullYear(), nowForMonth.getMonth() + 1, 1);
+  const monthKey = `${nowForMonth.getFullYear()}-${nowForMonth.getMonth() + 1}`;
+
   const [
     myProgress, mySubs, myQuizzes, enrolledLessons, pendingSubs, quizRows, studentModules,
     coachPrograms, myReviewRow, activityEvents,
@@ -456,6 +501,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     coachUsers, myBookingRows, parentGuardianships, studentGuardianRequests, myTournamentRegs,
     coachBookingRows, myCoachProfileRow,
     rosterGradeAgg, rosterQuizRows, rosterBookingAgg, rosterProgressRows, rosterLastEventAgg, rosterRecentEvents,
+    monthXpBoard,
   ] = await Promise.all([
     me ? db.lessonProgress.findMany({ where: { userId: me.id, done: true } }) : Promise.resolve([]),
     // Una sola consulta de TODAS las entregas del usuario; las GRADED se derivan en JS.
@@ -629,6 +675,36 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // en JS en last7 vs prior7 para el trend up/down/flat).
     isTeacher && rosterIds.length
       ? db.activityEvent.findMany({ where: { userId: { in: rosterIds }, createdAt: { gte: rosterActivityCutoff } }, select: { userId: true, createdAt: true } })
+      : Promise.resolve([] as any[]),
+    // [DASHBOARD] Ranking de XP del MES EN CURSO — la tarjeta "Clasificación de {mes}".
+    // Es un ranking DISTINTO al del Debate Hub (ese mide rating Glicko de por vida y NO
+    // se toca): aquí la fuente es ActivityEvent (xp + createdAt), el ledger fechado.
+    // Mismas reglas de privacidad que el ranking por rating: leaderboardOptIn y menores
+    // FUERA — el filtro se aplica sobre User, así que un menor puede sumar XP y nunca sale.
+    // Global e idéntico para todos (el "mi puesto" se deriva de esta misma lista) → caché
+    // con la clave del mes, para que el cambio de mes nunca sirva un board caducado.
+    // Envuelto en optionalRows: si la agregación falla, el board queda vacío y la tarjeta
+    // cae sola al ranking por rating (la degradación que ya está diseñada), en vez de 500.
+    me
+      ? optionalRows("leaderboard:monthXp", () => cached(`leaderboard:monthXp:${monthKey}`, GLOBAL_TTL_MS, async () => {
+          const agg = await db.activityEvent.groupBy({
+            by: ["userId"],
+            where: { createdAt: { gte: monthStart, lt: monthEnd } },
+            _sum: { xp: true },
+            orderBy: { _sum: { xp: "desc" } },
+            take: 200,
+          });
+          const scored = agg.filter((r: any) => (r._sum?.xp ?? 0) > 0);
+          if (!scored.length) return [] as any[];
+          const eligible = await db.user.findMany({
+            where: { id: { in: scored.map((r: any) => r.userId) }, ageBand: { not: "minor" }, leaderboardOptIn: true },
+            select: { id: true, name: true, initials: true, debateRating: true, debateTier: true },
+          });
+          const byId = new Map(eligible.map((u) => [u.id, u]));
+          return scored
+            .filter((r: any) => byId.has(r.userId))
+            .map((r: any) => ({ ...byId.get(r.userId)!, monthXp: r._sum?.xp ?? 0 }));
+        }))
       : Promise.resolve([] as any[]),
   ]);
 
@@ -1018,36 +1094,76 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // [DASHBOARD] Premio del puesto (solo podio): puesto → texto, leído de SeasonPrize.
   // Contenido editable en DB; la vista NO lleva los textos hardcodeados.
   const prizeByRank = new Map<number, string>((seasonPrizes || []).map((p: any) => [p.rank, p.text]));
-  const leaderboardRowsOut = (leaderboardRows || []).map((u: any, i: number) => {
-    const rank = i + 1;
-    const prize = prizeByRank.get(rank);
-    return {
-      rank,
-      name: esc(u.name),
-      initials: esc(u.initials || initialsFrom(u.name)),
-      rating: Math.round(u.debateRating ?? 1500),
-      tier: u.debateTier || "Novato",
-      you: u.id === me?.id,
-      // `prize` solo existe si hay un SeasonPrize para ese puesto (1º/2º/3º).
-      ...(prize ? { prize } : {}),
-    };
+
+  // [DASHBOARD] CONTRATO DE LA TARJETA DE CLASIFICACIÓN (lo consume scr-core.ts):
+  //   · Con `period` presente ⇒ la tabla es el ranking de XP del MES EN CURSO. La vista
+  //     titula "Clasificación de {period.label}", la meta dice "Faltan {period.endsInDays}
+  //     días · Premios al cierre" y la cifra de cada fila es `row.xp` con sufijo "XP".
+  //   · Con `period: null` ⇒ la tabla es el ranking GLOBAL por rating Glicko de siempre
+  //     (el mismo que mide el Debate Hub) y la cifra de la fila es `row.rating`, pelado.
+  // La rama mensual solo se activa si HAY actividad fechada este mes: si nadie sumó XP,
+  // se degrada al ranking por rating en vez de pintar una tabla vacía o un mes falso.
+  const monthBoard = (monthXpBoard || []) as any[];
+  const isMonthlyBoard = monthBoard.length > 0;
+  const baseRow = (u: any, i: number) => ({
+    rank: i + 1,
+    name: esc(u.name),
+    initials: esc(u.initials || initialsFrom(u.name)),
+    rating: Math.round(u.debateRating ?? 1500),
+    tier: u.debateTier || "Novato",
+    you: u.id === me?.id,
   });
+  // `prize` solo existe si hay un SeasonPrize para ese puesto (1º/2º/3º). Es de la
+  // TEMPORADA del Aula: no se cuelga del ranking del Debate Hub.
+  const withPrize = (row: any) => {
+    const prize = prizeByRank.get(row.rank);
+    return prize ? { ...row, prize } : row;
+  };
+  // Tabla del DEBATE HUB: siempre por rating Glicko-2 histórico, sin xp ni premios.
+  // Es la que existía desde siempre y NO cambia por el ranking mensual del Aula.
+  const ratingRowsOut = ((leaderboardRows || []) as any[]).slice(0, 50).map(baseRow);
+  // Tabla del DASHBOARD: mensual si hay actividad; si no, la misma de rating.
+  // `xp` SOLO existe en la mensual: un número sin significado claro en la tabla por
+  // rating sería peor que no tenerlo.
+  const leaderboardRowsOut = (isMonthlyBoard
+    ? monthBoard.slice(0, 50).map((u: any, i: number) => ({ ...baseRow(u, i), xp: u.monthXp ?? 0 }))
+    : ratingRowsOut.map((r) => ({ ...r }))
+  ).map(withPrize);
+  // Mi puesto: en la tabla mensual es el nº de usuarios ELEGIBLES con más XP del mes que
+  // yo, +1 (sirva o no yo mismo de fila: sin actividad este mes quedo detrás de todos los
+  // que sí la tuvieron). En la tabla por rating sigue siendo el conteo por debateRating.
+  const myMonthXp = isMonthlyBoard ? (monthBoard.find((u: any) => u.id === me?.id)?.monthXp ?? 0) : 0;
+  const myMonthRank = isMonthlyBoard
+    ? monthBoard.filter((u: any) => (u.monthXp ?? 0) > myMonthXp).length + 1
+    : 0;
   const leaderboard = me
     ? {
         rows: leaderboardRowsOut,
+        me: {
+          // El puesto DEBE hablar de la misma tabla que se está pintando, o el KPI
+          // "#N Clasificación" de la cabecera contradiría la card de abajo.
+          rank: isMonthlyBoard ? myMonthRank : (myLeaderboardAhead as number) + 1,
+          rating: Math.round(me.debateRating ?? 1500),
+          tier: me.debateTier || "Novato",
+          ...(isMonthlyBoard ? { xp: myMonthXp } : {}),
+        },
+        period: isMonthlyBoard
+          ? { label: monthNameLabel(nowForMonth, wantEn), endsInDays: daysLeftInMonth(nowForMonth) }
+          : null,
+      }
+    : null;
+  // [DASHBOARD] Tabla PROPIA del Debate Hub. Antes compartía objeto con la del Aula, y al
+  // volverse mensual esa, el Hub pasó a listar por XP del mes mientras seguía rotulando
+  // "ranking por rating Glicko-2" (Silvana, 1815, caía al 3.er puesto detrás de un 1720).
+  // Son dos rankings distintos y ahora cada uno tiene el suyo: aquí, rating de por vida.
+  const debateLeaderboard = me
+    ? {
+        rows: ratingRowsOut,
         me: {
           rank: (myLeaderboardAhead as number) + 1,
           rating: Math.round(me.debateRating ?? 1500),
           tier: me.debateTier || "Novato",
         },
-        // [DASHBOARD] period = { label, endsInDays } SOLO si la clasificación fuera MENSUAL.
-        // Hoy NO lo es: `rows` es el ranking GLOBAL e histórico por Glicko-2 (User.debateRating,
-        // acumulado de por vida), no el XP del mes. La única fuente de XP fechada del sistema es
-        // ActivityEvent (xp + createdAt), que es el ledger del Lifetime Progress Profile por
-        // usuario — no alimenta esta tabla. Devolver un "Clasificación de agosto · faltan N días"
-        // sobre un ranking histórico sería etiquetar mal el dato, así que va null y la vista
-        // mantiene su título sin periodo. Se activará cuando el ranking se calcule por mes.
-        period: null as { label: string; endsInDays: number } | null,
       }
     : null;
 
@@ -1819,8 +1935,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // PRD §6: Debate Hub (flagship). Sólo para roles CON sesión (null si no hay me).
     // DB.debate = dashboard del debatiente (rating/tier/form/history/analytics).
     debate,
-    // DB.leaderboard = top 50 por rating + la posición del usuario.
+    // DB.leaderboard = tabla de la TARJETA DEL AULA: ranking de XP del mes en curso
+    // (con `period` y `rows[].xp`) o, sin actividad este mes, el de rating de siempre.
     leaderboard,
+    // DB.debateLeaderboard = tabla del DEBATE HUB: top 50 por rating Glicko-2 + mi
+    // posición. Siempre por rating, pase lo que pase con la temporada del Aula.
+    debateLeaderboard,
     // DB.tournaments = torneos UPCOMING|LIVE con flag `registered`.
     tournaments,
     // PRD §7: Marketplace de coaches (browse/perfil) — visible para TODOS los roles.
