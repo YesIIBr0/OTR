@@ -1263,3 +1263,14 @@
    mandando, así que el tile no crece de alto (68px medidos antes y después). */
 .badge-tile .bt-n{hyphens:auto;overflow-wrap:break-word}
 /* === FIN FIXES GOAL F3 ==================================================== */
+
+/* === FIXES GOAL F3 · K-09 (escalera de encabezados) ======================= */
+/* Los estados vacíos colgaban un <h4> directo del <h1> de la pantalla (h1→h4).
+   Ahora el tag respeta la escalera (h2 bajo el h1 de pantalla, h3 bajo una
+   sección h2) y el aspecto lo sigue dando .empty, que hasta hoy solo vestía el
+   h4 (app.css: .empty h4{font-size:16px;color:var(--text);margin-bottom:6px}).
+   Esta regla replica ese mismo aspecto para h2/h3: mismo tamaño, mismo color y
+   mismo margen — con el reset global *{margin:0} no queda ninguna diferencia
+   heredada del navegador. */
+.empty h2,.empty h3{font-size:16px;color:var(--text);margin-bottom:6px}
+/* === FIN FIXES GOAL F3 · K-09 ============================================= */

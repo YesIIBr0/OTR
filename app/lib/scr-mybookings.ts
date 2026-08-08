@@ -154,9 +154,12 @@ export function renderBookings() {
   );
 
   // Cabecera de SECCIÓN (ya no de pantalla): el <h1> y el eyebrow los pone Cursos.
+  // [GOAL F3 · K-09] Y por eso el tag es h2, no el h3 por defecto de secTitle: colgaba
+  // del <h1> del curso saltándose un nivel. El diseño lo dan las clases (.sec-title
+  // viste igual h2/h3/h4), así que el tag cambia sin mover un píxel.
   const head = `
   <div class="fade-up" style="margin:28px 0 12px">
-    ${C.secTitle(t("mb.title"), { attrs: 'style="margin-bottom:4px"' })}
+    ${C.secTitle(t("mb.title"), { tag: 'h2', attrs: 'style="margin-bottom:4px"' })}
     <div class="faint" style="font-size:12.5px">${t("mb.subtitle")}</div>
   </div>`;
 
@@ -164,7 +167,7 @@ export function renderBookings() {
     return `${head}
     <div class="card fade-up" style="--d:1"><div class="empty">
       <div class="ill">${IC.calendar}</div>
-      <h4>${t("mb.emptyHeading")}</h4>
+      <h3>${t("mb.emptyHeading")}</h3>
       <p>${t("mb.emptyBody")}</p>
       <button class="btn btn-accent" data-go="explore">${t("mb.emptyCta")}</button>
     </div></div>`;
@@ -172,7 +175,7 @@ export function renderBookings() {
 
   return `${head}
   <div class="card card-pad fade-up" style="--d:1">
-    ${C.secTitle(t("mb.upcomingTitle"), { sm: true, right: C.chip(String(upcoming.length), "black") })}
+    ${C.secTitle(t("mb.upcomingTitle"), { sm: true, tag: 'h3', right: C.chip(String(upcoming.length), "black") })}
     <p class="faint" style="font-size:12px;margin-top:4px">${t("mb.videoRoomNote")}</p>
     ${upcoming.length
       ? `<div style="margin-top:6px;--ev-bleed:22px">${upcoming.map(upcomingRow).join("")}</div>`
@@ -180,7 +183,7 @@ export function renderBookings() {
   </div>
 
   <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
-    ${C.secTitle(t("mb.historyTitle"), { sm: true, right: C.chip(String(history.length), "outline") })}
+    ${C.secTitle(t("mb.historyTitle"), { sm: true, tag: 'h3', right: C.chip(String(history.length), "outline") })}
     ${history.length
       ? `<div style="margin-top:6px">${history.map(historyRow).join("")}</div>`
       : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.historyEmpty")}</p>`}

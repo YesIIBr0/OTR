@@ -115,3 +115,121 @@ describe("A5 · progress cierra con dos salidas reales", () => {
     expect(t("profile.progressGoDebate", "en")).toBe("Debate Hub");
   });
 });
+
+/* ================= K-09 · la escalera de encabezados no salta ==============
+   (auditoría de teclado, hallazgo K-09) En "Cursos" el bloque "Mis reservas"
+   colgaba un h3 del <h1> del curso, y los estados vacíos de scr-core.ts colgaban
+   un h4. El diseño lo dan las CLASES (.sec-title viste igual h2/h3/h4; el vacío
+   lo viste .empty), así que corregir el TAG no mueve un píxel. */
+const MODULOS = [{
+  t: "Módulo 1 — Fundamentos", done: false, locked: false,
+  items: [{ id: "l-1", t: "El modelo ARE", type: "video", done: true, doneByMe: true, locked: false, dur: "12 min" }],
+}];
+function fixtureCursos(extra: Record<string, unknown> = {}) {
+  for (const k of Object.keys(DB)) delete (DB as any)[k];
+  Object.assign(DB, {
+    me: { name: "Analía Reyes", initials: "AR", role: "student", level: "OTR Competitor", streak: 5 },
+    courses: [{ id: "PF-101", code: "PF-101", name: "Public Forum I", coach: "Saúl Méndez", color: "#2CAA20", progress: 50 }],
+    coursesContent: [{ id: "PF-101", dbId: "c-1", code: "PF-101", name: "Public Forum I", coach: "Saúl Méndez", color: "#2CAA20", progress: 50, layout: "modules", modules: MODULOS }],
+    courseModules: MODULOS, catalog: [],
+    myGrades: { rows: [{ activity: "Ensayo", score: 88, letter: "B+", kind: "Entrega", status: "GRADED" }], avg: 88, submitted: 1, total: 1, best: 88 },
+    myBookings: [
+      { id: "mb-1", status: "CONFIRMED", coachId: "co-1", coachName: "Saúl Méndez", coachInitials: "SM", packageName: "Single", slotLabel: "lun 11 ago · 4:00 PM", slotAtIso: new Date(Date.now() + 3 * 864e5).toISOString(), upcoming: true, priceLabel: "$36", escrowStatus: "HELD", videoUrl: "/aula?room=mb-1", canReview: false },
+      { id: "mb-2", status: "COMPLETED", coachId: "co-1", coachName: "Saúl Méndez", coachInitials: "SM", packageName: "10-pack", slotLabel: "jue 23 jul · 7:00 PM", slotAtIso: new Date(Date.now() - 6 * 864e5).toISOString(), upcoming: false, priceLabel: "$340", escrowStatus: "HELD", videoUrl: "", canReview: true },
+    ],
+    events: [], activity: [], notifications: [], messages: [], badges: [], levels: [], skills: [],
+    ...extra,
+  });
+  for (const k of Object.keys(win)) if (k.startsWith("__")) delete win[k];
+  win.DB = DB;
+  win.__course = "PF-101";
+}
+/** Secuencia de niveles de encabezado tal y como aparecen en el HTML. */
+const niveles = (html: string) => [...html.matchAll(/<h([1-6])[\s>]/g)].map((m) => Number(m[1]));
+/** Saltos (subir más de un nivel de golpe) en esa secuencia. */
+const saltos = (html: string) => {
+  const ns = niveles(html);
+  const out: string[] = [];
+  ns.forEach((n, i) => { if (i && n > ns[i - 1] + 1) out.push(`h${ns[i - 1]}->h${n} (#${i})`); });
+  return out;
+};
+
+describe("K-09 · Cursos: 'Mis reservas' cuelga del h1 sin saltarse un nivel", () => {
+  beforeEach(() => fixtureCursos());
+
+  it("la sección va en h2 y sus dos bloques en h3", () => {
+    const html = Core.course.render({ role: "student" });
+    expect(html).toContain(`<h2>${t("mb.title")}</h2>`);
+    expect(html).toContain(`<h3>${t("mb.upcomingTitle")}</h3>`);
+    expect(html).toContain(`<h3>${t("mb.historyTitle")}</h3>`);
+    expect(html).not.toContain(`<h3>${t("mb.title")}</h3>`);
+  });
+
+  it("la escalera completa de la pantalla Cursos no salta ningún nivel", () => {
+    const html = Core.course.render({ role: "student" });
+    expect(niveles(html)[0]).toBe(1);          // arranca en el h1 del curso
+    expect(saltos(html)).toEqual([]);
+  });
+
+  it("sin reservas, el estado vacío tampoco salta (h2 -> h3)", () => {
+    fixtureCursos({ myBookings: [] });
+    const html = Core.course.render({ role: "student" });
+    expect(html).toContain(`<h3>${t("mb.emptyHeading")}</h3>`);
+    expect(saltos(html)).toEqual([]);
+  });
+});
+
+describe("K-09 · los estados vacíos de scr-core.ts cuelgan en h2 del h1 de pantalla", () => {
+  beforeEach(() => fixtureCursos());
+
+  it("sin cursos activos", () => {
+    fixtureCursos({ courses: [], coursesContent: [], courseModules: [] });
+    const html = Core.course.render({ role: "student" });
+    expect(html).toContain(`<h2>${t("core.courseEnrollHeading")}</h2>`);
+    expect(saltos(html)).toEqual([]);
+  });
+
+  it("curso sin módulos", () => {
+    fixtureCursos({ coursesContent: [{ id: "PF-101", dbId: "c-1", code: "PF-101", name: "Public Forum I", coach: "Saúl Méndez", color: "#2CAA20", progress: 0, layout: "modules", modules: [] }] });
+    const html = Core.course.render({ role: "student" });
+    expect(html).toContain(`<h2>${t("core.modsEmptyHeading")}</h2>`);
+    expect(saltos(html)).toEqual([]);
+  });
+
+  it("pestaña de calificaciones sin notas", () => {
+    fixtureCursos({ myGrades: { rows: [], avg: 0, submitted: 0, total: 0, best: 0 } });
+    win.__courseTab = "grades";
+    const html = Core.course.render({ role: "student" });
+    expect(html).toContain(`<h2>${t("core.gradesEmpty")}</h2>`);
+    expect(saltos(html)).toEqual([]);
+  });
+
+  it("índice del curso sin actividades", () => {
+    fixtureCursos({ coursesContent: [{ id: "PF-101", dbId: "c-1", code: "PF-101", name: "Public Forum I", coach: "Saúl Méndez", color: "#2CAA20", progress: 0, layout: "modules", modules: [] }] });
+    const html = Core.courseIndex.render({ role: "student" });
+    expect(html).toContain(`<h2>${t("core.indexEmptyHeading")}</h2>`);
+    expect(saltos(html)).toEqual([]);
+  });
+
+  it("lección real todavía sin contenido", () => {
+    fixtureCursos({
+      coursesContent: [{
+        id: "PF-101", dbId: "c-1", code: "PF-101", name: "Public Forum I", coach: "Saúl Méndez", color: "#2CAA20", progress: 0, layout: "modules",
+        modules: [{ t: "Módulo 1", done: false, locked: false, items: [{ id: "l-9", t: "Lección nueva", type: "lesson", doneByMe: false, locked: false, contentHtml: "", videoKind: null, videoSrc: null }] }],
+      }],
+    });
+    win.__lesson = "l-9";
+    const html = Core.lesson.render({ role: "student" });
+    expect(html).toContain(`<h2>${t("core.lessonPrepHeading")}</h2>`);
+    expect(saltos(html)).toEqual([]);
+  });
+
+  it("la hoja viste igual el h2/h3 del vacío que el h4 que había (mismo tamaño y color)", () => {
+    const hoja = css();
+    const regla = hoja.match(/\.empty h2,\.empty h3\{([^}]*)\}/);
+    expect(regla).not.toBeNull();
+    expect(regla![1]).toContain("font-size:16px");
+    expect(regla![1]).toContain("color:var(--text)");
+    expect(regla![1]).toContain("margin-bottom:6px");
+  });
+});
