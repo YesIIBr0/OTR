@@ -26,12 +26,14 @@ vi.mock("../app/lib/db", () => ({ db: {} }));
 
 import { DB } from "../app/lib/data";
 import { S as STeacher } from "../app/lib/scr-teacher";
+import { S as SCommunityRaw } from "../app/lib/scr-community";
 import "../app/lib/scr-my-listings"; // registra el diccionario lst.*
 import { conversationLabel } from "../app/lib/queries";
 import { money } from "../app/lib/money";
 import { t } from "../app/lib/i18n";
 
 const Teacher: any = STeacher;
+const SCommunity: any = SCommunityRaw;
 
 const STUDENTS = [
   { id: "u-ig", n: "Isabella Guzmán", i: "IG", lvl: "OTR Competitor", xp: 2100, last: "hace 2 días", risk: false, grade: 88, att: 92, eng: "Alto", trend: "up" },
@@ -206,6 +208,39 @@ describe("K-14 · los 10 campos del modal Adjudicar tienen label programática",
   it("la rúbrica es un grupo con nombre (no 5 spin buttons sueltos)", () => {
     expect(SRC_TEACHER).toContain('role="group" aria-labelledby="bl-rubric-lbl"');
     expect(SRC_TEACHER).toContain('<label class="label" id="bl-rubric-lbl">');
+  });
+});
+
+describe("K-15/K-16 · el composer de Mensajes se anuncia", () => {
+  beforeEach(() => {
+    for (const k of Object.keys(DB)) delete (DB as any)[k];
+    Object.assign(DB, {
+      me: { name: "Saúl Méndez", initials: "SM", role: "teacher" },
+      messages: [{
+        id: "cv-1", ini: "AR", name: "Analía Reyes", last: "Hecho. Lo subo hoy mismo", when: "hace 1h",
+        unread: 0, online: true, navy: false,
+        messages: [{ me: true, body: "¿Cómo vas?", when: "10:02" }],
+      }],
+    });
+  });
+
+  it("K-15 · el botón de enviar (solo-icono) tiene aria-label", () => {
+    const html = SCommunity.messages.render();
+    expect(html).toMatch(/id="chat-send"[^>]*aria-label="[^"]+"/);
+  });
+
+  it("K-16 · el composer y el buscador no dependen del placeholder", () => {
+    const html = SCommunity.messages.render();
+    expect(html).toMatch(/id="chat-input"[^>]*aria-label="[^"]+"/);
+    expect(html).toMatch(/<input aria-label="[^"]+" placeholder="/); // buscador de conversaciones
+  });
+
+  it("las 3 claves nuevas existen en ES y EN", () => {
+    for (const k of ["comm.msg.sendAria", "comm.msg.composeAria", "comm.msg.searchAria"]) {
+      expect(t(k, "es")).not.toBe(k);
+      expect(t(k, "en")).not.toBe(k);
+      expect(t(k, "en")).not.toBe(t(k, "es"));
+    }
   });
 });
 

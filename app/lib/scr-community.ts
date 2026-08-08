@@ -123,7 +123,9 @@ export const S = {};
       <div class="page-sub" style="margin-top:8px">${t("comm.msg.sub")}</div></div></div>
       <div class="msg-wrap fade-up">
         <aside class="msg-list">
-          <div class="searchbox" style="width:100%;margin-bottom:10px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input placeholder="${t("comm.msg.searchPh")}"/></div>
+          ${/* [GOAL K-16] El placeholder NO es nombre accesible (se borra al teclear y varios
+               lectores no lo anuncian): aria-label explícito, como el buscador de Participantes. */""}
+          <div class="searchbox" style="width:100%;margin-bottom:10px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input aria-label="${t("comm.msg.searchAria")}" placeholder="${t("comm.msg.searchPh")}"/></div>
           ${convo}
         </aside>
         <section class="msg-thread">
@@ -138,8 +140,10 @@ export const S = {};
             ${bubbles}
           </div>
           <div class="mt-compose">
-            <input class="input" id="chat-input" placeholder="${t("comm.msg.composePh")}" style="flex:1"/>
-            <button class="btn btn-primary" id="chat-send" style="width:42px;padding:0">${IC.arrowR}</button>
+            ${/* [GOAL K-16] Ídem en el composer. [GOAL K-15] El botón de enviar es SOLO-ICONO:
+                 sin aria-label el árbol de accesibilidad lo expone como "button" a secas. */""}
+            <input class="input" id="chat-input" aria-label="${t("comm.msg.composeAria")}" placeholder="${t("comm.msg.composePh")}" style="flex:1"/>
+            <button class="btn btn-primary" id="chat-send" aria-label="${t("comm.msg.sendAria")}" title="${t("comm.msg.sendAria")}" style="width:42px;padding:0">${IC.arrowR}</button>
           </div>`
           : `<div class="empty" style="margin:auto;padding:48px 24px;text-align:center"><div class="ill">${IC.msg}</div><h4>${t("comm.msg.emptyHeading")}</h4><p>${t("comm.msg.emptyBody")}</p></div>`}
         </section>

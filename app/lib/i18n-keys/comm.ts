@@ -41,6 +41,12 @@ export const dict = {
     "comm.msg.title": "Mensajes",
     "comm.msg.sub": "Habla con tus coaches y compañeros",
     "comm.msg.searchPh": "Buscar…",
+    // [GOAL K-15/K-16] Nombres accesibles: el placeholder NO es un nombre (desaparece al
+    // escribir) y el botón de enviar es solo-icono. Sin esto el lector anuncia "edit text"
+    // y "button" a secas.
+    "comm.msg.searchAria": "Buscar conversaciones",
+    "comm.msg.composeAria": "Escribe un mensaje",
+    "comm.msg.sendAria": "Enviar mensaje",
     "comm.msg.online": "En línea",
     "comm.msg.report": "Reportar",
     "comm.msg.today": "Hoy",
@@ -93,6 +99,9 @@ export const dict = {
     "comm.msg.title": "Messages",
     "comm.msg.sub": "Talk with your coaches and peers",
     "comm.msg.searchPh": "Search…",
+    "comm.msg.searchAria": "Search conversations",
+    "comm.msg.composeAria": "Write a message",
+    "comm.msg.sendAria": "Send message",
     "comm.msg.online": "Online",
     "comm.msg.report": "Report",
     "comm.msg.today": "Today",
