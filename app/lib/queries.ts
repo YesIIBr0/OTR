@@ -3,7 +3,10 @@ import { db } from "./db";
 import { esc } from "./esc";
 import { cached } from "./cache";
 import { safeUrl } from "./api";
-import { dateLabel, timeLabel } from "./consultations";
+// [GOAL A2 · F2] Los labels de fecha del payload ya NO se arman con tablas en español
+// fijo (consultations.ts / MONTHS_ES local): se delegan a los formateadores de i18n.ts,
+// que reciben el idioma de la request (cookie otr_lang → getAppData(email, lang)).
+import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull } from "./i18n";
 
 const ME_EMAIL = "analia.reyes@otr.do";
 
@@ -147,11 +150,9 @@ export function computeRosterMetrics(input: RosterMetricsInput): RosterMetrics {
   return { grade, att, eng, trend, risk, last, prog: Math.round(progressPct) };
 }
 
-// Etiqueta legible mes + año en español, tipo "jun 2026" (texto generado por nosotros).
-const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 // [DASHBOARD] Nombre del mes para el periodo del ranking mensual. Tabla propia (no Intl):
 // el resto del archivo ya genera sus etiquetas así, sin depender del ICU del runtime.
+const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const MONTHS_EN_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 function monthNameLabel(d: Date, wantEnglish: boolean): string {
   return (wantEnglish ? MONTHS_EN_FULL : MONTHS_ES_FULL)[d.getMonth()] || "";
@@ -184,40 +185,50 @@ async function optionalRows<T>(label: string, run: () => Promise<T[]>): Promise<
     return [];
   }
 }
-function monthYearLabel(d?: Date | null): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  return `${MONTHS_ES[date.getMonth()]} ${date.getFullYear()}`;
+// [GOAL A2 · F2] Los cuatro labels de fecha del payload reciben ahora el idioma de la
+// request y delegan en los formateadores de i18n.ts (ES: "jun 2026" / EN: "Jun 2026").
+// Antes eran tablas en español fijo → con otr_lang=en la UI salía en inglés y las fechas
+// en español. La forma del label en ES NO cambia (mismo output, byte a byte).
+function monthYearLabel(d?: Date | null, lang?: string): string {
+  return fmtMonthYear(d, lang);
 }
 
-// Etiqueta corta de día "12 jun" (journey/atribución del Lifetime Profile, PRD §8).
-function shortDateLabel(d?: Date | string | null): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  return `${date.getDate()} ${MONTHS_ES[date.getMonth()]}`;
+// Etiqueta corta de día "12 jun" / "Jun 12" (journey/atribución del Lifetime Profile, PRD §8).
+function shortDateLabel(d?: Date | string | null, lang?: string): string {
+  return fmtDayMonth(d, lang);
 }
 
-// Etiqueta de mes completo capitalizado "Junio 2026" (agrupa el journey, PRD §8).
-function monthFullLabel(d?: Date | string | null): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  const m = MONTHS_ES_FULL[date.getMonth()];
-  return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${date.getFullYear()}`;
+// Etiqueta de mes completo capitalizado "Junio 2026" / "June 2026" (agrupa el journey, PRD §8).
+function monthFullLabel(d?: Date | string | null, lang?: string): string {
+  return fmtMonthFull(d, lang);
 }
 
-// Etiqueta de fecha de evento futuro tipo "12 jun · 9:00 AM" (texto generado por
-// nosotros). Usada para el inicio de los torneos del Debate Hub.
-function eventDateLabel(d?: Date | null): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  // [FIX glitch "12:23 AM"] Usar las etiquetas con zona horaria FIJA (America/Santo_Domingo,
-  // vía consultations.ts) en vez de la hora del SERVIDOR (UTC): antes un torneo a medianoche
-  // local se renderizaba "12:23 AM" en un server UTC. Misma fuente TZ que las reservas.
-  return `${dateLabel(date)} · ${timeLabel(date)}`;
+// Etiqueta de fecha de evento futuro tipo "12 jun · 9:00 AM" / "Fri, Jun 12 · 9:00 AM".
+// Usada para el inicio de los torneos del Debate Hub.
+// [FIX glitch "12:23 AM"] La hora sale con zona horaria FIJA (America/Santo_Domingo) y no
+// con la del SERVIDOR (UTC): antes un torneo a medianoche local se renderizaba "12:23 AM"
+// en un server UTC. fmtDateTimeRD conserva ese offset fijo. Misma fuente TZ que las reservas.
+function eventDateLabel(d?: Date | null, lang?: string): string {
+  return fmtDateTimeRD(d, lang);
+}
+
+/* [GOAL A4 · F2] Título REAL de una clase 1:1 del marketplace.
+   Defecto: el dashboard titulaba la próxima clase "Single" — que es el nombre COMERCIAL
+   del paquete del coach (Single / 5-pack / 10-pack, CoachPackage.name), no la clase. El
+   alumno leía "Single" como si fuera el tema de su sesión.
+   Booking no tiene curso ni lección (es coaching 1:1, no una lección de un curso), así que
+   el título honesto sale del dato real que SÍ existe: la primera especialidad del
+   CoachProfile ("Public Forum, Lincoln-Douglas, Oratoria" → "Sesión de Public Forum") y,
+   si el coach no declaró especialidades, su nombre ("Sesión con Carla Jiménez"). El paquete
+   se queda donde siempre fue correcto: como METADATO (packageName, que scr-mybookings y
+   scr-room ya pintan como metadato). Pura ⇒ testeable sin DB (tests/i18n-dates.test.ts).
+   Devuelve texto CRUDO: el call-site aplica esc() una sola vez (contrato de escape). */
+export function bookingClassTitle(input: { specialty?: string | null; coachName?: string | null; lang?: string }): string {
+  const first = String(input.specialty ?? "").split(",")[0].trim();
+  const en = input.lang === "en";
+  if (first) return en ? `${first} session` : `Sesión de ${first}`;
+  const coach = String(input.coachName ?? "").trim() || (en ? "OTR Coach" : "Coach OTR");
+  return en ? `Session with ${coach}` : `Sesión con ${coach}`;
 }
 
 // Las 6 dimensiones del radar OTR, en el orden fijo del contrato.
@@ -982,7 +993,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     id: c.id,
     title: esc(c.title),
     programName: esc(courseNameById.get(c.courseId) || ""),
-    issuedAt: monthYearLabel(c.issuedAt),
+    issuedAt: monthYearLabel(c.issuedAt, lang),
   }));
 
   // --- Arsenal APAGADO (PRD-estricto): no existe en el PDF (el motion library
@@ -1180,7 +1191,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         format: esc(t.format),
         region: esc(t.region || ""),
         modality: esc(t.modality),
-        startsLabel: t.startsAt ? eventDateLabel(t.startsAt) : "Por anunciar",
+        startsLabel: t.startsAt ? eventDateLabel(t.startsAt, lang) : (lang === "en" ? "To be announced" : "Por anunciar"),
         status: t.status,
         entryLabel: t.entryCents > 0 ? `RD$${(t.entryCents / 100).toLocaleString("es-DO")}` : "Gratis",
         registered: (t.registrations || []).length > 0,
@@ -1201,8 +1212,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     const v = (Number(cents) || 0) / 100;
     return `$${v.toLocaleString("en-US", Number.isInteger(v) ? undefined : { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
-  // Etiqueta de slot "lun 16 jun · 4:00 PM" (hora RD) — reutiliza consultations.ts.
-  const slotLabel = (d: Date | string): string => `${dateLabel(d as any)} · ${timeLabel(d as any)}`;
+  // Etiqueta de slot "lun 16 jun · 4:00 PM" / "Mon, Jun 16 · 4:00 PM" (hora RD fija).
+  const slotLabel = (d: Date | string): string => fmtDateTimeRD(d, lang);
   // Lista separada por comas → array escapado (specialties, languages).
   const splitList = (s?: string | null): string[] =>
     String(s ?? "").split(",").map((x) => x.trim()).filter(Boolean).map((x) => esc(x));
@@ -1212,6 +1223,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // Mapa packageId -> paquete (para resolver el nombre/precio en bookings).
   const packageById = new Map<string, any>();
   coachProfiles.forEach((p: any) => (p.packages || []).forEach((pk: any) => packageById.set(pk.id, pk)));
+  // [GOAL A4 · F2] Mapa coachId (User) -> especialidades declaradas, para titular la clase
+  // con el tema REAL en vez del nombre del paquete ("Single"). Ver bookingClassTitle.
+  const specialtiesByCoachId = new Map<string, string>();
+  coachProfiles.forEach((p: any) => specialtiesByCoachId.set(p.userId, String(p.specialties || "")));
 
   const marketplace = {
     // Quien mira: 'minor' activa el candado de consentimiento parental en el UI
@@ -1347,6 +1362,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     coachId: b.coachId,
     coachName: coachNameOf(b.coachId),
     coachInitials: coachIniOf(b.coachId),
+    // [GOAL A4 · F2] Título de la clase (tema real). `packageName` sigue viajando, pero
+    // como METADATO comercial — nunca más como título de la próxima clase del dashboard.
+    title: esc(bookingClassTitle({
+      specialty: specialtiesByCoachId.get(b.coachId),
+      coachName: coachUserById.get(b.coachId)?.name,
+      lang,
+    })),
     packageName: b.packageId ? esc(packageById.get(b.packageId)?.name || "") : "",
     slotLabel: slotLabel(b.slotAt),
     slotAtIso: new Date(b.slotAt).toISOString(),
@@ -1643,7 +1665,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         return text.includes(needle) || (TYPE_TO_SKILLS[a.type] || []).includes(skillName);
       })
       .slice(0, 8)
-      .map((a) => ({ title: esc(a.title), whenLabel: shortDateLabel(a.createdAt) }));
+      .map((a) => ({ title: esc(a.title), whenLabel: shortDateLabel(a.createdAt, lang) }));
   };
   // Sin StudentSkill → las 6 dimensiones canónicas en 0 (el perfil nunca va vacío).
   const skillGraphBase = (myStudentSkills || []).length
@@ -1680,7 +1702,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     .slice()
     .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime())
     .map((r) => ({
-      label: shortDateLabel(r.recordedAt),
+      label: shortDateLabel(r.recordedAt, lang),
       ratingAfter: Math.round(r.rating.ratingAfter),
       tierAfter: r.rating.tierAfter,
     }));
@@ -1695,14 +1717,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // Credenciales verificables (certificados emitidos).
   const lifetimeCredentials = (myCertificates || []).map((c: any) => ({
     title: esc(c.title),
-    issuedLabel: monthYearLabel(c.issuedAt),
+    issuedLabel: monthYearLabel(c.issuedAt, lang),
   }));
 
   // Journey: la historia cronológica vertical (hasta 60 eventos, asc) — el
   // screenshot que un estudiante comparte y que enorgullece a los padres.
   const journey = activityAsc.slice(0, 60).map((a: any) => ({
-    whenLabel: shortDateLabel(a.createdAt),
-    monthLabel: monthFullLabel(a.createdAt),
+    whenLabel: shortDateLabel(a.createdAt, lang),
+    monthLabel: monthFullLabel(a.createdAt, lang),
     title: esc(a.title),
     detail: esc(a.detail || ""),
     type: a.type,
@@ -1869,13 +1891,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     highlights: (highlightRows || []).map((h: any) => ({
       id: h.id,
       title: h.title,
-      dateLabel: h.date ? shortDateLabel(h.date) : "",
+      dateLabel: h.date ? shortDateLabel(h.date, lang) : "",
       category: h.category,
       imageUrl: h.imageUrl || "",
     })),
     // [auditoría] La etiqueta de fecha se DERIVA de startsAt (viva, como los torneos); whenLabel
     // es solo fallback para eventos legados sin startsAt. Así "Hoy/Mañana" no queda congelado.
-    events: events.map((e) => ({ t: e.title, c: e.course, when: (e as any).startsAt ? eventDateLabel((e as any).startsAt) : e.whenLabel, tone: e.tone })),
+    events: events.map((e) => ({ t: e.title, c: e.course, when: (e as any).startsAt ? eventDateLabel((e as any).startsAt, lang) : e.whenLabel, tone: e.tone })),
     // PRD §4: DB.activity = timeline del Progress Profile (ActivityEvent del usuario,
     // los últimos 15 de la consulta compartida con journey). esc() en texto de usuario.
     activity: (activityEvents || []).slice(0, 15).map((a) => ({

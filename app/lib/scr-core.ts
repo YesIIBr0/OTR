@@ -191,7 +191,10 @@ function activeItemsFlat() {
       const bookings = (Array.isArray(DB.myBookings) ? DB.myBookings : [])
         .filter((b) => b && b.upcoming && (b.status === 'CONFIRMED' || b.status === 'PENDING'))
         .sort((a, b) => (Date.parse(a.slotAtIso) || 0) - (Date.parse(b.slotAtIso) || 0));
-      const bookingTitle = (b) => b.packageName || t('core.dashSessionWith').replace('{coach}', b.coachName || 'Coach OTR');
+      /* [GOAL A4 · F2] El título es la CLASE (b.title, que arma queries.ts con el tema real
+         del coach); el paquete ("Single") es metadato comercial, no título. b.packageName
+         queda solo como respaldo para un payload viejo sin title. */
+      const bookingTitle = (b) => b.title || b.packageName || t('core.dashSessionWith').replace('{coach}', b.coachName || 'Coach OTR');
 
       /* ---- ② HERO "TU PRÓXIMA CLASE" ---- */
       const nextB = bookings[0] || null;
