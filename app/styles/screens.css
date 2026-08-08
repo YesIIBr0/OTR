@@ -902,7 +902,10 @@
    ========================================================================== */
 
 /* ---- Rejilla: contenido + rail de 336px (spec §2.4) ---- */
-.dash-grid{display:grid;grid-template-columns:1fr 336px;gap:22px;align-items:start}
+/* Medido sobre el mockup en alta resolución: con el contenido a 1120, la columna
+   principal ocupa 801px y el rail 300px con 18px de aire (71,5% / 26,8%). Con el rail
+   a 336 la principal se quedaba en 702 y el héroe se veía apretado. */
+.dash-grid{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start}
 .dash-main{display:flex;flex-direction:column;gap:30px;min-width:0}
 .dash-aside{display:flex;flex-direction:column;gap:18px;min-width:0}
 /* Breakpoint LOCAL (no toca .split ni el shell): el rail baja bajo el contenido. */
@@ -1074,6 +1077,9 @@
    h1 de page-head 40→38 y sin margin-top; h2 del héroe 33→31 a 16ch. */
 .page-head .ph-title{margin:0;font-size:38px}
 .dash-hero .dh-title{margin:0 0 16px;font-size:31px;line-height:1.04;max-width:16ch}
+/* Cabecera medida en el mockup: 70px de alto (eyebrow 9px sobre el título, regla a 16). */
+.page-head--rule{padding-bottom:16px;margin-bottom:24px}
+.page-head .ph-eyebrow{margin-bottom:7px}
 @media (max-width:640px){
   .dash-hero .dh-title{font-size:25px;max-width:none}
 }
