@@ -1232,7 +1232,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         // Solo cierran con Escape los modales con affordance de cerrar ([data-x]);
         // los de progreso (sin botón) lo ignoran a propósito.
         const x = scrim.querySelector("[data-x]") as HTMLElement | null;
-        if (x) { e.preventDefault(); x.click(); }
+        // stopPropagation: close() quita el scrim SÍNCRONO, así que sin esto el mismo
+        // Escape seguiría burbujeando hasta onPopoverKey ya sin scrim en el DOM y
+        // cerraría también el popover abierto detrás del modal (revisión E3).
+        if (x) { e.preventDefault(); e.stopPropagation(); x.click(); }
       } else if (e.key === "Tab") {
         const f = mdlFocusables(scrim);
         if (!f.length) { e.preventDefault(); return; }
