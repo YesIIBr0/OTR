@@ -2,6 +2,9 @@
 import { useEffect, useRef } from "react";
 import { renderShell } from "../lib/shell";
 import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
+// [ROUTER-HASH] Mapeo puro ruta↔URL (tests/router-hash.test.ts). La URL manda: sin esto
+// no había deep-link, ni Atrás/Adelante, ni F5 estable en /aula.
+import { parseHash, routeToHash, resolveHashRoute, defaultRouteForRole, isRouteAllowed, isInPageAnchor, routeNeedsContext, contextFallbackRoute } from "../lib/router";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
@@ -52,7 +55,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       } catch { /* defensivo: nunca bloquea la navegación */ }
     }
 
-    const ROLE_HOME: any = { admin: "admin", teacher: "teacher", parent: "parent", student: "dashboard" };
+    // El home de cada rol vive en lib/router (defaultRouteForRole) para que la lógica de
+    // hash y la del guard de rol no se puedan desincronizar.
 
     // [A11Y] El SPA inyecta innerHTML sin recargar el documento → teclado y lector de pantalla
     // no detectan el cambio de pantalla. Región aria-live persistente para anunciar la ruta.
@@ -70,18 +74,48 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // El idioma activo (cookie otr_lang) debe reflejarse en <html lang> para el lector de pantalla.
     try { const m = document.cookie.match(/(?:^|;\s*)otr_lang=([^;]+)/); document.documentElement.lang = m && m[1] === "en" ? "en" : "es"; } catch {}
 
-    async function renderApp(r: string, opts?: { keepScroll?: boolean }) {
+    // [ROUTER-CTX] Sello de contexto: go() lo pone con la ruta a la que navega, porque quien
+    // llama acaba de fijar la global de esa pantalla (window.__lesson = X; go('lesson')). Un
+    // render disparado por el HISTORIAL o por el arranque no lo trae → ese contexto no es suyo.
+    let ctxSeal: string | null = null;
+    let mounted = false; // true tras el primer render: a partir de ahí ya hay historial propio
+
+    async function renderApp(r: string, opts?: { keepScroll?: boolean; fromHash?: boolean }) {
       let def = (ROUTES as any)[r];
       if (!def) return;
+      const keep = !!(opts && opts.keepScroll);
+      const fromHash = !!(opts && opts.fromHash);
+      const prevRoute = currentRoute;
+      // [ROUTER-CTX] Pantalla con contexto (lección, ficha de clase, certificado, sala) abierta
+      // desde Atrás/Adelante, F5 o un hash a mano: la global lleva el ítem de OTRA visita (o
+      // ninguno) y se pintaría algo que el usuario no pidió. Se cae al padre de la sección.
+      if (fromHash && routeNeedsContext(r) && ctxSeal !== r) {
+        r = contextFallbackRoute(r, state.role);
+        def = ROUTES[r];
+        if (!def) return;
+      }
+      if (!keep) ctxSeal = null; // el sello vale para UN render, el inmediatamente siguiente
       // Guard de rol en el cliente: si la ruta exige un rol distinto al actual, redirige al
       // home del rol (el backend ya rechaza los datos, pero esto evita pintar UI ajena).
       // def.role puede ser un string (un rol) o una lista (varios roles autorizados).
+      let redirected = false;
       if (def.role) {
         const allowed = Array.isArray(def.role) ? def.role : [def.role];
-        if (!allowed.includes(state.role)) { r = ROLE_HOME[state.role] || "dashboard"; def = (ROUTES as any)[r]; if (!def) return; }
+        if (!allowed.includes(state.role)) { r = defaultRouteForRole(state.role); def = (ROUTES as any)[r]; if (!def) return; redirected = true; }
       }
-      const keep = !!(opts && opts.keepScroll);
+      // [ROUTER-HASH] Entrada fantasma: si la corrección nos devuelve a la pantalla que YA
+      // estaba pintada, la entrada que acaba de crear el hash inválido es un duplicado (dos
+      // entradas con la misma URL → el primer Atrás no hace nada). history.back() la retira y
+      // no hay nada que repintar. Solo en runtime: en el arranque no hay entrada propia.
+      if (redirected && fromHash && mounted && r === prevRoute) { try { history.back(); return; } catch { /* sin History API: sigue por replaceState */ } }
       currentRoute = r; // se fija ANTES del await para el guard "la última navegación gana"
+      // [ROUTER-HASH] La URL refleja SIEMPRE la pantalla que de verdad se pinta: también
+      // cuando el guard de rol o el fallback de contexto redirigieron, y cuando un handler
+      // llamó a renderApp() directo. replaceState no dispara 'hashchange' ni añade entrada al
+      // historial → no hay doble render ni basura en el botón Atrás.
+      if (!keep && parseHash(window.location.hash)?.route !== r) {
+        try { history.replaceState(null, "", window.location.pathname + window.location.search + routeToHash(r)); } catch { /* navegadores sin History API: la nav sigue funcionando */ }
+      }
       // [UI-CURSOS U4] Publica la ruta viva: los paneles EMBEBIDOS (p.ej. las reservas dentro
       // de Cursos) necesitan repintar "donde estoy" tras una mutación, no saltar a una
       // pantalla propia — que puede no existir.
@@ -132,7 +166,44 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       // del rol → navegación instantánea sin inflar el bundle inicial.
       prefetchForRole(state.role);
     }
-    (window as any).go = (r: string) => { void renderApp(r); };
+    // [ROUTER-HASH] go() ya NO pinta: escribe la URL. El repintado lo dispara el listener de
+    // 'hashchange' de más abajo, así el mismo camino sirve para un click, para Atrás/Adelante
+    // y para un hash escrito a mano — una sola fuente de verdad, sin doble render.
+    // Excepción: si el hash YA es esta ruta no habrá evento, así que se repinta directo. Hace
+    // falta para los saltos misma-ruta-otro-contexto (ficha de clase → otra ficha: cambia
+    // window.__listing y go('listing') tiene que repintar) y conserva el comportamiento previo.
+    function go(r: string) {
+      if (!ROUTES[r]) return;
+      // El contexto que el llamador acaba de fijar (window.__lesson = X; go('lesson')) es
+      // válido para ESTE render: se sella para que el render disparado por el hash lo acepte.
+      ctxSeal = r;
+      // Ruta que no es del rol: no merece entrada propia en el historial. Se pinta directo —
+      // renderApp redirige al home y corrige la URL con replaceState (semántica replace).
+      if (!isRouteAllowed(r, state.role)) { void renderApp(r); return; }
+      // Se escribe el hash destino COMPLETO: así un '#lesson/L-101' viejo no se queda mintiendo
+      // al saltar a otra lección de la misma ruta.
+      const h = routeToHash(r);
+      // ÚNICA rama sin evento: el hash ya es exactamente el destino → no habrá 'hashchange'
+      // que espere nadie, así que se repinta directo (salto misma-ruta-otro-contexto: otra
+      // ficha de clase, otro curso, refresco tras mutación).
+      if (window.location.hash === h) { void renderApp(r); return; }
+      window.location.hash = h; // el resto lo pinta el listener → una sola fuente de verdad
+    }
+    (window as any).go = go;
+    const onHashChange = () => {
+      const h = window.location.hash;
+      // Ancla IN-PAGE, no ruta: el skip-link (#content, primer tab-stop de toda pantalla) y el
+      // índice de lección (#s1/#s2/#s3). Es el navegador saltando dentro del documento: ni se
+      // repinta ni se corrige la URL. El redirect de un hash desconocido es cosa del arranque.
+      if (isInPageAnchor(h)) return;
+      const parsed = parseHash(h);
+      if (!parsed) return; // hash vacío ('' o '#'): tampoco es navegación
+      // Un hash que SÍ es ruta repinta SIEMPRE, aunque coincida con la ruta actual: eso ES el
+      // refresco tras mutación (crear un torneo → go('events')), que antes se perdía cuando el
+      // hash venía desincronizado por un ancla in-page.
+      void renderApp(parsed.route, { fromHash: true });
+    };
+    window.addEventListener("hashchange", onHashChange);
 
     let toastWrap: HTMLElement | null = null;
     function toast(msg: string, tone?: string, action?: { label?: string; onClick: () => void }) {
@@ -473,7 +544,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         else toast(tr("aula.courseCreated"), "ok");
         await refresh();
         // Flujo Moodle: entrar directo al constructor del curso recién creado.
-        if (newId) { (window as any).__builderCourseId = newId; try { sessionStorage.setItem("otr_builder_course", newId); } catch {} renderApp("course-builder"); }
+        if (newId) { (window as any).__builderCourseId = newId; try { sessionStorage.setItem("otr_builder_course", newId); } catch {} go("course-builder"); }
       });
     }
     // Duplicar (clonar) una actividad o sección orquestando los POST existentes.
@@ -639,7 +710,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         // [LEARN-2] Entrar directo al curso recién inscrito (antes solo refrescaba el catálogo
         // y el alumno se quedaba ahí sin un siguiente paso claro). __course indexa por code.
         const enrolled = ((DB as any).coursesContent || []).find((c: any) => c.dbId === courseId || c.id === courseId);
-        if (enrolled) { (window as any).__course = enrolled.code; renderApp("course"); }
+        if (enrolled) { (window as any).__course = enrolled.code; go("course"); }
       } catch (e: any) { toast(e.message || tr("err.generic"), "danger"); }
     }
     // [LEARN-1] Reclamar el diploma al completar un programa al 100%. El endpoint ya existía
@@ -653,7 +724,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         (window as any).__cert = d?.certificate?.id || null;
         toast(tr("aula.certIssued"), "ok");
         await refresh();
-        renderApp("certificate");
+        go("certificate");
       } catch (e: any) { toast(e.message || tr("aula.programNotCompleted"), "danger"); }
     }
     // [COACH-05] Publicar / pasar a borrador un curso sin abrir el modal de Configuración.
@@ -1076,7 +1147,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (dupEl) { e.preventDefault(); const [dk, di] = dupEl.getAttribute("data-duplicate")!.split(":"); duplicateEntity(dk, di); return; }
       // Constructor de curso estilo Moodle.
       const goBuilderEl = t.closest("[data-go-builder]") as HTMLElement | null;
-      if (goBuilderEl) { e.preventDefault(); const cid = goBuilderEl.getAttribute("data-go-builder")!; (window as any).__builderCourseId = cid; try { sessionStorage.setItem("otr_builder_course", cid); } catch {} renderApp("course-builder"); return; }
+      if (goBuilderEl) { e.preventDefault(); const cid = goBuilderEl.getAttribute("data-go-builder")!; (window as any).__builderCourseId = cid; try { sessionStorage.setItem("otr_builder_course", cid); } catch {} go("course-builder"); return; }
       const chooserEl = t.closest("[data-open-chooser]") as HTMLElement | null;
       if (chooserEl) { e.preventDefault(); openActivityChooser(chooserEl.getAttribute("data-open-chooser")!); return; }
       if (t.closest("[data-toggle-edit]")) { e.preventDefault(); const cur = (window as any).__editMode !== false; (window as any).__editMode = !cur; try { sessionStorage.setItem("otr_edit_mode", !cur ? "1" : "0"); } catch {} renderApp(currentRoute, { keepScroll: true }); return; }
@@ -1111,7 +1182,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const reviewEl = t.closest('[data-action="leave-review"]') as HTMLElement | null;
       if (reviewEl) { e.preventDefault(); leaveReview(reviewEl.getAttribute("data-course")!); return; }
       const goEl = t.closest("[data-go]") as HTMLElement | null;
-      if (goEl) { e.preventDefault(); renderApp(goEl.getAttribute("data-go")!); return; }
+      if (goEl) { e.preventDefault(); go(goEl.getAttribute("data-go")!); return; }
       const acc = t.closest("[data-acc]") as HTMLElement | null;
       if (acc) { const open = acc.closest(".module")?.classList.toggle("open"); acc.setAttribute("aria-expanded", open ? "true" : "false"); return; }
       const toastEl = t.closest("[data-toast]") as HTMLElement | null;
@@ -1122,7 +1193,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const inp = e.target as HTMLElement;
       if (inp && inp.matches?.(".searchbox input") && e.key === "Enter") {
         (window as any).__q = (inp as HTMLInputElement).value;
-        renderApp("search");
+        go("search");
         return;
       }
       // [A11Y-01] Activa con Enter/Espacio los contenedores clicables marcados como
@@ -1184,7 +1255,9 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     mdlObserver.observe(document.body, { childList: true });
     document.addEventListener("keydown", onModalKey, true);
 
-    let startRoute = state.role === "admin" ? "admin" : state.role === "teacher" ? "teacher" : state.role === "parent" ? "parent" : "dashboard";
+    // [ROUTER-HASH] Arranque: si la URL trae una ruta VÁLIDA PARA EL ROL, se abre esa
+    // (deep-link y F5 se quedan donde estabas); si no —o si es de otro rol— el home del rol.
+    let startRoute = resolveHashRoute(window.location.hash, state.role);
     // [ONBOARDING-1] Orden correcto del arranque: el placement del alumno nuevo (PRD §2.2
     // Journey A) DEBE ganar sobre el flag de onboarding del registro — antes `otr_onboard`
     // lo pisaba y el alumno nunca hacía su evaluación inicial (radar vacío para siempre).
@@ -1193,8 +1266,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     try { justRegistered = !!sessionStorage.getItem("otr_onboard"); sessionStorage.removeItem("otr_onboard"); } catch {}
     if (state.role === "student" && data?.me?.needsPlacement) startRoute = "placement";
     else if (justRegistered) startRoute = "onboarding";
-    renderApp(startRoute);
-    return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); };
+    // fromHash: el arranque tampoco trae contexto fresco → un F5 sobre #lesson cae a #course
+    // en vez de pintar la lección de otra visita. mounted se activa DESPUÉS: durante el primer
+    // render todavía no hay entrada de historial propia que retirar.
+    renderApp(startRoute, { fromHash: true }).finally(() => { mounted = true; });
+    return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); window.removeEventListener("hashchange", onHashChange); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); };
   }, []);
 
   return <div ref={ref} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: initialHtml }} />;
