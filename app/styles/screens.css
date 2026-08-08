@@ -967,6 +967,12 @@
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .badge-tile .bt-s{display:block;margin-top:2px;font-size:10.5px;font-weight:600;color:var(--ink-400);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* XP de la insignia (mockup §3.6): sustituye a la descripción cuando el dato trae
+   XP. Naranja accesible (--otr-green-text #9E3211, 6.36:1) — a 10.5px el naranja
+   de marca no llega a AA. */
+.badge-tile .bt-xp{display:flex;align-items:center;gap:3px;margin-top:2px;font-size:10.5px;font-weight:700;
+  white-space:nowrap;color:var(--otr-green-text)}
+.badge-tile .bt-xp .ic{width:11px;height:11px;flex:none;color:var(--otr-green)}
 /* Insignia aún no ganada: tile apagado (mockup §3.6) */
 .badge-tile--off{background:var(--surface-2)}
 .badge-tile--off .bt-ic{background:var(--bg);color:var(--ink-700)}
@@ -991,12 +997,18 @@
 .dash-lb .lb-place{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1;color:var(--ink-300)}
 .dash-lb .lb-tname{margin-top:11px;font-size:14px;font-weight:700;line-height:1.1;color:#fff;overflow:hidden;text-overflow:ellipsis}
 .dash-lb .lb-txp{margin-top:3px;font-size:11px;font-weight:700;color:var(--ink-300)}
+/* Premio del puesto (mockup §3.5): cajita bajo el XP. Solo se pinta cuando el dato
+   del puesto TRAE premio — sin premio no hay caja vacía. */
+.dash-lb .lb-prize{margin-top:11px;padding:6px 7px;border-radius:var(--r-sm);background:rgba(255,255,255,.05);
+  font-size:10.5px;font-weight:600;line-height:1.25;color:var(--n-150)}
 .dash-lb .lb-tile--1{background:linear-gradient(165deg,var(--otr-green),var(--accent-dark));padding-bottom:15px}
 .dash-lb .lb-tile--1 .lb-crown{display:block;color:var(--text-on-accent);margin-bottom:8px}
 .dash-lb .lb-tile--1 .lb-crown .ic{width:22px;height:22px}
 .dash-lb .lb-tile--1 .lb-place{font-size:26px;color:var(--text-on-accent)}
 .dash-lb .lb-tile--1 .lb-tname{font-size:16px;font-weight:800;letter-spacing:-.01em;color:var(--text-on-accent)}
 .dash-lb .lb-tile--1 .lb-txp{font-size:12px;font-weight:800;color:var(--text-on-accent)}
+/* Sobre el gradiente naranja el premio va en NEGRO (regla de marca: nunca blanco). */
+.dash-lb .lb-tile--1 .lb-prize{padding:7px;background:rgba(0,0,0,.18);font-size:11px;font-weight:700;color:var(--text-on-accent)}
 /* La posición propia también se marca cuando cae en el podio (no solo en la lista). */
 .dash-lb .lb-tile--me{box-shadow:inset 0 0 0 2px var(--otr-green)}
 .dash-lb .lb-tile--1.lb-tile--me{box-shadow:inset 0 0 0 2px var(--otr-black)}
@@ -1015,15 +1027,27 @@
   .dash-lb .dlb-grid{grid-template-columns:1fr;gap:18px}
 }
 
-/* ---- ⑦ Lo mejor de la temporada (solo si hay media real) ---- */
+/* ---- ⑦ Lo mejor de la temporada (solo si hay media real) ----
+   La foto vive en su propia capa .hl-img (no en el background de .hl) porque el
+   hover escala LA FOTO, no la card: escalando la card se saldrían el badge y el
+   texto del recorte. Sin .hl-img la card queda negra plana (degradación). */
 .hl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.hl{position:relative;aspect-ratio:5/4;border-radius:var(--r-md);overflow:hidden;background:var(--otr-black) center/cover no-repeat}
-.hl::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(18,18,18,0) 42%,rgba(18,18,18,.9) 100%)}
+.hl{position:relative;aspect-ratio:5/4;border-radius:var(--r-md);overflow:hidden;background:var(--otr-black);cursor:pointer}
+.hl .hl-img{position:absolute;inset:0;background-position:center;background-size:cover;background-repeat:no-repeat;
+  transition:transform .45s cubic-bezier(.16,1,.3,1)}
+.hl:hover .hl-img{transform:scale(1.045)}
+/* Degradado de protección VERTICAL: el texto de abajo se lee sobre cualquier foto. */
+.hl::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(23,23,23,.92),rgba(23,23,23,.25) 60%,rgba(23,23,23,.05))}
 .hl .hl-tag{position:absolute;top:9px;left:9px;z-index:2;font-size:9px;letter-spacing:.06em;padding:3px 7px}
 .hl .hl-txt{position:absolute;left:12px;right:12px;bottom:11px;z-index:2}
 .hl .hl-t{font-size:13px;font-weight:700;letter-spacing:-.015em;line-height:1.2;color:#fff;margin-bottom:3px}
 .hl .hl-d{font-size:11px;font-weight:500;color:var(--ink-300)}
+/* "Ver todo": enlace fantasma del catálogo de chips (spec §3.8). */
+.hl-all{padding:5px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:600;color:var(--ink-400)}
+.hl-all:hover{color:var(--text);text-decoration:none}
 @media (max-width:860px){ .hl-grid{grid-template-columns:repeat(2,1fr)} }
+@media (prefers-reduced-motion:reduce){ .hl .hl-img{transition:none} .hl:hover .hl-img{transform:none} }
 /* === FIN DASHBOARD MOCKUP ================================================= */
 
 /* === MOCKUP V2 · foto de héroe + densidad ==================================

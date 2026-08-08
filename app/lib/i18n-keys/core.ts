@@ -145,9 +145,17 @@ export const dict = {
     "core.dashBadgesTitle": "Logros",
     "core.dashBadgesEmpty": "Sin insignias todavía. Completa tu primera lección para ganar la primera.",
     "core.dashAllBadges": "Ver todas las insignias",
+    "core.dashBadgeXp": "+{xp} XP",
     "core.dashStandingsTitle": "Clasificación general",
     "core.dashStandingsMeta": "Por rating de debate",
+    // Variante con temporada real (DB.leaderboard.period): título y cierre + premios.
+    "core.dashStandingsTitlePeriod": "Clasificación de {period}",
+    "core.dashStandingsMetaPeriod": "Faltan {days} días · Premios al cierre",
+    "core.dashStandingsMetaPeriod1": "Falta 1 día · Premios al cierre",
+    // En la mensual la cifra de cada puesto es XP de temporada, no rating: se etiqueta.
+    "core.dashLbXp": "{xp} XP",
     "core.dashHighlightsTitle": "Lo mejor de la temporada",
+    "core.dashHighlightsAll": "Ver todo",
 
     // ── Course view ──
     "core.courseEmptyTitle": "Elige tu primer programa",
@@ -375,9 +383,17 @@ export const dict = {
     "core.dashBadgesTitle": "Achievements",
     "core.dashBadgesEmpty": "No badges yet. Complete your first lesson to earn your first one.",
     "core.dashAllBadges": "View all badges",
+    "core.dashBadgeXp": "+{xp} XP",
     "core.dashStandingsTitle": "Overall standings",
     "core.dashStandingsMeta": "By debate rating",
+    // Season variant (DB.leaderboard.period): title plus close date + prizes.
+    "core.dashStandingsTitlePeriod": "{period} standings",
+    "core.dashStandingsMetaPeriod": "{days} days left · Prizes at close",
+    "core.dashStandingsMetaPeriod1": "1 day left · Prizes at close",
+    // Season standings rank by season XP, not rating: the figure is labelled.
+    "core.dashLbXp": "{xp} XP",
     "core.dashHighlightsTitle": "Best of the season",
+    "core.dashHighlightsAll": "View all",
 
     // ── Course view ──
     "core.courseEmptyTitle": "Choose your first program",

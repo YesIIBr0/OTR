@@ -143,6 +143,14 @@ function activeItemsFlat() {
     return /^(\/|https:\/\/)[^'"()\s]+$/.test(u) ? `;--hero-img:url('${esc(u)}')` : '';
   }
 
+  /* [MOCKUP §3.7] Foto de una card de "Lo mejor de la temporada". Misma política
+     de URL que heroImgVar (solo rutas del propio sitio o https, sin comillas ni
+     paréntesis que puedan romper el url(...)); '' → la card queda negra plana. */
+  function hlImgUrl(url) {
+    const u = String(url || '');
+    return /^(\/|https:\/\/)[^'"()\s]+$/.test(u) ? esc(u) : '';
+  }
+
   S.dashboard = {
     render() {
       const lang = getLang();
@@ -277,7 +285,8 @@ function activeItemsFlat() {
               <div class="ev-meta">
                 <span class="row vcenter" style="gap:6px">${IC.clock} ${tr.startsLabel || ''}</span>
                 ${tr.format ? `<span class="row vcenter" style="gap:6px">${IC.flag} ${tr.format}</span>` : ''}
-                ${tr.modality ? `<span>${tr.modality}</span>` : ''}
+                ${/* [MOCKUP §3.4] La modalidad ES el "lugar" de la fila → chincheta. */''}
+                ${tr.modality ? `<span class="row vcenter" style="gap:6px">${IC.mapPin} ${tr.modality}</span>` : ''}
               </div>
             </div>
             <div class="ev-actions">${tr.registered
@@ -318,7 +327,8 @@ function activeItemsFlat() {
       <div class="card--dark dash-rank">
         <div class="dr-head">
           <span class="lbl">${t('core.dashRankTitle')}</span>
-          ${tier ? C.chip(esc(tier), 'accent', { ic: 'award' }) : ''}
+          ${/* [MOCKUP §3.8] El badge de tier ("ORO") va con escudo, no con medalla. */''}
+          ${tier ? C.chip(esc(tier), 'accent', { ic: 'shield' }) : ''}
         </div>
         <div class="dr-body">
           ${C.ringConic(pct, levelNum, t('core.dashLevelCap'))}
@@ -342,22 +352,53 @@ function activeItemsFlat() {
       <div class="card dash-badges">
         <div class="db-head">
           ${C.secTitle(t('core.dashBadgesTitle'), { sm: true })}
-          <span class="db-count tnum">${IC.medal} ${earned.length}/${badges.length}</span>
+          ${/* [MOCKUP §3.6] El contador del encabezado va con el RAYO, no con la medalla. */''}
+          <span class="db-count tnum">${IC.zap} ${earned.length}/${badges.length}</span>
         </div>
-        ${tiles.length ? `<div class="db-grid">${tiles.map((b) => `
+        ${tiles.length ? `<div class="db-grid">${tiles.map((b) => {
+          /* [MOCKUP §3.6] Cada insignia trae SU icono (Badge.icon → DB.badges[].ic:
+             flame / mic / target / medal / trophy / award…). IC.medal solo es el
+             respaldo cuando el dato no trae icono o trae uno que no está en el set. */
+          const bIc = (b.ic && IC[b.ic]) ? IC[b.ic] : IC.medal;
+          /* Con XP real en el dato, el mockup muestra "+150 XP" en vez de la
+             descripción; sin XP (0 o ausente) se conserva la descripción. */
+          const bXp = Number(b.xp || 0);
+          const bSub = bXp > 0
+            ? `<span class="bt-xp tnum">${IC.zap}${t('core.dashBadgeXp').replace('{xp}', nf(bXp))}</span>`
+            : `<span class="bt-s">${esc(b.d || '')}</span>`;
+          return `
           <div class="badge-tile${b.got ? '' : ' badge-tile--off'}" title="${esc(b.d || '')}">
-            <span class="bt-ic">${IC.medal}</span>
+            <span class="bt-ic">${bIc}</span>
             <span style="min-width:0">
               <span class="bt-n">${esc(b.n)}</span>
-              <span class="bt-s">${esc(b.d || '')}</span>
+              ${bSub}
             </span>
-          </div>`).join('')}</div>`
+          </div>`;
+        }).join('')}</div>`
         : `<p class="faint" style="font-size:12.5px;padding:0 18px 16px;margin:0">${t('core.dashBadgesEmpty')}</p>`}
         <a class="db-foot" href="#" data-go="badges">${t('core.dashAllBadges')} ${IC.arrowR}</a>
       </div>` : '';
 
-      /* ---- ⑥ CLASIFICACIÓN (no hay ranking mensual en la DB: es la general) ----
-         Sin datos de premios en el modelo → la línea de premios NO se pinta. */
+      /* ---- ⑥ CLASIFICACIÓN ----------------------------------------------
+         Con DB.leaderboard.period (temporada real: {label,endsInDays}) la card se
+         titula "Clasificación de {label}" y la meta anuncia el cierre + premios,
+         como el mockup. SIN period se queda EXACTAMENTE como hasta hoy
+         ("Clasificación general" / "Por rating de debate"): nada inventado. */
+      const lbPeriod = (DB.leaderboard && DB.leaderboard.period) ? DB.leaderboard.period : null;
+      const lbTitle = (lbPeriod && lbPeriod.label)
+        ? t('core.dashStandingsTitlePeriod').replace('{period}', esc(lbPeriod.label))
+        : t('core.dashStandingsTitle');
+      const lbDays = lbPeriod ? Math.max(0, Number(lbPeriod.endsInDays) || 0) : 0;
+      const lbMeta = lbPeriod
+        ? t(lbDays === 1 ? 'core.dashStandingsMetaPeriod1' : 'core.dashStandingsMetaPeriod').replace('{days}', nf(lbDays))
+        : t('core.dashStandingsMeta');
+      /* La cifra de la fila depende de POR QUÉ se ordena la tabla: la general ordena
+         por rating Glicko (número pelado), la mensual por XP de la temporada (con
+         sufijo "XP", como el mockup). Un mismo número con dos significados sin
+         etiqueta sería mentirle al alumno. */
+      const lbScore = (r) => (lbPeriod
+        ? t('core.dashLbXp').replace('{xp}', nf(r.xp))
+        : nf(r.rating));
       const podium = lbRows.slice(0, 3);
       const listRows = lbRows.slice(3, 8);
       const meInShown = lbRows.slice(0, 8).some((r) => r.you);
@@ -365,24 +406,28 @@ function activeItemsFlat() {
         <div class="lb-row${mine ? ' lb-row--me' : ''}">
           <span class="lb-pos tnum">${r.rank}</span>
           <span class="lb-name">${r.name || ''}${mine ? ` · ${t('core.youSuffix')}` : ''}</span>
-          <span class="lb-xp tnum">${nf(r.rating)}</span>
+          <span class="lb-xp tnum">${lbScore(r)}</span>
         </div>`;
+      /* r.name YA viene esc() de queries.ts (contrato de escape) → crudo. r.prize es
+         texto de CATÁLOGO (SeasonPrize), que queries.ts no escapa —igual que badges/
+         events—, así que se escapa aquí. La cajita solo se pinta con premio real. */
       const podiumTile = (r, place) => `
         <div class="lb-tile${place === 1 ? ' lb-tile--1' : ''}${r.you ? ' lb-tile--me' : ''}">
-          ${place === 1 ? `<span class="lb-crown">${IC.trophy}</span>` : ''}
+          ${place === 1 ? `<span class="lb-crown">${IC.crown}</span>` : ''}
           <div class="lb-place tnum">${r.rank}</div>
           <div class="lb-tname">${r.name || ''}${r.you ? ` · ${t('core.youSuffix')}` : ''}</div>
-          <div class="lb-txp tnum">${nf(r.rating)}</div>
+          <div class="lb-txp tnum">${lbScore(r)}</div>
+          ${r.prize ? `<div class="lb-prize">${esc(r.prize)}</div>` : ''}
         </div>`;
       // Con un cohorte de 3 o menos, la columna de la lista quedaría vacía: el
       // podio pasa a ocupar la card entera en vez de dejar medio bloque en blanco.
       const listBody = (podium.length >= 3 ? listRows : lbRows.slice(0, 8)).map((r) => lbRow(r, !!r.you)).join('')
-        + ((!meInShown && lbMe) ? lbRow({ rank: lbMe.rank, name: DB.me?.name || '', rating: lbMe.rating }, true) : '');
+        + ((!meInShown && lbMe) ? lbRow({ rank: lbMe.rank, name: DB.me?.name || '', rating: lbMe.rating, xp }, true) : '');
       const standings = lbRows.length ? `
       <section class="card--dark card--glow dash-lb fade-up" style="--d:3">
         <div class="dlb-head">
-          <div class="sec-title sec-title--on-dark"><h3>${IC.trophy} ${t('core.dashStandingsTitle')}</h3></div>
-          <span class="dlb-meta">${t('core.dashStandingsMeta')}</span>
+          <div class="sec-title sec-title--on-dark"><h3>${IC.trophy} ${lbTitle}</h3></div>
+          <span class="dlb-meta">${lbMeta}</span>
         </div>
         <div class="dlb-grid${listBody ? '' : ' dlb-grid--solo'}">
           ${podium.length >= 3 ? `<div class="lb-podium">
@@ -392,17 +437,25 @@ function activeItemsFlat() {
         </div>
       </section>` : '';
 
-      /* ---- ⑦ LO MEJOR DE LA TEMPORADA — solo con media real en la DB ---- */
+      /* ---- ⑦ LO MEJOR DE LA TEMPORADA — solo con media real en la DB ------
+         DB.highlights: [{ id, title, dateLabel, category, imageUrl }]. Son textos de
+         CATÁLOGO (tabla Highlight), que queries.ts NO escapa —igual que badges y
+         events—, así que se escapan aquí.
+         Sin imageUrl la card cae a negra plana: degrada sin hueco roto. */
       const highlights = Array.isArray(DB.highlights) ? DB.highlights : [];
       const highlightsSection = highlights.length ? `
       <section class="fade-up" style="--d:4">
-        ${C.secTitle(t('core.dashHighlightsTitle'))}
+        ${C.secTitle(t('core.dashHighlightsTitle'), { right: `<a class="hl-all" href="#" data-go="events">${t('core.dashHighlightsAll')}</a>` })}
         <div class="hl-grid">
-          ${highlights.slice(0, 4).map((h) => `
-            <article class="hl" style="background-image:url('${esc(h.image || '')}')">
-              ${h.tag ? C.chip(esc(h.tag), 'accent', { cls: 'hl-tag' }) : ''}
-              <div class="hl-txt"><div class="hl-t">${esc(h.title || '')}</div><div class="hl-d">${esc(h.when || '')}</div></div>
-            </article>`).join('')}
+          ${highlights.slice(0, 4).map((h) => {
+            const img = hlImgUrl(h.imageUrl);
+            return `
+            <article class="hl">
+              ${img ? `<span class="hl-img" style="background-image:url('${img}')"></span>` : ''}
+              ${h.category ? C.chip(esc(h.category), 'accent', { cls: 'hl-tag' }) : ''}
+              <div class="hl-txt"><div class="hl-t">${esc(h.title || '')}</div><div class="hl-d">${esc(h.dateLabel || '')}</div></div>
+            </article>`;
+          }).join('')}
         </div>
       </section>` : '';
 
