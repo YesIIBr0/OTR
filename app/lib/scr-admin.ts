@@ -375,21 +375,28 @@ S.adminConsole = {
     const open = reports.filter((r) => String(r.status || "").toUpperCase() === "OPEN").length;
 
     // Barra de pestañas: Reportes (cola de moderación) | Auditoría (rastro F2.2).
-    // [GOAL-E4 #8] Eran tres `<button class="tab">` sueltos: sin role="tablist"/role="tab",
-    // sin aria-selected y sin aria-controls. Un lector de pantalla oía tres botones
-    // cualesquiera y no podía saber cuál estaba activo ni qué panel gobernaban — el estado
-    // vivía SOLO en el color. Aquí se añaden EXCLUSIVAMENTE atributos: el handler de clicks
-    // (delegación por data-mod-tab, más abajo en mount) no se toca.
+    // [GOAL-E4 #8] Eran tres `<button class="tab">` sueltos: sin role="tablist"/role="tab" y
+    // sin aria-selected. Un lector de pantalla oía tres botones cualesquiera y no podía saber
+    // cuál estaba activo — el estado vivía SOLO en el color. Aquí se añaden EXCLUSIVAMENTE
+    // atributos: el handler de clicks (delegación por data-mod-tab, en mount) no se toca.
+    //
     // A propósito NO se implementa tabindex rotatorio: sin manejo de flechas, poner
     // tabindex="-1" en las inactivas las dejaría inalcanzables con Tab (peor que ahora).
+    //
+    // [revisión · Important-3] Tampoco se pone `aria-controls`: esta pantalla renderiza SOLO
+    // el panel de la pestaña activa (repinta entera al conmutar), así que dos de los tres
+    // aria-controls apuntarían SIEMPRE a ids inexistentes — axe lo marca como
+    // `aria-valid-attr-value`. La alternativa (pintar los tres paneles con `hidden`) obligaría
+    // a construir el cuerpo de Auditoría y Clases aunque su estado aún no se haya cargado
+    // on-demand. `aria-controls` es OPCIONAL en el patrón de pestañas de la APG: el vínculo
+    // inverso sí queda, vía el `aria-labelledby` del panel.
     const panelId = (k) => `mod-panel-${k}`;
     const tabId = (k) => `mod-tab-${k}`;
     const tabsHtml = `
     <div class="tabs fade-up" role="tablist" style="--d:1" id="mod-tabs">
-      ${TABS().map((tb) => `<button class="tab ${tb.k === tab ? "active" : ""}" role="tab" id="${tabId(tb.k)}" aria-selected="${tb.k === tab ? "true" : "false"}" aria-controls="${panelId(tb.k)}" data-mod-tab="${tb.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[tb.ic] || ""}</span>${tb.l}</span></button>`).join("")}
+      ${TABS().map((tb) => `<button class="tab ${tb.k === tab ? "active" : ""}" role="tab" id="${tabId(tb.k)}" aria-selected="${tb.k === tab ? "true" : "false"}" data-mod-tab="${tb.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[tb.ic] || ""}</span>${tb.l}</span></button>`).join("")}
     </div>`;
-    // Envoltorio del panel activo. Solo se renderiza el panel de la pestaña activa (la
-    // pantalla se repinta al conmutar), así que no hace falta `hidden` en los demás.
+    // Envoltorio del panel activo (el único que existe en el DOM en cada momento).
     const panel = (k, inner) => `<div id="${panelId(k)}" role="tabpanel" aria-labelledby="${tabId(k)}" tabindex="0">${inner}</div>`;
 
     // [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior.
