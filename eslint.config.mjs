@@ -11,6 +11,10 @@ export default tseslint.config(
     ignores: [
       "node_modules/**",
       ".next/**",
+      // Worktrees de sesiones paralelas de Claude: son COPIAS del repo, así que sus
+      // tsconfig.json compiten como raíz y typescript-eslint aborta con
+      // "No tsconfigRootDir was set" en cada archivo (689 errores fantasma).
+      ".claude/worktrees/**",
       "prisma/migrations/**",
       "public/**",
       "site/**",
