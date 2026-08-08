@@ -1251,3 +1251,26 @@
   .modal--v2 .modal-foot{padding:14px 18px 16px}
 }
 /* === FIN ADJUDICACIÓN v2 ================================================== */
+
+/* === FIXES GOAL F3 ======================================================== */
+/* A3 · El nombre de la insignia con UNA sola palabra larga ("Semifinalista") no
+   tenía dónde partir: se quedaba en una sola línea, medía 75px dentro de una caja
+   de 57px y el overflow:hidden de .bt-n la cortaba a media palabra ("Semifinalis"),
+   sin ellipsis que avisara. Se mantiene el criterio ya tomado para los nombres de
+   insignia —DOS líneas, no ellipsis— dándole al navegador dónde cortar:
+   hyphens:auto parte con guion ("Semifi-/nalista") y overflow-wrap:break-word es
+   el respaldo si no hay diccionario de guionado. El -webkit-line-clamp:2 sigue
+   mandando, así que el tile no crece de alto (68px medidos antes y después). */
+.badge-tile .bt-n{hyphens:auto;overflow-wrap:break-word}
+/* === FIN FIXES GOAL F3 ==================================================== */
+
+/* === FIXES GOAL F3 · K-09 (escalera de encabezados) ======================= */
+/* Los estados vacíos colgaban un <h4> directo del <h1> de la pantalla (h1→h4).
+   Ahora el tag respeta la escalera (h2 bajo el h1 de pantalla, h3 bajo una
+   sección h2) y el aspecto lo sigue dando .empty, que hasta hoy solo vestía el
+   h4 (app.css: .empty h4{font-size:16px;color:var(--text);margin-bottom:6px}).
+   Esta regla replica ese mismo aspecto para h2/h3: mismo tamaño, mismo color y
+   mismo margen — con el reset global *{margin:0} no queda ninguna diferencia
+   heredada del navegador. */
+.empty h2,.empty h3{font-size:16px;color:var(--text);margin-bottom:6px}
+/* === FIN FIXES GOAL F3 · K-09 ============================================= */
