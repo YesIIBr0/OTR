@@ -375,10 +375,29 @@ S.adminConsole = {
     const open = reports.filter((r) => String(r.status || "").toUpperCase() === "OPEN").length;
 
     // Barra de pestañas: Reportes (cola de moderación) | Auditoría (rastro F2.2).
+    // [GOAL-E4 #8] Eran tres `<button class="tab">` sueltos: sin role="tablist"/role="tab" y
+    // sin aria-selected. Un lector de pantalla oía tres botones cualesquiera y no podía saber
+    // cuál estaba activo — el estado vivía SOLO en el color. Aquí se añaden EXCLUSIVAMENTE
+    // atributos: el handler de clicks (delegación por data-mod-tab, en mount) no se toca.
+    //
+    // A propósito NO se implementa tabindex rotatorio: sin manejo de flechas, poner
+    // tabindex="-1" en las inactivas las dejaría inalcanzables con Tab (peor que ahora).
+    //
+    // [revisión · Important-3] Tampoco se pone `aria-controls`: esta pantalla renderiza SOLO
+    // el panel de la pestaña activa (repinta entera al conmutar), así que dos de los tres
+    // aria-controls apuntarían SIEMPRE a ids inexistentes — axe lo marca como
+    // `aria-valid-attr-value`. La alternativa (pintar los tres paneles con `hidden`) obligaría
+    // a construir el cuerpo de Auditoría y Clases aunque su estado aún no se haya cargado
+    // on-demand. `aria-controls` es OPCIONAL en el patrón de pestañas de la APG: el vínculo
+    // inverso sí queda, vía el `aria-labelledby` del panel.
+    const panelId = (k) => `mod-panel-${k}`;
+    const tabId = (k) => `mod-tab-${k}`;
     const tabsHtml = `
-    <div class="tabs fade-up" style="--d:1" id="mod-tabs">
-      ${TABS().map((tb) => `<button class="tab ${tb.k === tab ? "active" : ""}" data-mod-tab="${tb.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[tb.ic] || ""}</span>${tb.l}</span></button>`).join("")}
+    <div class="tabs fade-up" role="tablist" style="--d:1" id="mod-tabs">
+      ${TABS().map((tb) => `<button class="tab ${tb.k === tab ? "active" : ""}" role="tab" id="${tabId(tb.k)}" aria-selected="${tb.k === tab ? "true" : "false"}" data-mod-tab="${tb.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[tb.ic] || ""}</span>${tb.l}</span></button>`).join("")}
     </div>`;
+    // Envoltorio del panel activo (el único que existe en el DOM en cada momento).
+    const panel = (k, inner) => `<div id="${panelId(k)}" role="tabpanel" aria-labelledby="${tabId(k)}" tabindex="0">${inner}</div>`;
 
     // [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior.
     const head = `
@@ -395,23 +414,23 @@ S.adminConsole = {
       const more = (a.total || 0) > entries.length
         ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="audit-more">${t("admin.loadMore")} · ${entries.length} ${t("admin.ofConnector")} ${a.total}</button></div>`
         : "";
-      return `${head}${tabsHtml}<div class="sec-title sec-title--sm"><h3>${t("admin.tabAudit")}</h3></div><div class="fade-up" style="--d:2" id="audit-body">${auditBody()}${more}</div>`;
+      return `${head}${tabsHtml}${panel("audit", `<div class="sec-title sec-title--sm"><h3>${t("admin.tabAudit")}</h3></div><div class="fade-up" style="--d:2" id="audit-body">${auditBody()}${more}</div>`)}`;
     }
 
     // [F-MKT M2-UI] Pestaña Clases: cola de vetting del marketplace abierto.
     if (tab === "lst") {
-      return `${head}${tabsHtml}<div class="sec-title sec-title--sm"><h3>${t("admin.tabListings")}</h3></div><div class="fade-up" style="--d:2" id="lst-queue">${lstQueueBody()}</div>`;
+      return `${head}${tabsHtml}${panel("lst", `<div class="sec-title sec-title--sm"><h3>${t("admin.tabListings")}</h3></div><div class="fade-up" style="--d:2" id="lst-queue">${lstQueueBody()}</div>`)}`;
     }
 
     // Pestaña Reportes (comportamiento original).
-    return `${head}${tabsHtml}
+    return `${head}${tabsHtml}${panel("reports", `
     <div class="grid g-2 fade-up" style="--d:2;margin-bottom:18px">
       <div class="tile">${C.kpi(t("admin.kpiOpen"), String(open), { ic: "flag" })}</div>
       <div class="tile">${C.kpi(t("admin.kpiQueue"), String(st.total || reports.length), { ic: "doc" })}</div>
     </div>
 
     <div class="sec-title sec-title--sm"><h3>${t("admin.tabReports")}</h3></div>
-    <div class="fade-up" style="--d:3" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="mod-more">${t("admin.loadMore")} · ${reports.length} ${t("admin.ofConnector")} ${st.total}</button></div>` : ""}</div>`;
+    <div class="fade-up" style="--d:3" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="mod-more">${t("admin.loadMore")} · ${reports.length} ${t("admin.ofConnector")} ${st.total}</button></div>` : ""}</div>`)}`;
   },
 
   mount(root, state) {

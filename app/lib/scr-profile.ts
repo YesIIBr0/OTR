@@ -193,12 +193,24 @@ export const S = {};
     }
   };
 
-  /* ---------------- PERFIL (SEGMENTADO POR ROL) ---------------- */
+  /* ---------------- PERFIL (SEGMENTADO POR ROL) ----------------
+     [GOAL-E4 #3 y #4] Antes esto era un BINARIO (isTeacher = teacher||admin) con dos caras:
+     la de coach y la de alumno. Con cuatro roles reales eso mentía en los dos extremos:
+       · PARENT caía en renderStudentSelf() → a una madre se le pintaba el rango "OTR Initiate",
+         "Nivel 1", "1000 XP para el siguiente nivel", la racha, "Insignias destacadas" y
+         "Mis programas → Explorar programas". Gamificación de alumno para quien no es alumno.
+       · ADMIN caía en renderCoachSelf() → al equipo OTR se le atribuía un perfil VENDIBLE de
+         marketplace: chip "Coach", "Perfil de marketplace", "0.0 Rating · 0 Reseñas" y
+         "Cómo trabajo". El admin no se vende en el marketplace.
+     Ahora cada rol tiene su cara. Las dos nuevas son MINIMAL a propósito: identidad + lo que
+     ya existe en el payload (hijos vinculados / consolas del nav). No se inventa ninguna
+     feature nueva ni se promete un dato que no esté en DB. */
   S.profile = {
     render(state) {
       const role = String((state && state.role) || (DB.me && DB.me.role) || 'student').toLowerCase();
-      const isTeacher = role === 'teacher' || role === 'admin';
-      return isTeacher ? renderCoachSelf() : renderStudentSelf();
+      if (role === 'admin') return renderAdminSelf();
+      if (role === 'parent') return renderParentSelf();
+      return role === 'teacher' ? renderCoachSelf() : renderStudentSelf();
     }
   };
 
@@ -360,6 +372,97 @@ export const S = {};
                <div style="margin-top:16px">${C.btn(t("profile.viewAll"), 'outline', { size: 'sm', block: true, icRight: 'chevR', attrs: `onclick="go('badges')"` })}</div>`
             : `<p class="faint" style="font-size:12.5px;margin-top:10px">${t("profile.noBadgesStudent")}</p>`}
         </div>
+      </div>
+    </div>`;
+  }
+
+  /* --- Cabecera de identidad compartida por las caras MINIMAL (familia y admin) ---
+     Avatar + nombre + chip de rol + correo + "Editar perfil". Sin KPIs, sin rango, sin XP:
+     ninguno de los dos roles tiene progreso de alumno que mostrar.
+     [revisión · minor 7] Contrato de escape: queries.ts escapa UNA vez y el builder pinta
+     crudo. `initials`, `name` y `location` YA vienen escapados (queries.ts:1753/1756) → van
+     crudos; `email` NO se escapa allí → es el único que lleva esc() aquí. (Las caras de alumno
+     y de coach sí re-escapan: está reportado aparte, es previo a este trabajo.) */
+  function identityHead(roleChip) {
+    const me = DB.me || {};
+    return `
+    <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
+      <div class="profile-head">
+        ${C.avatar(me.initials || '', { size: 'xl', bg: 'var(--otr-navy)' })}
+        <div style="flex:1;min-width:200px">
+          <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${me.name}</h1>${roleChip}</div>
+          <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${me.location}` : ''}</div>
+          <div class="row" style="gap:8px;margin-top:12px">
+            ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-profile"' })}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* --- [GOAL-E4 #3] Perfil de FAMILIA (cara PARENT) ---
+     Identidad + los hijos ya vinculados (DB.parent.children, el MISMO dato que pinta el
+     Portal de familia — no se consulta nada nuevo) + los dos destinos donde el padre hace
+     algo: el portal (reservas, aprobaciones y gasto) y los mensajes con los coaches.
+     Explícitamente FUERA: rango, XP, racha, insignias y "Mis programas". */
+  function renderParentSelf() {
+    const kids = (DB.parent && Array.isArray(DB.parent.children)) ? DB.parent.children : [];
+    const kidRow = (k) => `
+      <div class="card card-pad" style="padding:12px 14px;background:var(--surface-2)">
+        <div class="row vcenter between" style="gap:10px;flex-wrap:wrap">
+          <div class="row vcenter" style="gap:11px;min-width:0">
+            ${/* Mismo contrato: children[].initials/name ya vienen escapados de queries.ts;
+                  `level` lo compone levelNameForXp() sin escapar, así que ese sí lleva esc(). */''}
+            ${C.avatar(k.initials || '', { size: 'sm', bg: 'var(--otr-black)' })}
+            <div style="min-width:0">
+              <div style="font-weight:700;font-size:14px;line-height:1.2">${k.name}</div>
+              ${k.level ? `<div class="faint" style="font-size:12px;margin-top:2px">${esc(k.level)}</div>` : ''}
+            </div>
+          </div>
+          ${k.ageBand === 'minor' ? C.chip(t("profile.minorProtected"), 'black', { ic: 'lock' }) : ''}
+        </div>
+      </div>`;
+
+    return `
+    ${identityHead(C.chip(t("profile.roleFamily"), 'outline'))}
+
+    <div class="split fade-up rail-320" style="--d:1">
+      <div class="stack" style="gap:18px">
+        <div class="card card-pad">
+          ${C.secTitle(t("profile.linkedChildren"), { sm: true, right: C.btn(t("profile.goParentPortal"), 'outline', { size: 'sm', icRight: 'chevR', attrs: 'data-go="parent"' }) })}
+          ${kids.length
+            ? `<div class="stack" style="gap:12px;margin-top:14px">${kids.map(kidRow).join('')}</div>`
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.users}</div><h4>${t("profile.noChildrenHeading")}</h4><p>${t("profile.noChildrenBody")}</p>${C.btn(t("profile.goParentPortal"), 'accent', { size: 'sm', attrs: 'data-go="parent"' })}</div>`}
+        </div>
+      </div>
+
+      <div class="stack" style="gap:16px">
+        <div class="card card-pad">
+          ${C.secTitle(t("profile.quickLinks"), { sm: true })}
+          <div class="stack" style="gap:8px;margin-top:12px">
+            ${C.btn(t("profile.goParentPortal"), 'outline', { size: 'sm', block: true, ic: 'users', icRight: 'chevR', attrs: 'data-go="parent"' })}
+            ${C.btn(t("profile.goMessages"), 'outline', { size: 'sm', block: true, ic: 'msg', icRight: 'chevR', attrs: 'data-go="messages"' })}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* --- [GOAL-E4 #4] Perfil de ADMIN ---
+     Identidad + chip "Admin" + atajos a SUS consolas (las mismas rutas que ya tiene en el
+     nav: moderación, usuarios y métricas). Explícitamente FUERA: "Perfil de marketplace",
+     rating, reseñas y "Cómo trabajo" — el admin no es un coach que se vende. */
+  function renderAdminSelf() {
+    return `
+    ${identityHead(C.chip(t("profile.roleAdmin"), 'black', { ic: 'shield' }))}
+
+    <div class="card card-pad fade-up" style="--d:1">
+      ${C.secTitle(t("profile.adminConsoles"), { sm: true })}
+      <p class="faint" style="font-size:12.5px;margin-top:4px">${t("profile.adminConsolesHint")}</p>
+      <div class="row wrap" style="gap:8px;margin-top:14px">
+        ${C.btn(t("profile.goModeration"), 'outline', { size: 'sm', ic: 'flag', icRight: 'chevR', attrs: 'data-go="admin"' })}
+        ${C.btn(t("profile.goUsers"), 'outline', { size: 'sm', ic: 'users', icRight: 'chevR', attrs: 'data-go="admin-users"' })}
+        ${C.btn(t("profile.goMetrics"), 'outline', { size: 'sm', ic: 'chart', icRight: 'chevR', attrs: 'data-go="admin-metrics"' })}
       </div>
     </div>`;
   }

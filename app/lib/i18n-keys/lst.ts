@@ -27,6 +27,9 @@ export const dict = {
     "lst.errLoad": "No se pudieron cargar las clases",
     "lst.emptyTitle": "Aún no hay clases en esta materia",
     "lst.emptyBody": "Prueba otra categoría o vuelve pronto — los profesores publican nuevas clases cada semana.",
+    // [GOAL-E4 #12] Vacío SIN filtro ("Todas" y sin búsqueda): no hay materia a la que culpar.
+    "lst.emptyTitleAll": "Aún no hay clases publicadas",
+    "lst.emptyBodyAll": "El marketplace de clases acaba de abrir. Vuelve pronto — los profesores publican nuevas clases cada semana.",
     "lst.bookTitle": "Reservar sesión (60 min)",
     "lst.bookDate": "Fecha (AAAA-MM-DD)",
     "lst.bookTime": "Hora RD (HH:MM, ej. 16:00)",
@@ -123,6 +126,9 @@ export const dict = {
     "lst.errLoad": "Could not load classes",
     "lst.emptyTitle": "No classes in this subject yet",
     "lst.emptyBody": "Try another category or come back soon — teachers publish new classes every week.",
+    // [GOAL-E4 #12] Empty state with NO filter ("All" and no search): no subject to blame.
+    "lst.emptyTitleAll": "No classes published yet",
+    "lst.emptyBodyAll": "The class marketplace just opened. Come back soon — teachers publish new classes every week.",
     "lst.bookTitle": "Book a session (60 min)",
     "lst.bookDate": "Date (YYYY-MM-DD)",
     "lst.bookTime": "Time DR (HH:MM, e.g. 16:00)",

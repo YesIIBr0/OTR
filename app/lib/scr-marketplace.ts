@@ -48,6 +48,13 @@ const safeSrc = (u) => {
 const langBadges = (languages) =>
   String(languages || "ES").split(/[,·/]/).map((l) => l.trim()).filter(Boolean).slice(0, 3)
     .map((l) => `<span class="chip chip--outline">${esc(l.toUpperCase())}</span>`).join("");
+// [GOAL-E4 #1] `responseTime` guarda SOLO la magnitud ("~2 h"); la etiqueta la pone la vista
+// con t("mkt.respondsIn") para que traduzca a EN. Datos LEGACY (seed viejo y perfiles ya
+// guardados en producción) traen la frase completa "Responde en ~2 h" → se leía
+// "Responde en Responde en ~2 h", y en la UI en inglés "Responds in Responde en ~2 h".
+// Defensa: si el valor ya empieza por la etiqueta (ES o EN), se la quitamos antes de pintar.
+const RESPONDS_IN_LABEL_RE = /^\s*(responde\s+en|responds?\s+in|replies\s+in)\b[\s:·–—-]*/i;
+const respondsInValue = (v) => String(v || "").replace(RESPONDS_IN_LABEL_RE, "").trim();
 // Etiqueta relativa simple desde un ISO ("hoy", "hace 3 días", "hace 2 meses").
 const whenAgo = (iso) => {
   const ts = Date.parse(iso || "");
@@ -394,7 +401,7 @@ function bookingCard(c, canBook, role) {
       : t("mkt.roleMsgCoach");
     return `
     <div class="card card-pad">
-      ${C.secTitle(t("mkt.bookingsLabel"), { sm: true })}
+      ${C.secTitle(t("mkt.bookingsLabel"), { sm: true, tag: "h2" })}
       <p class="muted" style="font-size:12.5px">${msg}</p>
     </div>`;
   }
@@ -433,7 +440,7 @@ function bookingCard(c, canBook, role) {
 
   return `
   <div class="card card-pad">
-    ${C.secTitle(t("mkt.bookSessionTitle"), { sm: true })}
+    ${C.secTitle(t("mkt.bookSessionTitle"), { sm: true, tag: "h2" })}
     ${isParent && kids.length ? `
     <p class="label" style="margin:14px 0 8px">${t("mkt.forChild")}</p>
     <select class="select" data-mk-child style="width:100%">
@@ -512,7 +519,11 @@ function renderProfile(state) {
       <div class="row between wrap" style="gap:12px;align-items:flex-start">
         <div style="min-width:0">
           <div class="row vcenter wrap" style="gap:8px">
-            <b class="brand-font" style="font-size:21px;font-weight:800;letter-spacing:-.025em">${c.name}</b>
+            ${/* [GOAL-E4 #2] El nombre del coach ES el título de esta pantalla: era un <b>, así que
+                  la ficha no tenía ningún h1/h2/h3 y un lector de pantalla no encontraba el título
+                  ni podía saltar por jerarquía. Pasa a <h1> conservando clase y estilo (se anula el
+                  margen del user-agent); las secciones de abajo pasan de h4 a h2 (sin saltos). */""}
+            <h1 class="brand-font" style="font-size:21px;font-weight:800;letter-spacing:-.025em;margin:0">${c.name}</h1>
             ${c.verified ? C.chip(t("mkt.verified"), "accent", { ic: "checkCircle" }) : ""}
             ${langBadges(c.languages)}
           </div>
@@ -522,7 +533,7 @@ function renderProfile(state) {
               ? `${stars(c.rating, 13)}<b>${c.rating.toFixed(1)}</b><span class="faint">${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")}</span>`
               : C.chip(t("mkt.newCoach"), "tint")}
             ${c.bookingCount ? `<span class="dot-sep"></span><span class="faint">${t("mkt.sessionsBooked").replace("{n}", String(c.bookingCount))}</span>` : ""}
-            ${c.responseTime ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${esc(c.responseTime)}</span>` : ""}
+            ${respondsInValue(c.responseTime) ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${esc(respondsInValue(c.responseTime))}</span>` : ""}
           </div>
         </div>
         ${c.fromCents > 0 ? `<div style="text-align:right;flex:none"><span class="faint" style="font-size:11.5px;display:block">${t("mkt.from")}</span><b class="cc-pct brand-font" style="font-size:22px;font-weight:800">${money(c.fromCents)}</b><span class="faint" style="font-size:11.5px;display:block">${t("mkt.perSession")}</span></div>` : ""}
@@ -534,14 +545,14 @@ function renderProfile(state) {
     <div class="stack" style="gap:16px">
       ${loading ? `<div class="card card-pad fade-up"><p class="muted" style="font-size:13px">${t("mkt.loadingProfile")}</p></div>` : ""}
       <div class="card card-pad fade-up" style="--d:1">
-        ${C.secTitle(`${t("mkt.aboutPrefix")} ${esc(c.name.split(" ")[0] || t("mkt.theCoach"))}`, { sm: true })}
+        ${C.secTitle(`${t("mkt.aboutPrefix")} ${esc(c.name.split(" ")[0] || t("mkt.theCoach"))}`, { sm: true, tag: "h2" })}
         <p class="muted" style="font-size:13.5px;line-height:1.6">${c.bio ? esc(c.bio) : t("mkt.noBio")}</p>
-        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true })}<div class="stack" style="gap:6px">${String(c.credentials).split(/\n|;/).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${esc(x)}</div>`).join("")}</div>` : ""}
-        ${specs.length ? `<div class="divider"></div>${C.secTitle(t("mkt.specialties"), { sm: true })}<div class="row wrap" style="gap:6px">${specs.map((s) => `<span class="chip chip--outline">${s}</span>`).join("")}</div>` : ""}
+        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true, tag: "h2" })}<div class="stack" style="gap:6px">${String(c.credentials).split(/\n|;/).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${esc(x)}</div>`).join("")}</div>` : ""}
+        ${specs.length ? `<div class="divider"></div>${C.secTitle(t("mkt.specialties"), { sm: true, tag: "h2" })}<div class="row wrap" style="gap:6px">${specs.map((s) => `<span class="chip chip--outline">${s}</span>`).join("")}</div>` : ""}
       </div>
 
       <div class="card card-pad fade-up" style="--d:2">
-        ${C.secTitle(t("mkt.reviewsTitle"), { sm: true, right: C.chip(String(c.reviews), "black") })}
+        ${C.secTitle(t("mkt.reviewsTitle"), { sm: true, tag: "h2", right: C.chip(String(c.reviews), "black") })}
         <p class="faint" style="font-size:11.5px;margin-top:4px">${t("mkt.reviewsEligibility")}</p>
         ${reviews.length ? `<div class="stack" style="gap:0;margin-top:6px">${reviews.slice(0, 6).map((r) => `
           <div style="padding:12px 0;border-bottom:1px solid var(--border)">
@@ -567,7 +578,7 @@ function renderProfile(state) {
 
     <div class="stack" style="gap:16px">
       <div class="fade-up" style="--d:1" id="mk-booking">${bookingCard(c, canBook, role)}</div>
-      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2">${C.secTitle(t("mkt.cancelPolicyTitle"), { sm: true })}<p class="muted" style="font-size:12.5px;line-height:1.55">${esc(c.cancelPolicy)}</p></div>` : ""}
+      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2">${C.secTitle(t("mkt.cancelPolicyTitle"), { sm: true, tag: "h2" })}<p class="muted" style="font-size:12.5px;line-height:1.55">${esc(c.cancelPolicy)}</p></div>` : ""}
     </div>
   </div>`;
 }

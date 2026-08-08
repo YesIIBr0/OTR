@@ -90,7 +90,14 @@ function resultsBody(st) {
   }
   const items = Array.isArray(st.items) ? st.items : [];
   if (!items.length) {
-    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("lst.emptyTitle")}</h4><p>${t("lst.emptyBody")}</p></div></div>`;
+    // [GOAL-E4 #12] Sin materia ni búsqueda no hay filtro al que culpar: el vacío es del
+    // marketplace entero. Decirlo ("aún no hay clases publicadas") en vez de "no hay clases
+    // en esta materia · prueba otra categoría", que mandaba a recorrer categorías igual de
+    // vacías. Con materia o búsqueda activas SÍ vale el copy de filtro (el original).
+    const filtered = !!(st.category || st.q);
+    const title = filtered ? t("lst.emptyTitle") : t("lst.emptyTitleAll");
+    const body = filtered ? t("lst.emptyBody") : t("lst.emptyBodyAll");
+    return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.search}</div><h4>${title}</h4><p>${body}</p></div></div>`;
   }
   return `
     <p class="faint" style="font-size:12.5px;margin-bottom:12px">${st.total} ${st.total === 1 ? t("lst.resultOne") : t("lst.resultMany")}</p>
