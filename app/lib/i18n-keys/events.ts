@@ -39,7 +39,10 @@ export const dict = {
     "events.tnFieldAgeDivision": "División",
     "events.tnFieldRegion": "Región",
     "events.tnFieldModality": "Modalidad",
-    "events.tnFieldEntry": "Cuota de inscripción (RD$)",
+    // [GOAL E5 · moneda] "($)" y no "(RD$)": el símbolo unificado de money() (app/lib/money.ts),
+    // el mismo criterio que ya aplicó GOAL S3 a "lst.fieldPrice". El modal pedía la cuota en RD$
+    // mientras la card del torneo la mostraba con "$".
+    "events.tnFieldEntry": "Cuota de inscripción ($)",
     "events.tnFieldSource": "Origen",
     "events.tnFieldStatus": "Estado",
     "events.tnFieldStartsAt": "Fecha de inicio",
@@ -93,7 +96,7 @@ export const dict = {
     "events.tnFieldAgeDivision": "Division",
     "events.tnFieldRegion": "Region",
     "events.tnFieldModality": "Modality",
-    "events.tnFieldEntry": "Entry fee (RD$)",
+    "events.tnFieldEntry": "Entry fee ($)",
     "events.tnFieldSource": "Source",
     "events.tnFieldStatus": "Status",
     "events.tnFieldStartsAt": "Start date",
