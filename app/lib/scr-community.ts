@@ -15,13 +15,19 @@ export const S = {};
       const byAuthorLabel = t("comm.forum.byAuthor");
       const repliesLabel = t("comm.forum.replies");
       const viewsLabel = t("comm.forum.views");
+      /* [GOAL E5 · doble-escape] CONTRATO DE ESCAPE, el mismo que ya adoptó Mensajes abajo:
+         queries.ts (l. 2016) escapa UNA vez title/excerpt/tag/author/ini al armar `forum`, y
+         aquí se renderiza CRUDO. Re-escaparlo hacía que el hilo «Cross & rebuttal» se leyera
+         «Cross &amp; rebuttal» y un cuerpo con <b> mostrara «&lt;b&gt;» literal. `last`
+         (lastLabel: "hace 2h") es la ÚNICA excepción: es etiqueta nuestra, queries NO la
+         escapa, así que se escapa aquí. */
       const row = (t)=>`
         <div class="forum-row" onclick="go('forum-thread')">
           ${C.avatar(t.ini,{size:'sm'})}
           <div class="fr-main">
-            <div class="fr-title">${t.pinned?`<span class="pin">${IC.flag}</span>`:''}${esc(t.title)}</div>
-            <div class="fr-sub">${esc(t.excerpt)}</div>
-            <div class="fr-meta"><span class="tag-soft">${esc(t.tag)}</span><span class="dot-sep"></span>${byAuthorLabel.replace("{author}", esc(t.author))}<span class="dot-sep"></span>${esc(t.last)}</div>
+            <div class="fr-title">${t.pinned?`<span class="pin">${IC.flag}</span>`:''}${t.title}</div>
+            <div class="fr-sub">${t.excerpt}</div>
+            <div class="fr-meta"><span class="tag-soft">${t.tag}</span><span class="dot-sep"></span>${byAuthorLabel.replace("{author}", t.author)}<span class="dot-sep"></span>${esc(t.last)}</div>
           </div>
           <div class="fr-stats">
             <div><b>${t.replies}</b><span>${repliesLabel}</span></div>
@@ -53,12 +59,15 @@ export const S = {};
   S.forumThread = {
     render() {
       const th = DB.forumThread;
+      /* [GOAL E5 · doble-escape] Mismo contrato que el listado: queries.ts (l. 2017-2019)
+         escapa title/tag/author/ini/body UNA vez → aquí van CRUDOS. `when` (whenLabel) es la
+         excepción: etiqueta nuestra sin escapar en el payload. */
       const post = (p)=>`
         <div class="post ${p.op?'op':''}">
           ${C.avatar(p.ini,{size:'lg', bg:p.role==='Coach'?'var(--otr-navy)':'var(--otr-sky-lo)'})}
           <div class="post-body">
-            <div class="post-head"><b>${esc(p.author)}</b>${p.role==='Coach'?C.badge(t("comm.thread.coachBadge"),'navy'):''}${p.op?C.badge(t("comm.thread.authorBadge"),'sky'):''}<span class="faint" style="font-size:12px">${esc(p.when)}</span></div>
-            <p>${esc(p.body)}</p>
+            <div class="post-head"><b>${p.author}</b>${p.role==='Coach'?C.badge(t("comm.thread.coachBadge"),'navy'):''}${p.op?C.badge(t("comm.thread.authorBadge"),'sky'):''}<span class="faint" style="font-size:12px">${esc(p.when)}</span></div>
+            <p>${p.body}</p>
             <div class="post-actions">
               <button class="btn btn-quiet btn-sm" data-toast="${t("comm.thread.markedUseful")}">${IC.star} ${t("comm.thread.useful")}</button>
               <button class="btn btn-quiet btn-sm">${t("comm.thread.reply")}</button>
@@ -68,9 +77,9 @@ export const S = {};
       return `
       <div class="row between vcenter" style="margin-bottom:14px">
         ${C.btn(t("comm.thread.backToForum"), "outline", { size: "sm", ic: "chevL", attrs: `onclick="go('forum')"` })}
-        ${C.chip(esc(th.tag), "outline")}
+        ${C.chip(th.tag, "outline")}
       </div>
-      <div class="page-head page-head--rule"><div><h1 class="ph-title" style="font-size:30px">${esc(th.title)}</h1></div></div>
+      <div class="page-head page-head--rule"><div><h1 class="ph-title" style="font-size:30px">${th.title}</h1></div></div>
       <div class="card card-pad fade-up" style="display:flex;flex-direction:column;gap:4px">
         ${th.posts.map(post).join('<div class="divider" style="margin:14px 0"></div>')}
       </div>
@@ -151,7 +160,13 @@ export const S = {};
             <input class="input" id="chat-input" aria-label="${t("comm.msg.composeAria")}" placeholder="${t("comm.msg.composePh")}" style="flex:1"/>
             <button class="btn btn-primary" id="chat-send" aria-label="${t("comm.msg.sendAria")}" title="${t("comm.msg.sendAria")}" style="width:42px;padding:0">${IC.arrowR}</button>
           </div>`
-          : `<div class="empty" style="margin:auto;padding:48px 24px;text-align:center"><div class="ill">${IC.msg}</div><h4>${t("comm.msg.emptyHeading")}</h4><p>${t("comm.msg.emptyBody")}</p></div>`}
+          /* [GOAL E5] El estado vacío ya no es un callejón sin salida: lleva BOTÓN a la única
+             superficie que abre un hilo hoy — la ficha del coach en 'explore', cuyo "Enviar
+             mensaje" hace POST /api/conversations (ver scr-marketplace). Reservar NO crea
+             conversación, así que la copy no lo promete. Navega por data-go, la misma
+             delegación que usa el resto del Aula, para que el clic navegue de verdad. */
+          : `<div class="empty" style="margin:auto;padding:48px 24px;text-align:center"><div class="ill">${IC.msg}</div><h4>${t("comm.msg.emptyHeading")}</h4><p>${t("comm.msg.emptyBody")}</p>
+             <button class="btn btn-accent" data-go="explore">${t("comm.msg.emptyCta")}</button></div>`}
         </section>
       </div>`;
     },

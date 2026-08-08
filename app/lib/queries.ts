@@ -1316,7 +1316,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         modality: esc(t.modality),
         startsLabel: t.startsAt ? eventDateLabel(t.startsAt, lang) : (lang === "en" ? "To be announced" : "Por anunciar"),
         status: t.status,
-        entryLabel: t.entryCents > 0 ? `RD$${(t.entryCents / 100).toLocaleString("es-DO")}` : "Gratis",
+        // [GOAL E5 · moneda] "$" y no "RD$": es el símbolo ÚNICO que ya imprime money()
+        // (app/lib/money.ts) en marketplace, coachwork, listings y padres. El torneo era el
+        // último sitio que rotulaba una tercera moneda junto a precios en "$" de la misma
+        // pantalla. Solo cambia la PRESENTACIÓN: entryCents no se toca.
+        entryLabel: t.entryCents > 0 ? `$${(t.entryCents / 100).toLocaleString("es-DO")}` : "Gratis",
         registered: (t.registrations || []).length > 0,
         ...(isStaff
           ? {
@@ -1890,7 +1894,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     tier: me?.membership || "free",
     // [GOAL A2 · F2] Con idioma (antes "Desde agosto 2026" fijo, aun con la UI en inglés).
     sinceLabel: me?.membershipSince ? fmtPlanSinceLabel(me.membershipSince, lang) : null,
-    prices: { proMonthly: "US$9", proAnnual: "US$79" },
+    // [GOAL E5 · moneda] "$9"/"$79" y no "US$9"/"US$79": el símbolo unificado de money()
+    // (app/lib/money.ts). La membresía era la tercera moneda de la app — convivía con los
+    // "$45/hora" del marketplace en la misma sesión. Solo presentación.
+    prices: { proMonthly: "$9", proAnnual: "$79" },
   };
 
   const base: any = {

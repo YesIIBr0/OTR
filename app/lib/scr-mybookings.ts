@@ -82,9 +82,17 @@ function slotDate(iso) {
 }
 
 /* ---------------- filas ---------------- */
+/* [GOAL E5 · doble-escape] CONTRATO DE ESCAPE: queries.ts (l. 1467-1494) escapa UNA vez el
+   texto de usuario de este payload — coachName, coachInitials, packageName — así que aquí se
+   renderiza CRUDO. Re-escaparlo dejaba a un coach «Ana O'Neil» como «Ana O&#39;Neil» y a un
+   pack «Intensivo & Torneo» como «Intensivo &amp; Torneo». slotLabel y priceLabel son
+   etiquetas NUESTRAS ("lun 16 jun · 4:00 PM", "$45"), no texto de usuario.
+   EXCEPCIÓN deliberada: `data-coach-name` conserva su esc() extra — ese valor sale por
+   getAttribute() (que decodifica UNA vez) y entra a innerHTML como título del modal de
+   reseña, así que ahí el esc() de más es la capa que corta la inyección. */
 function upcomingRow(b) {
   const cd = b.status === "CONFIRMED" || b.status === "PENDING" ? countdown(b.slotAtIso) : "";
-  const meta = [b.slotLabel, b.packageName, b.priceLabel].filter(Boolean).map(esc).join(" · ");
+  const meta = [b.slotLabel, b.packageName, b.priceLabel].filter(Boolean).join(" · ");
   // Sala on-platform: solo CONFIRMED con videoUrl ofrece el botón de unirse.
   const canJoin = b.status === "CONFIRMED" && b.videoUrl;
   const join = canJoin
@@ -99,13 +107,13 @@ function upcomingRow(b) {
   const dt = slotDate(b.slotAtIso);
   const lead = dt
     ? C.dateBox(dt.d, dt.m, !!cd && cd.includes(t("core.countdownMin")))
-    : `<div class="date-box">${C.avatar(esc(b.coachInitials || "C"), { size: "sm", bg: "var(--otr-navy)" })}</div>`;
+    : `<div class="date-box">${C.avatar(b.coachInitials || "C", { size: "sm", bg: "var(--otr-navy)" })}</div>`;
 
   return `
   <div class="evrow">
     ${lead}
     <div class="ev-main">
-      <div class="ev-title" style="font-size:15px;margin:0">${esc(b.coachName || t("mb.coachFallback"))}</div>
+      <div class="ev-title" style="font-size:15px;margin:0">${b.coachName || t("mb.coachFallback")}</div>
       <div class="ev-meta" style="margin-top:5px;gap:10px">
         <span>${meta || t("mb.coachingSession")}</span>
         ${cd ? `<span class="row vcenter" style="gap:5px"><span style="display:inline-flex;width:13px;height:13px">${IC.clock}</span>${esc(cd)}</span>` : ""}
@@ -120,12 +128,12 @@ function upcomingRow(b) {
 }
 
 function historyRow(b) {
-  const meta = [b.slotLabel, b.packageName, b.priceLabel].filter(Boolean).map(esc).join(" · ");
+  const meta = [b.slotLabel, b.packageName, b.priceLabel].filter(Boolean).join(" · ");
   return `
   <div class="row vcenter wrap" style="gap:12px;padding:13px 0;border-bottom:1px solid var(--border)">
-    ${C.avatar(esc(b.coachInitials || "C"), { size: "sm" })}
+    ${C.avatar(b.coachInitials || "C", { size: "sm" })}
     <div style="flex:1;min-width:200px">
-      <b style="font-size:13.5px">${esc(b.coachName || t("mb.coachFallback"))}</b>
+      <b style="font-size:13.5px">${b.coachName || t("mb.coachFallback")}</b>
       <div class="faint" style="font-size:12px;margin-top:2px">${meta || t("mb.coachingSession")}</div>
     </div>
     ${statusBadge(b.status)}

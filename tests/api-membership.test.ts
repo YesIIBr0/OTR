@@ -28,15 +28,19 @@ function userFree(extra: Record<string, unknown> = {}) {
   return { id: "u1", name: "Ana", role: "STUDENT", membership: "free", membershipSince: null, ...extra };
 }
 
-async function post(body: Record<string, unknown> | undefined, user: any = userFree()) {
+// [GOAL E5] `lang` inyecta la cookie otr_lang en la request — es de donde la ruta saca ahora
+// el idioma de la etiqueta de antigüedad (antes: tabla de meses en español FIJA).
+async function post(body: Record<string, unknown> | undefined, user: any = userFree(), lang?: string) {
   box.user = user;
-  const res = await POST(jsonReq("/api/membership", body));
+  const headers = lang ? { cookie: `otr_lang=${lang}` } : {};
+  const res = await POST(jsonReq("/api/membership", body, "POST", headers));
   return { status: res.status, json: await res.json() };
 }
 
-async function get(user: any) {
+async function get(user: any, lang?: string) {
   box.user = user;
-  const res = await GET();
+  const req = jsonReq("/api/membership", undefined, "GET", lang ? { cookie: `otr_lang=${lang}` } : {});
+  const res = await GET(req);
   return { status: res.status, json: await res.json() };
 }
 
@@ -61,11 +65,36 @@ describe("GET /api/membership — plan actual", () => {
     expect(json).toEqual({ ok: true, tier: "free", sinceLabel: null });
   });
 
-  it("plan pro con membershipSince → etiqueta legible 'mes año'", async () => {
+  it("plan pro con membershipSince → etiqueta legible 'Desde mes año'", async () => {
     // 15 de junio de 2026 (getMonth()=5 → "junio").
+    // [GOAL E5] La etiqueta sale de fmtPlanSinceLabel (i18n.ts), el MISMO formatter que usa
+    // queries.ts para el payload → trae el prefijo "Desde" que esta ruta antes perdía.
     const { status, json } = await get(userFree({ membership: "pro", membershipSince: new Date(2026, 5, 15) }));
     expect(status).toBe(200);
-    expect(json).toEqual({ ok: true, tier: "pro", sinceLabel: "junio 2026" });
+    expect(json).toEqual({ ok: true, tier: "pro", sinceLabel: "Desde junio 2026" });
+  });
+
+  // ── [GOAL E5] La fecha respeta el IDIOMA de la request ────────────────────────────────
+  // La ruta formateaba con una tabla de MESES en español fija: un alumno con la UI en inglés
+  // que cambiaba de plan veía la pantalla de Membresía saltar de "Since August 2026" (payload
+  // de queries.ts, migrado en F2) a "agosto 2026" en cuanto respondía este endpoint.
+  it("cookie otr_lang=en → etiqueta en inglés ('Since June 2026')", async () => {
+    const proUser = userFree({ membership: "pro", membershipSince: new Date(2026, 5, 15) });
+    const { status, json } = await get(proUser, "en");
+    expect(status).toBe(200);
+    expect(json).toEqual({ ok: true, tier: "pro", sinceLabel: "Since June 2026" });
+  });
+
+  it("sin cookie otr_lang → español (default del producto)", async () => {
+    const proUser = userFree({ membership: "pro", membershipSince: new Date(2026, 5, 15) });
+    const { json } = await get(proUser);
+    expect(json.sinceLabel).toBe("Desde junio 2026");
+  });
+
+  it("otr_lang con un valor raro → español, no revienta", async () => {
+    const proUser = userFree({ membership: "pro", membershipSince: new Date(2026, 5, 15) });
+    const { json } = await get(proUser, "klingon");
+    expect(json.sinceLabel).toBe("Desde junio 2026");
   });
 });
 
@@ -148,9 +177,18 @@ describe("POST /api/membership — transiciones de estado (suscripción simulada
     const { status, json } = await post({ tier: "pro" }, proUser);
     expect(status).toBe(200);
     // Devuelve el estado actual con su etiqueta, sin tocar nada.
-    expect(json).toEqual({ ok: true, tier: "pro", sinceLabel: "junio 2026" });
+    expect(json).toEqual({ ok: true, tier: "pro", sinceLabel: "Desde junio 2026" });
     expect(db.fn("user.update")).not.toHaveBeenCalled();
     expect(db.fn("activityEvent.create")).not.toHaveBeenCalled();
+  });
+
+  // [GOAL E5] El POST usa el mismo idioma de request que el GET (el cambio de plan es
+  // justo el momento en el que la etiqueta se repinta en pantalla).
+  it("POST con otr_lang=en → la etiqueta del plan también viene en inglés", async () => {
+    db.fn("user.update").mockResolvedValueOnce({ id: "u1", membership: "pro", membershipSince: new Date(2026, 5, 15) });
+    const { status, json } = await post({ tier: "pro" }, userFree(), "en");
+    expect(status).toBe(200);
+    expect(json).toMatchObject({ ok: true, tier: "pro", sinceLabel: "Since June 2026" });
   });
 
   it("idempotente: ya en 'free' y pide 'free' → NO re-escribe ni loguea", async () => {

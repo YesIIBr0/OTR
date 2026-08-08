@@ -1305,6 +1305,17 @@
 .btn.btn-accent:hover:focus-visible{box-shadow:var(--sh-glow),var(--ring)}
 .btn.btn-primary:hover:focus-visible{box-shadow:var(--ring)}
 
+/* --- K-01 (bis · GOAL E5) · el .rec-btn EN REPOSO tampoco tenía anillo -------
+   K-01 solo cubrió `.rec-btn.recording`, que declara `box-shadow:none`. Pero el botón
+   en reposo (screens.css:311) declara `box-shadow:var(--sh-glow)` con la MISMA
+   especificidad (0,1,0) que el `:focus-visible{box-shadow:var(--ring)}` de app.css:19,
+   y gana por orden de origen — screens.css carga después. Así que el control principal
+   de la entrega se recorría con Tab sin NINGÚN indicador visible (WCAG 2.4.7). Se
+   resuelve como el acento en el bloque de arriba: glow del mockup + anillo en el mismo
+   box-shadow. `.rec-btn.recording:focus-visible` (0,3,0) sigue ganando a esta (0,2,0)
+   mientras graba, que es lo correcto: ahí no hay glow que conservar. */
+.rec-btn:focus-visible{box-shadow:var(--sh-glow),var(--ring)}
+
 /* --- K-12 · prefers-reduced-motion: las cuatro animaciones que se escapaban ---
    El bloque de app.css:493-507 no las alcanza (viven en screens.css, que va después).
    La grave es `.lb-wave i`: el ecualizador del login se escala en bucle INFINITO y la
@@ -1314,6 +1325,10 @@
      shorthand (que lo resetea a `running`) deja también el estado observable en
      "paused" — es la señal que mide la auditoría con getComputedStyle. */
   .lb-wave i{animation:none;animation-play-state:paused}
+  /* [GOAL E5] `.typing i` (screens.css:492) era la ÚLTIMA animación infinita que
+     quedaba fuera: los tres puntos de "escribiendo…" del chat saltaban en bucle
+     aunque el sistema pidiera menos movimiento. Mismo par shorthand+play-state. */
+  .typing i{animation:none;animation-play-state:paused}
   .tn-more > summary .chev,
   .module-head .chev,
   .rate-star svg{transition:none}
