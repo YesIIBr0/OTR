@@ -1130,7 +1130,10 @@ async function main() {
       specialties: "Public Forum, Lincoln-Douglas, Oratoria",
       languages: "es,en",
       hourlyCents: 4500, // $45/h
-      responseTime: "Responde en ~2 h",
+      // [GOAL-E4 #1] SOLO la magnitud: la etiqueta ("Responde en" / "Responds in") la pone la
+      // vista con t("mkt.respondsIn"), y así traduce. Guardar la frase entera producía
+      // "Responde en Responde en ~2 h" (y español dentro de la UI en inglés).
+      responseTime: "~2 h",
       cancelPolicy: "Cancelación gratis hasta 24 h antes de la sesión; después se retiene el 50%.",
       ratingAvg: 4.9,
       reviewCount: 12,
@@ -1184,7 +1187,7 @@ async function main() {
       specialties: "Lincoln-Douglas, Policy",
       languages: "es,en",
       hourlyCents: 4000, // $40/h
-      responseTime: "Responde en ~4 h",
+      responseTime: "~4 h", // [GOAL-E4 #1] idem: solo la magnitud (ver cp-saul).
       cancelPolicy: "Cancelación gratis hasta 12 h antes de la sesión; después no hay reembolso.",
       ratingAvg: 4.7,
       reviewCount: 8,
@@ -1211,6 +1214,14 @@ async function main() {
     return x;
   };
 
+  // [GOAL-E4 #6] `priceCents` en TODAS las reservas demo. El KPI "GMV (escrow simulado)" de
+  // Métricas agrega Booking.priceCents (CONFIRMED+COMPLETED, api/admin/metrics/route.ts:85);
+  // el seed solo creaba el Escrow.amountCents y dejaba priceCents en su default 0, así que el
+  // panel mostraba $0 mientras su PROPIO CSV (que usa escrow.amountCents ?? priceCents) imprimía
+  // los montos. El flujo real de reserva sí fija priceCents (api/bookings/route.ts:209): esto
+  // alinea el seed con producción. Con 4500 + 4500 + 4000 el GMV pasa a $130 (la PENDING no
+  // entra en el agregado, pero también lleva su precio para no mentirle al CSV).
+
   // 1) COMPLETED: Analía × Saúl hace 9 días — escrow LIBERADO al coach
   //    (menos take rate 18%) + notas de sesión con rúbrica.
   await db.booking.create({
@@ -1221,6 +1232,7 @@ async function main() {
       packageId: "pkg-saul-1",
       slotAt: atHourRD(daysAgoDate(9), 16), // 4:00 PM RD
       durationMin: 60,
+      priceCents: 4500,
       status: "COMPLETED",
       escrow: {
         create: {
@@ -1253,6 +1265,7 @@ async function main() {
       packageId: "pkg-saul-1",
       slotAt: atHourRD(inDays(3), 16), // 4:00 PM RD
       durationMin: 60,
+      priceCents: 4500,
       status: "CONFIRMED",
       videoUrl: "/aula?room=bk-ar-saul-2",
       escrow: {
@@ -1270,6 +1283,7 @@ async function main() {
       packageId: "pkg-carla-1",
       slotAt: atHourRD(daysAgoDate(5), 17), // 5:00 PM RD
       durationMin: 60,
+      priceCents: 4000,
       status: "COMPLETED",
       escrow: {
         create: {
@@ -1302,6 +1316,7 @@ async function main() {
       packageId: "pkg-saul-1",
       slotAt: atHourRD(inDays(2), 17), // 5:00 PM RD
       durationMin: 60,
+      priceCents: 4500,
       status: "PENDING",
       consentBy: "u-rosa",
       escrow: {

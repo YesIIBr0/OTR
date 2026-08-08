@@ -183,6 +183,36 @@ function mountBuilder(root) {
   });
 }
 
+/* [GOAL-E4 #9] "Cursos" para el ADMIN: catálogo COMPLETO de la plataforma con su coach dueño.
+   Vista de solo lectura a propósito — ver el comentario de S.manage.render. */
+function renderAdminCourses() {
+  const courses = DB.adminCourses || [];
+  const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowAdmin")}</span><h1 class="ph-title">${t("extra.allCoursesTitle")}</h1>
+    <div class="page-sub" style="margin-top:8px">${t("extra.allCoursesSub")}</div></div>
+    ${C.btn(t("extra.newCourse"), "accent", { ic: "plus", attrs: 'data-action="new-course"' })}</div>`;
+  if (!courses.length) {
+    return head + `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.allCoursesEmptyHeading")}</h4><p>${t("extra.allCoursesEmptyBody")}</p></div></div>`;
+  }
+  const card = (c, i) => {
+    const pub = c.published === false ? C.chip(t("extra.draft"), "outline") : C.chip(t("extra.published"), "accent", { ic: "check" });
+    const mods = Number(c.moduleCount) || 0;
+    const lessons = Number(c.lessonCount) || 0;
+    return `<div class="card card-pad fade-up" style="margin-bottom:12px;--d:${Math.min(i, 6)}">
+      <div class="row between vcenter" style="gap:12px;flex-wrap:wrap">
+        <div class="row vcenter" style="gap:11px;min-width:0">${C.courseDot(c.color)}
+          <div style="min-width:0"><div class="row vcenter" style="gap:8px;flex-wrap:wrap"><b style="font-size:15px;letter-spacing:-.01em">${esc(c.code)} · ${c.name}</b>${pub}</div>
+          <div class="faint" style="font-size:12px;margin-top:2px">${mods} ${mods === 1 ? t("extra.section") : t("extra.sections")} · ${lessons} ${lessons === 1 ? t("extra.activity") : t("extra.activities")}${c.format ? ` · ${c.format}` : ""}</div></div>
+        </div>
+        <div class="row vcenter" style="gap:8px;flex:none">
+          <span class="lbl">${t("extra.courseOwner")}</span>
+          <b style="font-size:13px">${c.ownerName || t("extra.courseOwnerNone")}</b>
+        </div>
+      </div>
+    </div>`;
+  };
+  return head + courses.map(card).join("");
+}
+
 export const S = {
   catalog: {
     render() {
@@ -247,7 +277,16 @@ export const S = {
   // "Mis cursos" — ÍNDICE de cursos del profesor (estilo lista de cursos de Moodle).
   // Cada tarjeta entra al constructor del curso (S.courseBuilder) vía data-go-builder.
   manage: {
-    render() {
+    render(state) {
+      const role = String((state && state.role) || (DB.me && DB.me.role) || "").toLowerCase();
+      // [GOAL-E4 #9] Cara de ADMIN. Esta pantalla lee DB.teacherCourses (los cursos DE LOS QUE
+      // UNO ES DUEÑO) y no tenía rama de admin: el admin, que no imparte nada, aterrizaba en
+      // "Mis cursos · Sin cursos todavía" con "Nuevo curso" como único control — mientras su
+      // propia pantalla de Métricas reportaba 5 cursos publicados. Ahora lee DB.adminCourses
+      // (catálogo completo con el coach dueño, ver queries.ts). Es una vista de LECTURA: no se
+      // pinta Construir/Configuración/Eliminar (operan sobre contenido de otro dueño) ni
+      // "Reasignar dueño", porque no existe endpoint para ello.
+      if (role === "admin") return renderAdminCourses();
       const courses = DB.teacherCourses || [];
       const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowTeacher")}</span><h1 class="ph-title">${t("extra.myCoursesTitle")}</h1>
         <div class="page-sub" style="margin-top:8px">${t("extra.myCoursesSub")}</div></div>

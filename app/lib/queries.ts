@@ -2041,5 +2041,41 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     base.reviewsReceived = reviewsReceived;
   }
 
+  // --- [GOAL-E4 #9] Rama SOLO-ADMIN: catálogo completo para la pantalla "Cursos" ---------
+  // El ítem "Cursos" del nav de admin (shell.ts:123) reusa la pantalla `manage` del profesor,
+  // que lee DB.teacherCourses = los cursos DE LOS QUE EL USUARIO ES DUEÑO. El admin no
+  // imparte ninguno, así que veía "Mis cursos · Sin cursos todavía" mientras su PROPIA
+  // pantalla de Métricas reportaba 5 cursos publicados.
+  // Se sirve un campo PROPIO (`adminCourses`) en vez de rellenar `teacherCourses`: ese lo
+  // consumen también el constructor de cursos y el perfil de coach, y meterle cursos ajenos
+  // abriría mutaciones sobre contenido de otro dueño que aquí no se piden.
+  // Alcance: LISTAR con su dueño (incluidos los borradores, que es lo que un admin necesita
+  // ver). La reasignación de dueño NO se implementa — no existe endpoint para ella.
+  // Coste: una query extra que SOLO se ejecuta para el rol ADMIN.
+  if (me?.role === "ADMIN") {
+    const adminCourseRows = await db.course.findMany({
+      orderBy: { position: "asc" },
+      select: {
+        id: true, code: true, name: true, nameEn: true, color: true, published: true,
+        format: true, modality: true, coachName: true,
+        teacher: { select: { name: true } },
+        modules: { select: { _count: { select: { lessons: true } } } },
+      },
+    });
+    base.adminCourses = adminCourseRows.map((c: any) => ({
+      id: c.id,
+      code: c.code,
+      name: esc(pickLang(c.name, c.nameEn)),
+      color: c.color,
+      published: c.published,
+      format: esc(c.format || ""),
+      modality: esc(c.modality || ""),
+      // Dueño real (relación) con caída al denormalizado `coachName` de la fila.
+      ownerName: esc(c.teacher?.name || c.coachName || ""),
+      moduleCount: c.modules.length,
+      lessonCount: c.modules.reduce((n: number, m: any) => n + (m._count?.lessons || 0), 0),
+    }));
+  }
+
   return base;
 }

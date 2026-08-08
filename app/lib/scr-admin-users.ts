@@ -64,14 +64,20 @@ function userCard(u, d) {
          ${verified ? t("au.unverify") : t("au.verifyCoach")}
        </button>`
     : "";
-  const suspendBtn = `<button class="btn btn--sm ${suspended ? "btn-primary" : "btn-outline"}" data-user-suspend="${esc(u.id)}" data-val="${suspended ? "false" : "true"}" style="${suspended ? "" : "color:var(--danger)"}">
+  // [GOAL-E4 #5] Las dos acciones DESTRUCTIVAS se llamaban igual en las 12 filas ("Suspender",
+  // "Borrar datos"): quien navega por botones oía doce veces lo mismo sin saber a qué cuenta
+  // aplicaba — y son suspensión y borrado irreversible de datos personales. El nombre
+  // accesible ahora incluye a la persona; el texto visible no cambia (la fila ya la nombra).
+  const personName = esc(u.name || "");
+  const suspendAria = (suspended ? t("au.reactivateAria") : t("au.suspendAria")).replace("{name}", personName);
+  const suspendBtn = `<button class="btn btn--sm ${suspended ? "btn-primary" : "btn-outline"}" data-user-suspend="${esc(u.id)}" data-val="${suspended ? "false" : "true"}" aria-label="${suspendAria}" style="${suspended ? "" : "color:var(--danger)"}">
         ${suspended ? t("au.reactivate") : t("au.suspend")}
       </button>`;
   // [R4] Derecho de supresión (Ley 172-13/COPPA): SOLO no-admins (el server re-valida las
   // guardas). Dos toques armados — es irreversible: anonimiza y purga datos personales.
   const eraseBtn = role === "ADMIN"
     ? ""
-    : `<button class="btn btn-outline btn--sm" data-user-erase="${esc(u.id)}" style="color:var(--danger)">${t("au.erase")}</button>`;
+    : `<button class="btn btn-outline btn--sm" data-user-erase="${esc(u.id)}" aria-label="${t("au.eraseAria").replace("{name}", personName)}" style="color:var(--danger)">${t("au.erase")}</button>`;
 
   return `
   <div class="card card-pad fade-up" style="--d:${d}" data-user-card="${esc(u.id)}">
@@ -310,17 +316,29 @@ S.adminUsers = {
       btn.addEventListener("click", async () => {
         const id = btn.getAttribute("data-user-erase");
         if (!id) return;
+        // [GOAL-E4 #5] El aria-label (que nombra a la persona) TAPA al textContent, así que
+        // cada vez que el botón cambia de texto hay que moverlo también: si no, el lector
+        // seguiría diciendo "Borrar datos de X" justo cuando la pantalla pide la confirmación
+        // de una acción irreversible. `restLabel` es el nombre accesible en reposo.
+        const restLabel = btn.getAttribute("aria-label") || "";
+        const setLabel = (s) => { if (restLabel) btn.setAttribute("aria-label", s); };
         if (btn.getAttribute("data-armed") !== "1") {
           btn.setAttribute("data-armed", "1");
           const t0 = btn.textContent;
           btn.textContent = t("au.eraseArm");
+          setLabel(t("au.eraseArm"));
           setTimeout(() => {
-            if (btn.isConnected && btn.getAttribute("data-armed") === "1") { btn.removeAttribute("data-armed"); btn.textContent = t0; }
+            if (btn.isConnected && btn.getAttribute("data-armed") === "1") {
+              btn.removeAttribute("data-armed");
+              btn.textContent = t0;
+              setLabel(restLabel);
+            }
           }, 4000);
           return;
         }
         btn.disabled = true;
         btn.textContent = t("au.erasing");
+        setLabel(t("au.erasing"));
         try {
           await w.api("/api/admin/erase", { userId: id }, "POST");
           w.toast?.(t("au.erased"), "ok");
@@ -330,6 +348,7 @@ S.adminUsers = {
           btn.disabled = false;
           btn.removeAttribute("data-armed");
           btn.textContent = t("au.erase");
+          setLabel(restLabel);
         }
       })
     );

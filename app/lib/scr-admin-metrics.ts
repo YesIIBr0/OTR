@@ -225,7 +225,12 @@ S.adminMetrics = {
     </div></div>
 
     <!-- [F6.4] Export CSV de entidades de negocio (descarga directa; filename datado en servidor). -->
-    <div class="row fade-up" style="--d:1;margin-bottom:14px;justify-content:flex-end;gap:8px">
+    <!-- [GOAL-E4 #7] Era un .row con justify-content:flex-end y SIN wrap: los dos botones suman
+         465 px y a 390 solo hay 360, así que el primero se desbordaba hacia la IZQUIERDA
+         (left:-90px) y se leía "r inscripciones (CSV)" — sin scroll horizontal que lo rescatara,
+         porque el desbordamiento era negativo. La clase .am-exports (screens.css) permite wrap y
+         a ≤640 apila los botones a ancho completo. -->
+    <div class="am-exports fade-up" style="--d:1;margin-bottom:14px">
       <a class="btn btn-outline btn--sm" href="/api/admin/export?entity=enrollments" download>${IC.doc} ${t("am.exportEnrollments")}</a>
       <a class="btn btn-outline btn--sm" href="/api/admin/export?entity=bookings" download>${IC.doc} ${t("am.exportBookings")}</a>
     </div>
