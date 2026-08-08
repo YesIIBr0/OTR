@@ -622,7 +622,14 @@ S.membership = {
           const resp = await (window as any).api("/api/membership", { tier: target });
           DB.membership = DB.membership || {};
           DB.membership.tier = target;
-          if (resp && resp.membership) DB.membership = { ...DB.membership, ...resp.membership };
+          // [CIERRE · O6] /api/membership responde PLANO — { ok, tier, sinceLabel } — no
+          // `{ membership: {...} }`. La rama vieja (`resp.membership`) no entraba nunca, así
+          // que `sinceLabel` se quedaba con el valor viejo del payload ("Desde junio 2026"
+          // tras bajar a Free, o vacío tras subir a Pro) hasta que el alumno hacía F5.
+          // Se consumen los campos que la ruta devuelve de verdad; el `tier` local sigue de
+          // respaldo optimista por si el body llegara incompleto.
+          if (resp && typeof resp.tier === "string") DB.membership.tier = resp.tier;
+          if (resp && "sinceLabel" in resp) DB.membership.sinceLabel = resp.sinceLabel;
           (window as any).toast?.(target === "pro" ? t("lifetime.memToastWelcomePro") : t("lifetime.memToastSwitchedFree"), "ok");
           repaint();
         } catch (err) {

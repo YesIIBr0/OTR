@@ -1016,6 +1016,21 @@ export default function Aula({ data, user }: { data: any; user: any }) {
 
     const onClick = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
+      // [CIERRE · O12] Skip-link (shell.ts: <a href="#content">). El salto NATIVO reescribe
+      // el hash a '#content', que en esta SPA es la ÚNICA fuente de verdad de la ruta: la
+      // URL dejaba de decir dónde estabas y un F5 después de saltar al contenido tiraba al
+      // usuario a la home de su rol, perdiendo el deep-link (ficha de clase, curso, hilo).
+      // Se hace el salto a mano —foco en #content, que ya tiene tabindex="-1" justo para
+      // esto— y NO se toca la URL: así el hash de ruta se conserva sin carreras con el
+      // 'hashchange' del salto (restaurarlo después con replaceState compite con el evento
+      // que el propio salto encola). Efecto visible idéntico: el foco aterriza en el <main>.
+      const skip = t.closest("a.skip-link") as HTMLElement | null;
+      if (skip) {
+        e.preventDefault();
+        const main = document.getElementById("content");
+        if (main) main.focus();
+        return;
+      }
       if (t.closest("#create-menu")) { e.stopPropagation(); openCreateMenu(); return; }
 
       // [UI-NAV N2] Menú de cuenta del chip de usuario. Se cierra al elegir (el data-go

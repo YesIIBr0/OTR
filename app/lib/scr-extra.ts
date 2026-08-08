@@ -230,6 +230,17 @@ function mountAdminCourses(root) {
         btn.disabled = false;
       }
       if (!coaches.length) { w.toast?.(t("extra.reassignNoCoaches"), "warn"); return; }
+      // [CIERRE · opcional] Guarda del dueño ACTUAL. `value: ownerId` solo preselecciona si
+      // ese id está entre las opciones; /api/admin/users?role=TEACHER puede no traerlo (un
+      // dueño suspendido, o uno que quedó fuera de la primera página). Sin él, el navegador
+      // marcaba la PRIMERA opción y un "Guardar" sin tocar nada reasignaba el curso a otro
+      // coach en silencio. Si falta, se antepone su propia opción (nombre del payload, ya
+      // escapado por queries.ts → el renderer del select lo pinta crudo: una sola capa).
+      const ownerRow = (DB.adminCourses || []).find((c) => c.id === id);
+      const ownerMissing = ownerId && !coaches.some((c) => c.id === ownerId);
+      const ownerOpts = ownerMissing
+        ? [{ value: ownerId, label: (ownerRow && ownerRow.ownerName) || t("extra.courseOwnerNone") }, ...coaches.map((c) => ({ value: c.id, label: esc(c.name) }))]
+        : coaches.map((c) => ({ value: c.id, label: esc(c.name) }));
       w.otrFormModal(
         t("extra.reassignTitle").split("{course}").join(courseName),
         [{
@@ -237,7 +248,7 @@ function mountAdminCourses(root) {
           label: t("extra.reassignField"),
           type: "select",
           value: ownerId,
-          options: coaches.map((c) => ({ value: c.id, label: esc(c.name) })),
+          options: ownerOpts,
         }],
         async (v) => {
           // Sin cambio real: no se molesta al servidor (el backend también lo ignoraría).
