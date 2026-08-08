@@ -59,7 +59,15 @@
 .chip--accent{background:var(--otr-green);color:var(--text-on-accent)}
 .chip--outline{background:transparent;border:1px solid var(--border-strong);color:var(--n-600)}
 .chip--tint{background:rgba(242,86,35,.045);color:var(--otr-green-text)}
-.chip--info{background:#E7EBEE;color:#3F5566}
+/* [GOAL-E4 #10] Este chip llevaba un fondo y un texto azul-pizarra FRÍOS hardcodeados en hex
+   (resto de la paleta anterior), ajenos a la "paleta ESTRICTA" que declara tokens.css: negro
+   + naranja como ÚNICO acento sobre neutros cálidos. Pasa a los tokens neutros que ya
+   existen, conservando la MISMA claridad de fondo (solo se le quita el tinte azul) para no
+   cambiar el peso visual del chip. Contraste: n-600 sobre n-150 = 6,84:1 — WCAG AA para
+   texto pequeño pide 4,5:1, y el par frío anterior daba 6,48:1, así que no se pierde nada.
+   Único uso: el chip de rol "Profesor/Coach" de admin-users. El guardián
+   tests/brand-palette.test.ts ahora falla ante cualquier hex con azul > rojo. */
+.chip--info{background:var(--n-150);color:var(--n-600)}
 /* [A11Y] El media query de móvil de app.css estira .chip a min-height:44px; estos
    chips son etiquetas (no controles táctiles), así que conservan su altura. */
 @media (max-width:640px){
@@ -1251,3 +1259,18 @@
   .modal--v2 .modal-foot{padding:14px 18px 16px}
 }
 /* === FIN ADJUDICACIÓN v2 ================================================== */
+
+/* === [GOAL-E4] Sección de la campaña GOAL 2026-08 (agente E4) ============= */
+
+/* #7 · Fila de exportaciones de Métricas de negocio (scr-admin-metrics.ts).
+   El .row del kit es `display:flex` SIN wrap: con `justify-content:flex-end` los dos
+   botones (465 px juntos) no cabían en los 360 px útiles de un viewport de 390 y el
+   primero se salía por la IZQUIERDA (left:-90px), ilegible y sin scroll que lo rescatara.
+   Con wrap caen uno debajo del otro, y a ≤640 ocupan el ancho completo (mismo patrón que
+   `.lf-card .btn.btn-block` de este archivo: los .btn nacen inline-flex y al estirarse
+   necesitan centrar su contenido). */
+.am-exports{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+@media (max-width:640px){
+  .am-exports{justify-content:stretch}
+  .am-exports > .btn{flex:1 1 100%;justify-content:center}
+}
