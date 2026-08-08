@@ -123,17 +123,13 @@
 .evrow .ev-main{min-width:0}
 /* Título de fila 18→16px: es el delta que más pesa en el "los textos están muy grandes". */
 .evrow .ev-title{font-size:16px;font-weight:700;letter-spacing:-.02em;line-height:1.2;color:var(--text);margin:4px 0}
-/* [MOCKUP V2 · deltas §2/§9] La etiqueta de TIPO de la fila deja de ser un chip con
-   fondo y pasa a texto plano 10/800/.07em. El color va en el naranja accesible #9E3211
-   (el #F25623 puro a 10px da 3.6:1 → no cumple AA), mismo criterio que el eyebrow.
-   Los chips de la derecha (.ev-actions, p. ej. "Inscrito") conservan su fondo. */
-.evrow .ev-main > .chip--black,.evrow .ev-main > .chip--accent,.evrow .ev-main > .chip--tint,
-.evrow .ev-main > .chip--outline,.evrow .ev-main > .chip--info{
-  padding:0;border:0;background:transparent;letter-spacing:.07em;
-}
-.evrow .ev-main > .chip--accent,.evrow .ev-main > .chip--tint{color:var(--otr-green-text)}
-.evrow .ev-main > .chip--black{color:var(--text)}
-.evrow .ev-main > .chip--outline,.evrow .ev-main > .chip--info{color:var(--n-600)}
+/* [MOCKUP DASHBOARD] La etiqueta de TIPO de la fila es un CHIP CON FONDO, como en el
+   mockup aprobado: "CLASE EN VIVO" en negro, "CLASE" en gris frío, "TORNEO" en naranja.
+   (El mockup v2 de Eventos la traía como texto plano; manda el del dashboard, que es la
+   referencia de "que se vea así la plataforma".) Alto compacto para no engordar la fila.
+   El naranja lleva TEXTO NEGRO — sobre relleno #F25623 da 8.4:1, así que a 10px sí cumple
+   AA (lo que no cumple es el naranja como COLOR DE TEXTO sobre fondo claro). */
+.evrow .ev-main > .chip{padding:3px 8px;letter-spacing:.07em;line-height:1.25}
 .evrow .ev-meta{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;font-weight:500;color:var(--ink-400)}
 .evrow .ev-meta .ic{width:14px;height:14px}
 .evrow .ev-actions{display:flex;align-items:center;gap:8px}
