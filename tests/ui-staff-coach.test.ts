@@ -29,6 +29,7 @@ import { S as STeacher } from "../app/lib/scr-teacher";
 import { S as SCommunityRaw } from "../app/lib/scr-community";
 import "../app/lib/scr-my-listings"; // registra el diccionario lst.*
 import { conversationLabel } from "../app/lib/queries";
+import { esc as escOnce } from "../app/lib/esc";
 import { money } from "../app/lib/money";
 import { t } from "../app/lib/i18n";
 
@@ -314,5 +315,69 @@ describe("R2 · con 3+ participantes la etiqueta es estable", () => {
   it("la query del payload pide los participantes con orden explícito (userId asc)", () => {
     const q = readFileSync(join(process.cwd(), "app", "lib", "queries.ts"), "utf8");
     expect(q).toContain('participants: { select: { userId: true }, orderBy: { userId: "asc" } }');
+  });
+});
+
+/* Decodifica las 5 entidades de esc() — sirve para afirmar sobre lo que LEE el usuario. */
+const decode1 = (s: string) => s
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  .replace(/&amp;/g, "&");
+
+describe("R3 · doble escape en Mensajes: el texto se escapa UNA vez", () => {
+  const CRUDO = "hoy a las 5 & luego 'listo'";
+  const UNA_VEZ = escOnce(CRUDO); // lo que entrega queries.ts en el payload
+
+  beforeEach(() => {
+    for (const k of Object.keys(DB)) delete (DB as any)[k];
+    Object.assign(DB, {
+      me: { name: "Saúl Méndez", initials: "SM", role: "teacher" },
+      messages: [{
+        id: "cv-1", ini: "AR", name: "Analía Reyes", last: UNA_VEZ, when: "ahora",
+        unread: 0, online: true, navy: false,
+        messages: [{ me: true, body: UNA_VEZ, when: "ahora" }],
+      }],
+    });
+  });
+
+  it("el preview de la lista se lee tal cual lo escribió el usuario", () => {
+    const html = SCommunity.messages.render();
+    const preview = html.match(/<div class="convo-last">([\s\S]*?)<\/div>/)?.[1] ?? "";
+    expect(preview).toBe(UNA_VEZ);
+    expect(decode1(preview)).toBe(CRUDO);
+  });
+
+  it("la burbuja del hilo también (y no aparece la entidad doble)", () => {
+    const html = SCommunity.messages.render();
+    const burbuja = html.match(/<div class="bubble">([\s\S]*?)<span class="b-time">/)?.[1] ?? "";
+    expect(decode1(burbuja)).toBe(CRUDO);
+    expect(html).not.toContain("&amp;amp;");
+    expect(html).not.toContain("&amp;#39;");
+  });
+
+  it("un nombre con & tampoco se escapa dos veces en cabecera y lista", () => {
+    (DB as any).messages[0].name = escOnce("Ana & Co");
+    const html = SCommunity.messages.render();
+    expect(html).toContain(escOnce("Ana & Co"));
+    expect(html).not.toContain("&amp;amp;");
+  });
+
+  it("`when` SÍ se escapa aquí: queries.ts no lo escapa (es etiqueta nuestra)", () => {
+    (DB as any).messages[0].messages[0].when = "<b>x</b>";
+    const html = SCommunity.messages.render();
+    expect(html).toContain("&lt;b&gt;x&lt;/b&gt;");
+  });
+
+  it("el eco optimista entra al caché ya escapado (no re-inyecta lo tecleado)", () => {
+    const src = readFileSync(join(process.cwd(), "app", "lib", "scr-community.ts"), "utf8");
+    expect(src).toContain("conv.messages.push({ me:true, body:esc(v)");
+  });
+
+  it("el GET de refresco escapa UNA vez, usa conversationLabel y ordena participantes", () => {
+    const r = readFileSync(join(process.cwd(), "app", "api", "messages", "route.ts"), "utf8");
+    expect(r).toContain('participants: { select: { userId: true }, orderBy: { userId: "asc" } }');
+    expect(r).toContain("conversationLabel({");
+    expect(r).toContain("body: esc(m.body)");
+    expect(r).toContain("name: esc(label.name)");
   });
 });
