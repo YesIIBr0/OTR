@@ -49,7 +49,7 @@ export const dict = {
     "profile.linkedChildren": "Hijos vinculados",
     "profile.minorProtected": "Menor — protegido",
     "profile.noChildrenHeading": "Aún no tienes hijos vinculados",
-    "profile.noChildrenBody": "Vincula a tu hijo desde el Portal de familia para seguir sus sesiones y aprobar sus reservas.",
+    "profile.noChildrenBody": "Vincula a tu hijo/a desde el Portal de familia para seguir sus sesiones y aprobar sus reservas.",
     "profile.quickLinks": "Accesos rápidos",
     "profile.goParentPortal": "Portal de familia",
     "profile.goMessages": "Mensajes",

@@ -181,6 +181,13 @@ describe("A2 · getAppData REAL propaga el idioma a TODAS las etiquetas de fecha
     expect(en.lifetime.skillGraph[0].events[0].whenLabel).toBe("11 Aug");
   });
 
+  // [CIERRE · O5] La entrada GRATIS del torneo era la única etiqueta de este bloque con el
+  // texto en duro: un alumno con la UI en inglés leía "Gratis" junto al resto traducido.
+  it("la entrada gratis del torneo también traduce (no se queda en 'Gratis')", () => {
+    expect(es.tournaments[0].entryLabel).toBe("Gratis");
+    expect(en.tournaments[0].entryLabel).toBe("Free");
+  });
+
   it("cada etiqueta EN es DISTINTA de su ES y sin un solo token español", () => {
     const pares: Array<[string, string, string]> = [
       ["myBookings[0].slotLabel", es.myBookings[0].slotLabel, en.myBookings[0].slotLabel],

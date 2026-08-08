@@ -5,16 +5,20 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
-import { t, registerDict } from "./i18n";
+import { t, registerDict, getLang, fmtDayMonth } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): extra.* — los prefijos err.*/apierr.* que antes vivían aquí son CHROME (i18n-keys/chrome.ts). Ver app/lib/i18n.ts.
 import { dict as d_extra } from "./i18n-keys/extra";
 registerDict(d_extra);
 import { videoEmbedHtml } from "./video";
 
 /* ---- Helpers de autoría reutilizados por "Mis cursos" y el constructor de curso ---- */
-// Fecha de entrega legible (de un ISO) → "15 nov".
+// Fecha de entrega legible (de un ISO) → es "15 nov" · en "15 Nov".
+// [CIERRE · O11] El locale estaba FIJO en "es": con la UI en inglés, la fecha de entrega de
+// cada actividad se leía "15 nov" en medio de una pantalla traducida. Se usa fmtDayMonth de
+// i18n.ts —el formatter compartido, con tablas de meses propias— para dar el mismo resultado
+// en cualquier runtime (con o sin ICU), igual que el resto de fechas del Aula.
 function fmtDue(iso) {
-  try { const d = new Date(iso); if (isNaN(d.getTime())) return ""; return d.toLocaleDateString("es", { day: "numeric", month: "short" }); } catch { return ""; }
+  try { return fmtDayMonth(iso, getLang()); } catch { return ""; }
 }
 // Chip de autoguardado en el hero del builder (Guardando… / Guardado).
 function saveChip(root, state) {

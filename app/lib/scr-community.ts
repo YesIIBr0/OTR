@@ -27,7 +27,7 @@ export const S = {};
           <div class="fr-main">
             <div class="fr-title">${t.pinned?`<span class="pin">${IC.flag}</span>`:''}${t.title}</div>
             <div class="fr-sub">${t.excerpt}</div>
-            <div class="fr-meta"><span class="tag-soft">${t.tag}</span><span class="dot-sep"></span>${byAuthorLabel.replace("{author}", t.author)}<span class="dot-sep"></span>${esc(t.last)}</div>
+            <div class="fr-meta"><span class="tag-soft">${t.tag}</span><span class="dot-sep"></span>${byAuthorLabel.split("{author}").join(t.author)}<span class="dot-sep"></span>${esc(t.last)}</div>
           </div>
           <div class="fr-stats">
             <div><b>${t.replies}</b><span>${repliesLabel}</span></div>

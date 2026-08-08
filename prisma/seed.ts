@@ -1655,7 +1655,7 @@ async function main() {
       { id: "cv-3", initials: "OTR", name: "Equipo OTR (anuncios)", lastLabel: "Recordatorio: torneo interno el sábado", whenLabel: "ayer", unread: 0, online: false, navy: true, position: 2 },
       { id: "cv-4", initials: "SE", name: "Silvana Espaillat", lastLabel: "Te paso mi evidencia del tema", whenLabel: "ayer", unread: 0, online: false, navy: false, position: 3 },
       // Conversación menor↔coach (PRD §7.4): activa el filtro de contact-info.
-      { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach 🙌", whenLabel: "hace 2h", unread: 0, online: false, navy: false, position: 4 },
+      { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach", whenLabel: "hace 2h", unread: 0, online: false, navy: false, position: 4 },
     ],
   });
   // [GOAL S5] El hilo de Diego se sembraba VACÍO mientras la lista previsualizaba "Gracias
@@ -1674,7 +1674,7 @@ async function main() {
       { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Diego, buen trabajo en la ronda de ayer: el segundo contention quedó sólido.", timeLabel: "16:40", position: 0 },
       { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Para el sábado practica el crossfire: respuestas de 15 segundos, sin leer.", timeLabel: "16:41", position: 1 },
       { conversationId: "cv-5", senderId: "u-df", me: false, body: "Perfecto, lo practico esta semana con el cronómetro.", timeLabel: "17:02", position: 2 },
-      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Gracias coach 🙌", timeLabel: "17:02", position: 3 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Gracias coach", timeLabel: "17:02", position: 3 },
     ],
   });
 
