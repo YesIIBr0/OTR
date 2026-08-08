@@ -8,6 +8,7 @@
 import { db } from "../../../lib/db";
 import { getSessionUser } from "../../../lib/auth";
 import { ok, bad } from "../../../lib/api";
+import { esc } from "../../../lib/esc";
 
 const DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -85,32 +86,41 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const liveReviewCount = reviews.length;
   const liveRatingAvg = liveReviewCount ? Math.round((reviews.reduce((s, r) => s + (r.rating || 0), 0) / liveReviewCount) * 10) / 10 : 0;
 
+  // [CIERRE · C2 · contrato de escape] Este payload va DIRECTO a un builder de strings
+  // (scr-marketplace: la ficha del coach lo mezcla sobre el listado con
+  // `normCoach({...base, ...detail})`, así que el detalle PISA al base ya escapado de
+  // queries.ts). Sirviéndolo crudo, cualquier coach podía guardar `<img onerror>` en su
+  // bio/titular/credenciales y ejecutarlo en el navegador de todo el que abriera su ficha.
+  // Se escapa AQUÍ, en el borde, con el mismo criterio que queries.ts y que
+  // /api/listings/[id]: texto de usuario UNA vez, y el builder pinta crudo.
+  // `languages` queda crudo a propósito: langBadges() ya lo escapa al pintar (una capa).
+  // URLs (avatarUrl/introVideoUrl) no se escapan: el cliente las pasa por safeSrc().
   return ok({
     coach: {
       id: profile.id,
       userId: profile.userId, // = Booking.coachId
-      name: coachUser.name,
-      initials: coachUser.initials,
-      headline: coachUser.headline,
-      bio: coachUser.bio,
-      teachingStyle: coachUser.teachingStyle,
-      formats: coachUser.formats,
+      name: esc(coachUser.name),
+      initials: esc(coachUser.initials),
+      headline: esc(coachUser.headline || ""),
+      bio: esc(coachUser.bio || ""),
+      teachingStyle: esc(coachUser.teachingStyle || ""),
+      formats: esc(coachUser.formats || ""),
       avatarUrl: coachUser.avatarUrl,
       verified: coachUser.coachVerified,
-      location: coachUser.location,
+      location: esc(coachUser.location || ""),
       introVideoUrl: profile.introVideoUrl,
-      credentials: profile.credentials,
-      specialties: profile.specialties,
+      credentials: esc(profile.credentials || ""),
+      specialties: esc(profile.specialties || ""),
       languages: profile.languages,
       hourlyCents: profile.hourlyCents,
-      responseTime: profile.responseTime,
-      cancelPolicy: profile.cancelPolicy,
+      responseTime: esc(profile.responseTime || ""),
+      cancelPolicy: esc(profile.cancelPolicy || ""),
       ratingAvg: liveRatingAvg,
       reviewCount: liveReviewCount,
       bookingCount: profile.bookingCount,
       packages: profile.packages.map((k) => ({
         id: k.id,
-        name: k.name,
+        name: esc(k.name),
         sessions: k.sessions,
         priceCents: k.priceCents,
         discountPct: k.discountPct,
@@ -127,10 +137,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     reviews: reviews.map((r) => ({
       id: r.id,
       rating: r.rating,
-      body: r.body,
+      body: esc(r.body || ""),
       createdAt: r.createdAt,
-      studentName: r.student?.name ?? "Estudiante",
-      studentInitials: r.student?.initials ?? "ES",
+      studentName: esc(r.student?.name ?? "Estudiante"),
+      studentInitials: esc(r.student?.initials ?? "ES"),
       verifiedBooking: completedBy.has(r.studentId),
     })),
   });

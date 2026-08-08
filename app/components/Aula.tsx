@@ -317,8 +317,16 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const lbl = `<label class="label" for="${fid}">${f.label}${reqMark}</label>`;
         const hint = `<p class="fm-fieldhint" id="${hintId}" role="alert" style="color:var(--danger);font-size:12px;margin:4px 0 0;display:none"></p>`;
         const wrap = (ctrl: string) => `<div class="field" style="margin-bottom:12px">${lbl}${ctrl}${hint}</div>`;
+        // [CIERRE · C1] `o.label` se pinta CRUDO a propósito: es el contrato de la casa
+        // (queries.ts escapa el texto de usuario UNA vez y los builders pintan crudo), y aquí
+        // llegan etiquetas ya escapadas desde DB (nombres de curso/sección/actividad de
+        // DB.manage y DB.teacherCourses) — escaparlas otra vez sacaría "Debate &amp;amp; Oratoria".
+        // Quien alimente este select con texto CRUDO de una API (p.ej. los coaches de
+        // /api/admin/users) escapa EN SU BORDE, como hacen openCourseStart() aquí abajo y
+        // el "Reasignar dueño" de scr-extra. `o.value` sí se escapa: va en un atributo y son
+        // siempre ids/enums (esc es no-op), así que cierra el hueco sin tocar ninguna capa.
         return f.type === "select"
-          ? wrap(`<select class="select" id="${fid}" data-f="${f.name}" aria-describedby="${hintId}"${req}>${(f.options || []).map((o: any) => `<option value="${o.value}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("")}</select>`)
+          ? wrap(`<select class="select" id="${fid}" data-f="${f.name}" aria-describedby="${hintId}"${req}>${(f.options || []).map((o: any) => `<option value="${esc(o.value)}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("")}</select>`)
           : f.type === "richtext"
             ? wrap(`<div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", tr("aula.rtBold")], ["italic", "<i>I</i>", tr("aula.rtItalic")], ["formatBlock:h3", "H", tr("aula.rtHeading")], ["insertUnorderedList", `• ${tr("aula.rtList")}`, tr("aula.rtList")], ["createLink", '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11.5 6.5l1-1a4 4 0 0 1 6 6l-1 1"/><path d="M12.5 17.5l-1 1a4 4 0 0 1-6-6l1-1"/></svg>', tr("aula.rtLink")], ["removeFormat", "⨯", tr("aula.rtClearFormat")]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" id="${fid}" data-f="${f.name}" data-rich="1" contenteditable="true" aria-describedby="${hintId}"${req} style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div>`)
             : f.type === "textarea"
@@ -530,7 +538,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const coaches = await loadAdminCoaches();
         fields.push({ name: "teacherId", label: tr("aula.courseOwner"), type: "select", value: "", options: [
           { value: "", label: tr("aula.courseOwnerSelf") },
-          ...coaches.map((c) => ({ value: c.id, label: c.name })),
+          // [CIERRE · C1] `name` viene CRUDO de /api/admin/users (no pasa por queries.ts), y
+          // el <option> se pinta crudo: sin esc() un coach podía guardarse un nombre con
+          // markup y ejecutarlo en el navegador del ADMIN al abrir "Nuevo curso". Se escapa
+          // en el borde, exactamente como el "Reasignar dueño" de scr-extra (misma API).
+          ...coaches.map((c) => ({ value: c.id, label: esc(c.name) })),
         ] });
       }
       formModal(tpl ? tr("aula.newCourseTpl").replace("{name}", tpl.name) : tr("aula.newCourse"), fields, async (v) => {
