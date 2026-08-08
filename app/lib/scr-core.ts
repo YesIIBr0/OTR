@@ -352,8 +352,15 @@ function activeItemsFlat() {
       <div class="card dash-badges">
         <div class="db-head">
           ${C.secTitle(t('core.dashBadgesTitle'), { sm: true })}
-          ${/* [MOCKUP §3.6] El contador del encabezado va con el RAYO, no con la medalla. */''}
-          <span class="db-count tnum">${IC.zap} ${earned.length}/${badges.length}</span>
+          ${/* [MOCKUP §3.6] El encabezado muestra el XP TOTAL ganado con las insignias
+               ("+1.240 XP"), no un contador de piezas. Si ninguna insignia otorga XP
+               (dato viejo), cae al recuento de siempre para no dejar el hueco vacío. */''}
+          ${(() => {
+            const xpTotal = earned.reduce((s, b) => s + (Number(b.xp) || 0), 0);
+            return xpTotal > 0
+              ? `<span class="db-count tnum">${IC.zap} +${xpTotal.toLocaleString(lang === 'en' ? 'en' : 'es')} XP</span>`
+              : `<span class="db-count tnum">${IC.zap} ${earned.length}/${badges.length}</span>`;
+          })()}
         </div>
         ${tiles.length ? `<div class="db-grid">${tiles.map((b) => {
           /* [MOCKUP §3.6] Cada insignia trae SU icono (Badge.icon → DB.badges[].ic:

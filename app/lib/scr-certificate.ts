@@ -20,7 +20,7 @@ const otrSeal = () => `
       <circle cx="60" cy="60" r="56" fill="var(--otr-navy)"/>
       <circle cx="60" cy="60" r="50" fill="none" stroke="var(--otr-gold)" stroke-width="1.6" stroke-dasharray="2 4"/>
       <circle cx="60" cy="60" r="42" fill="none" stroke="var(--otr-gold)" stroke-width="1.2"/>
-      ${otrCrest({ attrs: 'x="43" y="42" width="34" height="36"', ink: "#FFFFFF" })}
+      ${otrCrest({ id: "seal", attrs: 'x="43" y="42" width="34" height="36"', ink: "#FFFFFF" })}
     </svg>
   </span>`;
 
