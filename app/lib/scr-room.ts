@@ -99,7 +99,7 @@ S.room = {
     // barra naranja de 3px), el resto son estados vacíos sobre card blanca.
     let panel;
     if (cancelled) {
-      panel = `<div class="card card-pad"><div class="empty" style="padding:32px 24px"><div class="ill">${IC.x || IC.alert || IC.video}</div>
+      panel = `<div class="card card-pad"><div class="empty" style="padding:32px 24px"><div class="ill">${IC.close}</div>
         <h4>${t("room.cancelledHeading")}</h4><p>${t("room.cancelledBody")}</p></div></div>`;
     } else if (pending) {
       panel = `<div class="card card-pad"><div class="empty" style="padding:32px 24px"><div class="ill">${IC.clock || IC.video}</div>
