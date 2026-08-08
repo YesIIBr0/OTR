@@ -219,6 +219,9 @@ function activeItemsFlat() {
               <div class="dh-meta">
                 <span class="row vcenter" style="gap:7px">${IC.clock} ${esc(nextB.slotLabel || '')}</span>
                 ${nextB.durationMin ? `<span class="dh-sep"></span><span>${nextB.durationMin} min</span>` : ''}
+                ${/* [GOAL A4 · F2] El paquete ("Single") no desaparece: baja de título a metadato,
+                     igual que ya lo pintan Mis Reservas y la Sala. Viene esc() de queries.ts. */''}
+                ${nextB.packageName ? `<span class="dh-sep"></span><span>${nextB.packageName}</span>` : ''}
               </div>
             </div>
             <div class="dh-side">

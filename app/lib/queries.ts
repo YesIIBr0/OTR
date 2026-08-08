@@ -6,7 +6,7 @@ import { safeUrl } from "./api";
 // [GOAL A2 · F2] Los labels de fecha del payload ya NO se arman con tablas en español
 // fijo (consultations.ts / MONTHS_ES local): se delegan a los formateadores de i18n.ts,
 // que reciben el idioma de la request (cookie otr_lang → getAppData(email, lang)).
-import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull } from "./i18n";
+import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull, fmtMemberSinceLabel, fmtPlanSinceLabel } from "./i18n";
 
 const ME_EMAIL = "analia.reyes@otr.do";
 
@@ -1616,9 +1616,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // "Miembro desde …": User no tiene createdAt en el schema → primer
   // ActivityEvent del usuario, o "2026" si aún no tiene historia.
   const firstEventAt = activityAsc[0]?.createdAt ?? null;
-  const memberSinceLabel = firstEventAt
-    ? `Miembro desde ${MONTHS_ES_FULL[new Date(firstEventAt).getMonth()]} ${new Date(firstEventAt).getFullYear()}`
-    : "Miembro desde 2026";
+  // [GOAL A2 · F2] También con idioma: era la última etiqueta de fecha que quedaba en
+  // español fijo (MONTHS_ES_FULL a pelo) y salía "Miembro desde agosto 2026" con la UI en EN.
+  const memberSinceLabel = fmtMemberSinceLabel(firstEventAt, lang);
 
   // Atribución del Skill Graph (PRD §8.2, sin cajas negras):
   //  1) FUENTE PRIMARIA — meta.skillBumps escrito por el server cuando un evento
@@ -1765,9 +1765,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // upgrade solo cambia User.membership). free | pro | elite ("Próximamente").
   const membership = {
     tier: me?.membership || "free",
-    sinceLabel: me?.membershipSince
-      ? `Desde ${MONTHS_ES_FULL[new Date(me.membershipSince).getMonth()]} ${new Date(me.membershipSince).getFullYear()}`
-      : null,
+    // [GOAL A2 · F2] Con idioma (antes "Desde agosto 2026" fijo, aun con la UI en inglés).
+    sinceLabel: me?.membershipSince ? fmtPlanSinceLabel(me.membershipSince, lang) : null,
     prices: { proMonthly: "US$9", proAnnual: "US$79" },
   };
 

@@ -876,6 +876,35 @@ export function fmtMonthFull(d?: Date | string | number | null, lang?: string | 
   return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${date.getFullYear()}`;
 }
 
+/** Mes completo + año TAL COMO SE LEE DENTRO DE UNA FRASE: es → "agosto 2026" (minúscula,
+ *  como manda el español) · en → "August 2026" (en inglés el mes va siempre en mayúscula). */
+export function fmtMonthNameYear(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  return `${DATE_MONTHS_FULL[dateLangOf(lang)][date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/* Prefijos de las dos etiquetas de antigüedad del payload. Viven aquí —y no como llaves de
+   t()— porque las genera el SERVIDOR (queries.ts) y allí el diccionario de pantalla todavía
+   no está registrado: registerDict() lo llama cada scr-*.ts al cargar SU chunk en el cliente,
+   así que t("…") devolvería la clave cruda en el server. */
+const MEMBER_SINCE_PREFIX: Record<Lang, string> = { es: "Miembro desde", en: "Member since" };
+const PLAN_SINCE_PREFIX: Record<Lang, string> = { es: "Desde", en: "Since" };
+
+/** "Miembro desde agosto 2026" / "Member since August 2026" (identidad del Lifetime Profile).
+ *  Sin fecha conserva el respaldo histórico del payload: "Miembro desde 2026". */
+export function fmtMemberSinceLabel(d?: Date | string | number | null, lang?: string | null): string {
+  const p = MEMBER_SINCE_PREFIX[dateLangOf(lang)];
+  const my = fmtMonthNameYear(d, lang);
+  return my ? `${p} ${my}` : `${p} 2026`;
+}
+
+/** "Desde agosto 2026" / "Since August 2026" (antigüedad del plan, PRD §13). */
+export function fmtPlanSinceLabel(d?: Date | string | number | null, lang?: string | null): string {
+  const my = fmtMonthNameYear(d, lang);
+  return my ? `${PLAN_SINCE_PREFIX[dateLangOf(lang)]} ${my}` : "";
+}
+
 /* Exponemos setLang en window para que el toggle ES/EN del topbar (renderizado
    como string vía innerHTML en shell.ts) lo invoque por onclick — sin tener que
    tocar la delegación de clics de Aula.tsx. Patrón idéntico a window.go/api/toast. */

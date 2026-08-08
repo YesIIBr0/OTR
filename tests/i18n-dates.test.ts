@@ -21,7 +21,10 @@ win.go = () => {};
 win.toast = () => {};
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull } from "../app/lib/i18n";
+import {
+  fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull,
+  fmtMonthNameYear, fmtMemberSinceLabel, fmtPlanSinceLabel,
+} from "../app/lib/i18n";
 import { bookingClassTitle } from "../app/lib/queries";
 import { DB } from "../app/lib/data";
 import { S as SCore } from "../app/lib/scr-core";
@@ -31,7 +34,14 @@ const Core: any = SCore;
 
 // Martes 11 de agosto de 2026, 4:00 PM hora RD (UTC-4) → 20:00 UTC.
 // Es exactamente el label que el barrido pilló en inglés: "mar 11 ago · 4:00 PM".
+// Solo para fmtDateTimeRD, que fija la zona a RD y por tanto NO depende de la TZ del proceso.
 const T = new Date("2026-08-11T20:00:00.000Z");
+
+// [CI] Los formateadores de día/mes/año SÍ leen la fecha en la zona del proceso (comportamiento
+// que ya tenían shortDateLabel/monthYearLabel/monthFullLabel y que no toqué). Sus fixtures usan
+// MEDIODÍA UTC: así el día calendario es el 11 desde UTC-12 hasta UTC+11 y el test no depende de
+// la TZ de la máquina (con 20:00Z fallaba en Asia/Tokyo, que ya estaba en el día 12).
+const T_LOCAL = new Date("2026-08-11T12:00:00.000Z");
 
 // Tokens que SOLO existen en español: si aparecen con lang='en', la fecha se quedó sin traducir.
 const ES_TOKENS = /\b(lun|mar|mié|jue|vie|sáb|dom|ene|abr|ago|dic|enero|agosto|diciembre)\b/i;
@@ -54,21 +64,38 @@ describe("A2 · los formateadores de fecha hablan el idioma de la request", () =
   });
 
   it("fmtDayMonth: '11 ago' en ES, '11 Aug' en EN", () => {
-    expect(fmtDayMonth(T, "es")).toBe("11 ago");
-    expect(fmtDayMonth(T, "en")).toBe("11 Aug");
-    expect(fmtDayMonth(T, "en")).not.toMatch(ES_TOKENS);
+    expect(fmtDayMonth(T_LOCAL, "es")).toBe("11 ago");
+    expect(fmtDayMonth(T_LOCAL, "en")).toBe("11 Aug");
+    expect(fmtDayMonth(T_LOCAL, "en")).not.toMatch(ES_TOKENS);
   });
 
   it("fmtMonthYear: 'ago 2026' en ES, 'Aug 2026' en EN", () => {
-    expect(fmtMonthYear(T, "es")).toBe("ago 2026");
-    expect(fmtMonthYear(T, "en")).toBe("Aug 2026");
-    expect(fmtMonthYear(T, "en")).not.toMatch(ES_TOKENS);
+    expect(fmtMonthYear(T_LOCAL, "es")).toBe("ago 2026");
+    expect(fmtMonthYear(T_LOCAL, "en")).toBe("Aug 2026");
+    expect(fmtMonthYear(T_LOCAL, "en")).not.toMatch(ES_TOKENS);
   });
 
   it("fmtMonthFull: 'Agosto 2026' en ES, 'August 2026' en EN", () => {
-    expect(fmtMonthFull(T, "es")).toBe("Agosto 2026");
-    expect(fmtMonthFull(T, "en")).toBe("August 2026");
-    expect(fmtMonthFull(T, "en")).not.toMatch(ES_TOKENS);
+    expect(fmtMonthFull(T_LOCAL, "es")).toBe("Agosto 2026");
+    expect(fmtMonthFull(T_LOCAL, "en")).toBe("August 2026");
+    expect(fmtMonthFull(T_LOCAL, "en")).not.toMatch(ES_TOKENS);
+  });
+
+  it("fmtMonthNameYear: 'agosto 2026' en ES (minúscula), 'August 2026' en EN", () => {
+    expect(fmtMonthNameYear(T_LOCAL, "es")).toBe("agosto 2026");
+    expect(fmtMonthNameYear(T_LOCAL, "en")).toBe("August 2026");
+  });
+
+  it("antigüedad: 'Miembro desde …' / 'Member since …' y 'Desde …' / 'Since …'", () => {
+    expect(fmtMemberSinceLabel(T_LOCAL, "es")).toBe("Miembro desde agosto 2026");
+    expect(fmtMemberSinceLabel(T_LOCAL, "en")).toBe("Member since August 2026");
+    expect(fmtMemberSinceLabel(T_LOCAL, "en")).not.toMatch(ES_TOKENS);
+    expect(fmtPlanSinceLabel(T_LOCAL, "es")).toBe("Desde agosto 2026");
+    expect(fmtPlanSinceLabel(T_LOCAL, "en")).toBe("Since August 2026");
+    expect(fmtPlanSinceLabel(T_LOCAL, "en")).not.toMatch(ES_TOKENS);
+    // Sin fecha: "Miembro desde" conserva el respaldo del payload; el plan no inventa nada.
+    expect(fmtMemberSinceLabel(null, "en")).toBe("Member since 2026");
+    expect(fmtPlanSinceLabel(null, "en")).toBe("");
   });
 
   it("la etiqueta EN sigue siendo parseable por las cajitas de fecha (scr-core/scr-events)", () => {
@@ -84,11 +111,11 @@ describe("A2 · los formateadores de fecha hablan el idioma de la request", () =
 
   it("sin idioma reconocible cae a español (default del producto), nunca a la clave cruda", () => {
     expect(fmtDateTimeRD(T, "pt")).toBe("mar 11 ago · 4:00 PM");
-    expect(fmtDayMonth(T, undefined)).toBe("11 ago");
+    expect(fmtDayMonth(T_LOCAL, undefined)).toBe("11 ago");
   });
 
   it("dato ausente o inválido devuelve cadena vacía (nunca 'Invalid Date')", () => {
-    for (const f of [fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull]) {
+    for (const f of [fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull, fmtMonthNameYear, fmtPlanSinceLabel]) {
       expect(f(null, "es")).toBe("");
       expect(f(undefined, "en")).toBe("");
       expect(f(new Date("no-es-fecha"), "en")).toBe("");
@@ -145,6 +172,13 @@ describe("A4 · el dashboard pinta el título real, no 'Single'", () => {
     expect(html).toContain('<div class="ev-title">Sesión de Public Forum</div>');
     expect(html).not.toContain('<h2 class="dh-title">Single</h2>');
     expect(html).not.toContain('<div class="ev-title">Single</div>');
+  });
+
+  it("el paquete no se pierde: baja de título a metadato del hero", () => {
+    const html = Core.dashboard.render({ role: "student" });
+    const meta = html.slice(html.indexOf('<div class="dh-meta">'), html.indexOf('<div class="dh-side">'));
+    expect(meta).toContain("Single");   // metadato, junto al slot y la duración
+    expect(meta).toContain("60 min");
   });
 
   it("si el payload NO trae título (dato viejo), sigue habiendo respaldo — nunca vacío", () => {
