@@ -400,7 +400,7 @@ export default function Auth() {
           <span
             aria-hidden="true"
             style={{ display: "flex", flex: "none" }}
-            dangerouslySetInnerHTML={{ __html: otrCrest({ id: "auth", attrs: 'class="crest" style="width:34px;height:39px"', ink: "#FFFFFF", paper: "#171717" }) }}
+            dangerouslySetInnerHTML={{ __html: otrCrest({ attrs: 'class="crest" style="width:34px;height:36px"', ink: "#FFFFFF" }) }}
           />
           <span className="brand-font" style={{ color: "#fff", fontSize: 16 }}>OTR <span style={{ opacity: 0.5, fontWeight: 600 }}>Aula</span></span>
         </div>

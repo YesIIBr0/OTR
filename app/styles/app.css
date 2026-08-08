@@ -42,7 +42,7 @@ img{display:block;max-width:100%}
 .tnum{font-variant-numeric:tabular-nums}
 
 /* ---------- crest ---------- */
-.crest{width:26px;height:30px;flex:none}
+.crest{width:28.5px;height:30px;flex:none}   /* proporción del logo oficial 274:288 */
 
 /* ---------- icon sizing (default + context overrides) ---------- */
 svg.ic{width:18px;height:18px;flex:none}
@@ -79,13 +79,15 @@ svg.ic{width:18px;height:18px;flex:none}
   background:rgba(248,248,246,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border-bottom:1px solid var(--border);
 }
-/* El interior se alinea con el ancho del contenido (1256px): en pantallas anchas el
-   escudo queda a plomo con el título de la página, no pegado al borde del monitor. */
-.topnav-in{max-width:1256px;height:100%;margin:0 auto;padding:0 30px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+/* [MOCKUP V2 · deltas §3] La barra va A SANGRE: sin contenedor centrado, solo 30px de
+   aire lateral. El escudo queda a 30px del borde del monitor mientras el contenido baja
+   a 1120px → el contraste de anchos es lo que hace que la página respire (pedido de
+   Isaac: "mira el espacio entre las cosas"). */
+.topnav-in{height:100%;padding:0 30px;display:flex;align-items:center;justify-content:space-between;gap:18px}
 .tn-left{display:flex;align-items:center;gap:38px;min-width:0}
 .tn-logo{display:flex;align-items:center;gap:10px;flex:none;color:var(--otr-black)}
 .tn-logo:hover{text-decoration:none}
-.tn-logo .crest{width:26px;height:30px}
+.tn-logo .crest{width:28.5px;height:30px}
 .tn-word{font-family:var(--font-brand);font-weight:800;font-size:18px;letter-spacing:-.03em;color:var(--otr-black)}
 
 /* Links horizontales. Activo = texto negro (700) + barra naranja de 2px abajo. */
@@ -171,16 +173,19 @@ svg.ic{width:18px;height:18px;flex:none}
 /* [MOCKUP T2] El panel de notificaciones colgaba del topbar de 56px; la top-nav mide 62.
    (La regla base vive en screens.css: aquí solo se corrige el desplome.) */
 .main .notif-panel{top:70px;right:24px}
-.searchbox{display:flex;align-items:center;gap:8px;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-pill);padding:0 12px;height:36px;width:260px;color:var(--text-3)}
+/* [MOCKUP V2 · deltas §4] Restos de --r-pill migrados a la escala 3/4/5/6: el input va a
+   5px (como .input), el segmentado a 6px de contenedor + 4px de botón. */
+.searchbox{display:flex;align-items:center;gap:8px;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-md);padding:0 12px;height:36px;width:260px;color:var(--text-3)}
 .searchbox input{border:0;background:transparent;outline:none;font-size:13px;color:var(--text);width:100%}
-.role-switch{display:flex;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-pill);padding:3px}
-.role-switch button{border:0;background:transparent;font-size:12.5px;font-weight:600;color:var(--text-2);padding:5px 12px;border-radius:var(--r-pill)}
+.role-switch{display:flex;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-lg);padding:3px}
+.role-switch button{border:0;background:transparent;font-size:12.5px;font-weight:600;color:var(--text-2);padding:5px 12px;border-radius:var(--r-sm)}
 .role-switch button.on{background:var(--otr-navy);color:#fff}
 
 /* ---------- content scroll area ---------- */
 .content{flex:1;overflow-y:auto;min-height:0;scroll-behavior:smooth}
-/* [MOCKUP T2 · spec §2.2] main = 1256px centrado, aire de 30px y 72px de respiro abajo. */
-.page{max-width:1256px;margin:0 auto;padding:30px 30px 72px}
+/* [MOCKUP V2 · deltas §1] main = 1120px centrado (antes 1256), aire de 30px y 80px de
+   respiro abajo (antes 72). Es el cambio nº1 de "más espacio en blanco". */
+.page{max-width:1120px;margin:0 auto;padding:30px 30px 80px}
 .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:24px}
 .page-title{font-size:var(--fs-24);font-weight:800;letter-spacing:var(--track-tight);color:var(--text);line-height:1.1;margin:0}
 /* Encabezado solo para lectores de pantalla (a11y): da a cada pantalla un h1 sin cambio visual */
@@ -289,7 +294,8 @@ svg.ic{width:18px;height:18px;flex:none}
 .kpi-hero-span{grid-column:span 2}
 
 /* Badges / chips / pills */
-.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--r-pill);font-size:11.5px;font-weight:700;letter-spacing:.01em;background:var(--otr-offwhite);color:var(--text-2)}
+/* [MOCKUP V2 · deltas §4] El badge es una ETIQUETA → 3px (nunca pill). */
+.badge{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:var(--r-xs);font-size:11.5px;font-weight:700;letter-spacing:.01em;background:var(--otr-offwhite);color:var(--text-2)}
 .badge.sky{background:var(--action-soft);color:var(--otr-green-text)}
 /* sky--alive: variante con energía (rank/posición del dashboard). Mismo brandbook
    (naranja), pero con profundidad: gradiente sutil + borde naranja + realce interno.
@@ -308,7 +314,8 @@ svg.ic{width:18px;height:18px;flex:none}
 .badge.warn{background:var(--warn-soft);color:var(--otr-gold-text)}
 .badge.danger{background:var(--danger-soft);color:var(--danger)}
 .badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-.chip{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:var(--r-pill);background:var(--otr-white);border:1px solid var(--border-strong);font-size:12.5px;font-weight:500;color:var(--text)}
+/* [MOCKUP V2 · deltas §4] El .chip pelado es un CONTROL (filtro) → 4px, como los botones. */
+.chip{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px;border-radius:var(--r-sm);background:var(--otr-white);border:1px solid var(--border-strong);font-size:12.5px;font-weight:500;color:var(--text)}
 .chip.active{background:var(--otr-navy);color:#fff;border-color:var(--otr-navy)}
 .chip.soft{background:var(--otr-offwhite);border-color:transparent}
 /* [UI-CURSOS U5] Chip GRANDE: para filtros que son la acción principal de la pantalla
@@ -317,8 +324,8 @@ svg.ic{width:18px;height:18px;flex:none}
 .chip--lg{height:40px;padding:0 18px;font-size:14px;font-weight:600}
 /* [AUTH-ROL] Toggle Estudiante | Coach de la tarjeta de acceso. Ancho completo y del
    tamaño del dedo: es la primera pregunta de la pantalla, no un ajuste secundario. */
-.aud-toggle{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--r-pill);background:var(--otr-offwhite)}
-.aud-toggle button{border:0;border-radius:var(--r-pill);padding:9px 12px;font:inherit;font-size:13.5px;font-weight:650;color:var(--text-2);background:transparent;cursor:pointer;transition:background .18s var(--ease),color .18s var(--ease)}
+.aud-toggle{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin-bottom:16px;border:1px solid var(--border);border-radius:var(--r-lg);background:var(--otr-offwhite)}
+.aud-toggle button{border:0;border-radius:var(--r-sm);padding:9px 12px;font:inherit;font-size:13.5px;font-weight:650;color:var(--text-2);background:transparent;cursor:pointer;transition:background .18s var(--ease),color .18s var(--ease)}
 .aud-toggle button:hover{color:var(--text)}
 .aud-toggle button.on{background:var(--otr-navy);color:#fff}
 
@@ -343,13 +350,19 @@ svg.ic{width:18px;height:18px;flex:none}
 .ring-wrap{position:relative;display:inline-flex}
 .ring-wrap .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 
-/* Tabs */
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto}
-.tab{padding:10px 14px;font-size:13.5px;font-weight:600;color:var(--text-2);border-bottom:2px solid transparent;white-space:nowrap;background:transparent;border-top:0;border-left:0;border-right:0}
-.tab:hover{color:var(--text)}
-/* [BRAND V1.0 · moderación] Estado activo = NEGRO (texto + subrayado). En una pantalla con
+/* Tabs — [MOCKUP V2 · deltas §5] CONTROL SEGMENTADO (antes barra subrayada).
+   Contenedor greige #E7E6E2 r6 con 3px de padding; el activo es una pastilla blanca con
+   --sh-1. El marcado no cambia (.tabs > button.tab): la migración es 100% CSS.
+   [BRAND V1.0 · moderación] El activo sigue siendo NEGRO sobre blanco: en una pantalla con
    tabs, chips y CTA, el naranja se reserva para la acción, no para la navegación interna. */
-.tab.active{color:var(--text);border-bottom-color:var(--otr-black)}
+.tabs{display:inline-flex;align-items:center;max-width:100%;padding:3px;margin-bottom:18px;
+  background:#E7E6E2;border:0;border-radius:var(--r-lg);overflow-x:auto}
+.tab{display:inline-flex;align-items:center;justify-content:center;flex:none;height:34px;padding:0 16px;
+  font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text-3);white-space:nowrap;
+  background:transparent;border:0;border-radius:var(--r-sm);
+  transition:background .15s var(--ease),color .15s}
+.tab:hover{color:var(--text)}
+.tab.active{background:#fff;color:var(--text);box-shadow:var(--sh-1)}
 .seg{display:inline-flex;background:var(--otr-offwhite);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px}
 .seg button{border:0;background:transparent;padding:6px 13px;font-size:12.5px;font-weight:600;color:var(--text-2);border-radius:var(--r-xs)}
 .seg button.on{background:#fff;color:var(--text);box-shadow:var(--sh-1)}
@@ -499,7 +512,7 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
 .drop-target{outline:2px dashed var(--otr-sky);outline-offset:2px;border-radius:var(--r-md)}
 .insert-line{height:2px;background:var(--otr-sky);border-radius:2px;margin:1px 0;box-shadow:0 0 4px color-mix(in srgb,var(--otr-sky) 50%,transparent)}
 .sec-dropzone.drop-target{border-color:var(--otr-sky);color:var(--otr-sky)}
-.save-chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text-2);padding:3px 10px;border-radius:var(--r-pill);border:1px solid var(--border);background:var(--surface)}
+.save-chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--text-2);padding:3px 10px;border-radius:var(--r-xs);border:1px solid var(--border);background:var(--surface)}
 .save-chip.saving{color:var(--otr-sky);border-color:color-mix(in srgb,var(--otr-sky) 45%,var(--border))}
 .save-chip.saved{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,var(--border))}
 .inline-rename-input{font:inherit;font-size:13.5px;font-weight:700;padding:2px 6px;border:1.5px solid var(--otr-sky);border-radius:6px;background:#fff;min-width:140px;max-width:100%}

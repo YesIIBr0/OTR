@@ -85,8 +85,10 @@ describe("A · la navegación vive en una top-nav horizontal", () => {
     // el sidebar ya no existe en el layout
     expect(css).not.toMatch(/\.app\.mini\{/);
     expect(css).not.toContain("var(--sidebar-w)");
-    // main del mockup: 1256px centrado
-    expect(css).toMatch(/\.page\{max-width:1256px;margin:0 auto;padding:30px 30px 72px\}/);
+    // main del mockup v2: 1120px centrado con 80px de respiro abajo (antes 1256/72)
+    expect(css).toMatch(/\.page\{max-width:1120px;margin:0 auto;padding:30px 30px 80px\}/);
+    // la top-nav va A SANGRE: su interior ya no lleva contenedor centrado
+    expect(css).not.toMatch(/\.topnav-in\{[^}]*max-width/);
   });
 
   it("móvil (<=760px) conserva la bottom-tab-bar y compacta la barra", () => {

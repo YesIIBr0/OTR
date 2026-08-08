@@ -235,7 +235,7 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
           <div class="tn-left">
             <a class="tn-logo" href="#dashboard" data-go="dashboard">
               ${/* Escudo OTR del brand book (barra clara: tinta negra por defecto) — markup canónico en ./icons */""}
-              ${otrCrest({ id: "tn", attrs: 'class="crest"' })}
+              ${otrCrest({ attrs: 'class="crest"' })}
               <span class="tn-word">Aula</span>
             </a>
             <nav class="tn-links" aria-label="${t('top.menu', lang)}">${linksHtml}</nav>

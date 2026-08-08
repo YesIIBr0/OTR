@@ -176,39 +176,57 @@ function escrowBadge(st) {
 }
 
 /* ================= TAB 1 · AGENDA ================= */
+/* [MOCKUP V2 §5] Día + mes corto para el .date-box del kit (60px, sin caja) a partir
+   del ISO real de la sesión. Sin ISO utilizable devuelve null y el hueco lo ocupa el
+   avatar del alumno: la columna guía nunca queda vacía. */
+function slotDate(iso) {
+  const ts = Date.parse(iso || "");
+  if (Number.isNaN(ts)) return null;
+  const dt = new Date(ts);
+  return { d: dt.getDate(), m: dt.toLocaleDateString(undefined, { month: "short" }).replace(".", "") };
+}
+
 function bookingRow(b, opts = {}) {
+  // [MOCKUP V2] Los botones son hijos DIRECTOS de .ev-actions (antes iban en un
+  // <div class="row" style="flex:none"> que no dejaba envolver en móvil y se salía de la card).
   const actions = opts.actions && b.status === "CONFIRMED"
-    ? `<div class="row" style="gap:8px;flex:none">
-         <button class="btn btn-outline btn--sm" data-cw-join="${esc(b.id)}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>${t("cw.joinSession")}</span></button>
-         <button class="btn btn-accent btn--sm" data-cw-complete="${esc(b.id)}">${t("cw.completeSession")}</button>
-         <button class="btn btn-outline btn--sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.cancel")}</button>
-       </div>`
+    ? `<button class="btn btn-outline btn--sm" data-cw-join="${esc(b.id)}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.video}</span>${t("cw.joinSession")}</span></button>
+       <button class="btn btn-accent btn--sm" data-cw-complete="${esc(b.id)}">${t("cw.completeSession")}</button>
+       <button class="btn btn-outline btn--sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.cancel")}</button>`
     // [COACH-01] PENDING (esperando consentimiento del padre): el coach puede RECHAZARLA.
     // Antes no se renderizaba ninguna acción y la reserva quedaba atascada en su agenda.
     : opts.actions && b.status === "PENDING"
-    ? `<div class="row" style="gap:8px;flex:none">
-         <button class="btn btn-outline btn--sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.rejectBooking")}</button>
-       </div>`
+    ? `<button class="btn btn-outline btn--sm" data-cw-cancel="${esc(b.id)}" style="color:var(--danger)">${t("cw.rejectBooking")}</button>`
     // [COACH-REC] Grabación: en sesiones COMPLETED el coach adjunta el enlace de la grabación
     // (PATCH action:'recording'). Si ya hay una, además ofrece verla.
     : opts.recording && b.status === "COMPLETED"
-    ? `<div class="row" style="gap:8px;flex:none">
-         ${b.recordingUrl ? `<a class="btn btn-outline btn--sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.play}</span>${t("cw.viewRecording")}</span></a>` : ""}
-         <button class="btn btn-outline btn--sm" data-cw-recording="${esc(b.id)}">${b.recordingUrl ? t("cw.changeRecording") : t("cw.attachRecording")}</button>
-       </div>`
+    ? `${b.recordingUrl ? `<a class="btn btn-outline btn--sm" href="${esc(b.recordingUrl)}" target="_blank" rel="noopener noreferrer"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:14px;height:14px">${IC.play}</span>${t("cw.viewRecording")}</span></a>` : ""}
+       <button class="btn btn-outline btn--sm" data-cw-recording="${esc(b.id)}">${b.recordingUrl ? t("cw.changeRecording") : t("cw.attachRecording")}</button>`
     : "";
+  // [MOCKUP V2 §2/§5] La fila pasa al .evrow del kit: columna de fecha, título de 16px y
+  // meta de 12.5px. Los estados que YA no piden acción (historial) son metadatos y van en
+  // texto plano dentro de .ev-main; el estado de una sesión viva conserva su chip con
+  // fondo en .ev-actions, que es donde el coach mira para decidir.
+  const dt = slotDate(b.slotAtIso);
+  const lead = dt
+    ? C.dateBox(dt.d, dt.m)
+    : `<div class="date-box">${C.avatar(esc(b.initials), { size: "sm", bg: "var(--otr-navy)" })}</div>`;
+  const live = !!opts.actions;
   return `
-  <div class="row vcenter wrap" style="gap:12px;padding:13px 0;border-bottom:1px solid var(--border)">
-    ${C.avatar(esc(b.initials), { size: "sm", bg: "var(--otr-navy)" })}
-    <div style="flex:1;min-width:180px">
-      <b style="font-size:13.5px">${esc(b.student)}</b>
-      <div class="faint" style="font-size:12px;margin-top:2px">
-        ${esc(b.slotLabel)}${b.slotLabel ? " · " : ""}${esc(b.pkgName)}${b.amountLabel ? ` · <b style="color:var(--text-2)">${esc(b.amountLabel)}</b>` : ""}
+  <div class="evrow">
+    ${lead}
+    <div class="ev-main">
+      ${live ? "" : `${statusBadge(b.status)}${opts.escrow ? escrowBadge(b.escrowStatus) : ""}`}
+      <div class="ev-title">${esc(b.student)}</div>
+      <div class="ev-meta">
+        <span>${esc(b.slotLabel)}${b.slotLabel ? " · " : ""}${esc(b.pkgName)}</span>
+        ${b.amountLabel ? `<span class="adj-amount">${esc(b.amountLabel)}</span>` : ""}
       </div>
     </div>
-    ${statusBadge(b.status)}
-    ${opts.escrow ? escrowBadge(b.escrowStatus) : ""}
-    ${actions}
+    <div class="ev-actions wrap">
+      ${live ? statusBadge(b.status) : ""}
+      ${actions}
+    </div>
   </div>`;
 }
 
@@ -227,26 +245,28 @@ function viewAgenda() {
   }
 
   return `
-  <div class="grid g-4" style="margin-bottom:18px">
+  ${/* [MOCKUP V2 §1] 26px entre bloques de sección (antes 18/16): el aire va ENTRE bloques. */""}
+  <div class="grid g-4" style="margin-bottom:26px">
     <div class="tile tile--hero otr-shine fade-up" style="--d:0">${C.kpi(t("cw.kpiRating"), m.rating ? m.rating.toFixed(1) : "—", { ic: "star", unit: m.reviews ? ` · ${m.reviews} ${m.reviews === 1 ? t("cw.reviewSingular") : t("cw.reviewPlural")}` : "", accent: "var(--otr-gold-text)" })}</div>
     <div class="tile fade-up" style="--d:1">${C.kpi(t("cw.kpiTotalBookings"), String(m.total), { ic: "calendar" })}</div>
     <div class="tile fade-up" style="--d:2">${C.kpi(t("cw.kpiCompleted"), String(m.completed), { ic: "checkCircle" })}</div>
     <div class="tile fade-up" style="--d:3">${C.kpi(t("cw.kpiRepeatStudents"), String(m.repeat), { ic: "users" })}</div>
   </div>
 
-  <div class="card card-pad fade-up" style="--d:1">
-    ${C.secTitle(t("cw.upcomingTitle"), { sm: true, right: C.chip(String(upcoming.length), "black") })}
-    <p class="faint" style="font-size:12px;margin-top:4px">${t("cw.upcomingNote")}</p>
+  ${/* [MOCKUP V2 §7] Card sin padding: las filas traen el suyo y llegan a sangre. */""}
+  <div class="card adj-list fade-up" style="--d:1">
+    <div class="adj-head">${C.secTitle(t("cw.upcomingTitle"), { sm: true, right: C.chip(String(upcoming.length), "black") })}
+      <p class="adj-sub" style="margin:6px 0 0">${t("cw.upcomingNote")}</p></div>
     ${upcoming.length
-      ? `<div style="margin-top:6px">${upcoming.map((b) => bookingRow(b, { actions: true })).join("")}</div>`
-      : `<p class="muted" style="font-size:13px;margin-top:12px">${t("cw.upcomingEmpty")}</p>`}
+      ? upcoming.map((b) => bookingRow(b, { actions: true })).join("")
+      : `<p class="muted" style="font-size:13px">${t("cw.upcomingEmpty")}</p>`}
   </div>
 
-  <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
-    ${C.secTitle(t("cw.historyTitle"), { sm: true, right: C.chip(String(past.length), "outline") })}
+  <div class="card adj-list fade-up" style="--d:2;margin-top:26px">
+    <div class="adj-head">${C.secTitle(t("cw.historyTitle"), { sm: true, right: C.chip(String(past.length), "outline") })}</div>
     ${past.length
-      ? `<div style="margin-top:6px">${past.map((b) => bookingRow(b, { escrow: true, recording: true })).join("")}</div>`
-      : `<p class="muted" style="font-size:13px;margin-top:12px">${t("cw.historyEmpty")}</p>`}
+      ? past.map((b) => bookingRow(b, { escrow: true, recording: true })).join("")
+      : `<p class="muted" style="font-size:13px">${t("cw.historyEmpty")}</p>`}
   </div>`;
 }
 
@@ -260,14 +280,14 @@ function viewEarnings() {
       <p class="faint" style="font-size:11.5px;margin-top:6px">${sub}</p>
     </div>`;
   return `
-  <div class="grid g-4" style="margin-bottom:18px">
+  <div class="grid g-4" style="margin-bottom:26px">
     ${tile(t("cw.earnEscrow"), e.heldLabel, t("cw.earnEscrowSub"), "lock", 0)}
     ${tile(t("cw.earnReleased"), e.releasedLabel, t("cw.earnReleasedSub"), "checkCircle", 1)}
     ${tile(t("cw.earnPayout"), e.payoutLabel, t("cw.earnPayoutSub").replace("{rate}", String(e.takeRate)), "award", 2)}
     ${tile(t("cw.earnThisMonth"), e.monthPayoutLabel, t("cw.earnThisMonthSub"), "calendar", 3)}
   </div>
 
-  <div class="alert info fade-up" style="--d:1;margin-bottom:18px"><span class="ai">${IC.lock}</span>
+  <div class="alert info fade-up" style="--d:1;margin-bottom:26px"><span class="ai">${IC.lock}</span>
     <div><div class="at">${t("cw.transparencyTitle")}</div>${t("cw.transparencyBody").replace("{rate}", String(e.takeRate))}</div>
   </div>
 
@@ -321,7 +341,7 @@ function viewAvailability() {
 
   return `
   <div class="split rail-360">
-    <div class="stack" style="gap:16px">
+    <div class="stack" style="gap:26px">
       <div class="card card-pad fade-up">
         ${C.secTitle(t("cw.offerTitle"), { sm: true, right: p.active ? C.chip(t("cw.offerVisible"), "accent") : C.chip(t("cw.offerInactive"), "outline") })}
         <div class="row vcenter wrap" style="gap:10px;margin-top:12px">
@@ -360,7 +380,7 @@ function viewAvailability() {
       </div>
     </div>
 
-    <div class="stack" style="gap:16px">
+    <div class="stack" style="gap:26px">
       <div class="card card-pad fade-up" style="--d:1">
         ${C.secTitle(t("cw.packagesTitle"), { sm: true })}
         <p class="faint" style="font-size:12px;margin-top:-8px">${t("cw.packagesNote")}</p>

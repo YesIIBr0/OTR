@@ -29,7 +29,8 @@
 .sec-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:13px}
 .sec-row--end{align-items:flex-end}
 .sec-row .sec-acts{display:flex;align-items:center;gap:4px;flex:none}
-.sec-title{display:flex;align-items:center;gap:10px;margin-bottom:13px;min-width:0}
+/* [MOCKUP V2 · deltas §1] Título de sección → card: 13 → 11px de respiro. */
+.sec-title{display:flex;align-items:center;gap:10px;margin-bottom:11px;min-width:0}
 .sec-row > .sec-title{margin-bottom:0}
 /* La barra es un ::before (el mockup usa un <span>: mismo resultado, menos marcado) */
 .sec-title::before{content:"";flex:none;display:inline-block;width:3px;height:15px;background:var(--otr-green)}
@@ -75,11 +76,12 @@
 .btn.btn-primary:hover{background:var(--ink-800);box-shadow:none;transform:none}
 /* El mockup no tiene brillos ni elevación al hover: solo color. */
 .btn.btn-primary::after{display:none}
-.btn.btn-outline{background:var(--otr-white);border:1.5px solid var(--border-strong);color:var(--text)}
+/* [MOCKUP V2 · deltas §5] El borde del outline baja de 1.5 a 1px: menos peso, más aire. */
+.btn.btn-outline{background:var(--otr-white);border:1px solid var(--border-strong);color:var(--text)}
 .btn.btn-outline:hover{background:var(--surface-2);border-color:var(--n-400);text-decoration:none}
-/* Tamaños: --sm nuevo (34px) y compat con el .btn-sm/.btn-lg existentes */
-.btn.btn--sm,.btn.btn-sm{height:34px;padding:0 14px;font-size:13.5px;border-radius:var(--r-sm)}
-.btn.btn-lg{height:50px;padding:0 24px;font-size:16px;font-weight:800}
+/* Tamaños: --sm = acción de FILA, que en el v2 mide 40px (antes 34) con 16px de padding. */
+.btn.btn--sm,.btn.btn-sm{height:40px;padding:0 16px;font-size:13.5px;border-radius:var(--r-sm)}
+.btn.btn-lg{height:50px;padding:0 24px;font-size:16px;font-weight:800;border-radius:var(--r-md)}
 .btn.btn-accent .ic,.btn.btn-primary .ic,.btn.btn-outline .ic{width:17px;height:17px}
 .btn.btn--sm .ic,.btn.btn-sm .ic{width:14px;height:14px}
 
@@ -96,21 +98,42 @@
 /* Halo naranja decorativo (esquina superior derecha) para héroes/leaderboard */
 .card--dark.card--glow::before{content:"";position:absolute;top:-60px;right:-30px;width:220px;height:220px;background:radial-gradient(circle,rgba(242,86,35,.18),transparent 68%);pointer-events:none}
 
-/* ---- Date box (70px) ---- */
-.date-box{width:70px;flex:none;text-align:center;background:var(--bg);border-radius:var(--r-md);padding:9px 4px}
-.date-box .db-d{display:block;font-size:20px;font-weight:800;letter-spacing:-.03em;line-height:1.05;color:var(--text);font-variant-numeric:tabular-nums}
+/* ---- Date box (60px, SIN caja) ----
+   [MOCKUP V2 · deltas §5] El v2 quita la caja gris: solo texto centrado en una columna
+   fija de 60px. El número crece (20→25px) y el peso visual del bloque baja: es de donde
+   sale la mayor parte del aire nuevo de cada fila. */
+.date-box{width:60px;flex:none;text-align:center;background:transparent;border-radius:0;padding:0}
+.date-box .db-d{display:block;font-size:25px;font-weight:800;letter-spacing:-.03em;line-height:1.02;color:var(--text);font-variant-numeric:tabular-nums}
 .date-box .db-m{display:block;margin-top:2px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-400)}
-/* En vivo: el número (20/800) aguanta el naranja puro; el mes, a 10px, va en el
-   naranja oscuro accesible (#9E3211) sobre el tinte claro. */
-.date-box--live{background:rgba(242,86,35,.1)}
+/* En vivo: el número (25/800) aguanta el naranja puro; el mes, a 10px, va en el
+   naranja oscuro accesible (#9E3211). */
+.date-box--live{background:transparent}
 .date-box--live .db-d{color:var(--otr-green)}
 .date-box--live .db-m{color:var(--otr-green-text)}
 
-/* ---- Fila de evento ---- */
-.evrow{display:grid;grid-template-columns:70px 1fr auto;gap:16px;align-items:center;padding:14px 0;border-left:3px solid transparent;border-bottom:1px solid var(--bg-sunken);transition:background .15s var(--ease)}
+/* ---- Fila de evento ----
+   [MOCKUP V2 · deltas §5] Columna de fecha 70→60px, gap 16→18 y respiro vertical 14→17px.
+   DESVIACIÓN CONSCIENTE respecto al spec (que pide `grid:60px 34px 1fr auto` y
+   `padding:17px 20px 17px 17px`): la 4ª columna es un tile de icono que HOY no existe en
+   el marcado (scr-core/scr-events/scr-mybookings emiten 3 hijos) y el padding horizontal
+   lo sigue poniendo la card (.card-pad 20/22). Ambos pasos van juntos con el cambio de
+   marcado; adelantarlos aquí rompería todas las filas. */
+.evrow{display:grid;grid-template-columns:60px 1fr auto;gap:18px;align-items:center;padding:17px 0;border-left:3px solid transparent;border-bottom:1px solid var(--bg-sunken);transition:background .15s var(--ease)}
 .evrow:last-child{border-bottom:0}
 .evrow .ev-main{min-width:0}
-.evrow .ev-title{font-size:18px;font-weight:700;letter-spacing:-.02em;line-height:1.15;color:var(--text);margin:7px 0}
+/* Título de fila 18→16px: es el delta que más pesa en el "los textos están muy grandes". */
+.evrow .ev-title{font-size:16px;font-weight:700;letter-spacing:-.02em;line-height:1.2;color:var(--text);margin:4px 0}
+/* [MOCKUP V2 · deltas §2/§9] La etiqueta de TIPO de la fila deja de ser un chip con
+   fondo y pasa a texto plano 10/800/.07em. El color va en el naranja accesible #9E3211
+   (el #F25623 puro a 10px da 3.6:1 → no cumple AA), mismo criterio que el eyebrow.
+   Los chips de la derecha (.ev-actions, p. ej. "Inscrito") conservan su fondo. */
+.evrow .ev-main > .chip--black,.evrow .ev-main > .chip--accent,.evrow .ev-main > .chip--tint,
+.evrow .ev-main > .chip--outline,.evrow .ev-main > .chip--info{
+  padding:0;border:0;background:transparent;letter-spacing:.07em;
+}
+.evrow .ev-main > .chip--accent,.evrow .ev-main > .chip--tint{color:var(--otr-green-text)}
+.evrow .ev-main > .chip--black{color:var(--text)}
+.evrow .ev-main > .chip--outline,.evrow .ev-main > .chip--info{color:var(--n-600)}
 .evrow .ev-meta{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;font-weight:500;color:var(--ink-400)}
 .evrow .ev-meta .ic{width:14px;height:14px}
 .evrow .ev-actions{display:flex;align-items:center;gap:8px}
@@ -184,7 +207,7 @@
 .hello-card .h-row{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
 .hello-card h2{font-size:22px;font-weight:800;letter-spacing:var(--track-tight)}
 /* Racha = LOGRO → chip de tinte naranja (el tinte de logro nunca es interactivo) */
-.streak{display:inline-flex;align-items:center;gap:7px;background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent);color:var(--otr-gold-text);padding:7px 13px;border-radius:var(--r-pill);font-weight:600;font-size:13px}
+.streak{display:inline-flex;align-items:center;gap:7px;background:var(--otr-gold-pale);border:1px solid color-mix(in srgb,var(--otr-gold) 40%,transparent);color:var(--otr-gold-text);padding:7px 13px;border-radius:var(--r-sm);font-weight:600;font-size:13px}
 .streak .ic{width:16px;height:16px;color:var(--otr-gold)}
 
 .course-card{display:flex;flex-direction:column;gap:0;overflow:hidden;cursor:pointer}
@@ -221,11 +244,13 @@
 .course-hero .ch-banner{height:56px;position:relative;display:flex;align-items:flex-end;padding:10px 20px;background:linear-gradient(120deg,var(--otr-navy),var(--otr-sky-lo))}
 .course-hero .ch-banner .stripes{position:absolute;inset:0;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 18px,transparent 18px 40px)}
 .course-hero .ch-body{padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.course-hero .ch-tabs{margin:0;padding:0 20px;border-bottom:1px solid var(--border);border-top:1px solid var(--border)}
+/* [MOCKUP V2 · deltas §5] Con las tabs convertidas en control segmentado, el aire vertical
+   de la banda lo pone el contenedor (antes lo daba el padding de cada .tab). */
+.course-hero .ch-tabs{margin:0;padding:10px 20px;border-bottom:1px solid var(--border);border-top:1px solid var(--border)}
 /* El panel va sobre un tono, no sobre blanco: así las tarjetas anidadas (módulos, progreso)
    se leen como contenido DENTRO del curso y no como cajas sueltas encima de otra caja. */
 .course-hero .ch-panel{padding:18px 20px;background:var(--n-25)}
-@media (max-width:640px){ .course-hero .ch-body,.course-hero .ch-panel{padding-left:14px;padding-right:14px} .course-hero .ch-tabs{padding:0 14px} }
+@media (max-width:640px){ .course-hero .ch-body,.course-hero .ch-panel{padding-left:14px;padding-right:14px} .course-hero .ch-tabs{padding:10px 14px} }
 .module{border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;margin-bottom:12px;overflow:hidden;box-shadow:var(--sh-1)}
 .module-head{display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer}
 .module-head:hover{background:var(--n-25)}
@@ -300,7 +325,7 @@
 
 /* ---------------- QUIZ ---------------- */
 .quiz-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
-.quiz-timer{display:inline-flex;align-items:center;gap:8px;background:var(--warn-soft);color:var(--otr-gold-text);font-weight:700;padding:7px 13px;border-radius:var(--r-pill);font-variant-numeric:tabular-nums}
+.quiz-timer{display:inline-flex;align-items:center;gap:8px;background:var(--warn-soft);color:var(--otr-gold-text);font-weight:700;padding:7px 13px;border-radius:var(--r-sm);font-variant-numeric:tabular-nums}
 .q-card{border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;padding:24px;box-shadow:var(--sh-1);max-width:760px;margin:0 auto}
 /* [A11Y] var(--action) (#F25623) sobre la tarjeta blanca del quiz da ~3.1:1 — falla AA de
    texto normal (12px). --otr-green-text (#9E3211) es el mismo naranja de marca a ≥4.5:1 AA. */
@@ -350,7 +375,7 @@
 .spark i{flex:1;border-radius:2px 2px 0 0;background:var(--n-600)}
 .risk-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
 .risk-row:last-child{border-bottom:0}
-.eng-pill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:var(--r-pill)}
+.eng-pill{font-size:11px;font-weight:700;padding:2px 9px;border-radius:var(--r-xs)}
 .eng-Alto{background:var(--ok-soft);color:var(--ok)} .eng-Medio{background:var(--warn-soft);color:var(--otr-gold-text)} .eng-Bajo{background:var(--danger-soft);color:var(--danger)}
 /* [BUG-ROSTER-REAL] "—" = alumno sin ActivityEvent aún (sin señal), distinto de "Bajo" medido */
 .eng-none{background:var(--n-25);color:var(--text-3)}
@@ -455,7 +480,7 @@
 .convo-top span{flex:none}
 .convo-last{font-size:12.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .online-dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:var(--ok);border:2px solid #fff}
-.unread-pill{background:var(--otr-sky-lo);color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:var(--r-pill);display:flex;align-items:center;justify-content:center;padding:0 6px;flex:none}
+.unread-pill{background:var(--otr-sky-lo);color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:var(--r-xs);display:flex;align-items:center;justify-content:center;padding:0 6px;flex:none}
 .msg-thread{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--sh-1)}
 .mt-head{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border)}
 .mt-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--n-25)}
@@ -490,14 +515,14 @@
 .notif-item .nt-t{font-weight:600;font-size:13px;line-height:1.35}.notif-item .nt-d{font-size:12px;color:var(--text-2);margin-top:2px;line-height:1.35}
 .notif-item .nt-w{font-size:11px;color:var(--text-3);margin-top:3px}
 .notif-foot{padding:10px 16px;text-align:center}
-.bell-count{position:absolute;top:4px;right:4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:var(--r-pill);display:flex;align-items:center;justify-content:center;border:2px solid #fff;padding:0 3px}
+.bell-count{position:absolute;top:4px;right:4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:var(--r-xs);display:flex;align-items:center;justify-content:center;border:2px solid #fff;padding:0 3px}
 
 /* ---------------- TOASTS ---------------- */
 .toast-wrap{position:fixed;bottom:20px;right:20px;z-index:90;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
 .toast{display:flex;align-items:center;gap:10px;background:var(--otr-navy);color:#fff;padding:12px 16px;border-radius:var(--r-md);box-shadow:var(--sh-pop);font-size:13.5px;font-weight:500;animation:toastin .3s var(--ease);max-width:340px}
 .toast .ti{width:18px;height:18px;flex:none}
 .toast .tmsg{flex:1;min-width:0}
-.toast-retry{flex:none;margin-left:2px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;font:inherit;font-weight:700;font-size:12.5px;line-height:1;padding:6px 12px;border-radius:var(--r-pill);cursor:pointer;min-height:32px;transition:background .15s var(--ease)}
+.toast-retry{flex:none;margin-left:2px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;font:inherit;font-weight:700;font-size:12.5px;line-height:1;padding:6px 12px;border-radius:var(--r-sm);cursor:pointer;min-height:32px;transition:background .15s var(--ease)}
 .toast-retry:hover{background:rgba(255,255,255,.15)}
 .toast-retry:focus-visible{outline:2px solid #fff;outline-offset:2px}
 /* Estados dentro de la paleta estricta: ok = negro (el toast ya lo es), aviso y error en
@@ -809,9 +834,8 @@
 .lbrow--you .lb-r,.lbrow--you .lb-x{color:var(--otr-green)}
 .lbrow--you .lb-n{color:#fff;font-weight:800}
 
-/* ---- Eventos: la fila .evrow del kit vive dentro de .card-pad (bleed 20px) ---- */
-.ev-list{--ev-bleed:20px}
-.ev-list .evrow:first-child{padding-top:4px}
+/* ---- Eventos: la card de lista ya NO lleva padding (mockup v2 §7): las filas
+   traen el suyo. La geometría vive en la sección "MOCKUP V2" del final. ---- */
 
 /* ---- Comunidad: foro, hilo y mensajería sin pills ---- */
 .forum-row .fr-title{font-weight:700;letter-spacing:-.01em}
@@ -912,11 +936,8 @@
   .dash-hero .dh-cd{font-size:34px}
 }
 
-/* ---- ③ Próximos eventos: la card aporta el aire, la fila el ritmo ---- */
-.dash-events .evrow:first-child{padding-top:7px}
-.dash-events .evrow:last-child{padding-bottom:7px}
-.dash-events .evrow--live:first-child{padding-top:14px}
-.dash-events .evrow--live:last-child{padding-bottom:14px}
+/* ---- ③ Próximos eventos: la card no aporta padding, la fila trae el suyo
+   (mockup v2 §7; la geometría vive en la sección "MOCKUP V2" del final) ---- */
 /* Los filtros son botones: neutralizan el aspecto de control heredado. */
 .dash-filter{cursor:pointer;font-family:inherit;padding:5px 12px;border-radius:var(--r-sm);
   font-size:12px;letter-spacing:0;text-transform:none;font-weight:700}
@@ -1005,3 +1026,192 @@
 .hl .hl-d{font-size:11px;font-weight:500;color:var(--ink-300)}
 @media (max-width:860px){ .hl-grid{grid-template-columns:repeat(2,1fr)} }
 /* === FIN DASHBOARD MOCKUP ================================================= */
+
+/* === MOCKUP V2 · foto de héroe + densidad ==================================
+   Deltas medidos del mockup v2 aprobado por Isaac
+   (docs/superpowers/specs/2026-08-07-mockup-v2-deltas.md §1 ritmo, §2 escala
+   tipográfica, §6 foto de fondo, §7 densidad de cards). Traduce los tres
+   pedidos del cliente: "fotos en el fondo", "esos textos están muy grandes",
+   "más espacio en blanco".
+
+   POR QUÉ AL FINAL DEL ARCHIVO: estas reglas re-declaran valores que ya
+   existen arriba (KIT MOCKUP, DASHBOARD MOCKUP). A igual especificidad gana
+   la última, así que van aquí y NO se edita el kit compartido.
+   Alcance: Inicio (scr-core) y Eventos (scr-events).
+   ========================================================================== */
+
+/* ---- §6 · FOTO DE FONDO DEL HÉROE -----------------------------------------
+   El mockup apila sobre el negro: (1) la foto a opacity .6 y (2) encima un
+   degradado HORIZONTAL que protege el texto de la izquierda y deja ver la
+   foto a la derecha.
+
+   Aquí las dos capas viven en UN solo ::before con tres capas de background,
+   no en dos pseudo-elementos, por dos razones: `opacity` sobre el pseudo
+   diluiría también el degradado de protección, y ::after ya está ocupado por
+   el canto naranja de 3px de .dash-hero.
+   La capa plana rgba(23,23,23,.4) sobre la foto es EXACTAMENTE equivalente a
+   pintar la foto al 60% sobre #171717 (.6·foto + .4·ink = mismo resultado).
+
+   --hero-img: si el dato trae imagen propia, esa gana; si no cae la foto de
+   marca (/img/hero-speaking.jpg). El recorte `center 26%` está calibrado para
+   ella: al cambiar de imagen hay que recalibrar.
+   A11y: el texto blanco se lee sobre #121212 al 95% de alpha en la zona
+   izquierda (>15:1), muy por encima de AAA. */
+.hero-photo{position:relative;overflow:hidden;background:var(--otr-black)}
+.hero-photo::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(100deg,rgba(18,18,18,.95) 0%,rgba(18,18,18,.80) 48%,rgba(18,18,18,.22) 100%),
+    linear-gradient(rgba(23,23,23,.4),rgba(23,23,23,.4)),
+    var(--hero-img,url("/img/hero-speaking.jpg"));
+  background-size:cover;background-position:center 26%;background-repeat:no-repeat;
+}
+/* El contenido se apila por encima de la foto (mismo z-index que el canto). */
+.hero-photo > *{position:relative;z-index:1}
+/* En móvil la foto se encuadra más al centro: a 390px el recorte 26% deja el
+   micrófono fuera y el degradado tapa casi todo. */
+@media (max-width:640px){
+  .hero-photo::before{background-position:center 34%}
+}
+
+/* ---- §2 · TIPOGRAFÍA: "esos textos están muy grandes" ---------------------
+   h1 de page-head 40→38 y sin margin-top; h2 del héroe 33→31 a 16ch. */
+.page-head .ph-title{margin:0;font-size:38px}
+.dash-hero .dh-title{margin:0 0 16px;font-size:31px;line-height:1.04;max-width:16ch}
+@media (max-width:640px){
+  .dash-hero .dh-title{font-size:25px;max-width:none}
+}
+
+/* ---- §1 · RITMO VERTICAL: "más espacio en blanco" ------------------------
+   El v2 NO usa un gap uniforme: 34px tras el héroe y 26px entre secciones.
+   Con flex-gap eso se expresa como gap 26 + 8px extra bajo el héroe. */
+.dash-main{gap:26px}
+.dash-main > .dash-hero{margin-bottom:8px} /* 26 + 8 = 34px tras el héroe */
+
+/* ---- §7 · CARD DE LISTA SIN PADDING --------------------------------------
+   La card no aporta padding: cada fila trae el suyo (17px 20px 17px 17px) y
+   va a sangre hasta el borde. Eso elimina el truco de --ev-bleed / márgenes
+   negativos que usaba la fila en vivo para no desalinear la columna de fecha:
+   todas las filas llevan el mismo borde izquierdo de 3px (transparente en las
+   normales, naranja en la viva), así que ya alinean solas. */
+.dash-events,.ev-list{padding:0}
+.dash-events .evrow,.ev-list .evrow{padding:17px 20px 17px 17px}
+.dash-events .evrow--live,.ev-list .evrow--live{margin:0;padding-left:17px;padding-right:20px}
+/* Avisos y estados vacíos sueltos dentro de la card sin padding. */
+.dash-events > p,.ev-list > p{margin:0;padding:17px 20px}
+@media (max-width:640px){
+  .dash-events .evrow,.ev-list .evrow,
+  .dash-events .evrow--live,.ev-list .evrow--live{padding:15px 14px 15px 13px}
+  .dash-events > p,.ev-list > p{padding:15px 14px}
+}
+/* === FIN MOCKUP V2 ======================================================== */
+
+/* === ADJUDICACIÓN v2 =======================================================
+   "Igual para adjudica — mismo principio" (Isaac, WhatsApp): la densidad del
+   mockup v2 aplicada a la adjudicación del coach y a su panel
+   (scr-teacher.ts: cola de debate, pendientes de calificar, modal de adjudicar;
+   scr-coachwork.ts: agenda de reservas e ingresos).
+
+   POR QUÉ AQUÍ Y NO EN EL KIT: estas clases son EXCLUSIVAS de esas pantallas y
+   el kit compartido (inicio del archivo) está cerrado. Se apoya en el kit
+   (.evrow, .date-box, .sec-title, .chip--*, .btn--sm) y solo añade el envoltorio
+   a sangre y los metadatos en texto plano.
+   A11y: todo texto naranja pequeño va en --otr-green-text (#9E3211, AA).
+   ========================================================================== */
+
+/* ---- Ritmo: 26px entre bloques de sección (spec v2 §1) ---- */
+.adj-block:not(:empty){margin-bottom:26px}
+.adj-stack{display:flex;flex-direction:column;gap:26px}
+/* Subtítulo bajo el título de sección: el aire vive ENTRE bloques, no dentro.
+   El título de sección se pega a su sub (6px) y el sub a la card (11px, spec §1). */
+.adj-block > .sec-row{margin-bottom:0}
+.adj-sub{margin:6px 0 11px;font-size:12.5px;font-weight:500;color:var(--ink-400)}
+
+/* ---- Card de lista sin padding: las filas van a sangre (spec v2 §7) ----
+   Mismo patrón que .dash-events/.ev-list, con selector propio de estas pantallas. */
+.adj-list{padding:0;overflow:hidden}
+.adj-list .evrow{padding:17px 20px 17px 17px}
+.adj-list .evrow--live{margin:0;padding-left:17px;padding-right:20px}
+.adj-list .ev-meta{gap:12px;font-size:12.5px}
+/* Varias acciones por fila (unirse/completar/cancelar): envuelven en vez de salirse. */
+.adj-list .ev-actions{flex-wrap:wrap;justify-content:flex-end}
+.adj-list .ev-meta .ic{width:13px;height:13px}
+/* Avisos, cabeceras y estados vacíos sueltos dentro de la card sin padding. */
+.adj-list > p{margin:0;padding:17px 20px}
+.adj-list > .adj-head{padding:17px 20px 0}
+.adj-list > .adj-head .sec-row,.adj-list > .adj-head .sec-title{margin-bottom:0}
+.adj-list > .adj-head + .evrow{padding-top:13px}
+.adj-list > .adj-foot{padding:14px 20px 17px}
+.adj-list .empty{padding:22px 20px}
+
+/* ---- Variante de rail (320px): la columna guía baja de 60 a 34px ---- */
+.adj-list--rail .evrow{grid-template-columns:34px 1fr auto;gap:12px;padding:14px 16px}
+.adj-list--rail .evrow .date-box{width:34px;display:flex;align-items:center;justify-content:center}
+.adj-list--rail .evrow .ev-title{font-size:14.5px;letter-spacing:-.015em}
+.adj-list--rail .ev-meta{font-size:12px}
+.adj-list--rail > .adj-head{padding:16px 16px 0}
+.adj-list--rail > .adj-head + .evrow{padding-top:12px}
+.adj-list--rail > .adj-foot{padding:12px 16px 16px}
+.adj-list--rail > p,.adj-list--rail .empty{padding:16px}
+/* Tile del icono guía (34px, radio 5) — el hueco nunca queda vacío. */
+.adj-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;
+  border-radius:var(--r-md);background:rgba(242,86,35,.1);color:var(--otr-green)}
+.adj-ic .ic,.adj-ic svg{width:17px;height:17px}
+.adj-ic--mute{background:var(--bg);color:var(--n-600)}
+
+/* ---- Metadatos de fila en TEXTO PLANO (spec v2 §2: sin fondo ni padding) ----
+   El chip con fondo se reserva para los estados que deben destacar (.ev-actions). */
+.adj-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;line-height:1.4;color:var(--n-600)}
+.adj-tag--win{color:var(--otr-green-text)}
+.adj-tag--loss{color:var(--n-600)}
+/* El aviso también va en el naranja accesible: a 10px, --danger (#C8401A) queda por
+   debajo del criterio de la casa para texto pequeño. */
+.adj-tag--alert{color:var(--otr-green-text)}
+.adj-tag + .adj-tag{margin-left:10px}
+/* Dos estados seguidos (estado + escrow) ya sin fondo: los separa el aire, no una caja. */
+.adj-list .evrow .ev-main > .chip + .chip{margin-left:10px}
+/* Nota del alumno: cita apagada, 13px, bajo la meta. */
+.adj-note{margin:6px 0 0;font-size:13px;font-weight:500;font-style:italic;line-height:1.5;color:var(--ink-400)}
+
+/* ---- Fila de la agenda del coach: el importe manda sobre el resto de la meta ---- */
+.adj-amount{font-weight:700;color:var(--text)}
+
+/* ---- MODAL v2 (adjudicar, rechazar, quiz, recurso) ------------------------
+   Mismo criterio de aire que las pantallas: menos dentro de cada campo, más
+   entre campos; título 20/800; botones del kit a 40px. */
+/* Con más aire el modal crece: se le pone techo y el scroll va en el cuerpo, para que
+   la rúbrica larga nunca se coma los botones en pantallas bajas. */
+.modal--v2{border-radius:var(--r-lg);display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.modal--v2 .modal-body{overflow-y:auto}
+.modal--v2 .modal-head,.modal--v2 .modal-foot{flex:none}
+.modal--v2 .modal-head{padding:22px 24px 0}
+.modal--v2 .modal-head h3{font-size:20px;font-weight:800;letter-spacing:-.025em;line-height:1.2}
+.modal--v2 .modal-body{padding:18px 24px 4px;font-size:14px;line-height:1.6}
+.modal--v2 .modal-body .field{gap:7px;margin-bottom:18px}
+.modal--v2 .modal-body .field > .label{font-size:10px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-400)}
+.modal--v2 .modal-foot{padding:16px 24px 20px;gap:8px;margin-top:10px}
+.modal--v2 .modal-foot .btn{height:40px;padding:0 16px;border-radius:var(--r-sm);font-size:13.5px}
+
+/* Rúbrica de adjudicación: rejilla de datos con divisores de 1px (spec v2 §7). */
+.adj-rubric{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+.adj-crit{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 13px;border-bottom:1px solid var(--bg-sunken)}
+.adj-crit:last-child{border-bottom:0}
+.adj-crit > span{font-size:13px;font-weight:600;color:var(--text)}
+.adj-crit .input{width:62px;flex:none;text-align:center;font-variant-numeric:tabular-nums}
+
+@media (max-width:640px){
+  /* En móvil las acciones caen bajo el contenido (grid-column:2 del kit): alineadas a la
+     izquierda quedan en columna limpia en vez de escalonadas contra el borde. */
+  .adj-list .ev-actions{justify-content:flex-start}
+  .adj-list .evrow,.adj-list .evrow--live{padding:15px 14px 15px 13px}
+  .adj-list > p{padding:15px 14px}
+  .adj-list > .adj-head{padding:15px 14px 0}
+  .adj-list > .adj-foot{padding:12px 14px 15px}
+  .modal--v2 .modal-head{padding:18px 18px 0}
+  .modal--v2 .modal-body{padding:14px 18px 4px}
+  .modal--v2 .modal-foot{padding:14px 18px 16px}
+}
+/* === FIN ADJUDICACIÓN v2 ================================================== */
