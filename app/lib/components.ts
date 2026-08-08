@@ -84,7 +84,10 @@ export const C = {
     const r = (size - 8) / 2, c = 2 * Math.PI * r, off = c * (1 - pct / 100);
     const color = opts.color || 'var(--otr-sky-lo)';
     return `<span class="ring-wrap" style="width:${size}px;height:${size}px">
-      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      ${/* [K-13] Decorativo: el dato ya lo dice en texto el .ring-label de abajo. Sin
+            aria-hidden algunos lectores lo anuncian como gráfico vacío — era el único de
+            los 22 <svg> del Aula sin ocultar. */""}
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
         <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--n-100)" stroke-width="7"/>
         <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="7"
           stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"

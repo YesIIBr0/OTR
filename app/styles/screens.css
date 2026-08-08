@@ -1274,3 +1274,43 @@
    heredada del navegador. */
 .empty h2,.empty h3{font-size:16px;color:var(--text);margin-bottom:6px}
 /* === FIN FIXES GOAL F3 · K-09 ============================================= */
+
+/* ==========================================================================
+   A11Y · GOAL 2026-08 (auditoría de teclado — docs/review/GOAL_2026-08_teclado.md)
+   Va al FINAL de screens.css a propósito: las reglas que corrige están en este
+   mismo archivo con la MISMA especificidad, así que la única forma de ganarlas
+   sin inflar selectores es el orden de origen. (responsive.css carga después,
+   pero no declara ninguna regla rival — auditado.)
+   ========================================================================== */
+
+/* --- K-01 · Devolver el anillo de foco a los botones que lo apagaban ---------
+   `:focus-visible{box-shadow:var(--ring)}` (app.css:19, especificidad 0,1,0) quedaba
+   pisado por `.btn.btn-primary`/`.btn.btn-accent`/`.rec-btn.recording` (0,2,0), que
+   declaran `box-shadow:none` para matar la elevación del mockup. Resultado medido en
+   "Entrar al aula": outline "3px none" + box-shadow "none" = CERO indicador de foco
+   (WCAG 2.4.7). Aquí se restaura SOLO en :focus-visible; el reposo sigue plano. */
+.btn.btn-primary:focus-visible,
+.btn.btn-accent:focus-visible,
+.rec-btn.recording:focus-visible{box-shadow:var(--ring)}
+/* Hover + foco a la vez: el acento conserva su glow y suma el anillo (el primario no
+   tiene sombra en hover, así que le basta el anillo). */
+.btn.btn-accent:hover:focus-visible{box-shadow:var(--sh-glow),var(--ring)}
+.btn.btn-primary:hover:focus-visible{box-shadow:var(--ring)}
+
+/* --- K-12 · prefers-reduced-motion: las cuatro animaciones que se escapaban ---
+   El bloque de app.css:493-507 no las alcanza (viven en screens.css, que va después).
+   La grave es `.lb-wave i`: el ecualizador del login se escala en bucle INFINITO y la
+   preferencia del sistema no lo paraba (roce con WCAG 2.2.2). */
+@media (prefers-reduced-motion:reduce){
+  /* `animation:none` quita el bucle; `animation-play-state:paused` DESPUÉS del
+     shorthand (que lo resetea a `running`) deja también el estado observable en
+     "paused" — es la señal que mide la auditoría con getComputedStyle. */
+  .lb-wave i{animation:none;animation-play-state:paused}
+  .tn-more > summary .chev,
+  .module-head .chev,
+  .rate-star svg{transition:none}
+}
+
+/* K-09 (Debate Hub y Niveles a h2/h3): cambio puramente semántico en los builders;
+   el aspecto del estado vacío lo cubre ya la regla `.empty h2,.empty h3` del bloque
+   FIXES GOAL F3 de arriba — no se duplica aquí. */
