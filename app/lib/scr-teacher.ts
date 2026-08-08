@@ -4,7 +4,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { matches } from "./text";
-import { t, registerDict } from "./i18n";
+import { t, getLang, registerDict } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): teacher.*. Ver app/lib/i18n.ts.
 import { dict as d_teacher } from "./i18n-keys/teacher";
 registerDict(d_teacher);
@@ -29,6 +29,18 @@ export const S = {};
       }
     } catch { /* silencioso: si falla la red, al menos re-renderiza con lo que hay */ }
     if (typeof window !== "undefined" && window.go) window.go(route);
+  }
+
+  /* [MOCKUP V2 · adjudicación] Día + mes corto para el .date-box del kit a partir de
+     un ISO real (recordedAt de la solicitud). Sin fecha utilizable devuelve null y la
+     fila se pinta sin tile — nada inventado. Mismo helper que el dashboard. */
+  function adjDateFromIso(iso) {
+    const ts = Date.parse(iso || "");
+    if (Number.isNaN(ts)) return null;
+    const d = new Date(ts);
+    let mon;
+    try { mon = d.toLocaleDateString(getLang() === "en" ? "en-US" : "es-ES", { month: "short" }).replace(".", ""); } catch { mon = ""; }
+    return { day: d.getDate(), mon };
   }
 
   // Recorre teacherCourses y devuelve la lección por id (para prefills).
@@ -69,7 +81,8 @@ export const S = {};
         <button class="tab ${tab==='grupo'?'active':''}" data-teacher-tab="grupo"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.users}</span>${t("teacher.tabGroup")}</span></button>
         <button class="tab ${tab==='contenido'?'active':''}" data-teacher-tab="contenido"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC.book}</span>${t("teacher.tabContent")}</span></button>
       </div>
-      ${tab==='grupo' ? `<div class="grid g-4" style="margin-bottom:18px">
+      ${/* [MOCKUP V2 §1] Ritmo del v2: 26px entre bloques de sección (antes 18). */""}
+      ${tab==='grupo' ? `<div class="grid g-4" style="margin-bottom:26px">
         <div class="tile tile--hero otr-shine fade-up" style="--d:0">${C.kpi(t("teacher.kpiAvg"),String(k.avg),{unit:'%',ic:'chart',accent:'var(--otr-green-text)'})}</div>
         <div class="tile fade-up" style="--d:1">${C.kpi(t("teacher.kpiAttendance"),String(k.attendance),{unit:'%',ic:'users'})}</div>
         ${/* [auditoría] el valor deriva de Enrollment.engagement (Alto/Medio/Bajo→%), no de entregas vs dueAt: se etiqueta como engagement, no como puntualidad medida */""}
@@ -104,24 +117,35 @@ export const S = {};
           </div>
         </div>
 
-        <div class="stack" style="gap:16px">
-          <div class="card fade-up" style="--d:1">
-            <div class="card-head"><h3 class="row vcenter" style="gap:8px;color:var(--danger)">${IC.flag} ${t("teacher.needAttention")}</h3>${atRisk.length?`<span class="chip chip--accent">${atRisk.length}</span>`:''}</div>
-            <div class="card-body" style="padding:6px 16px 10px">
-              ${atRisk.map(s=>`<div class="risk-row">${C.avatar(s.i,{size:'sm',bg:'var(--danger)'})}
-                <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px">${esc(s.n)}</div>
-                <div class="faint" style="font-size:12px">${s.att!=null&&s.att<70?t("teacher.lowAttendance"):t("teacher.noSubmissions")} · ${esc(s.last)}</div></div>
-                <button class="btn btn-outline btn-sm" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>`).join('')}
-              ${atRisk.length?'':'<div class="empty" style="padding:24px 16px"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.noAlertsTitle")+'</h4><p>'+t("teacher.noAlertsBody")+'</p></div>'}
-            </div>
+        ${/* [MOCKUP V2 §5/§7] Las dos cards del rail pasan al patrón de lista del v2:
+             la card no aporta padding, cada fila trae el suyo y va a sangre; el estado
+             de la fila es texto plano (.adj-tag), no un chip con fondo. */""}
+        <div class="stack" style="gap:26px">
+          <div class="card adj-list adj-list--rail fade-up" style="--d:1">
+            <div class="adj-head">${C.secTitle(t("teacher.needAttention"), { sm: true, right: atRisk.length ? C.chip(String(atRisk.length), "accent") : "" })}</div>
+            ${atRisk.map(s=>`<div class="evrow">
+                <div class="date-box">${C.avatar(s.i,{size:'sm',bg:'var(--danger)'})}</div>
+                <div class="ev-main">
+                  <span class="adj-tag adj-tag--alert">${t("teacher.riskBadge")}</span>
+                  <div class="ev-title">${esc(s.n)}</div>
+                  <div class="ev-meta">${s.att!=null&&s.att<70?t("teacher.lowAttendance"):t("teacher.noSubmissions")} · ${esc(s.last)}</div>
+                </div>
+                <div class="ev-actions"><button class="btn btn-outline btn--sm" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>
+              </div>`).join('')}
+            ${atRisk.length?'':'<div class="empty"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.noAlertsTitle")+'</h4><p>'+t("teacher.noAlertsBody")+'</p></div>'}
           </div>
-          <div class="card card-pad fade-up" style="--d:2">
-            ${C.secTitle(t("teacher.pendingGradingTitle"), { sm: true, right: C.chip(String(DB.pendingSubs ?? 0), "black") })}
+          <div class="card adj-list adj-list--rail fade-up" style="--d:2">
+            <div class="adj-head">${C.secTitle(t("teacher.pendingGradingTitle"), { sm: true, right: C.chip(String(DB.pendingSubs ?? 0), "black") })}</div>
             ${(DB.pendingSubs ?? 0) > 0
-              ? `<div class="lrow" style="padding:10px 0"><span style="display:flex;width:18px;color:var(--text-2)">${IC.mic}</span>
-                <div style="flex:1"><div style="font-weight:600;font-size:13px">${t("teacher.pendingSubsToReview").replace("{n}", `${DB.pendingSubs} ${DB.pendingSubs === 1 ? t("teacher.submissionUnitSingular") : t("teacher.submissionUnitPlural")}`)}</div><div class="faint" style="font-size:12px">${t("teacher.pendingGradingHint")}</div></div></div>
-                <button class="btn btn-accent btn--sm btn-block" style="margin-top:12px" data-action="grade-subs">${t("teacher.gradeSubmissions")}</button>`
-              : `<div class="empty" style="padding:20px 16px"><div class="ill">${IC.checkCircle}</div><h4>${t("teacher.allCaughtUpTitle")}</h4><p>${t("teacher.allCaughtUpBody")}</p></div>`}
+              ? `<div class="evrow">
+                  <div class="date-box"><span class="adj-ic">${IC.mic}</span></div>
+                  <div class="ev-main">
+                    <div class="ev-title">${t("teacher.pendingSubsToReview").replace("{n}", `${DB.pendingSubs} ${DB.pendingSubs === 1 ? t("teacher.submissionUnitSingular") : t("teacher.submissionUnitPlural")}`)}</div>
+                    <div class="ev-meta">${t("teacher.pendingGradingHint")}</div>
+                  </div>
+                </div>
+                <div class="adj-foot"><button class="btn btn-accent btn--sm btn-block" data-action="grade-subs">${t("teacher.gradeSubmissions")}</button></div>`
+              : `<div class="empty"><div class="ill">${IC.checkCircle}</div><h4>${t("teacher.allCaughtUpTitle")}</h4><p>${t("teacher.allCaughtUpBody")}</p></div>`}
           </div>
         </div>
       </div>` : this.managePanel({courseCount,moduleCount,lessonCount,quizCount})}`;
@@ -250,7 +274,9 @@ export const S = {};
   function buildModal({ title, bodyHtml, okLabel = t("teacher.save"), wide = false }) {
     const scrim = document.createElement("div");
     scrim.className = "modal-scrim";
-    scrim.innerHTML = `<div class="modal" role="dialog"${wide ? ' style="max-width:680px"' : ''}>
+    // [MOCKUP V2] .modal--v2: mismo criterio de aire que las pantallas (título 20/800,
+    // campos separados 18px, botones del kit a 40px). Solo presentación.
+    scrim.innerHTML = `<div class="modal modal--v2" role="dialog"${wide ? ' style="max-width:680px"' : ''}>
       <div class="modal-head"><h3>${esc(title)}</h3></div>
       <div class="modal-body">${bodyHtml}<p class="fm-err" style="color:var(--danger);font-size:13px;display:none;margin:8px 0 0"></p></div>
       <div class="modal-foot"><button class="btn btn-outline" data-x>${t("teacher.cancel")}</button><button class="btn btn-primary" data-ok>${esc(okLabel)}</button></div>
@@ -610,9 +636,9 @@ export const S = {};
       </div></div>
 
       ${/* [REQ-1] Cola de solicitudes de debate de los alumnos — se rellena en mount(). */""}
-      <div id="dq-queue" class="stack" style="gap:10px;margin-bottom:18px"></div>
+      <div id="dq-queue" class="adj-block"></div>
 
-      <div class="row between vcenter" style="margin-bottom:16px;flex-wrap:wrap;gap:12px">
+      <div class="row between vcenter" style="margin-bottom:26px;flex-wrap:wrap;gap:12px">
         <div class="searchbox" style="width:280px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input id="pt-search" aria-label="${t("teacher.ptSearchAria")}" placeholder="${t("teacher.ptSearchPh")}"/></div>
         <div class="row wrap" style="gap:8px" id="pt-filters">
           <button type="button" class="chip active" data-filter="all">${t("teacher.ptFilterAll")} · ${total}</button>
@@ -649,9 +675,11 @@ export const S = {};
       // El coach Aprueba (adjudica → mueve el rating Glicko) o Rechaza (con motivo).
       const queueBox = root.querySelector("#dq-queue");
       if (queueBox) {
+        // [MOCKUP V2 §2] El resultado es METADATO de la fila: texto plano 10/800/.07em,
+        // sin fondo. Naranja accesible (#9E3211) para la victoria, gris 600 para la derrota.
         const resultTag = (r) => r === "WIN"
-          ? `<span style="color:var(--ok);font-weight:700">${t("teacher.win")}</span>`
-          : `<span style="color:var(--danger);font-weight:700">${t("teacher.loss")}</span>`;
+          ? `<span class="adj-tag adj-tag--win">${t("teacher.win")}</span>`
+          : `<span class="adj-tag adj-tag--loss">${t("teacher.loss")}</span>`;
         const meta = (q) => [q.format, q.side, q.opponent ? "vs " + q.opponent : "", q.eventName, q.tournamentCode]
           .filter(Boolean).map(esc).join(" · ");
         const removeCard = (id) => {
@@ -698,21 +726,31 @@ export const S = {};
           let data; try { data = await window.api("/api/debates?queue=1", undefined, "GET"); } catch { return; }
           const reqs = (data && data.requests) || [];
           if (!reqs.length) { queueBox.innerHTML = ""; return; }
+          // [MOCKUP V2 §5/§7] La cola deja de ser una pila de cards con padding propio y
+          // pasa a UNA card sin padding con filas .evrow a sangre: columna de fecha del kit
+          // (la del auto-reporte), título de 16px, meta en una línea y acciones a la derecha.
           queueBox.innerHTML =
             C.secTitle(t("teacher.debateQueueTitle"), { sm: true, tag: "h2", right: C.chip(String(reqs.length), "black") }) +
-            `<p class="faint" style="font-size:12px;margin:0 0 2px">${t("teacher.debateQueueSub")}</p>` +
-            reqs.map((q) => `
-              <div class="card" data-req="${esc(q.id)}" style="padding:12px 14px">
-                <div class="row between vcenter" style="gap:10px;flex-wrap:wrap">
-                  <div><div style="font-weight:700">${esc(q.studentName)} · ${resultTag(q.result)}</div>
-                    <div class="faint" style="font-size:12px">${meta(q)}</div>
-                    ${q.studentNote ? `<div class="faint" style="font-size:12px;font-style:italic;margin-top:3px">“${esc(q.studentNote)}”</div>` : ""}</div>
-                  <div class="row vcenter" style="gap:6px">
-                    <button class="btn btn-accent btn--sm" data-approve="${esc(q.id)}">${t("teacher.approve")}</button>
-                    <button class="btn btn-outline btn--sm" data-reject="${esc(q.id)}">${t("teacher.reject")}</button>
-                  </div>
+            `<p class="adj-sub">${t("teacher.debateQueueSub")}</p>` +
+            `<div class="card adj-list">` +
+            reqs.map((q) => {
+              const dt = adjDateFromIso(q.recordedAt);
+              return `
+              <div class="evrow" data-req="${esc(q.id)}">
+                ${dt ? C.dateBox(dt.day, dt.mon) : "<span></span>"}
+                <div class="ev-main">
+                  ${resultTag(q.result)}
+                  <div class="ev-title">${esc(q.studentName)}</div>
+                  <div class="ev-meta">${meta(q)}</div>
+                  ${q.studentNote ? `<p class="adj-note">“${esc(q.studentNote)}”</p>` : ""}
                 </div>
-              </div>`).join("");
+                <div class="ev-actions">
+                  <button class="btn btn-accent btn--sm" data-approve="${esc(q.id)}">${t("teacher.approve")}</button>
+                  <button class="btn btn-outline btn--sm" data-reject="${esc(q.id)}">${t("teacher.reject")}</button>
+                </div>
+              </div>`;
+            }).join("") +
+            `</div>`;
           wireQueue();
         })();
       }
@@ -751,13 +789,16 @@ export const S = {};
         ["Argumentation", t("teacher.critArgumentation")], ["Rebuttal", t("teacher.critRebuttal")], ["Delivery", t("teacher.critDelivery")],
         ["Evidence/Research", t("teacher.critEvidence")], ["Crossfire", t("teacher.critCrossfire")],
       ];
-      const fld = (label, html) => `<div class="field" style="margin-bottom:12px"><label class="label">${label}</label>${html}</div>`;
+      // El respiro entre campos lo pone .modal--v2 (18px), no un inline de 12px.
+      const fld = (label, html) => `<div class="field"><label class="label">${label}</label>${html}</div>`;
       body.querySelectorAll("[data-adjudicate]").forEach((btn) =>
         btn.addEventListener("click", () => {
           const uid = btn.getAttribute("data-adjudicate");
           const name = btn.getAttribute("data-name") || t("teacher.studentFallbackName");
-          const rubric = CRIT.map(([k, es]) =>
-            `<div class="row vcenter between" style="gap:10px;margin-bottom:8px"><span style="font-size:13px">${es}</span><input class="input bl-score" data-c="${k}" type="number" min="0" max="10" step="1" value="7" style="width:80px"/></div>`).join("");
+          // [MOCKUP V2 §7] La rúbrica pasa a rejilla de datos: un solo borde exterior y
+          // divisores de 1px entre criterios (menos peso visual, más aire real entre campos).
+          const rubric = `<div class="adj-rubric">${CRIT.map(([k, es]) =>
+            `<div class="adj-crit"><span>${es}</span><input class="input bl-score" data-c="${k}" type="number" min="0" max="10" step="1" value="7"/></div>`).join("")}</div>`;
           // [RATING-1 §6.2] PF/Policy/Parli son 2v2: el coach puede nombrar al compañero
           // (otro de sus alumnos) para que SU rating también se mueva con el resultado.
           const partnerOpts = (DB.students || []).filter((s) => s.id !== uid)

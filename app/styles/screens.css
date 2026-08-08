@@ -1105,3 +1105,113 @@
   .dash-events > p,.ev-list > p{padding:15px 14px}
 }
 /* === FIN MOCKUP V2 ======================================================== */
+
+/* === ADJUDICACIÓN v2 =======================================================
+   "Igual para adjudica — mismo principio" (Isaac, WhatsApp): la densidad del
+   mockup v2 aplicada a la adjudicación del coach y a su panel
+   (scr-teacher.ts: cola de debate, pendientes de calificar, modal de adjudicar;
+   scr-coachwork.ts: agenda de reservas e ingresos).
+
+   POR QUÉ AQUÍ Y NO EN EL KIT: estas clases son EXCLUSIVAS de esas pantallas y
+   el kit compartido (inicio del archivo) está cerrado. Se apoya en el kit
+   (.evrow, .date-box, .sec-title, .chip--*, .btn--sm) y solo añade el envoltorio
+   a sangre y los metadatos en texto plano.
+   A11y: todo texto naranja pequeño va en --otr-green-text (#9E3211, AA).
+   ========================================================================== */
+
+/* ---- Ritmo: 26px entre bloques de sección (spec v2 §1) ---- */
+.adj-block:not(:empty){margin-bottom:26px}
+.adj-stack{display:flex;flex-direction:column;gap:26px}
+/* Subtítulo bajo el título de sección: el aire vive ENTRE bloques, no dentro.
+   El título de sección se pega a su sub (6px) y el sub a la card (11px, spec §1). */
+.adj-block > .sec-row{margin-bottom:0}
+.adj-sub{margin:6px 0 11px;font-size:12.5px;font-weight:500;color:var(--ink-400)}
+
+/* ---- Card de lista sin padding: las filas van a sangre (spec v2 §7) ----
+   Mismo patrón que .dash-events/.ev-list, con selector propio de estas pantallas. */
+.adj-list{padding:0;overflow:hidden}
+.adj-list .evrow{padding:17px 20px 17px 17px}
+.adj-list .evrow--live{margin:0;padding-left:17px;padding-right:20px}
+.adj-list .ev-meta{gap:12px;font-size:12.5px}
+/* Varias acciones por fila (unirse/completar/cancelar): envuelven en vez de salirse. */
+.adj-list .ev-actions{flex-wrap:wrap;justify-content:flex-end}
+.adj-list .ev-meta .ic{width:13px;height:13px}
+/* Avisos, cabeceras y estados vacíos sueltos dentro de la card sin padding. */
+.adj-list > p{margin:0;padding:17px 20px}
+.adj-list > .adj-head{padding:17px 20px 0}
+.adj-list > .adj-head .sec-row,.adj-list > .adj-head .sec-title{margin-bottom:0}
+.adj-list > .adj-head + .evrow{padding-top:13px}
+.adj-list > .adj-foot{padding:14px 20px 17px}
+.adj-list .empty{padding:22px 20px}
+
+/* ---- Variante de rail (320px): la columna guía baja de 60 a 34px ---- */
+.adj-list--rail .evrow{grid-template-columns:34px 1fr auto;gap:12px;padding:14px 16px}
+.adj-list--rail .evrow .date-box{width:34px;display:flex;align-items:center;justify-content:center}
+.adj-list--rail .evrow .ev-title{font-size:14.5px;letter-spacing:-.015em}
+.adj-list--rail .ev-meta{font-size:12px}
+.adj-list--rail > .adj-head{padding:16px 16px 0}
+.adj-list--rail > .adj-head + .evrow{padding-top:12px}
+.adj-list--rail > .adj-foot{padding:12px 16px 16px}
+.adj-list--rail > p,.adj-list--rail .empty{padding:16px}
+/* Tile del icono guía (34px, radio 5) — el hueco nunca queda vacío. */
+.adj-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;
+  border-radius:var(--r-md);background:rgba(242,86,35,.1);color:var(--otr-green)}
+.adj-ic .ic,.adj-ic svg{width:17px;height:17px}
+.adj-ic--mute{background:var(--bg);color:var(--n-600)}
+
+/* ---- Metadatos de fila en TEXTO PLANO (spec v2 §2: sin fondo ni padding) ----
+   El chip con fondo se reserva para los estados que deben destacar (.ev-actions). */
+.adj-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;line-height:1.4;color:var(--n-600)}
+.adj-tag--win{color:var(--otr-green-text)}
+.adj-tag--loss{color:var(--n-600)}
+/* El aviso también va en el naranja accesible: a 10px, --danger (#C8401A) queda por
+   debajo del criterio de la casa para texto pequeño. */
+.adj-tag--alert{color:var(--otr-green-text)}
+.adj-tag + .adj-tag{margin-left:10px}
+/* Dos estados seguidos (estado + escrow) ya sin fondo: los separa el aire, no una caja. */
+.adj-list .evrow .ev-main > .chip + .chip{margin-left:10px}
+/* Nota del alumno: cita apagada, 13px, bajo la meta. */
+.adj-note{margin:6px 0 0;font-size:13px;font-weight:500;font-style:italic;line-height:1.5;color:var(--ink-400)}
+
+/* ---- Fila de la agenda del coach: el importe manda sobre el resto de la meta ---- */
+.adj-amount{font-weight:700;color:var(--text)}
+
+/* ---- MODAL v2 (adjudicar, rechazar, quiz, recurso) ------------------------
+   Mismo criterio de aire que las pantallas: menos dentro de cada campo, más
+   entre campos; título 20/800; botones del kit a 40px. */
+/* Con más aire el modal crece: se le pone techo y el scroll va en el cuerpo, para que
+   la rúbrica larga nunca se coma los botones en pantallas bajas. */
+.modal--v2{border-radius:var(--r-lg);display:flex;flex-direction:column;max-height:calc(100vh - 40px)}
+.modal--v2 .modal-body{overflow-y:auto}
+.modal--v2 .modal-head,.modal--v2 .modal-foot{flex:none}
+.modal--v2 .modal-head{padding:22px 24px 0}
+.modal--v2 .modal-head h3{font-size:20px;font-weight:800;letter-spacing:-.025em;line-height:1.2}
+.modal--v2 .modal-body{padding:18px 24px 4px;font-size:14px;line-height:1.6}
+.modal--v2 .modal-body .field{gap:7px;margin-bottom:18px}
+.modal--v2 .modal-body .field > .label{font-size:10px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-400)}
+.modal--v2 .modal-foot{padding:16px 24px 20px;gap:8px;margin-top:10px}
+.modal--v2 .modal-foot .btn{height:40px;padding:0 16px;border-radius:var(--r-sm);font-size:13.5px}
+
+/* Rúbrica de adjudicación: rejilla de datos con divisores de 1px (spec v2 §7). */
+.adj-rubric{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+.adj-crit{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 13px;border-bottom:1px solid var(--bg-sunken)}
+.adj-crit:last-child{border-bottom:0}
+.adj-crit > span{font-size:13px;font-weight:600;color:var(--text)}
+.adj-crit .input{width:62px;flex:none;text-align:center;font-variant-numeric:tabular-nums}
+
+@media (max-width:640px){
+  /* En móvil las acciones caen bajo el contenido (grid-column:2 del kit): alineadas a la
+     izquierda quedan en columna limpia en vez de escalonadas contra el borde. */
+  .adj-list .ev-actions{justify-content:flex-start}
+  .adj-list .evrow,.adj-list .evrow--live{padding:15px 14px 15px 13px}
+  .adj-list > p{padding:15px 14px}
+  .adj-list > .adj-head{padding:15px 14px 0}
+  .adj-list > .adj-foot{padding:12px 14px 15px}
+  .modal--v2 .modal-head{padding:18px 18px 0}
+  .modal--v2 .modal-body{padding:14px 18px 4px}
+  .modal--v2 .modal-foot{padding:14px 18px 16px}
+}
+/* === FIN ADJUDICACIÓN v2 ================================================== */
