@@ -51,8 +51,15 @@ export const dict = {
     "comm.msg.report": "Reportar",
     "comm.msg.today": "Hoy",
     "comm.msg.composePh": "Escribe un mensaje…",
+    // [GOAL E5] Estado vacío CON SALIDA. El anterior ("cuando hables… aparecerán aquí") era un
+    // callejón sin salida: un padre sin hilos —el caso normal el primer día— llegaba a Mensajes
+    // desde el portal y solo veía el buscador, sin UN SOLO botón. La única superficie que ABRE
+    // un hilo hoy es "Enviar mensaje" en la ficha del coach (scr-marketplace → POST
+    // /api/conversations); reservar NO crea conversación. Así que la copy nombra ese camino y
+    // el botón lleva a 'explore', que está en el nav de las 4 caras.
     "comm.msg.emptyHeading": "Sin conversaciones",
-    "comm.msg.emptyBody": "Cuando hables con tus coaches o compañeros, los mensajes aparecerán aquí.",
+    "comm.msg.emptyBody": "Abre la ficha de un coach y pulsa «Enviar mensaje»: el hilo se abrirá aquí.",
+    "comm.msg.emptyCta": "Buscar coaches",
     "comm.msg.now": "ahora",
 
     // mensajes · reportar conversación (modal)
@@ -107,7 +114,8 @@ export const dict = {
     "comm.msg.today": "Today",
     "comm.msg.composePh": "Type a message…",
     "comm.msg.emptyHeading": "No conversations yet",
-    "comm.msg.emptyBody": "When you talk with your coaches or peers, your messages will appear here.",
+    "comm.msg.emptyBody": "Open a coach's profile and hit “Send message” — the thread will start here.",
+    "comm.msg.emptyCta": "Find coaches",
     "comm.msg.now": "now",
 
     // messages · report conversation (modal)

@@ -600,15 +600,19 @@ export default function Auth() {
             )}
 
             {/* Restablecer: nueva contraseña + confirmación */}
+            {/* [GOAL E5] autoComplete="new-password" en AMBOS campos: sin él el gestor de
+                contraseñas ofrece autocompletar con la contraseña VIEJA (la que el usuario
+                está restableciendo, normalmente porque la perdió) y no propone ni guarda la
+                nueva. Es el mismo valor que ya usa el campo password del modo registro. */}
             {mode === "reset" && (
               <>
                 <div className="field" style={{ marginBottom: 14 }}>
                   <label className="label" htmlFor="auth-new-password">{T.newPwdLabel}</label>
-                  <input id="auth-new-password" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={T.newPwdPh} required aria-required="true" aria-invalid={error ? true : undefined} />
+                  <input id="auth-new-password" className="input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={T.newPwdPh} required aria-required="true" aria-invalid={error ? true : undefined} />
                 </div>
                 <div className="field" style={{ marginBottom: 14 }}>
                   <label className="label" htmlFor="auth-confirm-password">{T.confirmPwdLabel}</label>
-                  <input id="auth-confirm-password" className="input" type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder={T.confirmPwdPh} required aria-required="true" aria-invalid={error ? true : undefined} />
+                  <input id="auth-confirm-password" className="input" type="password" autoComplete="new-password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder={T.confirmPwdPh} required aria-required="true" aria-invalid={error ? true : undefined} />
                 </div>
               </>
             )}
