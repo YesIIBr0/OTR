@@ -54,47 +54,27 @@ export const IC: Record<string, string> = (() => {
 })();
 
 /* ---------------- ESCUDO OTR · logo de marca (Brand Book V1.0 · 2026) ----------
-   Shield con tapa plana y punta inferior redondeada, dividido en una grilla 2x2
-   de cuadrantes que alternan papel/tinta (recortados con clipPath):
+   VECTORIZADO DEL LOGO OFICIAL que entregó la marca (PNG 320x350 → contornos
+   trazados sobre el canal alfa, viewBox 0 0 274 288). No es una reconstrucción:
+   es el archivo de marca, punto por punto.
 
+   Construcción del escudo (así es el original):
      ┌──────────────┬──────────────┐
-     │ PAPEL · "O"  │ TINTA · "T"  │  · la O (en tinta) lleva un trazo horizontal
-     │  O cruzada   │  + ribbon    │    que la cruza por debajo
-     ├──────────────┼──────────────┤  · bajo la T cuelga un ribbon/marcador de
-     │ TINTA · "R"  │ PAPEL vacío  │    libro en papel (muesca triangular inferior)
-     └──────────────┴──────────────┘  · inferior-derecho: papel, sin letra
+     │ TINTA · "O"  │ HUECO · "T"  │  · mitad izquierda maciza en tinta, con la O
+     │  calada      │  en tinta    │    y la R CALADAS (dejan ver el fondo)
+     ├──────────────┼──────────────┤  · mitad derecha hueca, con el contorno, la T
+     │ TINTA · "R"  │ HUECO        │    y el ribbon en tinta
+     └──────────────┴──────────────┘  · banda horizontal a media altura: regla
+                                        calada a la izquierda, barra maciza a la derecha
 
-   Letras O/T/R en Inter 800. El escudo es MONOCROMO: dos colores, la tinta de la
-   marca y el papel del fondo sobre el que se apoya. Nunca a color, nunca con
-   sombras ni degradados.
+   MONOCROMO de verdad: UNA sola tinta + calados transparentes (fill-rule evenodd).
+   El fondo se ve a través de los calados, así que el escudo se apoya sobre
+   cualquier superficie sin recortes ni parches de color.
 
-   - `ink`     → color de la marca (por defecto el negro del book, #171717).
-   - `paper`   → color del fondo sobre el que se apoya (por defecto blanco).
-                 Sobre fondo OSCURO se invierte: `ink:"#FFFFFF", paper:"#171717"`.
-   - `outline` → contorno del shield; por defecto sigue a `ink`.
-   - `id`      → sufijo ÚNICO por documento (el clipPath se referencia con url(#…);
-                 dos instancias simultáneas no deben compartir id).
-   - `attrs`   → atributos extra inyectados en el <svg> raíz (class, style,
-                 width/height, o x/y si se anida dentro de otro svg).
-   viewBox "0 0 26 30" — mismas proporciones que el crest anterior para no
-   romper los layouts existentes. */
-export const otrCrest = ({ id = "crest", attrs = "", ink = "#171717", paper = "#FFFFFF", outline = ink } = {}) => {
-  // Contorno del shield: M tapa (y=2) → lados rectos hasta y=15.5 → curvas que
-  // convergen en la punta inferior, suavizada con un pequeño arco (redondeada).
-  const shield = "M3 2 H23 V15.5 C23 21.5 19.8 25.8 14.2 28.6 C13.45 28.97 12.55 28.97 11.8 28.6 C6.2 25.8 3 21.5 3 15.5 Z";
-  return `<svg viewBox="0 0 26 30" fill="none" aria-hidden="true" ${attrs}>
-    <defs><clipPath id="otr-shield-${id}"><path d="${shield}"/></clipPath></defs>
-    <g clip-path="url(#otr-shield-${id})">
-      <rect x="3" y="2" width="10" height="13.5" fill="${paper}"/>
-      <rect x="13" y="2" width="10" height="13.5" fill="${ink}"/>
-      <rect x="3" y="15.5" width="10" height="13.6" fill="${ink}"/>
-      <rect x="13" y="15.5" width="10" height="13.6" fill="${paper}"/>
-      <text x="8" y="11.8" font-family="Inter" font-weight="800" font-size="9" fill="${ink}" text-anchor="middle">O</text>
-      <path d="M4.2 10.6 H11.8" stroke="${ink}" stroke-width="1.1"/>
-      <text x="18" y="10" font-family="Inter" font-weight="800" font-size="9" fill="${paper}" text-anchor="middle">T</text>
-      <path d="M16.7 11 H19.3 V14.6 L18 13.3 L16.7 14.6 Z" fill="${paper}"/>
-      <text x="8.4" y="22.6" font-family="Inter" font-weight="800" font-size="9" fill="${paper}" text-anchor="middle">R</text>
-    </g>
-    <path d="${shield}" stroke="${outline}" stroke-width="1.1"/>
-  </svg>`;
-};
+   - `ink`   → color de la marca. Negro #171717 sobre fondo claro; sobre fondo
+                oscuro o naranja se pasa "#FFFFFF" y el logo queda en blanco.
+   - `attrs` → atributos extra del <svg> raíz (class, style, width/height, o x/y
+                si se anida dentro de otro svg).
+   Proporción 274:288 (0.951) — la del logo oficial. */
+export const otrCrest = ({ attrs = "", ink = "#171717" } = {}) =>
+  `<svg viewBox="0 0 274 288" fill="none" aria-hidden="true" ${attrs}><path fill-rule="evenodd" clip-rule="evenodd" fill="${ink}" d="M0 0L274 0L274 166L273 166L273 173L272 173L270 187L269 187L266 199L264 201L264 204L263 204L263 206L261 208L261 211L259 212L256 220L254 221L253 225L248 230L248 232L245 234L245 236L240 240L240 242L227 255L225 255L221 260L219 260L217 263L215 263L214 265L212 265L208 269L202 271L201 273L199 273L199 274L197 274L193 277L190 277L188 279L185 279L183 281L180 281L180 282L176 282L176 283L165 285L165 286L152 287L152 288L123 288L123 287L116 287L116 286L101 284L101 283L86 279L86 278L84 278L80 275L77 275L77 274L71 272L70 270L66 269L65 267L61 266L60 264L58 264L51 257L49 257L42 249L40 249L40 247L31 239L31 237L25 231L25 229L23 228L23 226L19 222L17 216L15 215L15 213L12 209L12 206L9 202L9 199L8 199L8 196L7 196L7 193L6 193L6 190L5 190L5 186L4 186L4 182L3 182L3 178L2 178L2 172L1 172L1 164L0 164ZM138 11L137 12L137 136L11 136L11 152L137 152L137 136L263 136L263 11ZM67 41L67 42L60 42L60 43L57 43L57 44L51 46L50 48L48 48L42 54L42 56L40 57L40 59L38 61L38 64L37 64L36 76L37 76L37 81L38 81L38 84L39 84L41 90L43 91L43 93L47 97L49 97L53 101L61 103L61 104L77 104L77 103L80 103L80 102L83 102L83 101L87 100L88 98L90 98L96 92L96 90L98 89L98 87L100 85L100 82L101 82L102 68L101 68L101 64L100 64L100 61L99 61L98 57L96 56L96 54L89 47L87 47L87 46L85 46L85 45L83 45L81 43L78 43L78 42L70 42L70 41ZM180 49L227 49L227 61L210 61L210 110L198 110L197 109L197 61L180 61ZM63 54L78 55L87 64L88 79L87 79L85 85L81 89L79 89L77 91L74 91L74 92L61 91L58 88L56 88L54 86L54 84L52 83L52 81L51 81L50 67L51 67L53 61L57 57L59 57L60 55L63 55ZM137 152L137 276L138 277L141 277L141 276L154 276L154 275L160 275L160 274L173 272L173 271L182 269L184 267L187 267L187 266L199 261L200 259L204 258L205 256L207 256L209 253L211 253L213 250L215 250L219 245L221 245L231 235L231 233L237 228L237 226L239 225L239 223L242 221L245 214L247 213L247 211L248 211L248 209L249 209L249 207L250 207L250 205L251 205L251 203L254 199L255 193L257 191L258 184L259 184L260 177L261 177L261 171L262 171L263 152L216 152L216 189L214 189L214 188L212 188L212 187L210 187L210 186L208 186L208 185L206 185L202 182L198 182L197 184L194 184L191 187L189 187L187 189L184 189L184 152ZM47 175L46 176L46 235L59 235L59 216L60 215L70 215L70 216L72 216L82 235L96 235L96 233L94 232L92 226L90 225L87 217L84 214L85 212L87 212L91 208L91 206L94 202L94 189L93 189L92 184L89 182L89 180L87 180L86 178L84 178L82 176L78 176L78 175ZM60 187L76 187L76 188L78 188L81 192L80 200L77 203L59 203L59 188L60 188Z"/></svg>`;

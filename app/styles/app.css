@@ -42,7 +42,7 @@ img{display:block;max-width:100%}
 .tnum{font-variant-numeric:tabular-nums}
 
 /* ---------- crest ---------- */
-.crest{width:26px;height:30px;flex:none}
+.crest{width:28.5px;height:30px;flex:none}   /* proporción del logo oficial 274:288 */
 
 /* ---------- icon sizing (default + context overrides) ---------- */
 svg.ic{width:18px;height:18px;flex:none}
@@ -85,7 +85,7 @@ svg.ic{width:18px;height:18px;flex:none}
 .tn-left{display:flex;align-items:center;gap:38px;min-width:0}
 .tn-logo{display:flex;align-items:center;gap:10px;flex:none;color:var(--otr-black)}
 .tn-logo:hover{text-decoration:none}
-.tn-logo .crest{width:26px;height:30px}
+.tn-logo .crest{width:28.5px;height:30px}
 .tn-word{font-family:var(--font-brand);font-weight:800;font-size:18px;letter-spacing:-.03em;color:var(--otr-black)}
 
 /* Links horizontales. Activo = texto negro (700) + barra naranja de 2px abajo. */
