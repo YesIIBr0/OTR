@@ -106,31 +106,39 @@ export const S = {};
       // siempre mostraba DB.chat (la 1ª conversación) sin importar cuál tocaras.
       const list = DB.messages || [];
       const active = Math.max(0, Math.min((window.__convo | 0), list.length - 1));
+      /* [GOAL rev·doble-escape] CONTRATO DE ESCAPE: queries.ts escapa el texto de usuario
+         UNA vez al armar el payload (ini/name/last y el body de cada burbuja) y aquí se
+         renderiza CRUDO. Al re-escaparlo, un mensaje con «5 & luego 'listo'» se leía
+         «5 &amp; luego &#39;listo&#39;» en preview, cabecera y burbuja. `when` es la única
+         excepción: queries NO lo escapa (es una etiqueta nuestra: "ahora", "10:02"), así que
+         se escapa aquí. */
       const convo = list.map((m,i)=>`
         <div class="convo ${i===active?'active':''}" data-convo="${i}" role="button" tabindex="0" style="cursor:pointer">
-          <div class="avatar" style="background:${m.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${esc(m.ini)}${m.online?'<span class="online-dot"></span>':''}</div>
-          <div class="convo-main"><div class="convo-top"><b>${esc(m.name)}</b><span class="faint" style="font-size:11.5px">${esc(m.when)}</span></div>
-          <div class="convo-last">${esc(m.last)}</div></div>
+          <div class="avatar" style="background:${m.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${m.ini}${m.online?'<span class="online-dot"></span>':''}</div>
+          <div class="convo-main"><div class="convo-top"><b>${m.name}</b><span class="faint" style="font-size:11.5px">${esc(m.when)}</span></div>
+          <div class="convo-last">${m.last}</div></div>
           ${m.unread?`<span class="unread-pill">${m.unread}</span>`:''}
         </div>`).join('');
       const head = list[active] || null; // conversación seleccionada
       const bubbles = (head && Array.isArray(head.messages) ? head.messages : []).map(c=>`
         <div class="bubble-row ${c.me?'me':''}">
-          <div class="bubble">${esc(c.body)}<span class="b-time">${esc(c.when)}</span></div>
+          <div class="bubble">${c.body}<span class="b-time">${esc(c.when)}</span></div>
         </div>`).join('');
       return `
       <div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("comm.msg.eyebrow")}</span><h1 class="ph-title">${t("comm.msg.title")}</h1>
       <div class="page-sub" style="margin-top:8px">${t("comm.msg.sub")}</div></div></div>
       <div class="msg-wrap fade-up">
         <aside class="msg-list">
-          <div class="searchbox" style="width:100%;margin-bottom:10px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input placeholder="${t("comm.msg.searchPh")}"/></div>
+          ${/* [GOAL K-16] El placeholder NO es nombre accesible (se borra al teclear y varios
+               lectores no lo anuncian): aria-label explícito, como el buscador de Participantes. */""}
+          <div class="searchbox" style="width:100%;margin-bottom:10px"><span style="display:flex;width:16px;height:16px">${IC.search}</span><input aria-label="${t("comm.msg.searchAria")}" placeholder="${t("comm.msg.searchPh")}"/></div>
           ${convo}
         </aside>
         <section class="msg-thread">
           ${head ? `
           <div class="mt-head">
-            <div class="avatar" style="background:${head.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${esc(head.ini)}${head.online?'<span class="online-dot"></span>':''}</div>
-            <div><b>${esc(head.name)}</b>${head.online?`<div class="faint" style="font-size:12px">${t("comm.msg.online")}</div>`:''}</div>
+            <div class="avatar" style="background:${head.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${head.ini}${head.online?'<span class="online-dot"></span>':''}</div>
+            <div><b>${head.name}</b>${head.online?`<div class="faint" style="font-size:12px">${t("comm.msg.online")}</div>`:''}</div>
             <button class="btn btn-quiet btn-sm" id="mt-report" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px"><span style="display:flex;width:14px;height:14px">${IC.flag}</span>${t("comm.msg.report")}</button>
           </div>
           <div class="mt-body" id="mt-body">
@@ -138,8 +146,10 @@ export const S = {};
             ${bubbles}
           </div>
           <div class="mt-compose">
-            <input class="input" id="chat-input" placeholder="${t("comm.msg.composePh")}" style="flex:1"/>
-            <button class="btn btn-primary" id="chat-send" style="width:42px;padding:0">${IC.arrowR}</button>
+            ${/* [GOAL K-16] Ídem en el composer. [GOAL K-15] El botón de enviar es SOLO-ICONO:
+                 sin aria-label el árbol de accesibilidad lo expone como "button" a secas. */""}
+            <input class="input" id="chat-input" aria-label="${t("comm.msg.composeAria")}" placeholder="${t("comm.msg.composePh")}" style="flex:1"/>
+            <button class="btn btn-primary" id="chat-send" aria-label="${t("comm.msg.sendAria")}" title="${t("comm.msg.sendAria")}" style="width:42px;padding:0">${IC.arrowR}</button>
           </div>`
           : `<div class="empty" style="margin:auto;padding:48px 24px;text-align:center"><div class="ill">${IC.msg}</div><h4>${t("comm.msg.emptyHeading")}</h4><p>${t("comm.msg.emptyBody")}</p></div>`}
         </section>
@@ -175,7 +185,10 @@ export const S = {};
         // y el backend lo mandaba siempre al primer hilo del seed. El mensaje se envía de
         // verdad a /api/messages; el destinatario lo ve en su bandeja (sin auto-respuesta falsa).
         fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(convId?{conversationId:convId,body:v}:{body:v})}).catch(()=>{});
-        if (conv && Array.isArray(conv.messages)) conv.messages.push({ me:true, body:v, when:t("comm.msg.now") });
+        // [GOAL rev·doble-escape] El eco optimista entra en DB.messages con la MISMA forma
+        // que trae el payload (escapado UNA vez): si se guardara crudo, el siguiente render
+        // —que ya pinta el body sin escapar— inyectaría lo que el usuario acaba de teclear.
+        if (conv && Array.isArray(conv.messages)) conv.messages.push({ me:true, body:esc(v), when:t("comm.msg.now") });
         const div=document.createElement('div'); div.className='bubble-row me';
         div.innerHTML=`<div class="bubble">${esc(v)}<span class="b-time">${t("comm.msg.now")}</span></div>`;
         body.appendChild(div); input.value=''; body.scrollTop=body.scrollHeight;
