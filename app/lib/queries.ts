@@ -147,6 +147,68 @@ export function computeRosterMetrics(input: RosterMetricsInput): RosterMetrics {
   return { grade, att, eng, trend, risk, last, prog: Math.round(progressPct) };
 }
 
+/* ============================================================================
+   [GOAL S4/S5] Cabecera y preview de una conversación — función PURA (se testea
+   sin Prisma, igual que computeRosterMetrics).
+
+   Conversation.name/initials/lastLabel son etiquetas DESNORMALIZADAS escritas
+   desde UN solo lado del hilo. Dos consecuencias reales que arregla esto:
+
+   · S4 — el coach abría el hilo con su alumna y leía SU PROPIO nombre ("SM ·
+     Coach Saúl Méndez") en la cabecera y en la lista. Regla: si la etiqueta
+     guardada ya nombra a una contraparte, se respeta (hilos bien etiquetados y
+     canales tipo "Equipo OTR (anuncios)", que no nombran a nadie, se quedan
+     como están); si nombra al USUARIO ACTUAL, se sustituye por la contraparte.
+   · S5 — la lista previsualizaba "Gracias coach" en un hilo cuyo detalle estaba
+     vacío. Regla: el preview SALE del último mensaje real; lastLabel solo se usa
+     como fallback cuando la conversación aún no tiene mensajes.
+
+   Devuelve texto CRUDO (sin escapar): escapa el llamador, una sola vez. */
+export type ConversationLabelInput = {
+  storedName: string;
+  storedInitials: string;
+  storedLastLabel: string;
+  participantIds: string[];
+  meId: string | null;
+  /** nombre del usuario actual (para detectar el hilo etiquetado con uno mismo). */
+  meName: string | null;
+  /** id → {name, initials} de los participantes (los distintos del usuario actual). */
+  counterparts: Map<string, { name: string; initials: string }>;
+  /** body del ÚLTIMO mensaje real del hilo (null si el hilo está vacío). */
+  lastMessageBody: string | null;
+};
+
+/** Compara nombres ignorando tildes, mayúsculas y prefijos de cortesía ("Coach X" ≈ "X"). */
+function samePerson(a?: string | null, b?: string | null): boolean {
+  const norm = (s?: string | null) => String(s ?? "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/\s+/g, " ").trim();
+  const x = norm(a), y = norm(b);
+  if (!x || !y) return false;
+  return x === y || x.includes(y) || y.includes(x);
+}
+
+export function conversationLabel(input: ConversationLabelInput): { name: string; initials: string; last: string } {
+  const { storedName, storedInitials, storedLastLabel, participantIds, meId, meName, counterparts, lastMessageBody } = input;
+
+  const others = participantIds
+    .filter((id) => id && id !== meId)
+    .map((id) => counterparts.get(id))
+    .filter(Boolean) as Array<{ name: string; initials: string }>;
+
+  const labelsACounterpart = others.some((o) => samePerson(o.name, storedName));
+  const labelsMe = !labelsACounterpart && others.length > 0 && samePerson(meName, storedName);
+
+  const pick = labelsMe ? others[0] : null;
+
+  return {
+    name: pick ? pick.name : storedName,
+    initials: pick ? pick.initials : storedInitials,
+    // El preview manda el mensaje real; lastLabel es solo el fallback del hilo vacío.
+    last: lastMessageBody != null && lastMessageBody !== "" ? lastMessageBody : storedLastLabel,
+  };
+}
+
 // Etiqueta legible mes + año en español, tipo "jun 2026" (texto generado por nosotros).
 const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -344,7 +406,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           // de cada conversación (orderBy position desc + take) y los reinvertimos a orden
           // cronológico en el mapping (~línea 1697). scr-community NO pagina el hilo y renderiza
           // el array completo → 60 cubre la ventana visible; los mensajes nuevos se anexan al final.
-          include: { messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true } } },
+          // [GOAL S4] Los participantes viajan con la conversación (solo el id: una fila por
+          // participante, sin join a User) para poder etiquetar el hilo con la CONTRAPARTE.
+          // Conversation.name/initials es una etiqueta DESNORMALIZADA escrita desde un solo
+          // lado: el coach veía su propio nombre en el hilo con su alumna.
+          include: {
+            messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true } },
+            participants: { select: { userId: true } },
+          },
         })
       : Promise.resolve([] as any[]),
     db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true, summary: true, summaryEn: true, welcomeVideoKind: true, welcomeVideoSrc: true } }),
@@ -449,7 +518,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // [P0 de-mock] El "curso principal" ya NO es el hardcoded PF-101:
   //   · estudiante → su PRIMER curso inscrito (coach/reseñas/programas REALES de ese curso)
   //   · profesor   → su PRIMER curso impartido (roster real para el dashboard)
-  const [studentMainCourse, taughtRoster] = await Promise.all([
+  // [GOAL S4] Nombre/iniciales de las CONTRAPARTES de mis conversaciones, en UNA sola
+  // consulta (los ids ya viajan con cada conversación). Sin esto no se puede etiquetar el
+  // hilo con el otro: Conversation.name está escrito desde un solo lado.
+  const convoOtherIds = [...new Set(
+    (convos as any[]).flatMap((c: any) => (c.participants ?? []).map((p: any) => p.userId))
+      .filter((id: string) => id && id !== me?.id),
+  )] as string[];
+  const [studentMainCourse, taughtRoster, convoOtherUsers] = await Promise.all([
     (!isTeacher && firstEnrolledCourseId)
       ? db.course.findUnique({
           where: { id: firstEnrolledCourseId },
@@ -462,7 +538,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     (isTeacher && firstTaughtCourseId)
       ? db.enrollment.findMany({ where: { courseId: firstTaughtCourseId }, include: { user: true }, orderBy: { user: { xp: "desc" } }, take: 200 })
       : Promise.resolve([] as any[]),
+    convoOtherIds.length
+      ? db.user.findMany({ where: { id: { in: convoOtherIds } }, select: { id: true, name: true, initials: true } })
+      : Promise.resolve([] as any[]),
   ]);
+  const convoCounterparts = new Map<string, { name: string; initials: string }>(
+    (convoOtherUsers as any[]).map((u: any) => [u.id, { name: u.name, initials: u.initials }]),
+  );
   // mainCourse efectivo (estudiante) + coach REAL de su curso (ya no PF-101/saul).
   const effMainCourse: any = isTeacher ? null : studentMainCourse;
   const studentCoach = !isTeacher ? (studentMainCourse?.teacher ?? null) : null;
@@ -1893,13 +1975,29 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // consistente con CROSS-01) para que la pantalla pueda CAMBIAR de chat y enviar al hilo
     // correcto. Antes solo se exponía el resumen + DB.chat (la 1ª conversación), por eso el
     // thread mostraba siempre lo mismo y el envío iba al primer hilo.
-    messages: convos.map((c) => ({
-      id: c.id, ini: esc(c.initials), name: esc(c.name), last: esc(c.lastLabel), when: c.whenLabel,
-      unread: c.unread, online: c.online, navy: c.navy,
+    messages: convos.map((c) => {
       // [F3.3] Los mensajes vienen desc (los 60 más recientes) desde la query → se reinvierten
       // aquí a orden cronológico ascendente (viejo→nuevo), que es como el hilo se renderiza.
-      messages: (c.messages ?? []).slice().reverse().map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
-    })),
+      const thread = (c.messages ?? []).slice().reverse();
+      // [GOAL S4/S5] La etiqueta del hilo (contraparte, no uno mismo) y el preview (último
+      // mensaje REAL, no un lastLabel inventado) se deciden en conversationLabel() — pura y
+      // testeada. Aquí solo se escapa UNA vez, como manda el contrato de escape.
+      const label = conversationLabel({
+        storedName: c.name,
+        storedInitials: c.initials,
+        storedLastLabel: c.lastLabel,
+        participantIds: ((c as any).participants ?? []).map((p: any) => p.userId),
+        meId: me?.id ?? null,
+        meName: me?.name ?? null,
+        counterparts: convoCounterparts,
+        lastMessageBody: thread.length ? thread[thread.length - 1].body : null,
+      });
+      return {
+        id: c.id, ini: esc(label.initials), name: esc(label.name), last: esc(label.last), when: c.whenLabel,
+        unread: c.unread, online: c.online, navy: c.navy,
+        messages: thread.map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
+      };
+    }),
     // VENTA POR CURSO APAGADA (PRD §13.1): los cursos son valor de la membresía —
     // price 0 → la UI muestra "Gratis"/Inscribirme y /api/checkout inscribe directo.
     catalog: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(pickLang(c.name, c.nameEn)), coach: esc(c.coachName), color: c.color, price: 0, enrolled: enrolledIds.has(c.id),

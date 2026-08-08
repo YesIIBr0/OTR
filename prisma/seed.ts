@@ -1640,16 +1640,26 @@ async function main() {
       { id: "cv-3", initials: "OTR", name: "Equipo OTR (anuncios)", lastLabel: "Recordatorio: torneo interno el sábado", whenLabel: "ayer", unread: 0, online: false, navy: true, position: 2 },
       { id: "cv-4", initials: "SE", name: "Silvana Espaillat", lastLabel: "Te paso mi evidencia del tema", whenLabel: "ayer", unread: 0, online: false, navy: false, position: 3 },
       // Conversación menor↔coach (PRD §7.4): activa el filtro de contact-info.
-      { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach", whenLabel: "hace 2h", unread: 0, online: false, navy: false, position: 4 },
+      { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach 🙌", whenLabel: "hace 2h", unread: 0, online: false, navy: false, position: 4 },
     ],
   });
+  // [GOAL S5] El hilo de Diego se sembraba VACÍO mientras la lista previsualizaba "Gracias
+  // coach": preview y detalle no podían coincidir porque no había mensajes que mostrar. Ahora
+  // la conversación trae su intercambio real y el preview SALE de ese último mensaje
+  // (app/lib/queries.ts → conversationLabel), no de un lastLabel escrito a mano.
+  // [GOAL S4] Además todos los mensajes llevan senderId: `me` (legacy, por fila) estaba escrito
+  // desde el lado de Analía, así que el coach veía los mensajes de su alumna como propios.
   await db.chatMessage.createMany({
     data: [
-      { conversationId: "cv-1", me: false, body: "¡Hola Analía! Vi tu diagnóstico de 1 minuto.", timeLabel: "10:02", position: 0 },
-      { conversationId: "cv-1", me: false, body: "Tu claim quedó clarísimo en los primeros 10 segundos 👏", timeLabel: "10:02", position: 1 },
-      { conversationId: "cv-1", me: true, body: "¡Gracias coach! Sentí que el cierre me quedó flojo.", timeLabel: "10:05", position: 2 },
-      { conversationId: "cv-1", me: false, body: "Un poco. Cierra siempre con el impacto, no con un resumen. Vuelve a grabar el último tramo y me lo mandas.", timeLabel: "10:06", position: 3 },
-      { conversationId: "cv-1", me: true, body: "Hecho. Lo subo hoy mismo 💪", timeLabel: "10:08", position: 4 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "¡Hola Analía! Vi tu diagnóstico de 1 minuto.", timeLabel: "10:02", position: 0 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Tu claim quedó clarísimo en los primeros 10 segundos 👏", timeLabel: "10:02", position: 1 },
+      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "¡Gracias coach! Sentí que el cierre me quedó flojo.", timeLabel: "10:05", position: 2 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Un poco. Cierra siempre con el impacto, no con un resumen. Vuelve a grabar el último tramo y me lo mandas.", timeLabel: "10:06", position: 3 },
+      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "Hecho. Lo subo hoy mismo 💪", timeLabel: "10:08", position: 4 },
+      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Diego, buen trabajo en la ronda de ayer: el segundo contention quedó sólido.", timeLabel: "16:40", position: 0 },
+      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Para el sábado practica el crossfire: respuestas de 15 segundos, sin leer.", timeLabel: "16:41", position: 1 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Perfecto, lo practico esta semana con el cronómetro.", timeLabel: "17:02", position: 2 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Gracias coach 🙌", timeLabel: "17:02", position: 3 },
     ],
   });
 
