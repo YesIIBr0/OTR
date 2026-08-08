@@ -1255,6 +1255,46 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     mdlObserver.observe(document.body, { childList: true });
     document.addEventListener("keydown", onModalKey, true);
 
+    // [A11Y · GOAL 2026-08 · K-06] Escape descarta los POPOVERS del top-nav (menú "Más" y
+    // menú de cuenta) y devuelve el foco a su disparador. Antes solo se cerraban con un
+    // CLICK fuera: con teclado no había forma de descartarlos sin activar un ítem, y el
+    // aria-expanded del chip se quedaba en "true" con el panel flotando sobre el contenido.
+    // NO son diálogos: no se atrapa el foco ni se inerte el resto — solo el descarte que
+    // pide APG para un disclosure. Si hay un modal abierto, este handler se aparta: ese
+    // Escape es suyo (onModalKey, en fase de captura, ya lo atendió).
+    const onPopoverKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || document.querySelector(".modal-scrim")) return;
+      const focused = document.activeElement as HTMLElement | null;
+      // El foco solo se MUEVE si estaba dentro del popover (o en su propio disparador):
+      // un Escape tecleado en otra parte de la página no debe robárselo a nadie.
+      const restore = (trigger: HTMLElement | null, wasInside: boolean) => {
+        if (trigger && wasInside) { try { trigger.focus(); } catch { /* elemento ya fuera del DOM */ } }
+      };
+      let closed = false;
+
+      const more = document.querySelector(".tn-more[open]") as HTMLDetailsElement | null;
+      if (more) {
+        const summary = more.querySelector("summary") as HTMLElement | null;
+        const inside = !!focused && more.contains(focused);
+        more.open = false;
+        restore(summary, inside);
+        closed = true;
+      }
+
+      const userMenu = document.getElementById("sb-usermenu");
+      if (userMenu && !userMenu.hidden) {
+        const trigger = document.querySelector("[data-user-menu]") as HTMLElement | null;
+        const inside = !!focused && (userMenu.contains(focused) || !!trigger?.contains(focused));
+        userMenu.hidden = true;
+        trigger?.setAttribute("aria-expanded", "false");
+        restore(trigger, inside);
+        closed = true;
+      }
+
+      if (closed) e.preventDefault();
+    };
+    document.addEventListener("keydown", onPopoverKey);
+
     // [ROUTER-HASH] Arranque: si la URL trae una ruta VÁLIDA PARA EL ROL, se abre esa
     // (deep-link y F5 se quedan donde estabas); si no —o si es de otro rol— el home del rol.
     let startRoute = resolveHashRoute(window.location.hash, state.role);
@@ -1270,7 +1310,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // en vez de pintar la lección de otra visita. mounted se activa DESPUÉS: durante el primer
     // render todavía no hay entrada de historial propia que retirar.
     renderApp(startRoute, { fromHash: true }).finally(() => { mounted = true; });
-    return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); window.removeEventListener("hashchange", onHashChange); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); };
+    return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); window.removeEventListener("hashchange", onHashChange); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); document.removeEventListener("keydown", onPopoverKey); };
   }, []);
 
   return <div ref={ref} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: initialHtml }} />;

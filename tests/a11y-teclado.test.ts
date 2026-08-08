@@ -1,5 +1,5 @@
 // [A11Y · GOAL 2026-08] Guardián de la auditoría de teclado/semántica
-// (docs/review/GOAL_2026-08_teclado.md). Fija los hallazgos K-01…K-05, K-09, K-12 y K-13
+// (docs/review/GOAL_2026-08_teclado.md). Fija los hallazgos K-01…K-13
 // para que no vuelvan a colarse en un refactor de estilos o de builders.
 //
 // Los tres primeros son de CONTRASTE y de CASCADA: se comprueban sobre el CSS real
@@ -210,6 +210,7 @@ win.toast = () => {};
 import { DB } from "../app/lib/data";
 import { S as SDebateRaw } from "../app/lib/scr-debate";
 import { S as SProfileRaw } from "../app/lib/scr-profile";
+import { renderShell, type Role } from "../app/lib/shell";
 
 // Los builders son módulos `// @ts-nocheck` que declaran `export const S = {}` y luego
 // le cuelgan las rutas en runtime: el tipo estático es `{}`. Mismo trato que en
@@ -288,5 +289,147 @@ describe("K-09 · escalera de encabezados", () => {
   it("cada pantalla conserva UN solo h1", () => {
     expect(headingLevels(SDebate.debateHub.render({})).filter((l) => l === 1)).toHaveLength(1);
     expect(headingLevels(SProfile.progress.render()).filter((l) => l === 1)).toHaveLength(1);
+  });
+});
+
+/* ================================================================
+   K-06 … K-11 · Semántica del top-nav (shell.ts)
+   ================================================================
+   El HTML del shell es una plantilla pura: se comprueba sobre el string que devuelve
+   renderShell. Lo que NO cabe aquí es el COMPORTAMIENTO de Escape (K-06): vive en un
+   listener de Aula.tsx y la suite corre en `environment: "node"`, sin DOM — se verificó
+   con teclado real en el navegador (ver el reporte de la ola). Lo que sí queda fijado del
+   K-06 es el contrato ESTÁTICO del disparador: aria-expanded + aria-controls. */
+
+const ROLES: Role[] = ["student", "teacher", "parent", "admin"];
+
+function shellDB() {
+  for (const k of Object.keys(DB)) delete (DB as any)[k];
+  Object.assign(DB, {
+    me: { name: "Analía Reyes", initials: "AR", role: "student", level: "OTR Competitor" },
+    messages: [], notifications: [],
+  });
+}
+
+const shell = (activeNav = "course", role: Role = "student") =>
+  renderShell(activeNav, ["Cursos"], "<div></div>", role);
+
+/** Bloque del menú "Más" (desde .tn-menu hasta el cierre del <details>). */
+const menuMas = (html: string) => html.slice(html.indexOf('class="tn-menu"'), html.indexOf("</details>"));
+/** Bloque del menú de cuenta del chip de usuario. */
+const menuUser = (html: string) => html.slice(html.indexOf('id="sb-usermenu"'), html.indexOf("</header>"));
+/** Bloque del tabbar móvil. */
+const tabbar = (html: string) => html.slice(html.indexOf('class="tabbar'), html.indexOf("</nav>", html.indexOf('class="tabbar')));
+
+/** Renderiza con la cookie de idioma puesta (getLang lee document.cookie). */
+function withLang<T>(lang: string, fn: () => T): T {
+  const prev = (globalThis as any).document;
+  (globalThis as any).document = { cookie: `otr_lang=${lang}` };
+  try { return fn(); } finally {
+    if (prev === undefined) delete (globalThis as any).document;
+    else (globalThis as any).document = prev;
+  }
+}
+
+describe("K-07 · sin role=menu/menuitem (los menús son listas de ENLACES)", () => {
+  beforeEach(shellDB);
+
+  it("ningún rol declara role=\"menu\" ni role=\"menuitem\"", () => {
+    for (const role of ROLES) {
+      const html = shell("dashboard", role);
+      expect(html, `rol ${role}: role="menu" prometía el patrón APG que no existe`).not.toContain('role="menu"');
+      expect(html, `rol ${role}: role="menuitem"`).not.toContain('role="menuitem"');
+    }
+  });
+
+  it("el chip de usuario tampoco promete un menú con aria-haspopup", () => {
+    // Es un DISCLOSURE (expande una región), no un menú de comandos: aria-expanded +
+    // aria-controls lo describen entero.
+    expect(shell()).not.toContain("aria-haspopup");
+  });
+
+  it("los ítems siguen siendo enlaces navegables (no se perdió el destino)", () => {
+    const menu = menuMas(shell());
+    expect(menu).toContain('href="#course"');
+    expect(menu).toContain('data-go="course"');
+  });
+});
+
+describe("K-06 · el disparador del menú de cuenta es un disclosure honesto", () => {
+  beforeEach(shellDB);
+
+  it("declara aria-expanded=false y apunta a la región que abre", () => {
+    const html = shell();
+    expect(html).toMatch(/data-user-menu[^>]*aria-expanded="false"/);
+    expect(html).toMatch(/aria-controls="sb-usermenu"/);
+    expect(html).toContain('id="sb-usermenu"');
+  });
+});
+
+describe("K-08 · 'Más' se ANUNCIA 'Más' (WCAG 2.5.3 Label in Name)", () => {
+  beforeEach(shellDB);
+
+  it("el aria-label del <summary> es el mismo texto visible, en ES y en EN", () => {
+    const es = withLang("es", () => shell());
+    expect(es).toContain('<summary aria-label="Más">');
+    expect(es).toContain('<span class="lbl">Más</span>');
+    const en = withLang("en", () => shell());
+    expect(en).toContain('<summary aria-label="More">');
+    expect(en).toContain('<span class="lbl">More</span>');
+  });
+
+  it("ya no se llama como el <nav> hermano: los dos landmarks tienen nombres distintos", () => {
+    const html = shell();
+    const labels = [...html.matchAll(/<nav[^>]*aria-label="([^"]+)"/g)].map((m) => m[1]);
+    expect(labels.length, "los dos <nav> del shell llevan nombre").toBe(2);
+    expect(new Set(labels).size, `nombres duplicados: ${labels.join(" / ")}`).toBe(labels.length);
+    expect(labels).not.toContain("Más");
+  });
+});
+
+describe("K-10 · aria-current en el menú 'Más' y en el tabbar móvil", () => {
+  beforeEach(shellDB);
+
+  it("el ítem activo del menú 'Más' lo declara (antes: solo la clase .active)", () => {
+    // ('badges' está fuera de los 5 links de cabecera del alumno: sube a la barra por ser
+    // la ruta activa, y en el menú se marca .tn-dup — el aria-current va igual.)
+    const menu = menuMas(shell("badges"));
+    expect(menu).toMatch(/class="tn-mi active[^"]*"[^>]*data-go="badges" aria-current="page"/);
+    // y solo UNO
+    expect([...menu.matchAll(/aria-current="page"/g)]).toHaveLength(1);
+  });
+
+  it("la pestaña activa del tabbar lo declara, en los cuatro roles", () => {
+    for (const [role, ruta] of [["student", "dashboard"], ["teacher", "teacher"], ["parent", "parent"], ["admin", "admin"]] as const) {
+      const tb = tabbar(shell(ruta, role));
+      expect(tb, `tabbar de ${role}`).toContain('aria-current="page"');
+      expect([...tb.matchAll(/aria-current="page"/g)], `una sola pestaña activa en ${role}`).toHaveLength(1);
+    }
+  });
+
+  it("el <nav class=tabbar> tiene nombre accesible (en móvil ES la navegación)", () => {
+    expect(shell()).toMatch(/<nav class="tabbar mobile-only" aria-label="[^"]+"/);
+  });
+});
+
+describe("K-11 · 'Salir' es un <button> (acción, no destino)", () => {
+  beforeEach(shellDB);
+
+  it("el ítem de logout es un botón y ya no un enlace a '#'", () => {
+    for (const role of ROLES) {
+      const menu = menuUser(shell("dashboard", role));
+      expect(menu, `rol ${role}`).toMatch(/<button type="button" class="tn-mi"[^>]*data-action="logout"/);
+      expect(menu, `rol ${role}: sin <a href="#"> de logout`).not.toMatch(/<a[^>]*data-action="logout"/);
+    }
+  });
+
+  it("el menú de cuenta no deja ningún href=\"#\" muerto", () => {
+    expect(menuUser(shell())).not.toContain('href="#"');
+  });
+
+  it("conserva la clase .tn-mi (el CSS la selecciona por clase, no por elemento)", () => {
+    expect(APP).toMatch(/^\.tn-mi\{/m);
+    // …y neutraliza los estilos de user-agent del <button> para que se vea igual.
+    expect(APP, "falta la regla button.tn-mi que iguala el botón a sus vecinos enlace").toMatch(/button\.tn-mi\{/);
   });
 });

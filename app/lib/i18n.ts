@@ -85,8 +85,14 @@ const DICT: LangDict = {
     "top.search": "Buscar cursos, tareas, personas…",
     "top.create": "+ Crear",
     "top.notifications": "Notificaciones",
-    "top.menu": "Menú",
     "top.lang": "Idioma",
+    // [A11Y · GOAL 2026-08 · K-08/K-10] Nombres del chrome de navegación. 'top.menu'
+    // ("Menú") nombraba A LA VEZ el <nav> de links y el disparador "Más" —dos landmarks
+    // con el mismo nombre, y un aria-label que PISABA el texto visible "Más" (2.5.3 Label
+    // in Name). Ahora cada uno tiene el suyo, y el de "Más" ES el texto visible.
+    "top.more": "Más",
+    "top.navPrimary": "Navegación principal",
+    "top.navMobile": "Navegación móvil",
 
     // roles (footer del sidebar)
     "role.student": "Estudiante",
@@ -417,8 +423,11 @@ const DICT: LangDict = {
     "top.search": "Search courses, assignments, people…",
     "top.create": "+ Create",
     "top.notifications": "Notifications",
-    "top.menu": "Menu",
     "top.lang": "Language",
+    // [A11Y · GOAL 2026-08 · K-08/K-10] ver el bloque ES.
+    "top.more": "More",
+    "top.navPrimary": "Primary navigation",
+    "top.navMobile": "Mobile navigation",
 
     // roles (sidebar footer)
     "role.student": "Student",
