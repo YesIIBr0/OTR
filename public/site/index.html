@@ -382,6 +382,10 @@ body:not([data-route="home"]) .navback{display:inline-flex}
 }
 @media (max-width:720px){
   .nav-links nav,.nav-cta{display:none}
+  /* el lockup "OTR · Debating Academy" no cabe junto al toggle ES/EN + Acceder y
+     partía en 3 líneas: en móvil queda la marca corta, como el escudo. */
+  .brand{font-size:17px;white-space:nowrap}
+  .brand > span > span{display:none}
   h1.h1{font-size:clamp(54px,16vw,90px)}
   .stats{grid-template-columns:1fr}
   .stat:nth-child(odd){border-right:0}
@@ -436,7 +440,7 @@ body:not([data-route="home"]) .navback{display:inline-flex}
       <button data-lang="es" class="on">ES</button>
       <button data-lang="en">EN</button>
     </div>
-    <a href="/aula" class="lk nav-access" style="font-weight:600;letter-spacing:.01em">Acceder</a>
+    <a href="/aula" class="lk nav-access" style="font-weight:600;letter-spacing:.01em" data-i18n="nav_access">Acceder</a>
     <a href="#cta" class="btn btn-primary nav-cta"><span class="lbl" data-i18n="cta_short">Reserva tu consulta</span></a>
   </div>
 </header>
@@ -499,7 +503,7 @@ body:not([data-route="home"]) .navback{display:inline-flex}
   <div class="wrap">
     <div class="pain-copy reveal">
       <p class="eyebrow" data-i18n="pain_eyebrow">El obstáculo número uno</p>
-      <h2 style="margin-top:22px">El miedo a hablar en público es la <span class="strike" data-i18n="pain_strike">barrera #1</span>.<br/><span data-i18n="pain_h2b">Nosotros lo convertimos en tu mayor ventaja.</span></h2>
+      <h2 style="margin-top:22px"><span data-i18n="pain_h2a">El miedo a hablar en público es la</span> <span class="strike" data-i18n="pain_strike">barrera #1</span>.<br/><span data-i18n="pain_h2b">Nosotros lo convertimos en tu mayor ventaja.</span></h2>
       <p class="lead" data-i18n="pain_p1">El nudo en la garganta, las manos que tiemblan, la mente en blanco. No es falta de talento: es falta de método. Y el método se entrena.</p>
       <p data-i18n="pain_p2">En OTR no escondemos el miedo — lo usamos como combustible. En semanas, ese mismo estudiante toma el micrófono y la sala se queda en silencio para escucharlo.</p>
     </div>

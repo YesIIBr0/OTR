@@ -7,7 +7,7 @@
   /* ---------------- i18n ---------------- */
   const I18N = {
     es: {
-      nav_method:'El Método', nav_proof:'Resultados', nav_story:'Nosotros', cta_short:'Reserva tu consulta',
+      nav_method:'El Método', nav_proof:'Resultados', nav_story:'Nosotros', nav_access:'Acceder', cta_short:'Reserva tu consulta',
       hero_eyebrow:'Academia #1 del circuito de debate dominicano',
       hero_h1_a:'Domina', hero_h1_b:'la sala.', hero_sig:'Own the Room.',
       hero_sub:'Convertimos estudiantes en líderes que hablan con autoridad, claridad y dominio de cada escenario.',
@@ -18,7 +18,8 @@
       stat_students:'Estudiantes entrenados en 2025.',
       stat_days:'Días para ver resultados visibles en tu forma de hablar.',
       stat_tourn:'Torneos internacionales competidos.',
-      pain_eyebrow:'El obstáculo número uno', pain_strike:'barrera #1',
+      pain_eyebrow:'El obstáculo número uno',
+      pain_h2a:'El miedo a hablar en público es la', pain_strike:'barrera #1',
       pain_h2b:'Nosotros lo convertimos en tu mayor ventaja.',
       pain_p1:'El nudo en la garganta, las manos que tiemblan, la mente en blanco. No es falta de talento: es falta de método. Y el método se entrena.',
       pain_p2:'En OTR no escondemos el miedo — lo usamos como combustible. En semanas, ese mismo estudiante toma el micrófono y la sala se queda en silencio para escucharlo.',
@@ -70,7 +71,7 @@
       marquee:["Harvard JV '25 — Campeones","Florida Blue Key '24","Tournament of Champions","New Horizons — Campeones","St. Michael's — Co-campeones","Circuito Nacional RD — Campeones","Caribbean Debate Series — Oro","NSDA"]
     },
     en: {
-      nav_method:'The Method', nav_proof:'Results', nav_story:'About', cta_short:'Book your call',
+      nav_method:'The Method', nav_proof:'Results', nav_story:'About', nav_access:'Log in', cta_short:'Book your call',
       hero_eyebrow:'#1 academy of the Dominican debate circuit',
       hero_h1_a:'Own', hero_h1_b:'the room.', hero_sig:'Domina la sala.',
       hero_sub:'We turn students into leaders who speak with authority, clarity and command of every stage.',
@@ -81,7 +82,8 @@
       stat_students:'Students trained in 2025.',
       stat_days:'Days to see visible results in the way you speak.',
       stat_tourn:'International tournaments competed.',
-      pain_eyebrow:'The number-one obstacle', pain_strike:'#1 barrier',
+      pain_eyebrow:'The number-one obstacle',
+      pain_h2a:'The fear of public speaking is the', pain_strike:'#1 barrier',
       pain_h2b:'We turn it into your greatest advantage.',
       pain_p1:'The knot in your throat, the shaking hands, the blank mind. It is not a lack of talent — it is a lack of method. And method can be trained.',
       pain_p2:'At OTR we do not hide the fear — we use it as fuel. In weeks, that same student takes the mic and the room goes silent to listen.',
