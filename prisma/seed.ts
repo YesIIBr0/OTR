@@ -1539,14 +1539,19 @@ async function main() {
   // Harvard JV a 33 días, Florida Blue Key a 25, New Horizons (final) a 12.
   // St. Michael's NO tiene fecha en ninguna fuente del repo → date null (la vista
   // degrada sin fecha; preferimos hueco a fecha inventada).
-  // Imagen: solo existe /img/hero-speaking.jpg → va en UNA; el resto imageUrl "" y
-  // la card degrada a fondo negro. No se inventan rutas de imágenes inexistentes.
+  // Imagen: la marca solo nos ha dado UNA foto (/img/hero-speaking.jpg). Decisión de
+  // Wilser (2026-08-08): dejar las cuatro con foto MOCK —la misma— para que la franja
+  // se vea llena mientras Isaac manda las suyas. Cada tarjeta la encuadra distinto
+  // (`--hl-pos`, ver screens.css) para que no canten como repetidas.
+  // SUSTITUIR por las fotos reales en cuanto lleguen; la vista ya degrada a card negra
+  // si `imageUrl` viene vacío.
+  const MOCK_FOTO = "/img/hero-speaking.jpg";
   await db.highlight.createMany({
     data: [
-      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: "/img/hero-speaking.jpg", position: 0 },
-      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: "", position: 1 },
-      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: "", position: 2 },
-      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: "", position: 3 },
+      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: MOCK_FOTO, position: 0 },
+      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: MOCK_FOTO, position: 1 },
+      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: MOCK_FOTO, position: 2 },
+      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: MOCK_FOTO, position: 3 },
     ],
   });
 

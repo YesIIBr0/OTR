@@ -1035,8 +1035,14 @@
    texto del recorte. Sin .hl-img la card queda negra plana (degradación). */
 .hl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .hl{position:relative;aspect-ratio:5/4;border-radius:var(--r-md);overflow:hidden;background:var(--otr-black);cursor:pointer}
-.hl .hl-img{position:absolute;inset:0;background-position:center;background-size:cover;background-repeat:no-repeat;
+.hl .hl-img{position:absolute;inset:0;background-position:var(--hl-pos,center);background-size:cover;background-repeat:no-repeat;
   transition:transform .45s cubic-bezier(.16,1,.3,1)}
+/* Mientras la marca solo nos da UNA foto, las cuatro tarjetas la comparten (mock, ver
+   prisma/seed.ts). Cada una la encuadra distinto para que no canten como repetidas;
+   con fotos propias esto deja de aplicar solo (cada card traería la suya). */
+.hl-grid > .hl:nth-child(2) .hl-img{--hl-pos:22% 32%}
+.hl-grid > .hl:nth-child(3) .hl-img{--hl-pos:78% 28%}
+.hl-grid > .hl:nth-child(4) .hl-img{--hl-pos:45% 68%}
 .hl:hover .hl-img{transform:scale(1.045)}
 /* Degradado de protección VERTICAL: el texto de abajo se lee sobre cualquier foto. */
 .hl::after{content:"";position:absolute;inset:0;
