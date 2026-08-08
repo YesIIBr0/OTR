@@ -376,7 +376,9 @@ function viewOverview(d) {
   const recentList = d.history.slice(0, 4);
   const recentCard = `
     <div class="card">
-      <div class="card-head"><div class="sec-title sec-title--sm"><h3>${t("debate.recentDebates")}</h3></div><a href="#" onclick="return false" data-dtab="history" class="rlink" style="font-size:12.5px">${t("debate.seeAll")}</a></div>
+      ${/* [K-09] h2: sección de PRIMER nivel bajo el h1 del héroe (antes h3 = salto h1→h3).
+            `.sec-title > h2` está tipado igual que h3/h4 (screens.css:37,40): no cambia el look. */""}
+      <div class="card-head"><div class="sec-title sec-title--sm"><h2>${t("debate.recentDebates")}</h2></div><a href="#" onclick="return false" data-dtab="history" class="rlink" style="font-size:12.5px">${t("debate.seeAll")}</a></div>
       <div class="card-body" style="padding:6px 16px 12px">
         ${recentList.length ? recentList.map((h) => {
           const rs = resultStyle(h.result);
@@ -391,7 +393,8 @@ function viewOverview(d) {
 
   const nextEventCard = `
     <div class="card card-pad">
-      ${C.secTitle(t("debate.nextTournament"), { sm: true })}
+      ${/* [K-09] Hermana de "Debates recientes": mismo nivel, h2 (antes h4 por defecto de sm). */""}
+      ${C.secTitle(t("debate.nextTournament"), { sm: true, tag: "h2" })}
       ${nextEvent
         ? `<b style="font-size:15px;line-height:1.3;display:block">${esc(nextEvent.name)}</b>
            <div class="row vcenter wrap" style="gap:8px;margin-top:8px;font-size:12.5px;color:var(--text-2)">
@@ -403,7 +406,9 @@ function viewOverview(d) {
            ${nextEvent.registered
              ? `<div style="margin-top:12px">${C.chip(t("debate.registered"), "tint", { ic: "check" })}</div>`
              : `<div style="margin-top:12px">${C.btn(t("debate.register"), "accent", { block: true, icRight: "arrowR", attrs: `data-tn-register="${esc(nextEvent.id)}"` })}</div>`}`
-        : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h4>${t("debate.noEventsTitle")}</h4><p>${t("debate.noEventsBody")}</p></div>`}
+        /* [K-09] El vacío cuelga de la sección h2 de arriba → h3 (antes h4 = salto h2→h4).
+           `.empty h3` replica el tipado de `.empty h4` (screens.css, sección A11Y). */
+        : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h3>${t("debate.noEventsTitle")}</h3><p>${t("debate.noEventsBody")}</p></div>`}
     </div>`;
 
   // [NSDA Fase-1] Torneos del circuito vía la API pública oficial de Tabroom (indexcards).
@@ -411,7 +416,8 @@ function viewOverview(d) {
   // (sin key, sin datos personales de terceros). El récord personal es Fase-2.
   const nsdaCard = `
     <div class="card card-pad" data-nsda>
-      ${C.secTitle("NSDA · Tabroom", { sm: true })}
+      ${/* [K-09] Tercera sección de primer nivel del hub → h2. */""}
+      ${C.secTitle("NSDA · Tabroom", { sm: true, tag: "h2" })}
       <b style="font-size:15px;line-height:1.3;display:block">${t("debate.nsdaTitle")}</b>
       <p class="faint" style="font-size:12px;margin-top:2px">${t("debate.nsdaSub")}</p>
       <div data-nsda-body style="margin-top:10px"><p class="faint" style="font-size:12.5px">${t("debate.nsdaLoading")}</p></div>

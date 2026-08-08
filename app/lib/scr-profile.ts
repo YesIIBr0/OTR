@@ -104,17 +104,21 @@ export const S = {};
 
       <div class="split fade-up rail-320" style="--d:2">
         <div class="card card-pad">
-          ${C.secTitle(nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel"), { sm: true, right: `<span class="muted tnum" style="font-size:13px">${xp.toLocaleString(getLang() === 'en' ? 'en' : 'es')} / ${xpNext.toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span>` })}
+          ${/* [K-09] Niveles medía h1 → h4 → h4 → h3 (salto h1→h4 y además un h3 DESPUÉS de
+                un h4). Las tres secciones de la pantalla son hermanas de primer nivel: h2.
+                `.sec-title--sm > h2` ya está tipado igual que h3/h4 (screens.css:40). */""}
+          ${C.secTitle(nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel"), { sm: true, tag: 'h2', right: `<span class="muted tnum" style="font-size:13px">${xp.toLocaleString(getLang() === 'en' ? 'en' : 'es')} / ${xpNext.toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span>` })}
           <div style="margin:4px 0 7px">${C.bar(pct,{cls:'thick navy'})}</div>
           <div class="row between vcenter" style="font-size:12px;color:var(--text-2)">${C.chip(esc(curName), 'tint')}<span class="tnum">${nextLevel ? toNext.toLocaleString(getLang() === 'en' ? 'en' : 'es') + ' ' + t("profile.xpToReach") + ' ' + esc(nextLevel.name) : t("profile.maxLevelReached")}</span></div>
 
           <div class="divider"></div>
-          ${C.secTitle(t("profile.competencies"), { sm: true, right: hasSkills ? C.chip(`${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} ${t("profile.avg")}`, 'accent') : '' })}
+          ${C.secTitle(t("profile.competencies"), { sm: true, tag: 'h2', right: hasSkills ? C.chip(`${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} ${t("profile.avg")}`, 'accent') : '' })}
           ${hasSkills
             ? `<div style="margin-top:6px">
             ${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${t(SKILL_LABEL[c[0]] || c[0])}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
           </div>`
-            : `<div class="empty" style="padding:26px;margin-top:8px"><div class="ill">${IC.award}</div><h4>${t("profile.noEvalHeading")}</h4><p>${t("profile.noEvalBody")}</p></div>`}
+            /* [K-09] Vacío colgando de la sección h2 "Competencias" → h3 (antes h4). */
+            : `<div class="empty" style="padding:26px;margin-top:8px"><div class="ill">${IC.award}</div><h3>${t("profile.noEvalHeading")}</h3><p>${t("profile.noEvalBody")}</p></div>`}
         </div>
 
         <div class="stack" style="gap:16px">
@@ -127,7 +131,8 @@ export const S = {};
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><div class="sec-title sec-title--sm"><h3>${t("profile.recentGains")}</h3></div></div>
+            ${/* [K-09] Tercera sección hermana → h2 (antes h3, y venía DESPUÉS de dos h4). */""}
+            <div class="card-head"><div class="sec-title sec-title--sm"><h2>${t("profile.recentGains")}</h2></div></div>
             <div class="card-body" style="padding:8px 16px 12px">
               ${recent.length ? recent.map(ev=>`
                 <div class="agenda-item"><span class="when-dot" style="background:var(--otr-green)"></span>
