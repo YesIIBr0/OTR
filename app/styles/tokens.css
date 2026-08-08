@@ -63,7 +63,11 @@
   /* ---- Escala ink del mockup (derivada de #171717; para superficies oscuras) ---- */
   --ink-800:#202020;  /* card negra "elevada" sobre negro puro */
   --ink-700:#2E2E2E;  /* tiles de podio · hover de borde */
-  --ink-400:#808080;  /* labels/meta sobre claro y sobre negro */
+  /* [A11Y · GOAL 2026-08] Era #808080 (3,49:1 sobre el greige): FALLA AA y se usa como
+     COLOR DE TEXTO en toda la interfaz nueva — links de la nav, metadatos de fila,
+     etiquetas de 10px. #6B6B6B da 5,33:1 sobre blanco y 4,71:1 sobre el greige, así que
+     cumple en las dos superficies. Medido, no estimado. */
+  --ink-400:#6B6B6B;  /* labels/meta sobre claro y sobre negro */
   --ink-300:#B4B4B4;  /* texto secundario sobre negro */
 
   /* ---- Semantic (canvas GREIGE del mockup) ---- */
