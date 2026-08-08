@@ -861,6 +861,33 @@ export function fmtDayMonth(d?: Date | string | number | null, lang?: string | n
   return `${date.getDate()} ${DATE_MONTHS_SHORT[dateLangOf(lang)][date.getMonth()]}`;
 }
 
+/* ── [GOAL E5] Fechas ABSOLUTAS con año, para la consola de moderación ────────────────────
+   La consola de admin formateaba con `toLocaleDateString("es", …)` / `toLocaleString("es", …)`
+   —locale FIJO— así que con la cookie en inglés se leía "Reported by … · 8 ago 2026". Estas
+   dos las reemplazan respetando el idioma, con las MISMAS tablas de meses que el resto del
+   módulo (mismo output en cualquier runtime, con o sin ICU). Orden día-mes-año en ambos
+   idiomas, igual que fmtDateTimeRD y por la misma razón documentada allí. */
+
+/** Día + mes corto + año: es → "8 ago 2026" · en → "8 Aug 2026". Hora LOCAL del navegador,
+ *  como el `toLocaleDateString` al que sustituye (es un timestamp, no una franja reservada). */
+export function fmtDayMonthYear(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  return `${date.getDate()} ${DATE_MONTHS_SHORT[dateLangOf(lang)][date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/** Día + mes + año + hora de una franja reservada, en hora RD: es → "8 ago 2026 · 4:00 PM"
+ *  · en → "8 Aug 2026 · 4:00 PM". Como fmtDateTimeRD pero conservando el año (la cola de
+ *  moderación puede mirar una reserva de hace meses) y sin el día de la semana. */
+export function fmtDayMonthYearTimeRD(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  const l = dateLangOf(lang);
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  const mon = DATE_MONTHS_SHORT[l][rd.getUTCMonth()];
+  return `${rd.getUTCDate()} ${mon} ${rd.getUTCFullYear()} · ${clock12(rd.getUTCHours(), rd.getUTCMinutes())}`;
+}
+
 /** Mes corto + año: es → "ago 2026" · en → "Aug 2026". */
 export function fmtMonthYear(d?: Date | string | number | null, lang?: string | null): string {
   const date = toDate(d);

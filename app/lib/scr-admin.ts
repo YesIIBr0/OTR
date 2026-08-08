@@ -12,7 +12,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { money } from "./money";
-import { t, registerDict } from "./i18n";
+import { t, getLang, fmtDayMonthYear, fmtDayMonthYearTimeRD, registerDict } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): admin.*. Ver app/lib/i18n.ts.
 import { dict as d_admin } from "./i18n-keys/admin";
 registerDict(d_admin);
@@ -47,14 +47,13 @@ const TARGET_LABEL = () => ({
 const ini = (name) =>
   (String(name || "?").split(" ").map((w) => w[0]).join("") || "?").slice(0, 2).toUpperCase();
 
+// [GOAL E5 · i18n] Con el idioma ACTIVO, no con el locale "es" fijo que traía: con la cookie
+// en inglés la cola de moderación mostraba "Reported by … · 8 ago 2026". getLang() es la misma
+// fuente que ya usan scr-core/scr-debate/scr-admin-metrics en el cliente.
 function fmtDate(v) {
   const d = new Date(v);
   if (isNaN(d.getTime())) return "";
-  try {
-    return d.toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
-  } catch {
-    return d.toISOString().slice(0, 10);
-  }
+  return fmtDayMonthYear(d, getLang()) || d.toISOString().slice(0, 10);
 }
 
 // [MOCKUP 2026-08] Chips del kit (r3, versalitas 10/800): abierto = naranja sólido (lo que
@@ -68,14 +67,14 @@ function statusBadge(status) {
 }
 
 // [F2.3] Fecha + hora del slot de una reserva (la sesión sí necesita la hora, no solo el día).
+// [GOAL E5 · i18n] Ídem: idioma activo en vez del locale "es" fijo. Y en hora RD (UTC-4), que
+// es la zona en la que se agenda TODA franja del producto (fmtDateTimeRD, consultations.ts):
+// antes se leía en la zona del navegador, así que un admin fuera de RD veía otra hora que el
+// coach y el alumno para la misma reserva.
 function fmtSlot(v) {
   const d = new Date(v);
   if (isNaN(d.getTime())) return "";
-  try {
-    return d.toLocaleString("es", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return d.toISOString().slice(0, 16).replace("T", " ");
-  }
+  return fmtDayMonthYearTimeRD(d, getLang()) || d.toISOString().slice(0, 16).replace("T", " ");
 }
 
 // [F2.3] Etiqueta legible del estado de la reserva (el enum crudo en inglés es jarring en la UI).
