@@ -253,3 +253,66 @@ describe("K-17 · los botones data-go=messages usan aria-label (cubierto por S1)
     expect(conMsg.every((b) => /aria-label="[^"]+"/.test(b))).toBe(true);
   });
 });
+
+/* ==========================================================================
+   FIX POST-REVISIÓN
+   ========================================================================== */
+
+describe("R1 · precedencia: la comparación laxa no puede anular el arreglo de S4", () => {
+  const JR = { name: "Saúl Méndez Jr", initials: "SJ" };
+  const CON_JR = new Map<string, { name: string; initials: string }>([
+    ["u-saul", SAUL], ["u-jr", JR],
+  ]);
+
+  it("sonda del revisor: con un alumno 'Saúl Méndez Jr', el coach NO se ve a sí mismo", () => {
+    const v = convo({
+      storedName: "Saúl Méndez", storedInitials: "SM",
+      participantIds: ["u-jr", "u-saul"], meId: "u-saul", meName: "Saúl Méndez",
+      counterparts: CON_JR,
+    });
+    expect(v.name).toBe("Saúl Méndez Jr");
+    expect(v.initials).toBe("SJ");
+  });
+
+  it("y al revés: si la etiqueta nombra exactamente al Jr y el Jr soy yo, veo al coach", () => {
+    const v = convo({
+      storedName: "Saúl Méndez Jr", storedInitials: "SJ",
+      participantIds: ["u-jr", "u-saul"], meId: "u-jr", meName: "Saúl Méndez Jr",
+      counterparts: CON_JR,
+    });
+    expect(v.name).toBe("Saúl Méndez");
+  });
+
+  it("una etiqueta que ya nombra EXACTAMENTE a la contraparte se respeta", () => {
+    const v = convo({
+      storedName: "Saúl Méndez Jr", storedInitials: "SJ",
+      participantIds: ["u-jr", "u-saul"], meId: "u-saul", meName: "Saúl Méndez",
+      counterparts: CON_JR,
+    });
+    expect(v.name).toBe("Saúl Méndez Jr");
+  });
+
+  it("el prefijo de cortesía (comparación laxa) sigue funcionando", () => {
+    expect(convo().name).toBe("Analía Reyes"); // stored "Coach Saúl Méndez", yo Saúl
+  });
+});
+
+describe("R2 · con 3+ participantes la etiqueta es estable", () => {
+  it("elige el primero del orden que entrega la query, no uno al azar", () => {
+    const gente = new Map<string, { name: string; initials: string }>([
+      ["u-a", { name: "Ana Belén", initials: "AB" }],
+      ["u-b", { name: "Bruno Cruz", initials: "BC" }],
+      ["u-saul", SAUL],
+    ]);
+    const base = { storedName: "Saúl Méndez", storedInitials: "SM", meId: "u-saul", meName: "Saúl Méndez", counterparts: gente };
+    const v1 = convo({ ...base, participantIds: ["u-a", "u-b", "u-saul"] });
+    const v2 = convo({ ...base, participantIds: ["u-a", "u-b", "u-saul"] });
+    expect(v1.name).toBe("Ana Belén");
+    expect(v2.name).toBe(v1.name); // determinista entre cargas
+  });
+
+  it("la query del payload pide los participantes con orden explícito (userId asc)", () => {
+    const q = readFileSync(join(process.cwd(), "app", "lib", "queries.ts"), "utf8");
+    expect(q).toContain('participants: { select: { userId: true }, orderBy: { userId: "asc" } }');
+  });
+});

@@ -178,14 +178,22 @@ export type ConversationLabelInput = {
   lastMessageBody: string | null;
 };
 
-/** Compara nombres ignorando tildes, mayúsculas y prefijos de cortesía ("Coach X" ≈ "X"). */
-function samePerson(a?: string | null, b?: string | null): boolean {
-  const norm = (s?: string | null) => String(s ?? "")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().replace(/\s+/g, " ").trim();
-  const x = norm(a), y = norm(b);
+/** Normaliza para comparar personas: sin tildes, sin mayúsculas, sin espacios de más. */
+const normName = (s?: string | null) => String(s ?? "")
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/\s+/g, " ").trim();
+
+/** Igualdad ESTRICTA de nombre (ya normalizado). */
+function sameNameExact(a?: string | null, b?: string | null): boolean {
+  const x = normName(a), y = normName(b);
+  return !!x && x === y;
+}
+
+/** Coincidencia LAXA por subcadena — existe SOLO para tolerar "Coach X" ≈ "X". */
+function sameNameLoose(a?: string | null, b?: string | null): boolean {
+  const x = normName(a), y = normName(b);
   if (!x || !y) return false;
-  return x === y || x.includes(y) || y.includes(x);
+  return x.includes(y) || y.includes(x);
 }
 
 export function conversationLabel(input: ConversationLabelInput): { name: string; initials: string; last: string } {
@@ -196,10 +204,25 @@ export function conversationLabel(input: ConversationLabelInput): { name: string
     .map((id) => counterparts.get(id))
     .filter(Boolean) as Array<{ name: string; initials: string }>;
 
-  const labelsACounterpart = others.some((o) => samePerson(o.name, storedName));
-  const labelsMe = !labelsACounterpart && others.length > 0 && samePerson(meName, storedName);
+  /* Escalera de precedencia — el ORDEN importa. La comparación laxa por subcadena existe
+     solo para tolerar el prefijo de cortesía ("Coach Saúl Méndez" ≡ "Saúl Méndez"); si se
+     evalúa ANTES que la igualdad estricta se come el arreglo: con un alumno llamado
+     "Saúl Méndez Jr" el nombre del coach es subcadena del suyo, la etiqueta "Saúl Méndez"
+     pasaría por "ya nombra a la contraparte" y el coach volvería a verse a sí mismo.
+       1. la etiqueta es EXACTAMENTE mi nombre → contraparte (sin pasar por la laxa)
+       2. es exactamente la de una contraparte → se respeta
+       3. coincide de forma laxa con una contraparte → se respeta (hilo ya bien etiquetado)
+       4. coincide de forma laxa conmigo → contraparte ("Coach Saúl Méndez" siendo yo Saúl)
+       5. no nombra a nadie (canal "Equipo OTR (anuncios)") → se respeta */
+  const swap = others.length > 0 && (
+    sameNameExact(meName, storedName)
+    || (!others.some((o) => sameNameExact(o.name, storedName))
+      && !others.some((o) => sameNameLoose(o.name, storedName))
+      && sameNameLoose(meName, storedName))
+  );
 
-  const pick = labelsMe ? others[0] : null;
+  // others[0] = primer participante del orden ESTABLE que entrega el llamador (userId asc).
+  const pick = swap ? others[0] : null;
 
   return {
     name: pick ? pick.name : storedName,
@@ -410,9 +433,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           // participante, sin join a User) para poder etiquetar el hilo con la CONTRAPARTE.
           // Conversation.name/initials es una etiqueta DESNORMALIZADA escrita desde un solo
           // lado: el coach veía su propio nombre en el hilo con su alumna.
+          // [GOAL S4·rev] `orderBy` explícito: sin él Prisma no garantiza el orden de los
+          // participantes y con 3+ en el hilo la etiqueta (others[0]) podía cambiar entre
+          // cargas. userId asc = orden estable y barato (hay @@index([userId])).
           include: {
             messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true } },
-            participants: { select: { userId: true } },
+            participants: { select: { userId: true }, orderBy: { userId: "asc" } },
           },
         })
       : Promise.resolve([] as any[]),
