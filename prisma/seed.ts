@@ -82,6 +82,9 @@ async function main() {
   await db.eventItem.deleteMany();
   await db.notification.deleteMany();
   await db.badge.deleteMany();
+  // [DASHBOARD] Contenido de producto del dashboard (premios del podio + highlights).
+  await db.seasonPrize.deleteMany();
+  await db.highlight.deleteMany();
   await db.competency.deleteMany();
   await db.lesson.deleteMany();
   await db.module.deleteMany();
@@ -1454,14 +1457,48 @@ async function main() {
   // ----------------------------------------------------------------
   //  12) INSIGNIAS (las que evalúa gotBadge en queries.ts)
   // ----------------------------------------------------------------
+  // [DASHBOARD] `xp` = XP que otorga la insignia, escalado por dificultad (120→300):
+  // las de entrada valen menos que las de circuito (Semifinalista/Voz de oro/Campeón).
+  // `icon` DEBE ser una clave real de IC (app/lib/icons.ts) o el tile cae a fallback.
   await db.badge.createMany({
     data: [
-      { name: "Primer discurso", description: "Completaste tu primera grabación", got: false, icon: "mic", tone: "sky", position: 0 },
-      { name: "Racha de 7 días", description: "7 días seguidos entrenando", got: false, icon: "flame", tone: "sky", position: 1 },
-      { name: "Refutador", description: "Dominas la refutación de impacto", got: false, icon: "target", tone: "navy", position: 2 },
-      { name: "Semifinalista", description: "Llegaste a Varsity o Elite", got: false, icon: "medal", tone: "navy", position: 3 },
-      { name: "Voz de oro", description: "95+ en una grabación calificada", got: false, icon: "trophy", tone: "lock", position: 4 },
-      { name: "Campeón", description: "Alcanza el nivel Elite del circuito", got: false, icon: "award", tone: "lock", position: 5 },
+      { name: "Primer discurso", description: "Completaste tu primera grabación", got: false, icon: "mic", tone: "sky", xp: 120, position: 0 },
+      { name: "Racha de 7 días", description: "7 días seguidos entrenando", got: false, icon: "flame", tone: "sky", xp: 150, position: 1 },
+      { name: "Refutador", description: "Dominas la refutación de impacto", got: false, icon: "target", tone: "navy", xp: 180, position: 2 },
+      { name: "Semifinalista", description: "Llegaste a Varsity o Elite", got: false, icon: "medal", tone: "navy", xp: 220, position: 3 },
+      { name: "Voz de oro", description: "95+ en una grabación calificada", got: false, icon: "trophy", tone: "lock", xp: 260, position: 4 },
+      { name: "Campeón", description: "Alcanza el nivel Elite del circuito", got: false, icon: "award", tone: "lock", xp: 300, position: 5 },
+    ],
+  });
+
+  // ----------------------------------------------------------------
+  //  12.1) PREMIOS DE LA TEMPORADA (podio del leaderboard)
+  // ----------------------------------------------------------------
+  // Contenido de producto editable: el texto del premio vive en DB, no en la vista.
+  await db.seasonPrize.createMany({
+    data: [
+      { rank: 1, text: "Beca completa · próximo módulo", position: 0 },
+      { rank: 2, text: "Sesión 1:1 con coach", position: 1 },
+      { rank: 3, text: "Kit oficial OTR + credencial", position: 2 },
+    ],
+  });
+
+  // ----------------------------------------------------------------
+  //  12.2) LO MEJOR DE LA TEMPORADA (highlights)
+  // ----------------------------------------------------------------
+  // Logros REALES de la marca documentados en BRAND.md §"Logros de torneos".
+  // Las fechas son las que ya existen en la cronología del seed (DebateRecord):
+  // Harvard JV a 33 días, Florida Blue Key a 25, New Horizons (final) a 12.
+  // St. Michael's NO tiene fecha en ninguna fuente del repo → date null (la vista
+  // degrada sin fecha; preferimos hueco a fecha inventada).
+  // Imagen: solo existe /img/hero-speaking.jpg → va en UNA; el resto imageUrl "" y
+  // la card degrada a fondo negro. No se inventan rutas de imágenes inexistentes.
+  await db.highlight.createMany({
+    data: [
+      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: "/img/hero-speaking.jpg", position: 0 },
+      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: "", position: 1 },
+      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: "", position: 2 },
+      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: "", position: 3 },
     ],
   });
 

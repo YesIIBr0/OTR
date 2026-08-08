@@ -276,6 +276,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     levels, meEnrollments, badges, notifications, events,
     threads, mainThread, convos, allCourses, allModules, taughtCourses,
     myStudentSkills, myCertificates, coachProfiles,
+    seasonPrizes, highlightRows,
   ] = await Promise.all([
     // [GOAL G3] Global e idéntico para todos → micro-caché (ver lib/cache.ts).
     cached("levels", GLOBAL_TTL_MS, () => db.level.findMany({ orderBy: { position: "asc" } })),
@@ -348,6 +349,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       },
       take: 500,
     }),
+    // [DASHBOARD] Premios del podio de la temporada. Catálogo global e idéntico para
+    // todos → micro-caché, igual que levels/events.
+    cached("seasonPrizes", GLOBAL_TTL_MS, () => db.seasonPrize.findMany({ orderBy: { rank: "asc" }, take: 10 })),
+    // [DASHBOARD] "Lo mejor de la temporada": logros de la marca. También global.
+    cached("highlights", GLOBAL_TTL_MS, () => db.highlight.findMany({ orderBy: { position: "asc" }, take: 12 })),
   ]);
 
   // [fix nivel] El rango (Novato 0-999 · JV 1000-2499 · Varsity 2500-4999 · Elite 5000+) se
@@ -1009,14 +1015,23 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       .map((w) => w[0] || "")
       .join("")
       .toUpperCase();
-  const leaderboardRowsOut = (leaderboardRows || []).map((u: any, i: number) => ({
-    rank: i + 1,
-    name: esc(u.name),
-    initials: esc(u.initials || initialsFrom(u.name)),
-    rating: Math.round(u.debateRating ?? 1500),
-    tier: u.debateTier || "Novato",
-    you: u.id === me?.id,
-  }));
+  // [DASHBOARD] Premio del puesto (solo podio): puesto → texto, leído de SeasonPrize.
+  // Contenido editable en DB; la vista NO lleva los textos hardcodeados.
+  const prizeByRank = new Map<number, string>((seasonPrizes || []).map((p: any) => [p.rank, p.text]));
+  const leaderboardRowsOut = (leaderboardRows || []).map((u: any, i: number) => {
+    const rank = i + 1;
+    const prize = prizeByRank.get(rank);
+    return {
+      rank,
+      name: esc(u.name),
+      initials: esc(u.initials || initialsFrom(u.name)),
+      rating: Math.round(u.debateRating ?? 1500),
+      tier: u.debateTier || "Novato",
+      you: u.id === me?.id,
+      // `prize` solo existe si hay un SeasonPrize para ese puesto (1º/2º/3º).
+      ...(prize ? { prize } : {}),
+    };
+  });
   const leaderboard = me
     ? {
         rows: leaderboardRowsOut,
@@ -1025,6 +1040,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           rating: Math.round(me.debateRating ?? 1500),
           tier: me.debateTier || "Novato",
         },
+        // [DASHBOARD] period = { label, endsInDays } SOLO si la clasificación fuera MENSUAL.
+        // Hoy NO lo es: `rows` es el ranking GLOBAL e histórico por Glicko-2 (User.debateRating,
+        // acumulado de por vida), no el XP del mes. La única fuente de XP fechada del sistema es
+        // ActivityEvent (xp + createdAt), que es el ledger del Lifetime Progress Profile por
+        // usuario — no alimenta esta tabla. Devolver un "Clasificación de agosto · faltan N días"
+        // sobre un ranking histórico sería etiquetar mal el dato, así que va null y la vista
+        // mantiene su título sin periodo. Se activará cuando el ranking se calcule por mes.
+        period: null as { label: string; endsInDays: number } | null,
       }
     : null;
 
@@ -1720,7 +1743,20 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     mySubmissions: mySubmissionsByActivity,
     // [i18n] Mismo estado indexado por lessonId (clave estable) — S.assignment lo prefiere.
     mySubmissionsByLesson,
-    badges: badges.map((b) => ({ n: b.name, d: b.description, got: gotBadge(b.name), ic: b.icon, tone: b.tone })),
+    // [DASHBOARD] `xp` = XP que otorga la insignia (0 ⇒ la vista no lo pinta).
+    // `ic` es una clave de IC (app/lib/icons.ts); el seed solo usa claves existentes.
+    badges: badges.map((b) => ({ n: b.name, d: b.description, got: gotBadge(b.name), ic: b.icon, tone: b.tone, xp: b.xp ?? 0 })),
+    // [DASHBOARD] "Lo mejor de la temporada": logros reales de la marca (tabla Highlight).
+    // dateLabel se DERIVA de `date` (vivo, como los eventos); vacío si el logro no tiene
+    // fecha documentada. imageUrl vacío ⇒ la card degrada a fondo negro sin foto.
+    // Texto de catálogo (no de usuario) → sin esc(), igual que badges/events.
+    highlights: (highlightRows || []).map((h: any) => ({
+      id: h.id,
+      title: h.title,
+      dateLabel: h.date ? shortDateLabel(h.date) : "",
+      category: h.category,
+      imageUrl: h.imageUrl || "",
+    })),
     // [auditoría] La etiqueta de fecha se DERIVA de startsAt (viva, como los torneos); whenLabel
     // es solo fallback para eventos legados sin startsAt. Así "Hoy/Mañana" no queda congelado.
     events: events.map((e) => ({ t: e.title, c: e.course, when: (e as any).startsAt ? eventDateLabel((e as any).startsAt) : e.whenLabel, tone: e.tone })),
