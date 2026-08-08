@@ -19,6 +19,7 @@ win.toast = () => {};
 import { DB } from "../app/lib/data";
 import { renderShell } from "../app/lib/shell";
 import { S as SCore } from "../app/lib/scr-core";
+import { IC } from "../app/lib/icons";
 import { t } from "../app/lib/i18n";
 
 const Core: any = SCore;
@@ -176,5 +177,112 @@ describe("C · el dashboard replica el mockup con datos reales", () => {
     const html = Core.dashboard.render({ role: "student" });
     expect(html).not.toContain(t("core.dashJoinCta"));
     expect(html).toContain(t("core.dashSessionWith").replace("{coach}", "Saúl Méndez"));
+  });
+});
+
+/* ================= D · homologación con el mockup (iconos / XP / premios / highlights)
+   Queja del cliente: "los iconos ni nada se parecen". Cada bloque toma su icono
+   del DATO y los añadidos del mockup (XP por insignia, premios del podio, "Lo
+   mejor de la temporada") solo aparecen cuando el dato los trae. ================= */
+describe("D · el dashboard homologa iconos y bloques del mockup", () => {
+  it("cada logro pinta SU icono (DB.badges[].ic), no la medalla para todos", () => {
+    (DB as any).badges = [
+      { n: "Racha de 7 días", d: "7 días seguidos", got: true, ic: "flame", xp: 0 },
+      { n: "Primer discurso", d: "Tu primera grabación", got: true, ic: "mic", xp: 0 },
+    ];
+    const html = Core.dashboard.render({ role: "student" });
+    expect(html).toContain(IC.flame);
+    expect(html).toContain(IC.mic);
+    // El encabezado de "Logros" lleva el RAYO (antes medalla).
+    expect(html).toMatch(/class="db-count tnum">\s*<svg/);
+    expect(html).toContain(IC.zap);
+  });
+
+  it("sin `ic` en el dato la insignia degrada a la medalla (nada roto)", () => {
+    (DB as any).badges = [{ n: "Sin icono", d: "descripción", got: true }];
+    const html = Core.dashboard.render({ role: "student" });
+    expect(html).toMatch(/class="bt-ic">\s*<svg/);
+    expect(html).toContain(IC.medal);
+  });
+
+  it("con `xp` real la tarjeta muestra '+150 XP'; con 0 conserva la descripción", () => {
+    (DB as any).badges = [
+      { n: "Refutador", d: "Dominas la refutación", got: true, ic: "target", xp: 150 },
+      { n: "Campeón", d: "Alcanza el nivel Elite", got: false, ic: "award", xp: 0 },
+    ];
+    const html = Core.dashboard.render({ role: "student" });
+    expect(html).toContain(">+150 XP<");
+    expect(html).not.toContain(">Dominas la refutación<");   // la XP sustituye a la descripción
+    expect(html).toContain(">Alcanza el nivel Elite<");      // sin XP: descripción intacta
+  });
+
+  it("el 1º del podio lleva CORONA y cada premio real pinta su cajita", () => {
+    (DB as any).leaderboard = {
+      me: { rank: 1, rating: 1720 },
+      rows: [
+        { rank: 1, name: "Ana", rating: 1720, you: true, prize: "Beca de torneo" },
+        { rank: 2, name: "Beto", rating: 1690, prize: "Kit OTR" },
+        { rank: 3, name: "Caro", rating: 1650 },
+      ],
+    };
+    const html = Core.dashboard.render({ role: "student" });
+    expect(html).toContain(IC.crown);
+    expect(html).not.toContain(`<span class="lb-crown">${IC.trophy}</span>`);
+    expect(html).toContain('class="lb-prize">Beca de torneo<');
+    expect(html).toContain('class="lb-prize">Kit OTR<');
+    // 3º sin premio → NINGUNA cajita vacía: solo se pintan los dos premios reales.
+    expect(html.match(/class="lb-prize"/g)).toHaveLength(2);
+  });
+
+  it("sin `period` la clasificación se queda EXACTAMENTE como hoy (rating pelado)", () => {
+    (DB as any).leaderboard = { me: { rank: 4, rating: 1500 }, rows: [{ rank: 1, name: "Ana", rating: 1720, xp: 980 }] };
+    const html = Core.dashboard.render({ role: "student" });
+    expect(html).toContain(t("core.dashStandingsTitle"));   // "Clasificación general"
+    expect(html).toContain(t("core.dashStandingsMeta"));    // "Por rating de debate"
+    // El separador de millares depende del ICU del entorno: se tolera "1720"/"1.720".
+    expect(html).toMatch(/>1\.?720</);                      // el número es el RATING
+    expect(html).not.toMatch(/980 XP/);
+  });
+
+  it("con `period` el título nombra la temporada, la meta anuncia cierre y la cifra es XP", () => {
+    (DB as any).leaderboard = {
+      me: { rank: 4, rating: 1500 },
+      period: { label: "agosto", endsInDays: 24 },
+      rows: [{ rank: 1, name: "Ana", rating: 1720, xp: 2480 }],
+    };
+    const html = Core.dashboard.render({ role: "student" });
+    expect(html).toContain("Clasificación de agosto");
+    expect(html).toContain("Faltan 24 días · Premios al cierre");
+    expect(html).not.toContain(t("core.dashStandingsMeta"));
+    // La mensual ordena por XP de temporada: la cifra se etiqueta y el rating no se pinta.
+    expect(html).toMatch(/>2\.?480 XP</);
+    expect(html).not.toMatch(/>1\.?720</);
+  });
+
+  it("highlights: 4 columnas, badge de categoría, foto de fondo y 'Ver todo'", () => {
+    (DB as any).highlights = [
+      { id: "h1", title: "Final nacional", dateLabel: "mayo 2026", category: "Final", imageUrl: "/img/h1.jpg" },
+      { id: "h2", title: "Sin foto", dateLabel: "junio 2026", category: "Equipo", imageUrl: "" },
+    ];
+    const html = Core.dashboard.render({ role: "student" });
+    expect(html).toContain("hl-grid");
+    expect(html).toContain(t("core.dashHighlightsAll"));            // enlace "Ver todo"
+    expect(html).toContain(`class="hl-img" style="background-image:url('/img/h1.jpg')"`);
+    expect(html).toContain(">Final nacional<");
+    expect(html).toContain(">mayo 2026<");
+    expect(html).toContain("hl-tag");                                // badge de categoría
+    // La segunda card no trae foto: card negra plana, sin capa de imagen rota.
+    expect(html.match(/class="hl-img"/g)).toHaveLength(1);
+    expect(html).not.toContain("background-image:url('')");
+  });
+
+  it("una imageUrl que no es ruta del sitio ni https NO se pinta", () => {
+    (DB as any).highlights = [
+      { id: "h1", title: "Ojo", dateLabel: "", category: "", imageUrl: "javascript:alert(1)" },
+    ];
+    const html = Core.dashboard.render({ role: "student" });
+    expect(html).toContain("hl-grid");
+    expect(html).not.toContain("hl-img");
+    expect(html).not.toContain("javascript:");
   });
 });

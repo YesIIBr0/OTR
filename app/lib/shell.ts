@@ -222,7 +222,7 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
   // Pill de XP: solo con XP real (>0). Un coach/admin con 0 XP no la ve.
   const xp = typeof DB.xp === 'number' ? DB.xp : 0;
   const xpPill = xp > 0
-    ? `<span class="tn-xp" title="${xp.toLocaleString(lang==='en'?'en':'es')} XP">${IC.flame}<b class="tnum">${xp.toLocaleString(lang==='en'?'en':'es')}</b><span class="u">XP</span></span>`
+    ? `<span class="tn-xp" title="${xp.toLocaleString(lang==='en'?'en':'es')} XP">${IC.zap}<b class="tnum">${xp.toLocaleString(lang==='en'?'en':'es')}</b><span class="u">XP</span></span>`
     : '';
   const unreadNotifs = (DB.notifications || []).filter(n => n.unread).length;
 

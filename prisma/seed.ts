@@ -82,6 +82,9 @@ async function main() {
   await db.eventItem.deleteMany();
   await db.notification.deleteMany();
   await db.badge.deleteMany();
+  // [DASHBOARD] Contenido de producto del dashboard (premios del podio + highlights).
+  await db.seasonPrize.deleteMany();
+  await db.highlight.deleteMany();
   await db.competency.deleteMany();
   await db.lesson.deleteMany();
   await db.module.deleteMany();
@@ -1333,6 +1336,54 @@ async function main() {
   });
 
   // ----------------------------------------------------------------
+  //  8.9) ACTIVIDAD DEL MES EN CURSO — alimenta el ranking de XP del
+  //       dashboard ("Clasificación de {mes}"). Sin filas de ESTE mes
+  //       la tarjeta degrada al ranking por rating, así que el seed
+  //       tiene que dejar un mes vivo.
+  // ----------------------------------------------------------------
+  // Reparte los eventos por la parte YA TRANSCURRIDA del mes en curso: sea cual sea el
+  // día en que se siembre, ninguna fila cae en el futuro ni se escapa al mes anterior
+  // (sembrando el día 1, todas caen en el día 1).
+  const seedNow = new Date();
+  const thisMonthAt = (frac: number) =>
+    new Date(seedNow.getFullYear(), seedNow.getMonth(), Math.max(1, Math.round(seedNow.getDate() * frac)), 12, 0, 0, 0);
+  // El orden del mes NO copia al del rating a propósito: Analía viene de un mes fuerte
+  // (subió a Gold y ganó la final de New Horizons) y adelanta a Silvana, aunque siga
+  // por debajo de ella en rating de por vida. Son dos rankings distintos.
+  // Aaron/Sigmund/Camila son MENORES: suman XP real pero el ranking público nunca los
+  // muestra (regla de privacidad) — sirven para comprobar que el filtro funciona.
+  await db.activityEvent.createMany({
+    data: [
+      // Isabella Guzmán (u-is) — 840 XP
+      { userId: "u-is", type: "lesson_done", source: "course", title: "Completó “Cross-ex: preguntas que rompen el caso”", detail: "Public Forum I · Unidad 3", xp: 40, createdAt: thisMonthAt(0.15) },
+      { userId: "u-is", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 96%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.3) },
+      { userId: "u-is", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Loyola", detail: "Scrim OTR · Ronda 2", xp: 120, createdAt: thisMonthAt(0.45) },
+      { userId: "u-is", type: "debate_logged", source: "debate", title: "Ganó vs Saint Joseph", detail: "Scrim OTR · Ronda 4", xp: 120, createdAt: thisMonthAt(0.6) },
+      { userId: "u-is", type: "rank_up", source: "debate", title: "Subió a Platinum", detail: "Rating 1850 — mejor del circuito dominicano", xp: 180, createdAt: thisMonthAt(0.75) },
+      { userId: "u-is", type: "tournament_result", source: "debate", title: "Campeona del interno OTR", detail: "Final Varsity · récord 5-0", xp: 320, createdAt: thisMonthAt(0.95) },
+
+      // Analía Reyes (u-ar) — 560 XP
+      { userId: "u-ar", type: "lesson_done", source: "course", title: "Completó “Final focus: cerrar en el impacto”", detail: "Public Forum I · Unidad 3", xp: 40, createdAt: thisMonthAt(0.2) },
+      { userId: "u-ar", type: "session_done", source: "marketplace", title: "Sesión 1:1 con Coach Saúl", detail: "Trabajo de cross-ex y priorización de voters", xp: 80, createdAt: thisMonthAt(0.4) },
+      { userId: "u-ar", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Quisqueya", detail: "Scrim OTR · Ronda 1", xp: 120, createdAt: thisMonthAt(0.55) },
+      { userId: "u-ar", type: "debate_logged", source: "debate", title: "Ganó vs Saint George", detail: "Scrim OTR · Ronda 3", xp: 120, createdAt: thisMonthAt(0.7) },
+      { userId: "u-ar", type: "tournament_result", source: "debate", title: "Semifinalista del interno OTR", detail: "Semifinal Varsity · récord 4-1", xp: 200, createdAt: thisMonthAt(0.9) },
+
+      // Silvana Espaillat (u-si) — 360 XP
+      { userId: "u-si", type: "lesson_done", source: "course", title: "Completó “Cross-ex: preguntas que rompen el caso”", detail: "Public Forum I · Unidad 3", xp: 40, createdAt: thisMonthAt(0.25) },
+      { userId: "u-si", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 88%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.5) },
+      { userId: "u-si", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Loyola", detail: "Scrim OTR · Ronda 3", xp: 120, createdAt: thisMonthAt(0.65) },
+      { userId: "u-si", type: "tournament_result", source: "debate", title: "Cuartofinalista del interno OTR", detail: "Cuartos Varsity · récord 3-2", xp: 140, createdAt: thisMonthAt(0.85) },
+
+      // Menores (fuera del ranking público por edad, con actividad real igualmente)
+      { userId: "u-aa", type: "lesson_done", source: "course", title: "Completó “Construir el segundo contention”", detail: "Public Forum I · Unidad 2", xp: 40, createdAt: thisMonthAt(0.3) },
+      { userId: "u-aa", type: "debate_logged", source: "debate", title: "Ganó vs Babeque", detail: "Scrim OTR · Ronda 2", xp: 120, createdAt: thisMonthAt(0.6) },
+      { userId: "u-sg", type: "lesson_done", source: "course", title: "Completó “Claim · Warrant · Impact en video”", detail: "Public Forum I · Unidad 1", xp: 40, createdAt: thisMonthAt(0.45) },
+      { userId: "u-cn", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Estructura · 84%", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.7) },
+    ],
+  });
+
+  // ----------------------------------------------------------------
   //  9) REVIEWS reales — los testimonios del sitio (rating 5)
   //     Un review por (curso, estudiante). Todos sobre PF-101/Saúl.
   // ----------------------------------------------------------------
@@ -1454,14 +1505,48 @@ async function main() {
   // ----------------------------------------------------------------
   //  12) INSIGNIAS (las que evalúa gotBadge en queries.ts)
   // ----------------------------------------------------------------
+  // [DASHBOARD] `xp` = XP que otorga la insignia, escalado por dificultad (120→300):
+  // las de entrada valen menos que las de circuito (Semifinalista/Voz de oro/Campeón).
+  // `icon` DEBE ser una clave real de IC (app/lib/icons.ts) o el tile cae a fallback.
   await db.badge.createMany({
     data: [
-      { name: "Primer discurso", description: "Completaste tu primera grabación", got: false, icon: "mic", tone: "sky", position: 0 },
-      { name: "Racha de 7 días", description: "7 días seguidos entrenando", got: false, icon: "flame", tone: "sky", position: 1 },
-      { name: "Refutador", description: "Dominas la refutación de impacto", got: false, icon: "target", tone: "navy", position: 2 },
-      { name: "Semifinalista", description: "Llegaste a Varsity o Elite", got: false, icon: "medal", tone: "navy", position: 3 },
-      { name: "Voz de oro", description: "95+ en una grabación calificada", got: false, icon: "trophy", tone: "lock", position: 4 },
-      { name: "Campeón", description: "Alcanza el nivel Elite del circuito", got: false, icon: "award", tone: "lock", position: 5 },
+      { name: "Primer discurso", description: "Completaste tu primera grabación", got: false, icon: "mic", tone: "sky", xp: 120, position: 0 },
+      { name: "Racha de 7 días", description: "7 días seguidos entrenando", got: false, icon: "flame", tone: "sky", xp: 150, position: 1 },
+      { name: "Refutador", description: "Dominas la refutación de impacto", got: false, icon: "target", tone: "navy", xp: 180, position: 2 },
+      { name: "Semifinalista", description: "Llegaste a Varsity o Elite", got: false, icon: "medal", tone: "navy", xp: 220, position: 3 },
+      { name: "Voz de oro", description: "95+ en una grabación calificada", got: false, icon: "trophy", tone: "lock", xp: 260, position: 4 },
+      { name: "Campeón", description: "Alcanza el nivel Elite del circuito", got: false, icon: "award", tone: "lock", xp: 300, position: 5 },
+    ],
+  });
+
+  // ----------------------------------------------------------------
+  //  12.1) PREMIOS DE LA TEMPORADA (podio del leaderboard)
+  // ----------------------------------------------------------------
+  // Contenido de producto editable: el texto del premio vive en DB, no en la vista.
+  await db.seasonPrize.createMany({
+    data: [
+      { rank: 1, text: "Beca completa · próximo módulo", position: 0 },
+      { rank: 2, text: "Sesión 1:1 con coach", position: 1 },
+      { rank: 3, text: "Kit oficial OTR + credencial", position: 2 },
+    ],
+  });
+
+  // ----------------------------------------------------------------
+  //  12.2) LO MEJOR DE LA TEMPORADA (highlights)
+  // ----------------------------------------------------------------
+  // Logros REALES de la marca documentados en BRAND.md §"Logros de torneos".
+  // Las fechas son las que ya existen en la cronología del seed (DebateRecord):
+  // Harvard JV a 33 días, Florida Blue Key a 25, New Horizons (final) a 12.
+  // St. Michael's NO tiene fecha en ninguna fuente del repo → date null (la vista
+  // degrada sin fecha; preferimos hueco a fecha inventada).
+  // Imagen: solo existe /img/hero-speaking.jpg → va en UNA; el resto imageUrl "" y
+  // la card degrada a fondo negro. No se inventan rutas de imágenes inexistentes.
+  await db.highlight.createMany({
+    data: [
+      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: "/img/hero-speaking.jpg", position: 0 },
+      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: "", position: 1 },
+      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: "", position: 2 },
+      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: "", position: 3 },
     ],
   });
 
@@ -1615,7 +1700,7 @@ async function main() {
   console.log(`  · Matrículas:    ${enrollments}`);
   console.log(`  · Debate Hub:    ${debates} rondas · ${tournaments} torneos`);
   console.log(`  · Marketplace:   ${coachProfiles} coaches · ${bookings} bookings (escrow demo)`);
-  console.log(`  · Lifetime §8:   ${certificates} certificados · ${journeyEvents} eventos de journey (Analía)`);
+  console.log(`  · Lifetime §8:   ${certificates} certificados · ${journeyEvents} eventos de journey (con el mes en curso)`);
   console.log("  · Membresía §13: Analía PRO (simulada) · perfil público /p/analia-reyes");
   console.log("  · Login demo:    saul@otr.do / analia.reyes@otr.do — password: ver arriba (SEED_PASSWORD o la generada)");
 }

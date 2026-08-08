@@ -328,7 +328,30 @@ model Badge {
   got         Boolean @default(false)
   icon        String
   tone        String
+  // [DASHBOARD] XP que otorga la insignia. 0 = no se muestra el XP en el tile.
+  xp          Int     @default(0)
   position    Int     @default(0)
+}
+
+// [DASHBOARD] Premios de la temporada del leaderboard (podio 1º/2º/3º). Es contenido
+// de producto EDITABLE (puesto → texto), no una constante escrita en la vista.
+model SeasonPrize {
+  id       String @id @default(cuid())
+  rank     Int    @unique // puesto del podio: 1 | 2 | 3
+  text     String
+  position Int    @default(0)
+}
+
+// [DASHBOARD] "Lo mejor de la temporada": logros REALES de la marca (BRAND.md).
+// date es opcional: si un logro no tiene fecha documentada, la vista degrada sin fecha.
+// imageUrl vacío = card negra sin foto (no se inventan rutas de imagen inexistentes).
+model Highlight {
+  id       String    @id @default(cuid())
+  title    String
+  date     DateTime?
+  category String
+  imageUrl String    @default("")
+  position Int       @default(0)
 }
 
 model Notification {

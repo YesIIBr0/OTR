@@ -9,7 +9,9 @@
        history:[{id,result,format,opponent,eventName,roundLabel,when,ratingAfter,source}],
        analytics:{ byFormat:[{name,wins,losses,draws}], bySide:[{name,wins,losses,draws}], criteria:[{name,avg}] }
      }
-     DB.leaderboard = { me:{rank,rating,tier}, rows:[{rank,name,initials,rating,tier,you}] }
+     DB.debateLeaderboard = { me:{rank,rating,tier}, rows:[{rank,name,initials,rating,tier,you}] }
+       (tabla por RATING Glicko-2 — la del Hub. DB.leaderboard es la del dashboard y puede
+        venir ordenada por XP del mes, así que aquí NO se usa salvo como fallback.)
      DB.tournaments = [{id,name,format,region,modality,startsLabel,status,entryLabel,registered}]
 
    Patrón de la casa: render(state)->string + mount(root,state) opcional; IC.* iconos,
@@ -220,7 +222,11 @@ function getDebate() {
   };
 }
 function getLeaderboard() {
-  const lb = DB.leaderboard || {};
+  // DB.debateLeaderboard es la tabla POR RATING, propia del Hub. DB.leaderboard es la del
+  // dashboard, que cuando hay temporada viva ordena por XP del mes: usarla aquí rotularía
+  // "ranking por rating Glicko-2" sobre filas ordenadas por otra cosa. Fallback a la vieja
+  // para payloads antiguos (y para los tests que aún montan solo DB.leaderboard).
+  const lb = DB.debateLeaderboard || DB.leaderboard || {};
   return { me: lb.me || null, rows: Array.isArray(lb.rows) ? lb.rows : [] };
 }
 function getTournaments() {
