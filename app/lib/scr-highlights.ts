@@ -110,9 +110,159 @@ function highlightFields(prefill) {
       options: opts.map((c) => ({ value: c, label: catLabel(c) })),
     },
     { name: "date", label: t("hl.fieldDate"), type: "date", value: p.dateISO || "" },
-    { name: "imageUrl", label: t("hl.fieldImage"), type: "text", value: p.imageUrl || "", ph: "/img/hero-speaking.jpg" },
+    // El input de URL sigue existiendo y ES la fuente de verdad del formulario (lo que se
+    // envía a la API), pero deja de ser lo PRIMERO que ve el coach: encima se le inyecta la
+    // zona de subida (wireHighlightImage) y este campo queda como el atajo "o pega una URL",
+    // igual que el modal de recursos de scr-teacher acepta archivo O enlace externo.
+    { name: "imageUrl", label: t("hl.imgUrlLabel"), type: "text", value: p.imageUrl || "", ph: "/img/hero-speaking.jpg" },
     { name: "instagramUrl", label: t("hl.fieldInstagram"), type: "text", value: p.instagramUrl || "", ph: "https://www.instagram.com/p/..." },
   ];
+}
+
+/* ---------------- subida de la foto (dropzone del modal) ----------------
+   Isaac: «que en el otro portal de coach nosotros podamos subir en un view fácil». La foto
+   se SUBE, no se pega. Camino: window.otrUpload (Aula.tsx) → POST /api/uploads → disco +
+   fila Upload → /uploads/<uuid>.<ext>. NO se monta un canal nuevo ni se toca esa API.
+
+   `kind: "image"` NO es decorativo: app/uploads/[...path] autoriza por objeto y solo deja
+   pasar a cualquier autenticado los kinds PÚBLICOS (avatar | image | resource). Con
+   cualquier otro kind el archivo sería del coach y la ALUMNA recibiría 404 al pintar la
+   foto. "image" ya está en el enum documentado del modelo Upload.
+
+   Validación: /api/uploads acepta bastante más que imágenes (PDF, audio, video, Office) y
+   bloquea SVG/HTML y >25 MB. Aquí se ESTRECHA a foto —nunca se relaja— porque un PDF en
+   Highlight.imageUrl no se ve: sale un hueco roto en la pantalla del alumno. */
+const HL_UPLOAD_KIND = "image";
+export const HL_IMAGE_MIME = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+// Espejo de MAX_UPLOAD_BYTES (app/lib/uploads.ts). No sustituye al tope del servidor —que
+// sigue mandando— sino que evita gastar la subida entera para que la rechacen al final.
+const HL_MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+
+/** Motivo por el que este archivo NO puede ser la foto de un logro ("" = adelante). */
+export function hlImageReject(file) {
+  if (!file) return "";
+  const mime = String(file.type || "").toLowerCase().split(";")[0].trim();
+  if (HL_IMAGE_MIME.indexOf(mime) === -1) return "hl.imgErrOnlyImages";
+  if (typeof file.size === "number" && file.size > HL_MAX_IMAGE_BYTES) return "hl.imgErrTooBig";
+  return "";
+}
+
+/** Vista previa + "quitar" (tras subir, o con la foto que ya tenía el logro al editar). */
+export function hlUploadDone(url, name) {
+  const src = hlImgUrl(url);
+  if (!src) return "";
+  return `<div class="hlv-up-done">
+    <img class="hlv-up-img" src="${src}" alt="${t("hl.imgPreviewAlt")}"/>
+    <div class="hlv-up-meta">
+      ${name ? `<span class="hlv-up-ok">${IC.checkCircle}${t("hl.imgUploaded")}</span><span class="hlv-up-name">${esc(String(name))}</span>` : ""}
+      <button type="button" class="btn btn-quiet btn--sm hlv-up-clear" data-hl-imgclear>${IC.close}${t("hl.imgRemove")}</button>
+    </div>
+  </div>`;
+}
+
+const hlUploadBusy = () =>
+  `<div class="hlv-up-busy"><span class="spinner"></span>${t("hl.imgUploading")}</div>`;
+
+/** Error honesto: el coach se entera de que NO quedó subida y de por qué. */
+export function hlUploadErr(msg) {
+  return `<div class="alert danger hlv-up-err"><span class="ai">${IC.flag}</span><div>
+    <div class="at">${t("hl.imgErrTitle")}</div>${esc(String(msg || ""))}</div></div>`;
+}
+
+/** El bloque completo que se inyecta encima del campo de URL. `url` = foto actual (o ""). */
+export function hlUploadBlock(url) {
+  return `<div class="field hlv-up">
+    <span class="label">${t("hl.fieldImage")}</span>
+    <div class="dropzone hlv-drop" data-hl-drop>
+      <div class="ill">${IC.file}</div>
+      <b class="hlv-up-title">${t("hl.imgDropTitle")}</b>
+      <p class="hlv-up-hint">${t("hl.imgHint")}</p>
+      <button type="button" class="btn btn-outline btn--sm" data-hl-pick>${t("hl.imgPick")}</button>
+      <input type="file" accept="${HL_IMAGE_MIME.join(",")}" data-hl-file style="display:none"/>
+    </div>
+    <div class="hlv-up-state" data-hl-state role="status" aria-live="polite">${hlUploadDone(url, "")}</div>
+  </div>`;
+}
+
+/* Cablea la zona de subida DENTRO del modal del kit (otrFormModal, Aula.tsx).
+   Por qué inyectar y no un modal propio: formModal no tiene tipo "file" y Aula.tsx es de
+   otro agente esta ronda; duplicar el modal costaría perder su validación de requeridos,
+   el foco, aria-describedby y el Enter/Esc. El input de URL sigue siendo el valor que lee
+   el modal al guardar, así que la subida solo tiene que escribir ahí. */
+function wireHighlightImage(scrim) {
+  const w = window;
+  const urlInput = scrim && scrim.querySelector('[data-f="imageUrl"]');
+  if (!urlInput) return;
+  const fieldWrap = urlInput.closest(".field") || urlInput.parentElement;
+  if (!fieldWrap || !fieldWrap.parentElement) return;
+
+  const holder = document.createElement("div");
+  holder.innerHTML = hlUploadBlock(urlInput.value || "");
+  const block = holder.firstElementChild;
+  fieldWrap.parentElement.insertBefore(block, fieldWrap);
+
+  const fileInput = block.querySelector("[data-hl-file]");
+  const drop = block.querySelector("[data-hl-drop]");
+  const state = block.querySelector("[data-hl-state]");
+  const okBtn = scrim.querySelector("[data-ok]");
+  const paint = (html) => { state.innerHTML = html; };
+
+  async function handle(file) {
+    const err = hlImageReject(file);
+    if (err) { paint(hlUploadErr(t(err))); w.toast?.(t(err), "warn"); fileInput.value = ""; return; }
+    paint(hlUploadBusy());
+    // Guardar a medias subida deja el logro sin foto: se bloquea el botón mientras tanto.
+    if (okBtn) okBtn.disabled = true;
+    try {
+      const res = await w.otrUpload(file, HL_UPLOAD_KIND);
+      if (!res || !res.url) throw new Error(t("hl.imgErrTitle"));
+      urlInput.value = res.url;
+      paint(hlUploadDone(res.url, res.original || file.name));
+    } catch (e) {
+      // otrUpload ya avisa por toast con el mensaje del servidor; aquí queda escrito en el
+      // formulario para que no se guarde creyendo que la foto entró.
+      paint(hlUploadErr((e && e.message) || t("hl.imgErrTitle")));
+      fileInput.value = "";
+    } finally {
+      if (okBtn) okBtn.disabled = false;
+    }
+  }
+
+  block.querySelector("[data-hl-pick]")?.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files && fileInput.files[0];
+    if (f) handle(f);
+  });
+
+  // Arrastrar y soltar sobre la zona (delegado: el botón "quitar" se repinta con el estado).
+  ["dragenter", "dragover"].forEach((ev) =>
+    drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("is-over"); }));
+  ["dragleave", "dragend", "drop"].forEach((ev) =>
+    drop.addEventListener(ev, () => drop.classList.remove("is-over")));
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) handle(f);
+  });
+
+  state.addEventListener("click", (e) => {
+    if (!e.target.closest || !e.target.closest("[data-hl-imgclear]")) return;
+    urlInput.value = "";
+    fileInput.value = "";
+    paint("");
+  });
+
+  // Si el coach usa el atajo de pegar URL, la vista previa también le responde.
+  urlInput.addEventListener("change", () => paint(hlUploadDone(urlInput.value, "")));
+}
+
+/* El modal se crea SÍNCRONAMENTE (formModal hace appendChild antes de devolver), así que
+   justo después el último .modal-scrim del documento es el nuestro. */
+function wireLastModalImage() {
+  try {
+    const all = document.querySelectorAll(".modal-scrim");
+    if (all.length) wireHighlightImage(all[all.length - 1]);
+  } catch { /* sin DOM (tests de builder) no hay nada que cablear */ }
 }
 
 function highlightPayload(v) {
@@ -183,6 +333,7 @@ S.highlights = {
           w.toast?.(t("hl.created"), "ok");
           await softRefresh();
         });
+        wireLastModalImage();
       }));
 
     // Edición: el prefill sale del API (trae la fecha en ISO y las URLs, que el payload del
@@ -201,6 +352,7 @@ S.highlights = {
             w.toast?.(t("hl.updated"), "ok");
             await softRefresh();
           });
+          wireLastModalImage();
         } catch (e) { fail(e); }
         b.disabled = false;
       }));

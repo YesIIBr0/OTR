@@ -42,6 +42,26 @@ export function safeInstagramUrl(v: unknown, max = 2000): string | null {
 }
 
 /**
+ * Foto del logro. Parte de safeUrl (la política de la casa: sin javascript:/data:) y ADEMÁS
+ * estrecha —nunca relaja— el caso NUEVO: la foto ahora se SUBE por POST /api/uploads, que
+ * acepta bastante más que imágenes (PDF, audio, video, Office). Un `/uploads/x.pdf` metido
+ * en Highlight.imageUrl no se ve: le deja un hueco roto al alumno. Como lib/uploads.ts
+ * deriva la extensión del MIME validado (safeExt), mirar la extensión de NUESTRA ruta de
+ * subidas es fiable y no necesita ir a la base.
+ * Las URLs que no son de /uploads/ (estáticos del sitio, https externo) siguen exactamente
+ * como estaban. Una foto rechazada cae a "" — "sin foto", el mismo trato que ya recibe un
+ * `javascript:` aquí — y la fila degrada a tarjeta negra en vez de romperse.
+ */
+const UPLOAD_IMAGE_EXT = /\.(png|jpe?g|webp|gif|avif)$/i;
+export function safeHighlightImageUrl(v: unknown, max = 2000): string {
+  const s = safeUrl(v, max);
+  if (!s) return "";
+  if (!/^\/uploads\//i.test(s)) return s;
+  const pathOnly = s.split("?")[0].split("#")[0];
+  return UPLOAD_IMAGE_EXT.test(pathOnly) ? s : "";
+}
+
+/**
  * "YYYY-MM-DD" (lo que emite <input type="date"> del modal del kit) → Date al MEDIODÍA local.
  * Mediodía y no medianoche a propósito: la etiqueta del payload se deriva con getDate() local
  * (queries.ts → fmtDayMonth), así que una medianoche UTC se leería como el día anterior en RD
@@ -85,7 +105,7 @@ export function cleanHighlightInput(
   if (opts.forCreate || b.title !== undefined) data.title = clean(b.title, 160);
   if (opts.forCreate || b.category !== undefined) data.category = clean(b.category, 40);
   if (opts.forCreate || b.date !== undefined) data.date = parseHighlightDate(b.date);
-  if (opts.forCreate || b.imageUrl !== undefined) data.imageUrl = safeUrl(b.imageUrl) || "";
+  if (opts.forCreate || b.imageUrl !== undefined) data.imageUrl = safeHighlightImageUrl(b.imageUrl);
 
   if (opts.forCreate || b.instagramUrl !== undefined) {
     const raw = clean(b.instagramUrl, 2000);
