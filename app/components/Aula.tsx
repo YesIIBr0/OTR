@@ -995,6 +995,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     function toggleNotif(force?: boolean) {
       notifOpen = force != null ? force : !notifOpen;
       document.getElementById("notif-panel")?.remove();
+      // [A11Y · K-06b] El disparador anuncia el estado de su panel, igual que el chip de
+      // usuario (aria-expanded en shell.ts). Se sincroniza AQUÍ y no en el clic para que
+      // toda vía de cierre —clic fuera, Escape, "marcar leídas"— lo deje coherente.
+      document.getElementById("bell")?.setAttribute("aria-expanded", String(notifOpen));
       if (!notifOpen) return;
       const panel = document.createElement("div"); panel.id = "notif-panel"; panel.className = "notif-panel";
       panel.innerHTML = `<div class="notif-head"><b>${tr("aula.notifications")}</b><button class="btn btn-quiet btn-sm" id="notif-read">${tr("aula.markRead")}</button></div><div id="notif-list">${(DB.notifications || []).map((n: any) => `<div class="notif-item ${n.unread ? "unread" : ""}"><div class="notif-ic ${n.tone}">${IC[n.ic]}</div><div class="nt-main"><div class="nt-t">${n.t}</div><div class="nt-d">${n.d}</div><div class="nt-w">${n.when}</div></div></div>`).join("")}</div><div class="notif-foot"><a href="#" onclick="return false">${tr("aula.viewAll")}</a></div>`;
@@ -1294,8 +1298,9 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     mdlObserver.observe(document.body, { childList: true });
     document.addEventListener("keydown", onModalKey, true);
 
-    // [A11Y · GOAL 2026-08 · K-06] Escape descarta los POPOVERS del top-nav (menú "Más" y
-    // menú de cuenta) y devuelve el foco a su disparador. Antes solo se cerraban con un
+    // [A11Y · GOAL 2026-08 · K-06] Escape descarta los POPOVERS del top-nav (menú "Más",
+    // menú de cuenta y panel de notificaciones) y devuelve el foco a su disparador — el del
+    // panel es #bell, dentro de "Más". Antes solo se cerraban con un
     // CLICK fuera: con teclado no había forma de descartarlos sin activar un ítem, y el
     // aria-expanded del chip se quedaba en "true" con el panel flotando sobre el contenido.
     // NO son diálogos: no se atrapa el foco ni se inerte el resto — solo el descarte que
@@ -1310,6 +1315,32 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         if (trigger && wasInside) { try { trigger.focus(); } catch { /* elemento ya fuera del DOM */ } }
       };
       let closed = false;
+
+      // [A11Y · K-06b · RONDA 3] Panel de notificaciones: el TERCER popover de la barra y el
+      // más alto — se abre desde el menú "Más", que #bell cierra al pulsarse, así que puede
+      // quedar flotando sin ningún menú detrás. Hasta ahora solo lo descartaba un clic fuera.
+      // Va PRIMERO y sale con return: un Escape descarta UNA capa (misma regla que separa el
+      // modal del popover). Se exige el elemento en el DOM, no solo el flag: si un repintado
+      // del shell se llevó el panel por delante, aquí no hay nada que cerrar.
+      const notifPanel = notifOpen ? document.getElementById("notif-panel") : null;
+      if (notifPanel) {
+        const bell = document.getElementById("bell") as HTMLElement | null;
+        // Al abrir el panel su disparador se OCULTA (el <details> que lo hospeda se cierra),
+        // y el navegador deja el foco en el <body>: ese limbo cuenta como "dentro" — si no,
+        // el flujo normal de teclado jamás recuperaría el foco.
+        const owned = !focused || focused === document.body || notifPanel.contains(focused) || focused === bell;
+        toggleNotif(false);
+        if (owned && bell) {
+          // focus() sobre el contenido de un <details> cerrado no hace nada (el foco se
+          // caería al body): se reabre el menú que hospeda al disparador. Deshace el camino
+          // tal cual se hizo —menú → campana → panel— y el siguiente Escape cierra el menú.
+          const host = bell.closest("details.tn-more") as HTMLDetailsElement | null;
+          if (host) host.open = true;
+          try { bell.focus(); } catch { /* disparador ya fuera del DOM */ }
+        }
+        e.preventDefault();
+        return;
+      }
 
       // [RONDA 3] La barra tiene DOS <details class="tn-more">: "Más" y el desplegable de
       // grupo "Progreso". Con querySelector solo se cerraba el primero — se recorren todos.

@@ -371,6 +371,65 @@ describe("K-06 · el disparador del menú de cuenta es un disclosure honesto", (
   });
 });
 
+/* ================================================================
+   K-06b · el panel de notificaciones también se descarta con Escape
+   ================================================================
+   El sondeo del 2026-08-09 lo pilló: de los tres popovers del top-nav, #notif-panel era el
+   único que Escape no cerraba (onPopoverKey solo miraba .tn-more y #sb-usermenu). Con la
+   campana ya dentro del menú "Más" el panel puede quedar flotando SIN ningún menú detrás,
+   así que con teclado no había forma de descartarlo. La suite corre en `environment: "node"`
+   (sin DOM): igual que el K-06, aquí se fija el contrato del CÓDIGO —el handler contempla el
+   panel y devuelve el foco a #bell— y el comportamiento se verificó con teclado real en el
+   navegador midiendo document.activeElement (ver el reporte de la ola). */
+describe("K-06b · Escape cierra el panel de notificaciones y devuelve el foco a #bell", () => {
+  beforeEach(shellDB);
+
+  const AULA = read("app/components/Aula.tsx");
+  const popoverHandler = () => AULA.slice(AULA.indexOf("const onPopoverKey"), AULA.indexOf('document.addEventListener("keydown", onPopoverKey)'));
+
+  it("el handler de popovers contempla el panel (antes: solo 'Más' y el menú de cuenta)", () => {
+    expect(AULA.indexOf("const onPopoverKey"), "onPopoverKey sigue siendo el sitio del Escape de popovers").toBeGreaterThan(-1);
+    const handler = popoverHandler();
+    expect(handler).toContain('document.getElementById("notif-panel")');
+    expect(handler).toContain("toggleNotif(false)");
+    expect(handler).toContain('document.getElementById("bell")');
+    expect(handler).toContain("bell.focus()");
+  });
+
+  it("el panel se atiende ANTES que los <details> y corta ahí: un Escape = una capa", () => {
+    const handler = popoverHandler();
+    const panel = handler.indexOf('const notifPanel = notifOpen ? document.getElementById("notif-panel") : null;');
+    const masLoop = handler.indexOf('document.querySelectorAll(".tn-more[open]")');
+    const userMenu = handler.indexOf('document.getElementById("sb-usermenu")');
+    expect(panel).toBeGreaterThan(-1);
+    expect(panel, "el panel es el popover más alto: va primero").toBeLessThan(masLoop);
+    expect(panel).toBeLessThan(userMenu);
+    // El return corta antes del bucle de .tn-more: si no, cerraría el menú que acaba de
+    // reabrir para poder enfocar la campana.
+    expect(handler.slice(panel, masLoop)).toContain("return;");
+  });
+
+  it("reabre el <details> que hospeda a #bell (focus() sobre contenido oculto no hace nada)", () => {
+    const handler = popoverHandler();
+    expect(handler).toContain('bell.closest("details.tn-more")');
+    expect(handler).toContain("host.open = true");
+  });
+
+  it("un modal abierto sigue teniendo prioridad: su Escape no se filtra al panel", () => {
+    // Doble candado, ya existente y que este cambio NO afloja: onModalKey corta la
+    // propagación (fase de captura) y onPopoverKey se aparta si hay .modal-scrim.
+    expect(AULA).toContain("if (x) { e.preventDefault(); e.stopPropagation(); x.click(); }");
+    expect(popoverHandler()).toContain('if (e.key !== "Escape" || document.querySelector(".modal-scrim")) return;');
+  });
+
+  it("el disparador declara aria-expanded y toggleNotif lo sincroniza al abrir y al cerrar", () => {
+    expect(shell()).toMatch(/id="bell" aria-expanded="false"/);
+    expect(AULA).toContain('document.getElementById("bell")?.setAttribute("aria-expanded", String(notifOpen));');
+    // Sin aria-controls: el panel no existe en el DOM hasta que se abre.
+    expect(shell()).not.toMatch(/id="bell"[^>]*aria-controls/);
+  });
+});
+
 describe("K-08 · 'Más' se ANUNCIA 'Más' (WCAG 2.5.3 Label in Name)", () => {
   beforeEach(shellDB);
 
