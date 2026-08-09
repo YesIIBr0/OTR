@@ -186,24 +186,24 @@
 @media (max-width:640px){ .page-head .ph-title{font-size:30px} }
 /* === FIN KIT MOCKUP 2026-08 =============================================== */
 
-/* ---------------- LOGIN ---------------- */
-.login{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr}
-.login-brand{position:relative;background:linear-gradient(160deg,var(--otr-navy),var(--otr-ink));color:#fff;padding:34px 40px;display:flex;flex-direction:column;overflow:hidden}
-.login-brand::before{content:"";position:absolute;top:-20%;right:-15%;width:60vh;height:60vh;border-radius:50%;background:radial-gradient(circle at 40% 40%,rgba(242,86,35,.45),transparent 60%);filter:blur(8px)}
-.lb-top{display:flex;align-items:center;gap:11px;position:relative;z-index:2}
-.lb-mid{margin-top:auto;margin-bottom:auto;position:relative;z-index:2;max-width:30ch}
-.lb-mid h1{font-size:clamp(30px,3.4vw,46px);line-height:1.02;font-weight:800;letter-spacing:var(--track-tighter);margin:14px 0 16px}
-.lb-sub{color:rgba(255,255,255,.72);font-size:15px;line-height:1.5}
-.lb-foot{position:relative;z-index:2;display:flex;flex-direction:column;gap:12px;color:rgba(255,255,255,.6);font-size:12.5px;font-weight:500}
-.lb-wave{display:flex;align-items:center;gap:3px;height:44px}
-.lb-wave i{flex:1;border-radius:3px;background:linear-gradient(var(--otr-sky-hi),var(--otr-sky-lo));transform-origin:center;animation:lbw 1.6s ease-in-out infinite alternate}
-@keyframes lbw{from{transform:scaleY(.55)}to{transform:scaleY(1.05)}}
-.login-form{display:flex;align-items:center;justify-content:center;padding:30px;background:var(--otr-offwhite)}
+/* ---------------- LOGIN ----------------
+   [R5 · 2026-08 · pedido de Isaac] "Remueve eso de la izquierda y solo centraliza el
+   acceso y ya. Deja arriba a la izquierda lo del logo". Se retiró la columna oscura
+   entera (.login-brand y su orb, .lb-top/.lb-mid/.lb-sub/.lb-foot, el ecualizador
+   .lb-wave y su @keyframes lbw): la pantalla es UNA columna, la tarjeta centrada
+   sobre el greige y el lockup fijado arriba a la izquierda. El aire alrededor es lo
+   que hace resaltar la tarjeta — no hay nada más que mirar. */
+.login{min-height:100vh;display:flex;flex-direction:column;background:var(--bg);padding:26px clamp(20px,4vw,40px) 40px}
+.login-mark{display:flex;align-items:center;gap:11px;flex:none}
+/* La tarjeta se centra en TODO el alto sobrante: el lockup no le roba el centro
+   porque .login-form crece (flex:1) y centra dentro de lo que queda. */
+.login-form{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 0}
 .lf-card{width:100%;max-width:380px;background:#fff;border:1px solid var(--border);border-radius:var(--r-xl);padding:32px;box-shadow:var(--sh-3)}
-.lf-card h2{font-size:22px;font-weight:800;letter-spacing:var(--track-tight)}
+.lf-card h1{font-size:22px;font-weight:800;letter-spacing:var(--track-tight)}
 .lf-or{display:flex;align-items:center;gap:12px;color:var(--text-3);font-size:12px;margin:18px 0}
 .lf-or::before,.lf-or::after{content:"";flex:1;height:1px;background:var(--border)}
-@media (max-width:860px){ .login{grid-template-columns:1fr} .login-brand{display:none} }
+/* Móvil: el aire lateral baja a 18px para que la tarjeta respire sin apretarse. */
+@media (max-width:520px){ .login{padding:20px 18px 32px} .login-form{padding:28px 0} }
 
 /* ---------------- DASHBOARD ---------------- */
 .hello-card{background:linear-gradient(120deg,var(--otr-navy),var(--otr-ink));color:#fff;border-radius:var(--r-xl);padding:26px 30px;position:relative;overflow:hidden}
@@ -888,11 +888,12 @@
 .card-head .sec-title{margin-bottom:0}
 
 /* ---- Login (app/components/Auth.tsx) ----
-   El panel de formulario pasa al canvas greige del mockup (#F1F1EF) para que la
-   tarjeta blanca se recorte igual que las cards del Aula; antes era #F7F7F7 frío. */
-.login-form{background:var(--bg)}
+   La pantalla entera es el canvas greige del mockup (#F1F1EF) para que la tarjeta
+   blanca se recorte igual que las cards del Aula; antes era #F7F7F7 frío. [R5] El
+   fondo lo pinta ahora `.login` (arriba), que desde que cayó el panel oscuro es toda
+   la superficie; `.login-form` quedó como el simple centrador de la tarjeta. */
 .lf-card{border-radius:var(--r-lg);box-shadow:var(--sh-1);border-color:var(--border)}
-.lf-card h2{font-size:26px;letter-spacing:-.035em;line-height:1.05}
+.lf-card h1{font-size:26px;letter-spacing:-.035em;line-height:1.05}
 .lf-card .muted{font-size:14px}
 /* El toggle Estudiante|Coach era una pastilla de 999px: el kit no tiene pills.
    Se re-escribe SOLO dentro de la tarjeta de login (el .aud-toggle de app.css
@@ -1335,16 +1336,20 @@
    mientras graba, que es lo correcto: ahí no hay glow que conservar. */
 .rec-btn:focus-visible{box-shadow:var(--sh-glow),var(--ring)}
 
-/* --- K-12 · prefers-reduced-motion: las cuatro animaciones que se escapaban ---
+/* --- K-12 · prefers-reduced-motion: las animaciones que se escapaban ---
    El bloque de app.css:493-507 no las alcanza (viven en screens.css, que va después).
-   La grave es `.lb-wave i`: el ecualizador del login se escala en bucle INFINITO y la
-   preferencia del sistema no lo paraba (roce con WCAG 2.2.2). */
+   [R5 · 2026-08] La entrada original de K-12 era `.lb-wave i` — el ecualizador del
+   login, que se escalaba en bucle INFINITO sin que la preferencia del sistema lo
+   parara (roce con WCAG 2.2.2). Ese elemento YA NO EXISTE: el rediseño del acceso
+   pedido por el cliente retiró el panel oscuro entero, así que la regla se cae con
+   él (una regla para un selector muerto es ruido, no protección). La invariante que
+   sí sigue viva es la de abajo, y la vigila el test de goal-e5-deudas: NINGUNA
+   animación `infinite` de screens.css puede quedar fuera de este bloque. */
 @media (prefers-reduced-motion:reduce){
   /* `animation:none` quita el bucle; `animation-play-state:paused` DESPUÉS del
      shorthand (que lo resetea a `running`) deja también el estado observable en
-     "paused" — es la señal que mide la auditoría con getComputedStyle. */
-  .lb-wave i{animation:none;animation-play-state:paused}
-  /* [GOAL E5] `.typing i` (screens.css:492) era la ÚLTIMA animación infinita que
+     "paused" — es la señal que mide la auditoría con getComputedStyle.
+     [GOAL E5] `.typing i` (screens.css:492) era la ÚLTIMA animación infinita que
      quedaba fuera: los tres puntos de "escribiendo…" del chat saltaban en bucle
      aunque el sistema pidiera menos movimiento. Mismo par shorthand+play-state. */
   .typing i{animation:none;animation-play-state:paused}
