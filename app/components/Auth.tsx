@@ -2,24 +2,18 @@
 import { useEffect, useState } from "react";
 import { otrCrest } from "../lib/icons";
 
-const WAVE = Array.from({ length: 60 }, (_, i) => {
-  const env = Math.sin((i / 59) * Math.PI);
-  // Redondeamos a 2 decimales: así `${h}%` serializa idéntico en SSR y cliente y no
-  // dispara el aviso de hydration-mismatch (el float crudo daba 16 decimales vs 4).
-  const h = Math.round((Math.min(96, 8 + env * 70 * Math.abs(Math.sin(i * 0.9)) + 6)) * 100) / 100;
-  return { h, d: (i * 0.03).toFixed(2) };
-});
+// [R5 · 2026-08 · pedido de Isaac] "Remueve eso de la izquierda y solo centraliza el
+// acceso y ya. Deja arriba a la izquierda lo del logo". El panel oscuro a sangre
+// (titular, eyebrow, párrafo, orb, ecualizador `.lb-wave` y línea de campeonatos) se
+// retiró entero: la pantalla es una sola columna con la tarjeta centrada sobre el
+// greige de marca y el lockup fijado arriba a la izquierda. Con él se fueron sus
+// strings (brandEyebrow/brandH1a/brandH1b/brandSub/brandFoot) y el array WAVE que
+// pintaba las 60 barras del ecualizador.
 
 // Tabla de strings bilingüe (es/en). El login es la primera pantalla y debe
 // hablar el idioma del visitante igual que el resto del Aula (cookie otr_lang).
 const STR = {
   es: {
-    // Brand (panel oscuro)
-    brandEyebrow: "Academia #1 del circuito dominicano",
-    brandH1a: "Domina la sala.",
-    brandH1b: "Empieza por entrenar.",
-    brandSub: "Tu aula de debate y oratoria: cursos, grabaciones, niveles y resultados — en un solo lugar.",
-    brandFoot: "10 campeonatos · 55 clasificaciones · Harvard '26",
     // Encabezados por modo
     headingLogin: "Inicia sesión",
     headingRegister: "Crea tu cuenta",
@@ -92,11 +86,6 @@ const STR = {
     errConnect: "No pudimos conectar. Inténtalo de nuevo.",
   },
   en: {
-    brandEyebrow: "#1 academy on the Dominican circuit",
-    brandH1a: "Own the room.",
-    brandH1b: "Start by training.",
-    brandSub: "Your debate and public-speaking academy: courses, recordings, levels and results — all in one place.",
-    brandFoot: "10 championships · 55 qualifications · Harvard '26",
     headingLogin: "Sign in",
     headingRegister: "Create your account",
     headingForgot: "Reset your password",
@@ -211,11 +200,27 @@ export default function Auth() {
     try { document.cookie = `otr_lang=${next};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`; } catch {}
   }
 
-  // Entrada suave de la tarjeta al montar. El estado BASE es visible (mounted parte
-  // como false → opacity 1 si reduced-motion); solo añadimos el fade-up cuando se permite.
-  const reduceMotion = typeof window !== "undefined" && window.matchMedia
-    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
-  useEffect(() => { setMounted(true); }, []);
+  // Entrada suave de la tarjeta al montar; con reduced-motion no hay entrada ninguna.
+  //
+  // [R5 · 2026-08] `reduceMotion` se leía con matchMedia DURANTE el render. En el
+  // servidor no hay window → false → el HTML salía con `style="opacity:0"`; en el
+  // cliente con la preferencia activa daba true → el render esperado NO tenía style.
+  // Eso es un desajuste de ATRIBUTOS en la hidratación, y React lo dice con todas las
+  // letras en consola: "some attributes … didn't match … This won't be patched up".
+  // El atributo del servidor se quedaba puesto para siempre y la tarjeta de acceso
+  // era INVISIBLE (opacity 0) para quien pide menos movimiento: con el panel oscuro
+  // aún se veía algo; retirado el panel, la pantalla quedaba literalmente en blanco.
+  // Visto en /aula a 1280 con reducedMotion:reduce. Se resuelve leyendo la preferencia
+  // DESPUÉS de montar: el primer render del cliente coincide con el del servidor (no
+  // hay mismatch) y el efecto quita el estilo en la misma pasada que marca `mounted`,
+  // así que la tarjeta aparece de golpe, sin transición.
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    try {
+      if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) setReduceMotion(true);
+    } catch {}
+    setMounted(true);
+  }, []);
   const cardEnter: React.CSSProperties = reduceMotion ? {} : {
     opacity: mounted ? 1 : 0,
     transform: mounted ? "none" : "translateY(10px)",
@@ -398,25 +403,17 @@ export default function Auth() {
        vive en el shell del Aula (shell.ts), que aquí no se monta. `.login` ya trae su
        display:grid, y <main> es block-level igual que el <div>: el layout no se mueve. */
     <main className="login">
-      <div className="login-brand">
-        <div className="lb-top">
-          {/* Escudo OTR del brand book (login, panel oscuro) — markup canónico en lib/icons (otrCrest) */}
-          <span
-            aria-hidden="true"
-            style={{ display: "flex", flex: "none" }}
-            dangerouslySetInnerHTML={{ __html: otrCrest({ id: "auth", attrs: 'class="crest" style="width:34px;height:36px"', ink: "#FFFFFF" }) }}
-          />
-          <span className="brand-font" style={{ color: "#fff", fontSize: 16 }}>OTR <span style={{ opacity: 0.5, fontWeight: 600 }}>Aula</span></span>
-        </div>
-        <div className="lb-mid">
-          <p className="eyebrow" style={{ color: "var(--otr-sky-hi)" }}>{T.brandEyebrow}</p>
-          <h1 className="brand-font">{T.brandH1a}<br />{T.brandH1b}</h1>
-          <p className="lb-sub">{T.brandSub}</p>
-        </div>
-        <div className="lb-foot">
-          <div className="lb-wave">{WAVE.map((w, i) => <i key={i} style={{ height: `${w.h}%`, animationDelay: `${w.d}s` }} />)}</div>
-          <span>{T.brandFoot}</span>
-        </div>
+      {/* [R5] El lockup se queda arriba a la izquierda, ahora sobre el greige claro:
+          mismo escudo + "OTR Aula", con la tinta por defecto de otrCrest (#171717,
+          igual que el del shell) porque el fondo dejó de ser el panel oscuro. Es un
+          <div>, no un <header>: la pantalla ya declara su landmark con <main>. */}
+      <div className="login-mark">
+        <span
+          aria-hidden="true"
+          style={{ display: "flex", flex: "none" }}
+          dangerouslySetInnerHTML={{ __html: otrCrest({ id: "auth", attrs: 'class="crest" style="width:34px;height:36px"' }) }}
+        />
+        <span className="brand-font" style={{ fontSize: 16 }}>OTR <span style={{ opacity: 0.5, fontWeight: 600 }}>Aula</span></span>
       </div>
       <div className="login-form">
         <div className="lf-card" style={cardEnter}>
@@ -468,7 +465,11 @@ export default function Auth() {
               ))}
             </div>
           )}
-          <h2>{heading}</h2>
+          {/* [R5] Era <h2> porque el <h1> de la página vivía en el panel oscuro. Al
+              retirarlo, el título de la tarjeta ES el encabezado principal de la
+              pantalla: si se dejara en h2 la página se quedaría sin h1 y la escalera
+              de encabezados arrancaría en el nivel 2. */}
+          <h1>{heading}</h1>
           <p className="muted" style={{ marginBottom: 22 }}>{subheading}</p>
 
           {notice && (
