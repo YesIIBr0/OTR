@@ -155,6 +155,18 @@ async function main() {
     { id: "u-sg", name: "Sigmund Castillo", email: "sigmund.castillo@otr.do", initials: "SC", level: "OTR Apprentice", xp: 2480, streak: 5, location: "La Vega, RD", debateRating: 1545, debateRd: 120, debateVol: 0.06, debateTier: "Silver", birthYear: 2010, ageBand: "minor" },
     { id: "u-cn", name: "Camila Núñez", email: "camila.nunez@otr.do", initials: "CN", level: "OTR Apprentice", xp: 1980, streak: 3, location: "Santo Domingo, RD", debateRating: 1420, debateRd: 160, debateVol: 0.062, debateTier: "Bronze", birthYear: 2010, ageBand: "minor" },
     { id: "u-df", name: "Diego Fermín", email: "diego.fermin@otr.do", initials: "DF", level: "OTR Initiate", xp: 820, streak: 0, location: "Punta Cana, RD", debateRating: 1360, debateRd: 220, debateVol: 0.065, debateTier: "Bronze", birthYear: 2011, ageBand: "minor" }, // [fix] tierFor(1360)=Bronze (no Novato)
+    // [RONDA3 · leaderboard] Cohorte ADULTA de la sede (mayores de edad ⇒ elegibles para
+    // el ranking público, igual que Analía/Silvana/Isabella). Antes el seed solo tenía 3
+    // adultos: el ranking del dashboard se quedaba en 3 filas y la tarjeta caía a "solo
+    // podio" — la lista de puestos 4-8 del mockup de Isaac no tenía a quién listar.
+    // El rating de todos queda POR DEBAJO de Analía (1720) a propósito: el podio del
+    // Debate Hub (Isabella 1850 · Silvana 1815 · Analía 1720) no se mueve.
+    // debateTier respeta tierFor(): 1450-1599 Silver, 1600-1749 Gold.
+    { id: "u-mv", name: "Mariela Valdez", email: "mariela.valdez@otr.do", initials: "MV", level: "OTR Competitor", xp: 3060, streak: 9, location: "Santiago, RD", debateRating: 1665, debateRd: 100, debateVol: 0.055, debateTier: "Gold", birthYear: 2007, ageBand: "adult" },
+    { id: "u-lp", name: "Leonel Peña", email: "leonel.pena@otr.do", initials: "LP", level: "OTR Competitor", xp: 2890, streak: 6, location: "Santo Domingo, RD", debateRating: 1620, debateRd: 105, debateVol: 0.056, debateTier: "Gold", birthYear: 2006, ageBand: "adult" },
+    { id: "u-yb", name: "Yamilet Bautista", email: "yamilet.bautista@otr.do", initials: "YB", level: "OTR Apprentice", xp: 2640, streak: 5, location: "San Cristóbal, RD", debateRating: 1565, debateRd: 115, debateVol: 0.058, debateTier: "Silver", birthYear: 2007, ageBand: "adult" },
+    { id: "u-rq", name: "Rafael Disla", email: "rafael.disla@otr.do", initials: "RD", level: "OTR Apprentice", xp: 2350, streak: 3, location: "Puerto Plata, RD", debateRating: 1510, debateRd: 125, debateVol: 0.059, debateTier: "Silver", birthYear: 2006, ageBand: "adult" },
+    { id: "u-nc", name: "Noelia Cabrera", email: "noelia.cabrera@otr.do", initials: "NC", level: "OTR Apprentice", xp: 2120, streak: 2, location: "Moca, RD", debateRating: 1470, debateRd: 140, debateVol: 0.06, debateTier: "Silver", birthYear: 2007, ageBand: "adult" },
   ];
   await db.user.createMany({
     data: students.map((s) => ({
@@ -1367,6 +1379,12 @@ async function main() {
   // por debajo de ella en rating de por vida. Son dos rankings distintos.
   // Aaron/Sigmund/Camila son MENORES: suman XP real pero el ranking público nunca los
   // muestra (regla de privacidad) — sirven para comprobar que el filtro funciona.
+  // [RONDA3] La temporada la corren OCHO adultos elegibles, que es lo que pide el mockup
+  // de Isaac: podio (1-3) a la izquierda y lista de puestos 4-8 a la derecha. El orden del
+  // mes queda: Isabella 840 · Mariela 780 · Leonel 700 · Yamilet 620 · ANALÍA 560 ·
+  // Silvana 360 · Rafael 300 · Noelia 240. Analía cae en el 5º puesto A PROPÓSITO: el
+  // mockup enseña la fila del usuario RESALTADA dentro de la lista, y con ella en el podio
+  // esa fila no existiría. Sigue por delante de Silvana, como estaba documentado.
   await db.activityEvent.createMany({
     data: [
       // Isabella Guzmán (u-is) — 840 XP
@@ -1389,6 +1407,45 @@ async function main() {
       { userId: "u-si", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 88%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.5) },
       { userId: "u-si", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Loyola", detail: "Scrim OTR · Ronda 3", xp: 120, createdAt: thisMonthAt(0.65) },
       { userId: "u-si", type: "tournament_result", source: "debate", title: "Cuartofinalista del interno OTR", detail: "Cuartos Varsity · récord 3-2", xp: 140, createdAt: thisMonthAt(0.85) },
+
+      // Mariela Valdez (u-mv) — 780 XP
+      { userId: "u-mv", type: "lesson_done", source: "course", title: "Completó “Cross-ex: preguntas que rompen el caso”", detail: "Public Forum I · Unidad 3", xp: 40, createdAt: thisMonthAt(0.18) },
+      { userId: "u-mv", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 94%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.35) },
+      { userId: "u-mv", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Babeque", detail: "Scrim OTR · Ronda 2", xp: 120, createdAt: thisMonthAt(0.5) },
+      { userId: "u-mv", type: "debate_logged", source: "debate", title: "Ganó vs Instituto Iberia", detail: "Scrim OTR · Ronda 4", xp: 120, createdAt: thisMonthAt(0.68) },
+      { userId: "u-mv", type: "tournament_result", source: "debate", title: "Finalista del interno OTR", detail: "Final Varsity · récord 4-1", xp: 240, createdAt: thisMonthAt(0.92) },
+      { userId: "u-mv", type: "session_done", source: "marketplace", title: "Sesión 1:1 con Coach Saúl", detail: "Reconstrucción del segundo contention", xp: 80, createdAt: thisMonthAt(0.8) },
+      { userId: "u-mv", type: "lesson_done", source: "course", title: "Completó “Final focus: cerrar en el impacto”", detail: "Public Forum I · Unidad 3", xp: 120, createdAt: thisMonthAt(0.6) },
+
+      // Leonel Peña (u-lp) — 700 XP
+      { userId: "u-lp", type: "lesson_done", source: "course", title: "Completó “Construir el segundo contention”", detail: "Public Forum I · Unidad 2", xp: 40, createdAt: thisMonthAt(0.22) },
+      { userId: "u-lp", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Estructura · 90%", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.38) },
+      { userId: "u-lp", type: "debate_logged", source: "debate", title: "Ganó vs Saint George", detail: "Scrim OTR · Ronda 2", xp: 120, createdAt: thisMonthAt(0.52) },
+      { userId: "u-lp", type: "debate_logged", source: "debate", title: "Ganó vs Carol Morgan School", detail: "Scrim OTR · Ronda 5", xp: 120, createdAt: thisMonthAt(0.72) },
+      { userId: "u-lp", type: "tournament_result", source: "debate", title: "Semifinalista del interno OTR", detail: "Semifinal Varsity · récord 4-1", xp: 200, createdAt: thisMonthAt(0.9) },
+      { userId: "u-lp", type: "session_done", source: "marketplace", title: "Sesión 1:1 con Coach Alberto", detail: "Cross-ex agresivo sin perder credibilidad", xp: 80, createdAt: thisMonthAt(0.83) },
+      { userId: "u-lp", type: "lesson_done", source: "course", title: "Completó “Claim · Warrant · Impact en video”", detail: "Public Forum I · Unidad 1", xp: 80, createdAt: thisMonthAt(0.3) },
+
+      // Yamilet Bautista (u-yb) — 620 XP
+      { userId: "u-yb", type: "lesson_done", source: "course", title: "Completó “Qué es Public Forum”", detail: "Public Forum I · Unidad 1", xp: 40, createdAt: thisMonthAt(0.2) },
+      { userId: "u-yb", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 86%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.42) },
+      { userId: "u-yb", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Quisqueya", detail: "Scrim OTR · Ronda 3", xp: 120, createdAt: thisMonthAt(0.58) },
+      { userId: "u-yb", type: "debate_logged", source: "debate", title: "Ganó vs Liceo Científico", detail: "Scrim OTR · Ronda 5", xp: 120, createdAt: thisMonthAt(0.74) },
+      { userId: "u-yb", type: "tournament_result", source: "debate", title: "Cuartofinalista del interno OTR", detail: "Cuartos Varsity · récord 3-2", xp: 140, createdAt: thisMonthAt(0.88) },
+      { userId: "u-yb", type: "session_done", source: "marketplace", title: "Sesión 1:1 con Coach Saúl", detail: "Primer contention: del warrant al impacto", xp: 80, createdAt: thisMonthAt(0.66) },
+      { userId: "u-yb", type: "lesson_done", source: "course", title: "Completó “Bienvenida y diagnóstico”", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.12) },
+
+      // Rafael Disla (u-rq) — 300 XP
+      { userId: "u-rq", type: "lesson_done", source: "course", title: "Completó “Bienvenida y diagnóstico”", detail: "Public Forum I · Unidad 1", xp: 40, createdAt: thisMonthAt(0.28) },
+      { userId: "u-rq", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Estructura · 82%", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.5) },
+      { userId: "u-rq", type: "debate_logged", source: "debate", title: "Ganó vs Instituto Iberia", detail: "Scrim OTR · Ronda 1", xp: 120, createdAt: thisMonthAt(0.72) },
+      { userId: "u-rq", type: "lesson_done", source: "course", title: "Completó “Qué es Public Forum”", detail: "Public Forum I · Unidad 1", xp: 80, createdAt: thisMonthAt(0.86) },
+
+      // Noelia Cabrera (u-nc) — 240 XP
+      { userId: "u-nc", type: "lesson_done", source: "course", title: "Completó “Bienvenida y diagnóstico”", detail: "Public Forum I · Unidad 1", xp: 40, createdAt: thisMonthAt(0.33) },
+      { userId: "u-nc", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Estructura · 78%", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.55) },
+      { userId: "u-nc", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Loyola", detail: "Scrim OTR · Ronda 1", xp: 120, createdAt: thisMonthAt(0.78) },
+      { userId: "u-nc", type: "lesson_done", source: "course", title: "Completó “Claim · Warrant · Impact en video”", detail: "Public Forum I · Unidad 1", xp: 20, createdAt: thisMonthAt(0.9) },
 
       // Menores (fuera del ranking público por edad, con actividad real igualmente)
       { userId: "u-aa", type: "lesson_done", source: "course", title: "Completó “Construir el segundo contention”", detail: "Public Forum I · Unidad 2", xp: 40, createdAt: thisMonthAt(0.3) },
@@ -1538,11 +1595,15 @@ async function main() {
   //  12.1) PREMIOS DE LA TEMPORADA (podio del leaderboard)
   // ----------------------------------------------------------------
   // Contenido de producto editable: el texto del premio vive en DB, no en la vista.
+  // [RONDA3 · i18n] `textEn` es el MISMO premio en inglés. Sin él la card en EN mezclaba
+  // interfaz inglesa con premios en español (fuga visible en la captura del cliente).
+  // Si algún día un premio se crea sin traducción, la vista cae al texto ES: se ve el
+  // premio real en el otro idioma, nunca una cajita vacía.
   await db.seasonPrize.createMany({
     data: [
-      { rank: 1, text: "Beca completa · próximo módulo", position: 0 },
-      { rank: 2, text: "Sesión 1:1 con coach", position: 1 },
-      { rank: 3, text: "Kit oficial OTR + credencial", position: 2 },
+      { rank: 1, text: "Beca completa · próximo módulo", textEn: "Full scholarship · next module", position: 0 },
+      { rank: 2, text: "Sesión 1:1 con coach", textEn: "1:1 session with a coach", position: 1 },
+      { rank: 3, text: "Kit oficial OTR + credencial", textEn: "Official OTR kit + credential", position: 2 },
     ],
   });
 
@@ -1560,13 +1621,17 @@ async function main() {
   // (`--hl-pos`, ver screens.css) para que no canten como repetidas.
   // SUSTITUIR por las fotos reales en cuanto lleguen; la vista ya degrada a card negra
   // si `imageUrl` viene vacío.
+  // [RONDA3 · Isaac] `instagramUrl`: cada logro enlaza a SU publicación de Instagram
+  // ("cada publicación de esa a un post de IG"). Estas cuatro son PLACEHOLDERS hasta que
+  // Isaac mande los enlaces reales de @otr.academy — sustituirlas es cambiar el string.
+  // Un highlight sin instagramUrl no navega a ningún sitio (la vista ya degrada).
   const MOCK_FOTO = "/img/hero-speaking.jpg";
   await db.highlight.createMany({
     data: [
-      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: MOCK_FOTO, position: 0 },
-      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: MOCK_FOTO, position: 1 },
-      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: MOCK_FOTO, position: 2 },
-      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: MOCK_FOTO, position: 3 },
+      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: MOCK_FOTO, instagramUrl: "https://instagram.com/p/EJEMPLO1", position: 0 },
+      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: MOCK_FOTO, instagramUrl: "https://instagram.com/p/EJEMPLO2", position: 1 },
+      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: MOCK_FOTO, instagramUrl: "https://instagram.com/p/EJEMPLO3", position: 2 },
+      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: MOCK_FOTO, instagramUrl: "https://instagram.com/p/EJEMPLO4", position: 3 },
     ],
   });
 
