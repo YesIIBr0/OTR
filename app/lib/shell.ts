@@ -199,12 +199,23 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
   const groupDef = TOPNAV_GROUP[role];
   const groupItems: NavItem[] = groupDef ? groupDef.items.map(r => flat.find(it => it.r === r)).filter((it): it is NavItem => !!it) : [];
   const groupActive = groupItems.some(it => it.r === activeNav);
-  // Si la ruta activa no estaba entre las elegidas se AÑADE a los links visibles: la barra
-  // nunca esconde DÓNDE ESTÁS. Excepción: 'messages' ya tiene sitio FIJO a la derecha
-  // (el icono que sustituyó a la campana) — inyectarla otra vez era exactamente la queja de
-  // Isaac ("¿por qué se abre otra pestaña arriba?"), así que la marca la lleva el icono.
+  // [SONDEO 2026-08-09 · R4] La barra tiene un número FIJO de destinos por rol. Antes, la ruta
+  // activa que no estaba entre los elegidos se INYECTABA como un link más ("la barra nunca
+  // esconde dónde estás") — y eso ES la queja de Isaac: entrar en "Buscar coaches" (#explore) o
+  // "Buscar clases" (#listings) abría una pestaña nueva arriba. El caso de 'catalog' se cerró
+  // cambiando su nav a 'course' porque el catálogo SÍ es un sub-tab de Cursos; con estas dos NO
+  // se puede: para el PADRE 'explore'/'listings' son secciones propias y legítimas (ocupan dos
+  // de sus cuatro links, grupo "Marketplace"), así que repuntar su `nav` a otra sección dejaría
+  // la barra del padre sin nada activo. Como `nav` es por RUTA y no por rol, la respuesta vive
+  // aquí: el destino excedente NO crece la barra; la marca la lleva su CONTENEDOR, el
+  // desplegable "Más" (mismo patrón que el grupo "Progreso" y que el icono de Mensajes), y
+  // dentro sigue con .active + aria-current="page". Se sabe dónde estás sin abrir una pestaña.
+  // Excepción: rutas que YA tienen marca en un sitio FIJO de la barra — 'messages' en el icono
+  // de la derecha y 'profile'/'membership'/'settings' en el chip de usuario. Para esas, "Más"
+  // tampoco se ilumina: la marca ya está puesta y duplicarla confunde.
+  const FIXED_MARK = ['messages', 'profile', 'membership', 'settings'];
   const activeItem = flat.find(it => it.r === activeNav);
-  if (activeItem && !inline.includes(activeItem) && !groupActive && activeItem.r !== 'messages') inline.push(activeItem);
+  const overflowActive = !!activeItem && !inline.includes(activeItem) && !groupActive && !FIXED_MARK.includes(activeNav);
   const inlineSet = new Set([...inline, ...groupItems].map(it => it.r));
 
   const linksHtml = inline.map(it => {
@@ -314,8 +325,8 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
                  [RONDA 3] Lleva id para poder ubicarlo sin ambigüedad ahora que hay DOS
                  <details class="tn-more"> en la barra, y ya nunca se esconde: además de la
                  navegación excedente guarda el acceso a Notificaciones. */""}
-            <details class="tn-more" id="tn-more">
-              <summary aria-label="${t('top.more', lang)}">${IC.menu}<span class="lbl">${t('top.more', lang)}</span><span class="chev">${IC.chevD}</span></summary>
+            <details class="tn-more${overflowActive?' active':''}" id="tn-more">
+              <summary aria-label="${t('top.more', lang)}"${overflowActive?' aria-current="true"':''}>${IC.menu}<span class="lbl">${t('top.more', lang)}</span><span class="chev">${IC.chevD}</span></summary>
               <div class="tn-menu">${moreHtml}${notifsHtml}</div>
             </details>
           </div>

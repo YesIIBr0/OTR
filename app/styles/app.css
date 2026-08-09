@@ -153,6 +153,13 @@ button.tn-mi{width:100%;border:0;background:transparent;appearance:none;-webkit-
 .tn-more.tn-nav > summary .chev{width:12px;height:12px}
 .tn-menu--nav{width:214px}
 .tn-msep{height:1px;margin:6px 3px;background:var(--border)}
+/* [SONDEO 2026-08-09 · R4] Estar en un destino del EXCEDENTE ("Buscar coaches", "Buscar
+   clases"…) ya no añade una pestaña a la barra: la marca la lleva el propio disparador de
+   "Más". Mismo lenguaje que el link activo (14/700 en negro) sobre el fondo hundido que la
+   píldora ya usa al abrirse — no se inventa un estilo nuevo. Va por ID (#tn-more) a
+   propósito: `.tn-more` la comparte el desplegable de grupo "Progreso", que tiene su propia
+   marca de activo (.tn-nav.active, arriba) y NO debe recibir el fondo hundido. */
+#tn-more.active > summary{background:var(--bg-sunken);color:var(--otr-black);font-weight:700}
 /* 3) El tile de la derecha dejó de ser <button id="bell"> y pasó a ser <a> a Mensajes: hay
       que apagarle el subrayado global de los enlaces y darle marca de activo (es lo único
       que señala "estás en Mensajes": la ruta ya no se inyecta como link en la barra). */
