@@ -106,6 +106,23 @@
   --danger:#C8401A; --danger-soft:#FBDDD2;      /* peligro = naranja oscuro */
   --info:#4D4D4D; --info-soft:#EFEFEF;          /* info = gris frío */
 
+  /* ---- Resultado y tiers del DEBATE (pedido de Isaac, 2026-08-09) ----------
+     Única excepción declarada a "el naranja es el acento único": en el Debate Hub
+     el color NO decora, SIGNIFICA — victoria/derrota y el metal del tier. Textual
+     del cliente: "las W verde", "las L así negro", "que no sea «Gold» en naranja,
+     que sea gold", "si dice «platinum» ... que sea en platino". Se whitelistean uno
+     a uno en tests/brand-palette.test.ts (con su medición); nadie puede meter otro
+     hex por esta puerta.
+     Contraste MEDIDO (WCAG 2.1, luminancia relativa) — el script vive en el commit:
+       · --win #2FA84F   con la letra negra #171717 encima → 5,83:1  (AA, ≥4,5)
+       · --tier-gold #D4AF37      letra negra → 8,53:1 · como texto sobre #171717 → 8,53:1
+       · --tier-platinum #D6D5D1  letra negra → 12,21:1 · como texto sobre #171717 → 12,21:1
+     La derrota es el NEGRO de marca (--otr-black) y se contornea con
+     rgba(255,255,255,.38) = 3,57:1 sobre la card negra (WCAG 1.4.11 pide 3:1). */
+  --win:#2FA84F;
+  --tier-gold:#D4AF37;
+  --tier-platinum:#D6D5D1;
+
   /* ---- Niveles (competencias): gris claro → negro → naranja (elite) ---- */
   --lvl-novato:#BDBDBD;
   --lvl-jv:#8C8C8C;

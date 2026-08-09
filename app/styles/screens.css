@@ -1873,3 +1873,62 @@ a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
   .cls-row-thumb{width:46px;height:46px}
   .cls-row-t{font-size:15px}
 }
+
+/* === RONDA3 · DEBATE TIERS (Isaac) ==========================================
+   Feedback textual del cliente (2026-08-09) sobre la tarjeta OSCURA de rating del
+   Debate Hub — "YOUR GLICKO-2 RATING / 1720 / GOLD / RECENT FORM W L W W L":
+     · "Las W - verde"                         → victoria en --win
+     · "Las L - así negro"                     → derrota en el NEGRO de marca
+     · "que no sea «Gold» en naranja, que sea gold"      → chip y texto en --tier-gold
+     · "Si dice «platinum» ... que sea en platino"       → ídem en --tier-platinum
+     · "Al cuadrado atrás ponle la foto del estudiante"  → .hero-photo con --hero-img
+     · "Igualito que en dashboard"             → MISMO mecanismo que el héroe del
+       dashboard (.hero-photo + --hero-img, sección MOCKUP V2 de este archivo).
+   Va al FINAL del archivo a propósito: pisa por ORDEN DE ORIGEN a .form-sq--win/loss
+   y a .chip--accent (misma especificidad) sin inflar selectores. Los tres colores son
+   tokens semánticos declarados en tokens.css con su contraste medido.
+   ========================================================================== */
+
+/* --- Resultado de la ronda: la victoria CANTA, la derrota se apaga en negro ---
+   La letra sigue en negro sobre el verde (mismo contrato que --text-on-accent:
+   5,83:1). La derrota es negro sobre negro, así que necesita contorno propio:
+   inset box-shadow (no border) para no tocar los 32×32 del cuadrado; 3,57:1
+   sobre la card, por encima del 3:1 que WCAG 1.4.11 pide a un componente. */
+.form-sq--win{background:var(--win);color:var(--text-on-accent)}
+.form-sq--loss{background:var(--otr-black);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.38)}
+
+/* --- Tier en su metal (chip del rating y texto de "Próximo tier") ---
+   El chip conserva la geometría del kit (.chip + .chip--accent); aquí solo cambia
+   la pareja fondo/texto. Texto NEGRO sobre el metal, igual que sobre el naranja. */
+.chip--tier-gold{background:var(--tier-gold);color:var(--text-on-accent)}
+.chip--tier-platinum{background:var(--tier-platinum);color:var(--text-on-accent)}
+/* `.dbt-sub b` pinta el nombre del próximo tier en naranja; cuando ese nombre ES
+   un metal, manda el metal (2 clases + elemento gana a la regla de una clase). */
+.dbt-sub b.dbt-tier--gold{color:var(--tier-gold)}
+.dbt-sub b.dbt-tier--platinum{color:var(--tier-platinum)}
+
+/* --- La FOTO del estudiante detrás de la tarjeta ---------------------------
+   .hero-photo (kit) pone la foto y el velo; aquí solo se OSCURECE el velo, porque
+   esta card no lleva un titular blanco de 31px sino etiquetas de 10-12px al 55%
+   de blanco. Medido contra el peor caso posible (una foto BLANCA debajo):
+     velo .84 → fondo #383838 → .lbl (rgba(255,255,255,.55)) 4,76:1 · AA
+     velo .94 (izquierda, donde vive el rating 64px) → contraste ampliamente AAA
+   El delta de cada ronda (--n-400 sobre negro) sí se aclara a --ink-300 cuando hay
+   foto: 5,65:1 en ese mismo peor caso (con --n-400 caía a 3,48:1). */
+.dbt-card--photo.hero-photo::before{
+  background-image:
+    linear-gradient(100deg,rgba(18,18,18,.94) 0%,rgba(18,18,18,.90) 46%,rgba(18,18,18,.84) 100%),
+    var(--hero-img,none);
+}
+.card--dark.dbt-card--photo .form-d{color:var(--ink-300)}
+/* Sin foto la card no cambia: sigue con el halo naranja de .card--glow y solo se
+   suma el avatar de iniciales del kit (identidad honesta, nada inventado). */
+.dbt-face{display:inline-flex;flex:none}
+.dbt-face .avatar{color:#fff;font-weight:700}
+
+/* --- Cara de OBSERVADOR del staff (M1 del sondeo) ---
+   Sin rating propio: la card negra hospeda tres cifras REALES del payload. */
+.dbt-staff{display:flex;flex-wrap:wrap;gap:26px;align-items:center;justify-content:space-between}
+.dbt-staff .dbt-staff-lead{max-width:52ch}
+.dbt-staff .stat-group{gap:26px}
+/* === FIN RONDA3 · DEBATE TIERS ============================================= */
