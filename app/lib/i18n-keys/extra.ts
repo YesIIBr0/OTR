@@ -33,7 +33,6 @@ export const dict = {
     "extra.renameFailed": "No se pudo renombrar",
     "extra.reorderFailed": "No se pudo guardar el orden",
     // Catalog
-    "extra.eyebrowAcademy": "Academia OTR",
     "extra.catalogTitle": "Catálogo de cursos",
     "extra.catalogSub": "Explora e inscríbete en los cursos de OTR",
     "extra.catalogEmptyHeading": "Sin cursos disponibles",
@@ -44,7 +43,6 @@ export const dict = {
     "extra.welcomeVideoBtn": "Presentación",
     "extra.close": "Cerrar",
     // Teacher: My courses
-    "extra.eyebrowTeacher": "Profesor",
     "extra.myCoursesTitle": "Mis cursos",
     "extra.myCoursesSub": "Crea un curso y entra a construirlo: secciones, lecciones, exámenes y tareas",
     "extra.newCourse": "Nuevo curso",
@@ -55,7 +53,6 @@ export const dict = {
     // el curso es de la academia y el coach es quien RESPONDE por él. Se rotula "Coach
     // responsable" en toda la consola (7 apariciones); el inglés conserva "owner", que allí sí
     // es el término natural del producto.
-    "extra.eyebrowAdmin": "Administración",
     "extra.allCoursesTitle": "Cursos",
     "extra.allCoursesSub": "Todos los cursos de la plataforma, con su coach responsable",
     "extra.allCoursesEmptyHeading": "Aún no hay cursos en la plataforma",
@@ -84,7 +81,6 @@ export const dict = {
     "extra.builderSelectHeading": "Selecciona un curso",
     "extra.builderSelectBody": "Vuelve a \"Mis cursos\" y pulsa \"Construir curso\".",
     "extra.viewMyCourses": "Ver mis cursos",
-    "extra.eyebrowTeacherBuilder": "Profesor · Constructor de curso",
     "extra.editModeActiveSub": "Modo edición activo — añade secciones y actividades",
     "extra.readOnlySub": "Vista de solo lectura — activa el modo edición para construir",
     "extra.toggleEditTooltip": "Mostrar/ocultar controles de edición",
@@ -97,7 +93,6 @@ export const dict = {
     "extra.noSectionsBody": "Añade tu primera sección para organizar el contenido del curso.",
     "extra.addSection": "Añadir sección",
     // Search
-    "extra.searchEyebrow": "Búsqueda",
     "extra.searchResultsFor": "Resultados para",
     "extra.resultSingular": "resultado",
     "extra.resultPlural": "resultados",
@@ -141,7 +136,6 @@ export const dict = {
     "extra.renameFailed": "Couldn't rename",
     "extra.reorderFailed": "Couldn't save the order",
     // Catalog
-    "extra.eyebrowAcademy": "OTR Academy",
     "extra.catalogTitle": "Course catalog",
     "extra.catalogSub": "Browse and enroll in OTR courses",
     "extra.catalogEmptyHeading": "No courses available",
@@ -152,14 +146,12 @@ export const dict = {
     "extra.welcomeVideoBtn": "Intro",
     "extra.close": "Close",
     // Teacher: My courses
-    "extra.eyebrowTeacher": "Teacher",
     "extra.myCoursesTitle": "My courses",
     "extra.myCoursesSub": "Create a course and start building it: sections, lessons, quizzes, and assignments",
     "extra.newCourse": "New course",
     "extra.myCoursesEmptyHeading": "No courses yet",
     "extra.myCoursesEmptyBody": "Create your first course to start building its content.",
     // [GOAL-E4 #9] ADMIN view of the same screen: full catalog with its owner.
-    "extra.eyebrowAdmin": "Administration",
     "extra.allCoursesTitle": "Courses",
     "extra.allCoursesSub": "Every course on the platform, with the coach who owns it",
     "extra.allCoursesEmptyHeading": "No courses on the platform yet",
@@ -188,7 +180,6 @@ export const dict = {
     "extra.builderSelectHeading": "Select a course",
     "extra.builderSelectBody": "Go back to \"My courses\" and click \"Build course\".",
     "extra.viewMyCourses": "View my courses",
-    "extra.eyebrowTeacherBuilder": "Teacher · Course builder",
     "extra.editModeActiveSub": "Edit mode on — add sections and activities",
     "extra.readOnlySub": "Read-only view — turn on edit mode to build",
     "extra.toggleEditTooltip": "Show/hide editing controls",
@@ -201,7 +192,6 @@ export const dict = {
     "extra.noSectionsBody": "Add your first section to organize the course content.",
     "extra.addSection": "Add section",
     // Search
-    "extra.searchEyebrow": "Search",
     "extra.searchResultsFor": "Results for",
     "extra.resultSingular": "result",
     "extra.resultPlural": "results",

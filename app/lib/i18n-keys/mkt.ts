@@ -42,7 +42,6 @@ export const dict = {
     "mkt.specAll": "Todos",
 
     // grid: encabezado
-    "mkt.eyebrow": "Marketplace",
     "mkt.title": "Coaches",
     "mkt.subtitle": "Entrena 1:1 con los coaches de debate y oratoria de OTR",
 
@@ -192,7 +191,6 @@ export const dict = {
     "mkt.specAll": "All",
 
     // grid: header
-    "mkt.eyebrow": "Marketplace",
     "mkt.title": "Coaches",
     "mkt.subtitle": "Train 1:1 with OTR's debate and public-speaking coaches",
 

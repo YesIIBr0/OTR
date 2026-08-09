@@ -7,7 +7,6 @@
 export const dict = {
   es: {
     // entrega de tarea · cabecera
-    "learn.assignmentEyebrow": "Entrega de tarea",
 
     // tarjeta "Tu entrega"
     "learn.yourSubmission": "Tu entrega",
@@ -99,7 +98,6 @@ export const dict = {
     "learn.passWithPrefix": "aprobado con",
 
     // examen · cabecera y navegación
-    "learn.unitExamEyebrow": "Examen de unidad",
     "learn.previous": "Anterior",
     "learn.next": "Siguiente",
     "learn.finishExam": "Finalizar examen",
@@ -145,7 +143,6 @@ export const dict = {
   },
   en: {
     // assignment · header
-    "learn.assignmentEyebrow": "Assignment submission",
 
     // "Your submission" card
     "learn.yourSubmission": "Your submission",
@@ -237,7 +234,6 @@ export const dict = {
     "learn.passWithPrefix": "pass with",
 
     // exam · header and navigation
-    "learn.unitExamEyebrow": "Unit exam",
     "learn.previous": "Previous",
     "learn.next": "Next",
     "learn.finishExam": "Finish exam",

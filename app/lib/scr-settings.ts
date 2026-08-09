@@ -214,7 +214,7 @@ S.settings = {
     const guardianRequests = role === "STUDENT" && Array.isArray(DB.pendingGuardianRequests) ? DB.pendingGuardianRequests : [];
 
     return `
-    <div class="page-head page-head--rule fade-up"><div><p class="ph-eyebrow">${t("settings.eyebrow")}</p>
+    <div class="page-head page-head--rule fade-up"><div>
       <h1 class="ph-title">${t("settings.title")}</h1>
       <div class="page-sub">${t("settings.subtitle")}</div></div></div>
 

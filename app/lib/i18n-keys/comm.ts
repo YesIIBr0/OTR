@@ -37,7 +37,6 @@ export const dict = {
     "comm.thread.postError": "Error al publicar",
 
     // mensajes · cabecera, hilo y vacío
-    "comm.msg.eyebrow": "Comunidad",
     "comm.msg.title": "Mensajes",
     "comm.msg.sub": "Habla con tus coaches y compañeros",
     "comm.msg.searchPh": "Buscar…",
@@ -102,7 +101,6 @@ export const dict = {
     "comm.thread.postError": "Couldn't post",
 
     // messages · header, thread and empty
-    "comm.msg.eyebrow": "Community",
     "comm.msg.title": "Messages",
     "comm.msg.sub": "Talk with your coaches and peers",
     "comm.msg.searchPh": "Search…",

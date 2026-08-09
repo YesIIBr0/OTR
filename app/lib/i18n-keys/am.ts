@@ -5,7 +5,6 @@
 export const dict = {
   es: {
     // page head
-    "am.eyebrow": "Administración",
     "am.title": "Métricas de negocio",
     "am.subtitle": "Usuarios, reservas, debates y cursos — el estado de OTR de un vistazo",
     "am.exportEnrollments": "Exportar inscripciones (CSV)",
@@ -61,7 +60,6 @@ export const dict = {
   },
   en: {
     // page head
-    "am.eyebrow": "Administration",
     "am.title": "Business metrics",
     "am.subtitle": "Users, bookings, debates and courses — OTR's status at a glance",
     "am.exportEnrollments": "Export enrollments (CSV)",

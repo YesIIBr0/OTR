@@ -5,7 +5,6 @@
 export const dict = {
   es: {
     // ① Hero de identidad
-    "lifetime.heroEyebrow": "Tu historia en OTR",
     "lifetime.minorProtected": "Menor — cuenta protegida",
     "lifetime.studentFallback": "Estudiante OTR",
 
@@ -126,7 +125,6 @@ export const dict = {
   },
   en: {
     // ① Identity hero
-    "lifetime.heroEyebrow": "Your story at OTR",
     "lifetime.minorProtected": "Minor — protected account",
     "lifetime.studentFallback": "OTR Student",
 

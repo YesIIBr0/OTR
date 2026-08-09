@@ -5,7 +5,6 @@
 export const dict = {
   es: {
     // page head
-    "parent.eyebrow": "Portal de familia",
     "parent.title": "Pruebas y tranquilidad",
     "parent.subtitle": "El progreso real de tu hijo/a, cada sesión segura y cada peso bajo tu control",
 
@@ -168,7 +167,6 @@ export const dict = {
   },
   en: {
     // page head
-    "parent.eyebrow": "Family Portal",
     "parent.title": "Proof and peace of mind",
     "parent.subtitle": "Your child's real progress, every session secure, and every dollar under your control",
 

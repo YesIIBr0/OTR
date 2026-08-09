@@ -220,7 +220,6 @@ export const dict = {
     "core.clsAboutFallback": "Tu coach aún no ha escrito la descripción de esta clase.",
 
     /* ── [RONDA3 · CURSOS] "Mis clases" como LISTA + catálogo por categorías ── */
-    "core.clsEyebrow": "Tu formación",
     "core.clsStatPrograms": "Programas",
     "core.clsStatAvg": "Progreso medio",
     "core.clsFilterAll": "Todas",
@@ -549,7 +548,6 @@ export const dict = {
     "core.clsAboutFallback": "Your coach hasn't written the description for this class yet.",
 
     /* ── [RONDA3 · CURSOS] "My classes" as a LIST + catalog by category ── */
-    "core.clsEyebrow": "Your training",
     "core.clsStatPrograms": "Programs",
     "core.clsStatAvg": "Average progress",
     "core.clsFilterAll": "All",

@@ -20,6 +20,15 @@ const SCREENS = read("app/styles/screens.css");
 const AUTH = read("app/components/Auth.tsx");
 const COMPONENTS = read("app/lib/components.ts");
 
+/* [R5] Versiones sin comentarios. Los guardianes que exigen la AUSENCIA de un selector
+   o de una string deben mirar el CÓDIGO: la prosa que explica por qué se borró algo
+   nombra por fuerza lo borrado, y si no se despoja el archivo el propio comentario
+   hace fallar al test (o, peor, empuja a escribir comentarios mudos). */
+const noComments = (src: string) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
+const SCREENS_CODE = noComments(SCREENS);
+const AUTH_CODE = noComments(AUTH);
+
 /* ================================================================
    Contraste WCAG 2.1 (§1.4.11 · no-text contrast, mínimo 3:1)
    ================================================================ */
@@ -124,11 +133,19 @@ describe("K-01 · foco visible en .btn-primary / .btn-accent / .rec-btn.recordin
     expect(focusRule!.index).toBeGreaterThan(killer);
   });
 
-  it("hover + foco conserva el glow del acento y suma el anillo", () => {
-    const m = /\.btn\.btn-accent:hover:focus-visible\{([^}]*)\}/.exec(SCREENS);
-    expect(m).toBeTruthy();
-    expect(m![1]).toContain("var(--sh-glow)");
-    expect(m![1]).toContain("var(--ring)");
+  it("hover + foco NUNCA se queda sin anillo (ni en el acento ni en el primario)", () => {
+    // [ISAAC 2026-08-09] Antes este test exigía además `var(--sh-glow)`: el CTA de acción
+    // era naranja y llevaba un glow naranja al hover, que había que conservar al sumar el
+    // anillo. Ahora el CTA es NEGRO con texto blanco y no tiene glow, así que la única
+    // propiedad que este test protege —y la única que importa para WCAG 2.4.7— es que el
+    // par hover+foco no vuelva a quedarse en `box-shadow:none`.
+    for (const sel of [".btn.btn-accent", ".btn.btn-primary"]) {
+      const re = new RegExp(sel.replace(/\./g, "\\.") + ":hover:focus-visible\\{([^}]*)\\}");
+      const m = re.exec(SCREENS);
+      expect(m, `falta ${sel}:hover:focus-visible`).toBeTruthy();
+      expect(m![1]).toContain("var(--ring)");
+      expect(m![1]).not.toMatch(/box-shadow:\s*none/);
+    }
   });
 });
 
@@ -145,12 +162,27 @@ describe("K-12 · prefers-reduced-motion", () => {
     expect(block, "falta el @media reduce de K-12 en screens.css").toBeTruthy();
   });
 
-  it("para la animación INFINITA de .lb-wave i (WCAG 2.2.2) y deja el estado en paused", () => {
-    const m = /\.lb-wave i\{([^}]*)\}/.exec(block![1]);
+  /* [R5 · 2026-08] Este `it` exigía `.lb-wave i{animation:none;animation-play-state:paused}`.
+     `.lb-wave` era el ecualizador del panel oscuro del login, y ese panel se retiró
+     entero por pedido del cliente ("remueve eso de la izquierda y solo centraliza el
+     acceso"): ya no hay elemento que animar, así que exigir su regla obligaría a
+     mantener CSS muerto. La deuda que K-12 protege no se relaja — se reformula en las
+     dos comprobaciones de abajo: (1) el ecualizador está de verdad fuera del producto
+     y (2) la animación infinita que SÍ queda (`.typing i`) sigue apagada. La regla
+     general "ninguna animación infinite de screens.css fuera del bloque reduce" la
+     vigila además tests/goal-e5-deudas.test.ts. */
+  it("el ecualizador .lb-wave ya no existe en el producto (panel del login retirado)", () => {
+    expect(SCREENS_CODE).not.toContain(".lb-wave");
+    expect(SCREENS_CODE).not.toContain("@keyframes lbw");
+    expect(AUTH_CODE).not.toContain("lb-wave");
+  });
+
+  it("para la animación INFINITA que queda, .typing i (WCAG 2.2.2), y deja el estado en paused", () => {
+    const m = /\.typing i\{([^}]*)\}/.exec(block![1]);
     expect(m).toBeTruthy();
-    expect(m![1]).toContain("animation:none");
     // `animation:none` resetea play-state a `running`; el paused explícito va después
     // para que la medición por getComputedStyle también lo refleje.
+    expect(m![1]).toContain("animation:none");
     expect(m![1]).toContain("animation-play-state:paused");
   });
 
@@ -159,6 +191,33 @@ describe("K-12 · prefers-reduced-motion", () => {
       expect(block![1]).toContain(sel);
     }
     expect(block![1]).toMatch(/transition:none/);
+  });
+});
+
+/* ================================================================
+   [R5 · 2026-08] La tarjeta de acceso NO puede depender de un valor
+   distinto en servidor y cliente para ser visible
+   ================================================================ */
+describe("R5 · reduced-motion no puede dejar invisible la tarjeta de acceso", () => {
+  /* La entrada de la tarjeta arranca en `opacity:0`. Cuando la preferencia de
+     movimiento se leía con matchMedia DURANTE el render, servidor (sin window →
+     false) y cliente (true) discrepaban: React avisa "some attributes … didn't
+     match … This won't be patched up" y el `style="opacity:0"` del servidor se
+     quedaba puesto. Resultado medido en /aula con reducedMotion:reduce: la tarjeta
+     nunca se veía y la pantalla quedaba en blanco. La preferencia se lee ahora tras
+     montar, así que el primer render del cliente coincide con el del servidor. */
+  it("la preferencia se lee después de montar (estado), no durante el render", () => {
+    expect(AUTH_CODE).toContain("const [reduceMotion, setReduceMotion] = useState(false)");
+    expect(
+      AUTH_CODE,
+      "reduceMotion vuelve a calcularse en el render: eso reabre el mismatch de hidratación",
+    ).not.toMatch(/const\s+reduceMotion\s*=[\s\S]{0,160}matchMedia/);
+  });
+
+  it("el único matchMedia del componente vive dentro de un useEffect", () => {
+    const effects = [...AUTH_CODE.matchAll(/useEffect\(\(\) => \{[\s\S]*?\n {2}\}, \[\]\);/g)].join("\n");
+    expect((AUTH_CODE.match(/matchMedia/g) || []).length).toBe(1);
+    expect(effects).toContain("matchMedia");
   });
 });
 
@@ -181,6 +240,30 @@ describe("K-04/K-05 · login", () => {
     const line = AUTH.split("\n").find((l) => l.includes('id="auth-password"'))!;
     expect(line).toContain("current-password");
     expect(line).toContain("new-password");
+  });
+
+  /* [R5 · 2026-08] Rediseño pedido por el cliente: una sola columna, tarjeta centrada,
+     lockup arriba a la izquierda. Se fija aquí para que un refactor no reviva el panel. */
+  it("no queda rastro del panel oscuro de la izquierda", () => {
+    for (const dead of ["login-brand", "lb-top", "lb-mid", "lb-sub", "lb-foot", "brandEyebrow", "brandH1a", "brandFoot"]) {
+      expect(AUTH_CODE, `Auth.tsx aún usa ${dead}`).not.toContain(dead);
+    }
+    for (const dead of [".login-brand", ".lb-top", ".lb-mid", ".lb-sub", ".lb-foot"]) {
+      expect(SCREENS_CODE, `screens.css aún declara ${dead}`).not.toContain(dead);
+    }
+  });
+
+  it("conserva el lockup arriba a la izquierda y la tarjeta queda centrada", () => {
+    expect(AUTH_CODE).toContain('className="login-mark"');
+    expect(AUTH_CODE).toContain("otrCrest(");
+    // El título de la tarjeta es ahora el h1 de la página (antes vivía en el panel).
+    expect(AUTH_CODE).toContain("<h1>{heading}</h1>");
+    const layout = /\.login\{([^}]*)\}/.exec(SCREENS_CODE);
+    expect(layout).toBeTruthy();
+    expect(layout![1], ".login ya no debe ser una rejilla de dos columnas").not.toContain("grid-template-columns");
+    const form = /\.login-form\{([^}]*)\}/.exec(SCREENS_CODE);
+    expect(form![1]).toContain("align-items:center");
+    expect(form![1]).toContain("justify-content:center");
   });
 });
 

@@ -300,7 +300,6 @@ S.highlights = {
     const back = `<div class="hlv-back">${C.btn(t("hl.back"), "outline", { size: "sm", ic: "chevL", attrs: 'data-go="dashboard"' })}</div>`;
 
     const head = `<div class="page-head page-head--rule fade-up"><div>
-        <span class="ph-eyebrow">${t("hl.eyebrow")}</span>
         <h1 class="ph-title">${t("hl.title")}</h1>
         <div class="page-sub" style="margin-top:8px">${t("hl.subtitle")}</div></div>
       <div class="hlv-head-acts">

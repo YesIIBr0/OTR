@@ -175,7 +175,7 @@ export const S = {
       const coaches = coachList();
       const formats = [...new Set((DB.catalog || []).map((c) => c.format).filter(Boolean))];
       return `
-      <div class="page-head page-head--rule"><div><p class="ph-eyebrow">OTR Hub</p><div class="ph-title">${t("hub.exploreTitle")}</div>
+      <div class="page-head page-head--rule"><div><div class="ph-title">${t("hub.exploreTitle")}</div>
       <div class="page-sub">${t("hub.exploreSub")}</div></div></div>
 
       <div class="mkt-fbar" style="margin-bottom:22px" id="ex-filters">
@@ -224,7 +224,7 @@ export const S = {
       const rest = (DB.catalog || []).filter((c) => !c.enrolled);
       const sessions = { Ligero: 1, "Estándar": 2, Intensivo: 3 }[prefs.pace] || 2;
       return `
-      <div class="page-head page-head--rule"><div><p class="ph-eyebrow">OTR Hub</p><div class="ph-title">${t("hub.xpTitle")}</div>
+      <div class="page-head page-head--rule"><div><div class="ph-title">${t("hub.xpTitle")}</div>
       <div class="page-sub">${t("hub.xpSub")}</div></div>
       ${C.chip(t("hub.xpAutosave"), "tint")}</div>
 

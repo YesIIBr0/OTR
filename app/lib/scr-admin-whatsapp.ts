@@ -147,9 +147,8 @@ S.adminWhatsapp = {
   render(state) {
     const st = waState();
     return `
-    <!-- [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior. -->
+    <!-- [MOCKUP 2026-08] Cabecera del kit: h1 de 40px + línea inferior (sin eyebrow, R3). -->
     <div class="page-head page-head--rule fade-up"><div>
-      <p class="ph-eyebrow">${t("wap.eyebrow")}</p>
       <h1 class="ph-title">${t("wap.title")}</h1>
       <div class="page-sub">${t("wap.subtitle")}</div>
     </div></div>

@@ -427,7 +427,6 @@ S.parentPortal = {
     const pending = (DB.parent && Array.isArray(DB.parent.pendingLinks)) ? DB.parent.pendingLinks : [];
     const head = `
     <div class="page-head page-head--rule"><div>
-      <p class="ph-eyebrow">${t("parent.eyebrow")}</p>
       <h1 class="ph-title">${t("parent.title")}</h1>
       <div class="page-sub">${t("parent.subtitle")}</div>
     </div></div>`;

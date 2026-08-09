@@ -1,8 +1,21 @@
 /* ============================================================
    OTR LMS · DESIGN TOKENS — ESTÉTICA MOCKUP 2026-08-07
    sobre OTR BRAND BOOK V1.0 (2026)
-   Paleta ESTRICTA: Negro #171717 · Naranja #F25623 como ÚNICO acento.
-   Sin verde, sin oro, sin azul.
+   Paleta: Negro #171717 + blanco/grises DOMINANTES · Naranja #F25623 como acento
+   PUNTUAL · Verde #2FA84F como color SEMÁNTICO (progreso y completado).
+   Sin azul.
+
+   [ISAAC · 2026-08-09 · "igual demasiado naranja"] Textual del cliente:
+   «Reemplaza más por negro con blanco. Para completed - verde. Para progress bar
+   - verde. Unirse a una llamada y todo eso negro con blanco». Traducido a reglas:
+     1) el CTA por defecto (.btn-accent, que era naranja) es NEGRO con texto
+        BLANCO — y BLANCO con texto negro cuando vive sobre una superficie oscura;
+     2) toda barra/anillo de progreso va en la escala --success (verde);
+     3) "Completado" (chip, check, tile de módulo/lección hecho) va en verde;
+     4) el naranja se queda SOLO en acentos puntuales: la barra de 3px de los
+        títulos de sección, el canto de los héroes, un dato destacado, los chips
+        de "EN VIVO/TORNEO/HOY" y los estados de aviso. Nunca en superficies
+        grandes ni en cada botón.
    Deltas del mockup (spec docs/superpowers/specs/2026-08-07-dashboard-mockup-spec.md):
    · Canvas GREIGE cálido #F1F1EF (antes blanco puro) con bordes cálidos
      #E4E3DF / #DCDBD6 y superficies #EDEDEA / #FBFBFA.
@@ -100,15 +113,47 @@
   --focus:var(--otr-green);
   --link:var(--otr-green-lo);
 
-  /* ---- Status (dentro de la paleta estricta: negro/gris/naranja) ---- */
-  --ok:#171717; --ok-soft:#EFEFEF;              /* éxito = negro sobre gris claro */
+  /* ---- Escala VERDE semántica (pedido de Isaac, 2026-08-09) -----------------
+     Textual del cliente: «Para completed - verde. Para progress bar - verde».
+     NO es un verde nuevo: es la ESCALA del --win #2FA84F que ya vivía aquí para
+     las victorias del Debate Hub. Tres pasos y ni uno más:
+       · --success        = var(--win) #2FA84F — relleno vivo (barras, chip de
+                            completado, anillo sobre negro). Texto encima: NEGRO.
+       · --success-strong  #1A7A38 — el mismo verde OSCURECIDO hasta cumplir AA
+                            como COLOR DE TEXTO sobre claro y como punta de la
+                            barra contra la pista gris (misma función que
+                            --otr-green-text para el naranja).
+       · --success-soft    #E3F3E7 — tinte (≈12% de --success sobre blanco) para
+                            fondos de "completado" (chips suaves, tiles de check).
+     Contraste MEDIDO (WCAG 2.1, luminancia relativa; L(#2FA84F)=0,29167,
+     L(#1A7A38)=0,14426, L(#E3F3E7)=0,86201, L(#171717)=0,00857):
+       · #171717 sobre --success .............. 5,83:1  AA  (texto NEGRO, nunca blanco:
+                                                blanco sobre --success da 3,07:1)
+       · --success-strong sobre blanco ........ 5,41:1  AA
+       · --success-strong sobre greige F1F1EF . 4,78:1  AA
+       · --success-strong sobre --success-soft  4,70:1  AA
+       · #FFFFFF sobre --success-strong ....... 5,41:1  AA
+       · --success-strong contra la pista de la barra #EFEFEF … 4,70:1 (WCAG 1.4.11
+         pide 3:1 a un elemento gráfico; --success sola daría 2,67:1, por eso la
+         barra termina en --success-strong y no en el verde vivo). */
+  --success:var(--win);
+  --success-strong:#1A7A38;
+  --success-soft:#E3F3E7;
+
+  /* ---- Status ------------------------------------------------------------
+     [ISAAC 2026-08-09] El éxito deja de ser negro-sobre-gris y pasa al verde
+     semántico: es lo que pinta "Completado", el check de lección hecha, la nota
+     alta, la tendencia al alza y el punto de "en línea". --ok se usa TAMBIÉN
+     como color de texto, así que apunta al verde OSCURO (AA), no al vivo. */
+  --ok:var(--success-strong); --ok-soft:var(--success-soft);  /* éxito = verde */
   --warn:#F25623; --warn-soft:#FDE7DE;          /* aviso = acento naranja */
   --danger:#C8401A; --danger-soft:#FBDDD2;      /* peligro = naranja oscuro */
   --info:#4D4D4D; --info-soft:#EFEFEF;          /* info = gris frío */
 
   /* ---- Resultado y tiers del DEBATE (pedido de Isaac, 2026-08-09) ----------
-     Única excepción declarada a "el naranja es el acento único": en el Debate Hub
-     el color NO decora, SIGNIFICA — victoria/derrota y el metal del tier. Textual
+     Primera puerta semántica del sistema: en el Debate Hub el color NO decora,
+     SIGNIFICA — victoria/derrota y el metal del tier. --win es además la RAÍZ de
+     la escala --success de arriba (mismo hex, misma medición). Textual
      del cliente: "las W verde", "las L así negro", "que no sea «Gold» en naranja,
      que sea gold", "si dice «platinum» ... que sea en platino". Se whitelistean uno
      a uno en tests/brand-palette.test.ts (con su medición); nadie puede meter otro

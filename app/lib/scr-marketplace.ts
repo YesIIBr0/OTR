@@ -308,7 +308,6 @@ function renderGrid() {
   const list = applyFilters(all);
   return `
   <div class="page-head page-head--rule"><div>
-    <p class="ph-eyebrow">${t("mkt.eyebrow")}</p>
     <h1 class="ph-title">${t("mkt.title")}</h1>
     <div class="page-sub">${t("mkt.subtitle")}</div>
   </div>

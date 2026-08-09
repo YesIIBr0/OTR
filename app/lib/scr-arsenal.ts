@@ -126,7 +126,6 @@ S.arsenal = {
 
     return `
     <div class="page-head page-head--rule"><div>
-      <p class="ph-eyebrow">OTR Hub</p>
       <h1 class="ph-title">Arsenal</h1>
       <div class="page-sub" style="margin-top:8px">${t("arsenal.pageSub")}</div>
     </div>

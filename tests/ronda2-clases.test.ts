@@ -287,12 +287,22 @@ describe("Accesibilidad de la sección", () => {
   // no se usa. Se corta la cabecera (el slice empieza DENTRO de ella) y se quitan los demás.
   const reglas = bloque.slice(bloque.indexOf("*/") + 2).replace(/\/\*[\s\S]*?\*\//g, "");
 
-  it("el naranja de texto pequeño es el accesible (#9E3211), no el naranja pleno", () => {
+  it("el texto pequeño de color usa un token MEDIDO, nunca el color pleno", () => {
     expect(bloque).toContain("--otr-green-text");
-    // .cls-pct / .cls-toc-pct / .cls-les-s / .cls-mat-a son texto de 11-12,5px en naranja.
+    // .cls-pct / .cls-toc-pct / .cls-les-s son texto de 11-12,5px de color. Lo que este
+    // test protege es que NUNCA lleven el color pleno —var(--otr-green) #F25623 ≈3,1:1 y
+    // var(--success) #2FA84F 3,07:1 sobre blanco: los dos fallan AA a ese tamaño— sino el
+    // paso oscuro MEDIDO de su familia:
+    //   · --otr-green-text #9E3211 → 6,36:1 sobre el greige   (naranja)
+    //   · --ok = --success-strong #1A7A38 → 5,41:1 sobre blanco · 4,78:1 sobre el greige
+    // [ISAAC 2026-08-09] Los porcentajes de PROGRESO (.cls-pct/.cls-toc-pct) pasaron del
+    // naranja al verde con la barra a la que acompañan; .cls-les-s sigue en naranja porque
+    // rotula "Ahora", que es acento y no progreso.
+    const ACCESIBLES = ["var(--otr-green-text)", "var(--ok)"];
     for (const sel of [".cls-pct{", ".cls-toc-pct{", ".cls-les-s{"]) {
       const r = bloque.slice(bloque.indexOf(sel), bloque.indexOf(sel) + 160);
-      expect(r, `${sel} usa el naranja accesible`).toContain("var(--otr-green-text)");
+      const color = /color:(var\(--[a-z-]+\))/.exec(r)?.[1];
+      expect(ACCESIBLES, `${sel} usa un color medido, no el pleno`).toContain(color);
     }
   });
 

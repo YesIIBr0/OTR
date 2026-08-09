@@ -158,19 +158,21 @@ function getEarnings() {
 }
 
 /* ---------------- badges de estado ---------------- */
-// Una variante DISTINTA por estado (si no, todo naranja no dice nada): confirmada =
-// naranja (es lo que toca hoy), pendiente = tinte, completada = info, cancelada =
-// contorno. Mismos criterios que el panel del alumno (scr-mybookings.ts).
+// Una variante DISTINTA por estado (si no, todo igual no dice nada): confirmada = negro
+// (vigente), pendiente = tinte, completada = verde con check, cancelada = contorno.
+// Mismos criterios que el panel del alumno (scr-mybookings.ts).
 function statusBadge(status) {
-  if (status === "CONFIRMED") return C.chip(t("cw.statusConfirmed"), "accent");
+  // [Isaac 2026-08-09] Mismo criterio que Mis reservas: vigente en negro, terminado en
+  // verde con check. El naranja deja de usarse para marcar estados.
+  if (status === "CONFIRMED") return C.chip(t("cw.statusConfirmed"), "black");
   if (status === "PENDING") return C.chip(t("cw.statusPending"), "tint");
-  if (status === "COMPLETED") return C.chip(t("cw.statusCompleted"), "info");
+  if (status === "COMPLETED") return C.chip(t("cw.statusCompleted"), "accent", { ic: "check" });
   if (status === "CANCELLED") return C.chip(t("cw.statusCancelled"), "outline");
   return status ? C.chip(esc(status), "outline") : "";
 }
 function escrowBadge(st) {
   if (st === "HELD") return C.chip(t("cw.escrowHeld"), "tint");
-  if (st === "RELEASED") return C.chip(t("cw.escrowReleased"), "info");
+  if (st === "RELEASED") return C.chip(t("cw.escrowReleased"), "tint", { ic: "check" });
   if (st === "REFUNDED") return C.chip(t("cw.escrowRefunded"), "outline");
   return st ? C.chip(esc(st), "outline") : `<span class="faint" style="font-size:12px">—</span>`;
 }
@@ -417,7 +419,6 @@ S.coachwork = {
     const tab = activeTab();
     return `
     <div class="page-head page-head--rule fade-up"><div>
-      <p class="ph-eyebrow">${t("cw.eyebrow")}</p>
       <h1 class="ph-title">${t("cw.title")}</h1>
       <div class="page-sub">${t("cw.subtitle")}</div>
     </div></div>

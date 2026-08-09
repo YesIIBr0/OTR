@@ -6,7 +6,6 @@
 export const dict = {
   es: {
     // page head
-    "wap.eyebrow": "Administración",
     "wap.title": "WhatsApp",
     "wap.subtitle": "Bandeja del equipo — mensajes entrantes y respuesta 1 a 1 desde el número de WhatsApp Business",
     "wap.refresh": "Actualizar",
@@ -40,7 +39,6 @@ export const dict = {
   },
   en: {
     // page head
-    "wap.eyebrow": "Administration",
     "wap.title": "WhatsApp",
     "wap.subtitle": "Team inbox — incoming messages and 1-to-1 replies from the WhatsApp Business number",
     "wap.refresh": "Refresh",

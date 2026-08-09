@@ -7,7 +7,6 @@
 // una categoría que no esté en la tabla se pinta cruda (sin inventar traducción).
 export const dict = {
   es: {
-    "hl.eyebrow": "Temporada",
     "hl.title": "Lo mejor de la temporada",
     "hl.subtitle": "Cada logro del equipo, con su publicación en Instagram",
     "hl.countLabel": "Logros",
@@ -59,7 +58,6 @@ export const dict = {
     "hl.imgUrlLabel": "O pega la URL de una imagen",
   },
   en: {
-    "hl.eyebrow": "Season",
     "hl.title": "Best of the season",
     "hl.subtitle": "Every team achievement, with its Instagram post",
     "hl.countLabel": "Highlights",

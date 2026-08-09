@@ -4,7 +4,6 @@
 export const dict = {
   es: {
     // page head
-    "settings.eyebrow": "Cuenta",
     "settings.title": "Ajustes",
     "settings.subtitle": "Tu cuenta, idioma, notificaciones, membresía y privacidad",
 
@@ -119,7 +118,6 @@ export const dict = {
   },
   en: {
     // page head
-    "settings.eyebrow": "Account",
     "settings.title": "Settings",
     "settings.subtitle": "Your account, language, notifications, membership and privacy",
 
