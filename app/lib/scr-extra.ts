@@ -310,7 +310,7 @@ function mountAdminCourses(root) {
 
 function renderAdminCourses() {
   const courses = DB.adminCourses || [];
-  const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowAdmin")}</span><h1 class="ph-title">${t("extra.allCoursesTitle")}</h1>
+  const head = `<div class="page-head page-head--rule"><div><h1 class="ph-title">${t("extra.allCoursesTitle")}</h1>
     <div class="page-sub" style="margin-top:8px">${t("extra.allCoursesSub")}</div></div>
     ${manageHeadActions()}</div>`;
   if (!courses.length) {
@@ -370,7 +370,6 @@ export const S = {
         </div>`;
       return `
       <div class="page-head page-head--rule"><div>
-        <span class="ph-eyebrow">${t("extra.eyebrowAcademy")}</span>
         <h1 class="ph-title">${t("extra.catalogTitle")}</h1>
         <div class="page-sub" style="margin-top:8px">${t("extra.catalogSub")}</div>
       </div>
@@ -414,7 +413,7 @@ export const S = {
       // "Reasignar dueño", porque no existe endpoint para ello.
       if (role === "admin") return renderAdminCourses();
       const courses = DB.teacherCourses || [];
-      const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowTeacher")}</span><h1 class="ph-title">${t("extra.myCoursesTitle")}</h1>
+      const head = `<div class="page-head page-head--rule"><div><h1 class="ph-title">${t("extra.myCoursesTitle")}</h1>
         <div class="page-sub" style="margin-top:8px">${t("extra.myCoursesSub")}</div></div>
         ${manageHeadActions()}</div>`;
       if (!courses.length) {
@@ -456,7 +455,7 @@ export const S = {
       if (!id && typeof window !== "undefined") { try { id = sessionStorage.getItem("otr_builder_course") || ""; window.__builderCourseId = id; } catch {} }
       const c = courses.find((x) => x.id === id);
       if (!c) {
-        return `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowTeacher")}</span><h1 class="ph-title">${t("extra.builderTitle")}</h1>
+        return `<div class="page-head page-head--rule"><div><h1 class="ph-title">${t("extra.builderTitle")}</h1>
           <div class="page-sub" style="margin-top:8px">${t("extra.builderPickSub")}</div></div></div>
           <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.builderSelectHeading")}</h4><p>${t("extra.builderSelectBody")}</p>${C.btn(t("extra.viewMyCourses"), "accent", { size: "sm", attrs: 'data-go="manage"' })}</div></div>`;
       }
@@ -464,7 +463,7 @@ export const S = {
       const mods = c.modules || [];
       const lessons = mods.reduce((n, m) => n + ((m.lessons || []).length), 0);
       const pub = c.published === false ? C.chip(t("extra.draft"), "outline") : C.chip(t("extra.published"), "accent", { ic: "check" });
-      const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowTeacherBuilder")}</span><h1 class="ph-title" style="font-size:30px">${esc(c.code)} · ${c.name}</h1>
+      const head = `<div class="page-head page-head--rule"><div><h1 class="ph-title" style="font-size:30px">${esc(c.code)} · ${c.name}</h1>
         <div class="page-sub" style="margin-top:8px">${edit ? t("extra.editModeActiveSub") : t("extra.readOnlySub")}</div></div>
         <div class="stat-group">${C.statInline(mods.length, mods.length === 1 ? t("extra.section") : t("extra.sections"))}${C.statInline(lessons, lessons === 1 ? t("extra.activity") : t("extra.activities"), { accent: true })}</div></div>`;
       const hero = `
@@ -508,7 +507,7 @@ export const S = {
       let _sec = 0;
       const section = (title, count, body) => body ? `<div class="kit-section fade-up" style="--d:${_sec++}"><h3 class="row between vcenter"><span>${title}</span><span class="badge-count">${count}</span></h3>${body}</div>` : "";
       return `
-      <div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.searchEyebrow")}</span><h1 class="ph-title" style="font-size:30px">${t("extra.searchResultsFor")} "${esc(window.__q || "")}"</h1></div>
+      <div class="page-head page-head--rule"><div><h1 class="ph-title" style="font-size:30px">${t("extra.searchResultsFor")} "${esc(window.__q || "")}"</h1></div>
       <div class="stat-group">${C.statInline(total, total === 1 ? t("extra.resultSingular") : t("extra.resultPlural"), { accent: true })}</div></div>
       ${total === 0 ? `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h4>${t("extra.noResults")}</h4><p>${t("extra.searchEmptyPrefix")}"${esc(window.__q || "")}${t("extra.searchEmptySuffix")}</p></div></div>` : ""}
       ${section(t("extra.coursesSection"), courses.length, courses.length ? `<div class="grid g-3">${courses.map((c) => `<div class="tile click course-card"><div class="cc-top" style="background:linear-gradient(120deg,${c.color},#171717)"><span class="cc-code">${esc(c.code)}</span></div><div class="cc-body"><div class="cc-name">${c.name}</div><div class="cc-coach row vcenter" style="gap:6px"><span style="display:flex;width:13px">${IC.user}</span>${c.coach}</div></div></div>`).join("")}</div>` : "")}

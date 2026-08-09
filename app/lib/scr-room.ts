@@ -75,7 +75,7 @@ S.room = {
       const back = isCoach ? "coachwork" : "course";
       const backLabel = isCoach ? t("room.goToBookingsCoach") : t("room.goToBookingsStudent");
       return `
-      <div class="page-head page-head--rule fade-up"><div><p class="ph-eyebrow">${t("room.eyebrowSession")}</p>
+      <div class="page-head page-head--rule fade-up"><div>
         <h1 class="ph-title">${t("room.title")}</h1></div></div>
       <div class="card card-pad fade-up" style="--d:0">
         <div class="empty" style="padding:36px 24px">
@@ -141,7 +141,7 @@ S.room = {
       </div>`;
 
     return `
-    <div class="page-head page-head--rule fade-up"><div><p class="ph-eyebrow">${t("room.eyebrowCoaching")}</p>
+    <div class="page-head page-head--rule fade-up"><div>
       <h1 class="ph-title">${t("room.title")}</h1>
       <div class="page-sub" style="margin-top:8px">${side === "coach" ? t("room.subWithStudent") : t("room.subWithCoach")} · ${esc(b.slotLabel || "")}</div></div></div>
 

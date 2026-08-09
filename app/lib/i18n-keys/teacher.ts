@@ -7,7 +7,6 @@
 export const dict = {
   es: {
     // Panel del profesor · cabecera
-    "teacher.eyebrow": "Panel del profesor",
     "teacher.title": "Seguimiento del grupo",
     "teacher.gradeBtn": "Calificar",
     "teacher.trackingSub": "Tracking total · {students} en {courses}",
@@ -65,7 +64,6 @@ export const dict = {
     "teacher.allCaughtUpBody": "No tienes entregas pendientes de calificar.",
 
     // Panel de gestión de contenido
-    "teacher.manageEyebrow": "Gestión de contenido",
     "teacher.manageTitle": "Estructura del curso",
     "teacher.manageSub": "Cursos → Módulos → Lecciones → Examen",
     "teacher.resourceFileBtn": "Recurso (archivo)",
@@ -165,7 +163,6 @@ export const dict = {
     "teacher.resourceCreateError": "No se pudo crear el recurso",
 
     // Participantes
-    "teacher.ptEyebrow": "Profesor",
     "teacher.ptTitle": "Participantes",
     "teacher.coachNameFallback": "Coach",
     "teacher.ptCountsSub": "{students} · {coaches}",
@@ -233,7 +230,6 @@ export const dict = {
   },
   en: {
     // Teacher dashboard · header
-    "teacher.eyebrow": "Teacher dashboard",
     "teacher.title": "Group tracking",
     "teacher.gradeBtn": "Grade",
     "teacher.trackingSub": "Full tracking · {students} in {courses}",
@@ -288,7 +284,6 @@ export const dict = {
     "teacher.allCaughtUpBody": "You have no submissions pending grading.",
 
     // Content management panel
-    "teacher.manageEyebrow": "Content management",
     "teacher.manageTitle": "Course structure",
     "teacher.manageSub": "Courses → Modules → Lessons → Quiz",
     "teacher.resourceFileBtn": "Resource (file)",
@@ -388,7 +383,6 @@ export const dict = {
     "teacher.resourceCreateError": "Could not create the resource",
 
     // Participants
-    "teacher.ptEyebrow": "Teacher",
     "teacher.ptTitle": "Participants",
     "teacher.coachNameFallback": "Coach",
     "teacher.ptCountsSub": "{students} · {coaches}",

@@ -161,7 +161,6 @@ function priorQuizAttempt() {
       return `
       <div class="page-head page-head--rule fade-up" style="--d:0">
         <div>
-          <p class="ph-eyebrow">${t("learn.assignmentEyebrow")}</p>
           <h1 class="ph-title" style="font-size:30px" id="asg-title" data-course="${courseCode}" data-activity="${activity}">${activity}</h1>
           ${course && course.name ? `<div class="page-sub" style="margin-top:8px">${course.name}</div>` : ''}
         </div>
@@ -427,7 +426,6 @@ function priorQuizAttempt() {
       return `
       <div class="page-head page-head--rule fade-up" style="--d:0">
         <div>
-          <p class="ph-eyebrow">${t("learn.unitExamEyebrow")}</p>
           <h1 class="ph-title" style="font-size:30px">${esc(quiz.title || t("learn.examFallback"))}</h1>
           <div class="page-sub" style="margin-top:8px">${total} ${total!==1?t("learn.questionUnitPlural"):t("learn.questionUnitSingular")} · ${t("learn.passWithPrefix")} ${esc(String(passScore))}%</div>
         </div>
@@ -652,8 +650,7 @@ function priorQuizAttempt() {
       const g = DB.myGrades || { rows:[], avg:0, submitted:0, total:0, best:0 };
       const rows = g.rows || [];
 
-      const mainCourseName = (DB.courses && DB.courses[0] && DB.courses[0].name) || null;
-      // [MOCKUP · Task 5] Cabecera del mockup (spec §2.3): eyebrow + h1 de 40px y la
+      // [MOCKUP · Task 5] Cabecera del mockup (spec §2.3): h1 de 40px y la
       // tira de stats a la derecha (los mismos 3 números que antes eran KPI tiles).
       const stats = g.total ? `
         <div class="stat-group">
@@ -662,7 +659,7 @@ function priorQuizAttempt() {
           ${C.statInline(`${g.best}%`, t("learn.kpiBest"))}
         </div>` : "";
       const head = `
-      <div class="page-head page-head--rule fade-up" style="--d:0"><div>${mainCourseName ? `<p class="ph-eyebrow">${esc(mainCourseName)}</p>` : ''}<h1 class="ph-title">${t("learn.gradesTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("learn.weightedAvg")}</div></div>${stats}</div>`;
+      <div class="page-head page-head--rule fade-up" style="--d:0"><div><h1 class="ph-title">${t("learn.gradesTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("learn.weightedAvg")}</div></div>${stats}</div>`;
 
       if (!g.total) {
         return `${head}

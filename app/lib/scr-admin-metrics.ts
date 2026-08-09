@@ -217,9 +217,8 @@ function viewBody() {
 S.adminMetrics = {
   render(state) {
     return `
-    <!-- [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior. -->
+    <!-- [MOCKUP 2026-08] Cabecera del kit: h1 de 40px + línea inferior (sin eyebrow, R3). -->
     <div class="page-head page-head--rule fade-up"><div>
-      <p class="ph-eyebrow">${t("am.eyebrow")}</p>
       <h1 class="ph-title">${t("am.title")}</h1>
       <div class="page-sub">${t("am.subtitle")}</div>
     </div></div>

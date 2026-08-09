@@ -35,7 +35,7 @@ export const S = {};
           </div>
         </div>`;
       return `
-      <div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("comm.msg.eyebrow")}</span>
+      <div class="page-head page-head--rule"><div>
       <h1 class="ph-title">${t("comm.forum.title")}</h1>
       <div class="page-sub" style="margin-top:8px">${t("comm.forum.sub")}</div></div>
       ${C.btn(t("comm.forum.newThread"), "accent", { ic: "plus", attrs: 'data-action="new-thread"' })}</div>
@@ -134,7 +134,7 @@ export const S = {};
           <div class="bubble">${c.body}<span class="b-time">${esc(c.when)}</span></div>
         </div>`).join('');
       return `
-      <div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("comm.msg.eyebrow")}</span><h1 class="ph-title">${t("comm.msg.title")}</h1>
+      <div class="page-head page-head--rule"><div><h1 class="ph-title">${t("comm.msg.title")}</h1>
       <div class="page-sub" style="margin-top:8px">${t("comm.msg.sub")}</div></div></div>
       <div class="msg-wrap fade-up">
         <aside class="msg-list">

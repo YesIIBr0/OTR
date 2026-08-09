@@ -194,8 +194,10 @@ function body(d) {
 S.listing = {
   render() {
     const st = detState();
+    // [R3] Fuera el eyebrow de cabecera: el regreso al buscador no se pierde, pasa a ser
+    // un botón del kit (mismo patrón que el "volver" de Highlights).
     const head = `<div class="page-head fade-up"><div>
-      <p class="ph-eyebrow"><a href="#listings" data-go="listings" style="color:inherit">${t("lst.eyebrow")}</a></p>
+      ${C.btn(t("lst.backToSearch"), "outline", { size: "sm", ic: "chevL", attrs: 'data-go="listings"' })}
     </div></div>`;
     if (st.error) {
       return `${head}<div class="card fade-up"><div class="empty">

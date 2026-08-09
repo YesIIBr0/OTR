@@ -156,9 +156,12 @@ describe("[E4] manage (admin) · listado con dueño y reasignación", () => {
     ];
   });
 
-  it("pinta el catálogo con eyebrow de administración, el dueño y el control de reasignar", () => {
+  it("pinta el catálogo de administración con el dueño y el control de reasignar", () => {
     const html = Extra.manage.render({ role: "admin" });
-    expect(html).toContain(t("extra.eyebrowAdmin"));
+    // [R3 · Isaac] La cabecera ya no lleva eyebrow; la vista de admin se reconoce
+    // por su título y por los controles de dueño/reasignación.
+    expect(html).not.toContain("ph-eyebrow");
+    expect(html).toContain(t("extra.allCoursesTitle"));
     expect(html).toContain("Saúl Méndez");
     expect(html).toContain('data-reassign-course="c-1"');
     expect(html).toContain('data-owner-id="u-saul"');

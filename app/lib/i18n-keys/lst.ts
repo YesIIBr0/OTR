@@ -14,7 +14,6 @@ export const dict = {
     "lst.catMusica": "Música",
     "lst.catOtros": "Otros",
 
-    "lst.eyebrow": "Marketplace",
     "lst.title": "Buscar clases",
     "lst.subtitle": "Encuentra profesor por materia — cada clase tiene su tarifa por hora",
     "lst.searchPh": "¿De qué quieres clases? (inglés, matemáticas, AI…)",
@@ -67,7 +66,6 @@ export const dict = {
     "lst.detailErr": "No pudimos abrir esta clase",
     "lst.backToSearch": "Volver a Buscar clases",
 
-    "lst.myEyebrow": "Profesor",
     "lst.myTitle": "Mis clases",
     "lst.mySubtitle": "Publica lo que enseñas — cada materia con su propia tarifa por hora",
     "lst.newBtn": "Publicar clase",
@@ -113,7 +111,6 @@ export const dict = {
     "lst.catMusica": "Music",
     "lst.catOtros": "Other",
 
-    "lst.eyebrow": "Marketplace",
     "lst.title": "Find classes",
     "lst.subtitle": "Find a teacher by subject — each class sets its own hourly rate",
     "lst.searchPh": "What do you want to learn? (English, math, AI…)",
@@ -165,7 +162,6 @@ export const dict = {
     "lst.detailErr": "We could not open this class",
     "lst.backToSearch": "Back to Find classes",
 
-    "lst.myEyebrow": "Teacher",
     "lst.myTitle": "My classes",
     "lst.mySubtitle": "Publish what you teach — each subject with its own hourly rate",
     "lst.newBtn": "Publish class",

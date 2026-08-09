@@ -5,7 +5,6 @@
 export const dict = {
   es: {
     // page head
-    "au.eyebrow": "Administración",
     "au.title": "Gestión de usuarios",
     "au.subtitle": "Cambia roles, verifica coaches y suspende cuentas — sin tocar la base de datos",
 
@@ -77,7 +76,6 @@ export const dict = {
   },
   en: {
     // page head
-    "au.eyebrow": "Administration",
     "au.title": "User management",
     "au.subtitle": "Change roles, verify coaches and suspend accounts — without touching the database",
 

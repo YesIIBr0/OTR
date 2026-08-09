@@ -96,7 +96,7 @@ function clampScore(n) { return Math.max(0, Math.min(100, Number(n) || 0)); }
    ① HERO CLARO — identidad (quién es + desde cuándo + idiomas)
    ================================================================ */
 // [MOCKUP · Task 6] La identidad pasa a ser la cabecera de página del mockup
-// (.page-head--rule: eyebrow naranja + h1 de 40px + strip de stats a la derecha).
+// (.page-head--rule: h1 de 40px + strip de stats a la derecha; sin eyebrow desde R3).
 function identityHero(lt) {
   const id = lt.identity;
   const L = lt.ledger;
@@ -111,7 +111,6 @@ function identityHero(lt) {
     <div class="row vcenter wrap" style="gap:18px;min-width:0">
       ${C.avatar(esc(id.initials), { size: "lg", bg: "var(--otr-black)" })}
       <div style="min-width:0">
-        <span class="ph-eyebrow">${t("lifetime.heroEyebrow")}</span>
         <h1 class="ph-title">${esc(id.name || t("lifetime.studentFallback"))}</h1>
         <div class="row vcenter wrap" style="gap:6px;margin-top:12px">
           ${C.chip(esc(id.level), "black", { ic: "levels" })}

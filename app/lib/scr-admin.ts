@@ -398,10 +398,9 @@ S.adminConsole = {
     // Envoltorio del panel activo (el único que existe en el DOM en cada momento).
     const panel = (k, inner) => `<div id="${panelId(k)}" role="tabpanel" aria-labelledby="${tabId(k)}" tabindex="0">${inner}</div>`;
 
-    // [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior.
+    // [MOCKUP 2026-08] Cabecera del kit: h1 de 40px + línea inferior (sin eyebrow, R3).
     const head = `
     <div class="page-head page-head--rule fade-up"><div>
-      <p class="ph-eyebrow">${t("admin.eyebrow")}</p>
       <h1 class="ph-title">${t("admin.title")}</h1>
       <div class="page-sub">${t("admin.subtitle")}</div>
     </div></div>`;

@@ -210,7 +210,7 @@ S.events = {
     const [first, ...rest] = tournaments;
 
     const head = `<div class="page-head page-head--rule fade-up">
-      <div><span class="ph-eyebrow">OTR</span>
+      <div>
       <h1 class="ph-title">${t("events.title")}</h1>
       <div class="page-sub" style="margin-top:8px">${t("events.subtitle")}</div></div>
       <div class="stat-group">

@@ -5,7 +5,6 @@
 export const dict = {
   es: {
     // page head
-    "admin.eyebrow": "Administración",
     "admin.title": "Consola de moderación",
     "admin.subtitle": "Revisa y resuelve los reportes de la comunidad — usuarios, mensajes y reservas",
 
@@ -125,7 +124,6 @@ export const dict = {
   },
   en: {
     // page head
-    "admin.eyebrow": "Administration",
     "admin.title": "Moderation console",
     "admin.subtitle": "Review and resolve community reports — users, messages and bookings",
 
