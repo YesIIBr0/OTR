@@ -190,7 +190,11 @@ export const ROUTES: Record<string, RouteDef> = {
   listing:        { screen:'listing',      nav:'listings',     crumbs:['Marketplace','Buscar clases','Clase'] },
   'my-listings':  { screen:'myListings',   nav:'my-listings',  crumbs:['Profesor','Mis clases'], role:['teacher','admin'] },
   // Coach Workspace (PRD §7.5, supply-side) → scr-coachwork.ts.
-  coachwork:      { screen:'coachwork',    nav:'coachwork',    crumbs:['Espacio de coach','Reservas e ingresos'] },
+  // [SONDEO 2026-08-09 · R4 · GUARD ROTO] Mismo caso que 'parent': '#coachwork' escrito a mano
+  // metía a la alumna en "Reservas e ingresos" del coach. Es la caja del COACH (agenda, escrow,
+  // ingresos); scr-coachwork.ts no ramifica por rol y solo el nav del profesor la ofrece. El
+  // admin tampoco entra: no cobra sesiones — para supervisar tiene su consola (PRD §3.3).
+  coachwork:      { screen:'coachwork',    nav:'coachwork',    crumbs:['Espacio de coach','Reservas e ingresos'], role:'teacher' },
   // [UI-CURSOS U4] La ruta demand-side "Mis reservas" (PRD §7.3 paso 6 + §4.2 ④) se retiró:
   // el panel vive dentro de la sección Cursos. Todo lo que apuntaba aquí enruta a 'course'.
   // Sala de sesión (PRD §7.3 paso 6) → scr-room.ts; destino real del botón "Unirse".
@@ -199,12 +203,21 @@ export const ROUTES: Record<string, RouteDef> = {
   onboarding:     { screen:'onboarding',   nav:'dashboard',    crumbs:['Inicio','Configura tu experiencia'] },
   // Placement inicial (PRD §2.2 Journey A + §4.3): auto-evaluación de 3 min para
   // el usuario nuevo sin placement → puebla el Skill Graph y fija User.placedAt.
-  placement:      { screen:'placement',    nav:'dashboard',    crumbs:['Inicio','Tu punto de partida'] },
+  // [SONDEO 2026-08-09 · R4 · auditoría del guard] Es la evaluación del ALUMNO: el arranque de
+  // Aula.tsx ya la reserva a `state.role === 'student'`, y ninguna pantalla enlaza a ella. Sin
+  // `role`, un coach que escribiera '#placement' podía RESPONDERLA y escribir un skill graph de
+  // estudiante en su propia cuenta. Cerrada al alumno, que es de quien es.
+  placement:      { screen:'placement',    nav:'dashboard',    crumbs:['Inicio','Tu punto de partida'], role:'student' },
   certificate:    { screen:'certificate',  nav:'badges',       crumbs:['Logros','Certificado'] },
   // Debate Hub (flagship, PRD §6) → pantalla real S.debateHub.
   debate:         { screen:'debateHub',    nav:'debate',       crumbs:['Debate Hub'] },
   // Parent Portal (PRD §11) → pantalla real S.parentPortal.
-  parent:         { screen:'parentPortal', nav:'parent',       crumbs:['Portal de familia'] },
+  // [SONDEO 2026-08-09 · R4 · GUARD ROTO] Iba SIN `role`: escribiendo '#parent' a mano, la
+  // alumna ENTRABA al Portal de Familia. Hoy se pinta vacío (su payload no trae `parent`), pero
+  // el guard estaba abierto y el día que alguien cuelgue datos ahí es fuga de verdad.
+  // scr-parent.ts NO ramifica por rol —renderiza la vista del PADRE y nada más— y sus enlaces
+  // de entrada solo existen dentro de renderParentSelf() y de Ajustes con role==='PARENT'.
+  parent:         { screen:'parentPortal', nav:'parent',       crumbs:['Portal de familia'], role:'parent' },
   // Lifetime Progress Profile (PRD §8) + Membresía (PRD §13) → scr-lifetime.ts.
   lifetime:       { screen:'lifetimeProfile', nav:'lifetime',  crumbs:['Progreso','Trayectoria'] },
   membership:     { screen:'membership',   nav:'membership',   crumbs:['Cuenta','Membresía'] },
