@@ -145,7 +145,8 @@ describe("O10 · el nombre de la insignia también parte en iPhone", () => {
   it(".badge-tile .bt-n lleva -webkit-hyphens ANTES del estándar", () => {
     // Hay DOS reglas .badge-tile .bt-n (la del kit y la del fix F3); la del guionado es la
     // que declara hyphens, no la del line-clamp.
-    const regla = (screens().match(/\.badge-tile \.bt-n\{[^}]*\}/g) || []).find((r) => r.includes("hyphens"));
+    const reglas: string[] = screens().match(/\.badge-tile \.bt-n\{[^}]*\}/g) ?? [];
+    const regla = reglas.find((r) => r.includes("hyphens"));
     expect(regla, "no hay ninguna regla .badge-tile .bt-n con hyphens").toBeTruthy();
     expect(regla!).toContain("-webkit-hyphens:auto");
     expect(regla!.indexOf("-webkit-hyphens")).toBeLessThan(regla!.indexOf(";hyphens:auto"));
