@@ -340,10 +340,15 @@ model Badge {
 // [DASHBOARD] Premios de la temporada del leaderboard (podio 1º/2º/3º). Es contenido
 // de producto EDITABLE (puesto → texto), no una constante escrita en la vista.
 model SeasonPrize {
-  id       String @id @default(cuid())
-  rank     Int    @unique // puesto del podio: 1 | 2 | 3
-  text     String
-  position Int    @default(0)
+  id       String  @id @default(cuid())
+  rank     Int     @unique // puesto del podio: 1 | 2 | 3
+  text     String  // premio en ES (idioma base del catálogo)
+  // [i18n premios] Traducción EN del MISMO premio. Opcional: sin ella la vista cae al
+  // texto ES en vez de dejar la cajita vacía (el premio existe aunque falte la traducción).
+  // Vive en la FILA —y no en claves de i18n— porque el premio es contenido de PRODUCTO
+  // editable en DB: cambiarlo no puede exigir un deploy.
+  textEn   String?
+  position Int     @default(0)
 }
 
 // [DASHBOARD] "Lo mejor de la temporada": logros REALES de la marca (BRAND.md).
@@ -355,6 +360,9 @@ model Highlight {
   date     DateTime?
   category String
   imageUrl String    @default("")
+  // [ISAAC R3] Publicación de Instagram del logro: cada highlight enlaza a SU post.
+  // Opcional — sin URL la tarjeta no navega a ningún sitio (mejor que un enlace roto).
+  instagramUrl String?
   position Int       @default(0)
 }
 

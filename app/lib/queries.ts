@@ -1227,7 +1227,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       .toUpperCase();
   // [DASHBOARD] Premio del puesto (solo podio): puesto → texto, leído de SeasonPrize.
   // Contenido editable en DB; la vista NO lleva los textos hardcodeados.
-  const prizeByRank = new Map<number, string>((seasonPrizes || []).map((p: any) => [p.rank, p.text]));
+  // [RONDA3 · i18n] El premio se sirve en el idioma activo con el MISMO pickLang que el
+  // resto del contenido de catálogo: `textEn` si el usuario está en EN y existe; si no, el
+  // ES. Antes la card en inglés pintaba "Beca completa · próximo módulo" bajo una interfaz
+  // en inglés (la fuga que se ve en la captura del cliente). El premio sigue viviendo en la
+  // DB —editable sin deploy—, que es la razón por la que existe SeasonPrize.
+  const prizeByRank = new Map<number, string>(
+    (seasonPrizes || []).map((p: any) => [p.rank, pickLang(p.text, p.textEn)]),
+  );
 
   // [DASHBOARD] CONTRATO DE LA TARJETA DE CLASIFICACIÓN (lo consume scr-core.ts):
   //   · Con `period` presente ⇒ la tabla es el ranking de XP del MES EN CURSO. La vista
@@ -2020,13 +2027,21 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // dateLabel se DERIVA de `date` (vivo, como los eventos); vacío si el logro no tiene
     // fecha documentada. imageUrl vacío ⇒ la card degrada a fondo negro sin foto.
     // Texto de catálogo (no de usuario) → sin esc(), igual que badges/events.
-    highlights: (highlightRows || []).map((h: any) => ({
-      id: h.id,
-      title: h.title,
-      dateLabel: h.date ? shortDateLabel(h.date, lang) : "",
-      category: h.category,
-      imageUrl: h.imageUrl || "",
-    })),
+    // [RONDA3 · Isaac] instagramUrl: la publicación de IG del logro. Sanea con safeUrl
+    // (bloquea javascript:/data:) y ADEMÁS exige http(s) absoluto: un post de Instagram
+    // nunca es una ruta interna ni un mailto:, así que todo lo demás cae a "" y la
+    // tarjeta simplemente no navega, en vez de abrir un enlace roto.
+    highlights: (highlightRows || []).map((h: any) => {
+      const ig = safeUrl(h.instagramUrl);
+      return {
+        id: h.id,
+        title: h.title,
+        dateLabel: h.date ? shortDateLabel(h.date, lang) : "",
+        category: h.category,
+        imageUrl: h.imageUrl || "",
+        instagramUrl: ig && /^https?:\/\//i.test(ig) ? ig : "",
+      };
+    }),
     // [auditoría] La etiqueta de fecha se DERIVA de startsAt (viva, como los torneos); whenLabel
     // es solo fallback para eventos legados sin startsAt. Así "Hoy/Mañana" no queda congelado.
     events: events.map((e) => ({ t: e.title, c: e.course, when: (e as any).startsAt ? eventDateLabel((e as any).startsAt, lang) : e.whenLabel, tone: e.tone })),

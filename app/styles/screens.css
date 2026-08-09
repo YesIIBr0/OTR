@@ -1573,3 +1573,22 @@
   .cls-facts{grid-template-columns:1fr !important}
   .cls-crumb-row{flex-wrap:wrap;gap:8px}
 }
+
+/* === RONDA3 · LEADERBOARD (mockup Isaac) === */
+/* La cabecera de la tarjeta de clasificación es un flex con el título a la izquierda y la
+   meta ("FALTAN N DÍAS · PREMIOS AL CIERRE") a la derecha, y la meta lleva flex:none. En
+   móvil el título ya no cabe en una línea: envuelve POR DEBAJO de la meta y los dos textos
+   se pisan (visto a 375 con clicks). Por debajo de 560 la cabecera se apila —título arriba,
+   meta abajo— que es como se lee el mockup en vertical. */
+@media (max-width:560px) {
+  .dash-lb .dlb-head{flex-direction:column;align-items:flex-start;gap:6px}
+  .dash-lb .dlb-meta{align-self:flex-start}
+}
+
+/* "Lo mejor de la temporada": con publicación de Instagram la tarjeta deja de ser
+   <article> y pasa a ser <a> (pedido de Isaac). Como enlace heredaría el color y el
+   subrayado del tema, así que se neutralizan; y al ser navegable necesita foco visible
+   de teclado, que el <article> no requería. */
+.hl--ig{display:block;color:inherit;text-decoration:none}
+.hl--ig:hover,.hl--ig:focus{color:inherit;text-decoration:none}
+.hl--ig:focus-visible{outline:2px solid var(--otr-green);outline-offset:2px}

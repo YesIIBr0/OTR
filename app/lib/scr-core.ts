@@ -151,6 +151,14 @@ function activeItemsFlat() {
     return /^(\/|https:\/\/)[^'"()\s]+$/.test(u) ? esc(u) : '';
   }
 
+  /* [RONDA3 · Isaac] Enlace a la publicación de Instagram de un highlight. queries.ts ya
+     lo saneó con safeUrl + http(s); aquí se vuelve a exigir absoluto http(s) porque el
+     builder también corre con payloads viejos o de test. '' → la tarjeta NO navega. */
+  function hlPostUrl(url) {
+    const u = String(url || '');
+    return /^https?:\/\/[^'"<>\s]+$/.test(u) ? esc(u) : '';
+  }
+
   S.dashboard = {
     render() {
       const lang = getLang();
@@ -434,8 +442,13 @@ function activeItemsFlat() {
         </div>`;
       // Con un cohorte de 3 o menos, la columna de la lista quedaría vacía: el
       // podio pasa a ocupar la card entera en vez de dejar medio bloque en blanco.
+      /* [RONDA3] Fila de cortesía cuando el alumno cae fuera del top 8: la cifra tiene que
+         ser la de ESTA tabla. Antes usaba `xp` (= DB.xp, la XP DE POR VIDA), así que en la
+         tabla mensual se pintaba 3.120 XP junto a puestos de 840 XP. Con solo 3 elegibles
+         nadie llegaba a esa rama; al poblar la temporada sí se alcanza. Ahora sale de
+         `lbMe.xp`, que es la XP del mes que ya calcula queries.ts. */
       const listBody = (podium.length >= 3 ? listRows : lbRows.slice(0, 8)).map((r) => lbRow(r, !!r.you)).join('')
-        + ((!meInShown && lbMe) ? lbRow({ rank: lbMe.rank, name: DB.me?.name || '', rating: lbMe.rating, xp }, true) : '');
+        + ((!meInShown && lbMe) ? lbRow({ rank: lbMe.rank, name: DB.me?.name || '', rating: lbMe.rating, xp: lbMe.xp ?? 0 }, true) : '');
       const standings = lbRows.length ? `
       <section class="card--dark card--glow dash-lb fade-up" style="--d:3">
         <div class="dlb-head">
@@ -451,23 +464,31 @@ function activeItemsFlat() {
       </section>` : '';
 
       /* ---- ⑦ LO MEJOR DE LA TEMPORADA — solo con media real en la DB ------
-         DB.highlights: [{ id, title, dateLabel, category, imageUrl }]. Son textos de
-         CATÁLOGO (tabla Highlight), que queries.ts NO escapa —igual que badges y
-         events—, así que se escapan aquí.
-         Sin imageUrl la card cae a negra plana: degrada sin hueco roto. */
+         DB.highlights: [{ id, title, dateLabel, category, imageUrl, instagramUrl }]. Son
+         textos de CATÁLOGO (tabla Highlight), que queries.ts NO escapa —igual que badges
+         y events—, así que se escapan aquí.
+         Sin imageUrl la card cae a negra plana: degrada sin hueco roto.
+         [RONDA3 · Isaac] Dos correcciones pedidas por el cliente:
+           · "Ver todo" ya NO manda a Eventos (eran cosas distintas): va a la pantalla
+             propia `highlights`, la lista larga de 1 por fila.
+           · Cada tarjeta enlaza a SU publicación de Instagram, en pestaña nueva y con
+             rel="noopener noreferrer". Sin URL la tarjeta se queda en <article>: no
+             navega a ningún sitio, que es mejor que un enlace roto. */
       const highlights = Array.isArray(DB.highlights) ? DB.highlights : [];
       const highlightsSection = highlights.length ? `
       <section class="fade-up" style="--d:4">
-        ${C.secTitle(t('core.dashHighlightsTitle'), { right: `<a class="hl-all" href="#" data-go="events">${t('core.dashHighlightsAll')}</a>` })}
+        ${C.secTitle(t('core.dashHighlightsTitle'), { right: `<a class="hl-all" href="#" data-go="highlights">${t('core.dashHighlightsAll')}</a>` })}
         <div class="hl-grid">
           ${highlights.slice(0, 4).map((h) => {
             const img = hlImgUrl(h.imageUrl);
-            return `
-            <article class="hl">
+            const post = hlPostUrl(h.instagramUrl);
+            const inner = `
               ${img ? `<span class="hl-img" style="background-image:url('${img}')"></span>` : ''}
               ${h.category ? C.chip(esc(h.category), 'accent', { cls: 'hl-tag' }) : ''}
-              <div class="hl-txt"><div class="hl-t">${esc(h.title || '')}</div><div class="hl-d">${esc(h.dateLabel || '')}</div></div>
-            </article>`;
+              <div class="hl-txt"><div class="hl-t">${esc(h.title || '')}</div><div class="hl-d">${esc(h.dateLabel || '')}</div></div>`;
+            return post
+              ? `<a class="hl hl--ig" href="${post}" target="_blank" rel="noopener noreferrer">${inner}</a>`
+              : `<article class="hl">${inner}</article>`;
           }).join('')}
         </div>
       </section>` : '';
