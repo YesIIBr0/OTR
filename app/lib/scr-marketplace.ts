@@ -44,8 +44,30 @@ const safeSrc = (u) => {
    CIERRA una entidad HTML. El texto llega escapado (queries.ts y, desde el cierre, también
    /api/coaches/[id]), así que un coach de "St. Michael's" viaja como "St. Michael&#39;s" y
    el `split(/\n|;/)` de antes lo partía en "St. Michael&#39" — la línea se leía rota en la
-   ficha. El lookbehind deja pasar &amp; &lt; &gt; &quot; &#39; y los numéricos. */
-const CRED_SEP = /\n|(?<!&(?:#\d{1,7}|#x[\da-f]{1,6}|[a-z]{2,8}));/i;
+   ficha. Deja pasar &amp; &lt; &gt; &quot; &#39; y los numéricos.
+
+   [DEUDA-H] La versión anterior usaba un LOOKBEHIND —/(?<!&(?:#\d{1,7}|…));/— y eso no era
+   un problema de credenciales sino del chunk entero: Safari < 16.4 no soporta lookbehind y
+   lanza SyntaxError AL EVALUAR EL MÓDULO, así que el marketplace completo (ficha de coach,
+   listado, reservas) moría antes de pintar, no solo esta línea. Se recorre la cadena y se
+   decide en cada ';' si cierra una entidad mirando lo que quedó DETRÁS: mismo resultado,
+   sin sintaxis que dependa de la versión del navegador. */
+const ENTITY_TAIL = /&(?:#\d{1,7}|#x[\da-f]{1,6}|[a-z]{2,8})$/i;
+function splitCredentials(raw) {
+  const s = String(raw || "");
+  const out = [];
+  let start = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch !== "\n" && ch !== ";") continue;
+    // Un ';' que cierra una entidad (&#39; &amp; &#x27;…) NO separa: es parte del texto.
+    if (ch === ";" && ENTITY_TAIL.test(s.slice(start, i))) continue;
+    out.push(s.slice(start, i));
+    start = i + 1;
+  }
+  out.push(s.slice(start));
+  return out.map((x) => x.trim()).filter(Boolean);
+}
 const langBadges = (languages) =>
   String(languages || "ES").split(/[,·/]/).map((l) => l.trim()).filter(Boolean).slice(0, 3)
     .map((l) => `<span class="chip chip--outline">${esc(l.toUpperCase())}</span>`).join("");
@@ -555,7 +577,7 @@ function renderProfile(state) {
       <div class="card card-pad fade-up" style="--d:1">
         ${C.secTitle(`${t("mkt.aboutPrefix")} ${c.name.split(" ")[0] || t("mkt.theCoach")}`, { sm: true, tag: "h2" })}
         <p class="muted" style="font-size:13.5px;line-height:1.6">${c.bio ? c.bio : t("mkt.noBio")}</p>
-        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true, tag: "h2" })}<div class="stack" style="gap:6px">${String(c.credentials).split(CRED_SEP).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${x}</div>`).join("")}</div>` : ""}
+        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true, tag: "h2" })}<div class="stack" style="gap:6px">${splitCredentials(c.credentials).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${x}</div>`).join("")}</div>` : ""}
         ${specs.length ? `<div class="divider"></div>${C.secTitle(t("mkt.specialties"), { sm: true, tag: "h2" })}<div class="row wrap" style="gap:6px">${specs.map((s) => `<span class="chip chip--outline">${s}</span>`).join("")}</div>` : ""}
       </div>
 

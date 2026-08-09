@@ -169,9 +169,12 @@ describe("[E4] manage (admin) · listado con dueño y reasignación", () => {
 
   it("reasignar hace PATCH con teacherId, refresca el modelo local y repinta", async () => {
     const calls: any[] = [];
+    // [DEUDA-H] La lista se compone de DOS páginas (TEACHER+COACH y ADMIN) y se filtra por rol
+    // real contra OWNER_ROLES, así que el doble devuelve `role` como lo hace la API de verdad.
     win.api = async (url: string, body: any, method: string) => {
       calls.push({ url, body, method });
-      if (url === "/api/admin/users?role=TEACHER") return { users: [{ id: "u-saul", name: "Saúl Méndez" }, { id: "u-carla", name: "Carla Jiménez" }] };
+      if (url === "/api/admin/users?role=TEACHER") return { users: [{ id: "u-saul", name: "Saúl Méndez", role: "TEACHER" }, { id: "u-carla", name: "Carla Jiménez", role: "TEACHER" }] };
+      if (url === "/api/admin/users?role=ADMIN") return { users: [] };
       return { ok: true };
     };
     let repainted = "";
@@ -191,9 +194,9 @@ describe("[E4] manage (admin) · listado con dueño y reasignación", () => {
 
     expect(modalTitle).toContain("Public Forum I");
     expect(options.map((o) => o.value)).toEqual(["u-saul", "u-carla"]);
-    // GET de coaches primero, PATCH del curso después.
-    expect(calls[0].url).toBe("/api/admin/users?role=TEACHER");
-    expect(calls[1]).toMatchObject({ url: "/api/courses/c-1", body: { teacherId: "u-carla" }, method: "PATCH" });
+    // GET de las dos páginas de dueños elegibles primero, PATCH del curso después.
+    expect(calls.slice(0, 2).map((c) => c.url).sort()).toEqual(["/api/admin/users?role=ADMIN", "/api/admin/users?role=TEACHER"]);
+    expect(calls[2]).toMatchObject({ url: "/api/courses/c-1", body: { teacherId: "u-carla" }, method: "PATCH" });
     // Modelo local al día + repintado de la misma ruta.
     expect(DB.adminCourses[0].ownerName).toBe("Carla Jiménez");
     expect(DB.adminCourses[0].ownerId).toBe("u-carla");
@@ -204,7 +207,7 @@ describe("[E4] manage (admin) · listado con dueño y reasignación", () => {
     const calls: any[] = [];
     win.api = async (url: string, body: any, method: string) => {
       calls.push({ url, body, method });
-      return { users: [{ id: "u-saul", name: "Saúl Méndez" }] };
+      return { users: url === "/api/admin/users?role=ADMIN" ? [] : [{ id: "u-saul", name: "Saúl Méndez", role: "TEACHER" }] };
     };
     win.otrFormModal = async (_t: string, _f: any[], onSubmit: (v: any) => Promise<void>) => { await onSubmit({ teacherId: "u-saul" }); };
 

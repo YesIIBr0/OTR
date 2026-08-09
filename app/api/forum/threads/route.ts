@@ -25,7 +25,8 @@ export async function POST(req: Request) {
   const excerpt = clean(body.excerpt, 300);
   const count = await db.forumThread.count();
   const thread = await db.forumThread.create({
-    data: { title, tag, excerpt, author: user.name, initials: user.initials, replies: 0, views: 0, pinned: false, lastLabel: "ahora", position: count },
+    // [DEUDA-H] lastAt = instante de creación del hilo; lastLabel deja de guardar "ahora".
+    data: { title, tag, excerpt, author: user.name, initials: user.initials, replies: 0, views: 0, pinned: false, lastLabel: "", lastAt: new Date(), position: count },
   });
   return NextResponse.json({ ok: true, thread });
 }
