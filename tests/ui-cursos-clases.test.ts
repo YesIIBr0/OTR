@@ -134,54 +134,70 @@ describe("U4 · la pantalla suelta Mis reservas desaparece", () => {
   });
 });
 
-/* ================= U2 · Contenido/Calificaciones dentro del curso ================= */
-describe("U2 · los tabs viven dentro del curso", () => {
+/* ================= U2 · Contenido/Calificaciones dentro del curso =================
+   [RONDA2] Los tabs ya no viven dentro de la tarjeta .course-hero del sub-tab "Mis
+   cursos" (esa tarjeta desapareció al homologar la sección al mockup del cliente):
+   viven DENTRO de la clase, en la ruta 'course-detail'. Lo que se blinda sigue
+   siendo lo mismo — los dos tabs, in-place, sin salir a otra pantalla. */
+describe("U2 · los tabs viven dentro de la clase", () => {
   it("ofrece los dos tabs como cambio in-place, no como navegación a otra ruta", () => {
-    const html = Core.coursesMine.render({ role: "student" });
+    const html = Core.courseDetail.render({ role: "student" });
     expect(html).toContain('data-course-tab="content"');
     expect(html).toContain('data-course-tab="grades"');
     expect(html).not.toContain("go('grades')"); // antes saltaba fuera de la pantalla
   });
 
-  it("los tabs y su panel quedan DENTRO de la tarjeta del curso (.course-hero)", () => {
-    const html = Core.coursesMine.render({ role: "student" });
-    const hero = html.indexOf("course-hero");
+  it("los tabs quedan DENTRO del 'adentro' de la clase, tras el breadcrumb de vuelta", () => {
+    const html = Core.courseDetail.render({ role: "student" });
+    const back = html.indexOf("data-cls-back");
     const tabs = html.indexOf('data-course-tab="content"');
-    const cierre = html.indexOf("<!--/course-hero-->");
-    expect(hero).toBeGreaterThanOrEqual(0);
-    expect(cierre).toBeGreaterThan(tabs);
-    expect(tabs).toBeGreaterThan(hero);
+    const grid = html.indexOf('class="cls-in"');
+    expect(back).toBeGreaterThanOrEqual(0);
+    expect(tabs).toBeGreaterThan(back);
+    expect(grid).toBeGreaterThan(tabs);
   });
 
-  it("el tab Calificaciones pinta las notas SIN salir de Cursos", () => {
+  it("el tab Calificaciones pinta las notas SIN salir de la clase", () => {
     win.__courseTab = "grades";
-    const html = Core.coursesMine.render({ role: "student" });
+    const html = Core.courseDetail.render({ role: "student" });
     expect(html).toContain("Ensayo de refutación");
     expect(html).toContain("88");
     expect(html).toContain("B+");
     expect(html).toContain("Buen trabajo"); // el comentario del coach sigue visible
+    expect(html).toContain("data-cls-back"); // y el breadcrumb de vuelta sigue ahí
   });
 
-  it("el tab por defecto es Contenido (los módulos del curso)", () => {
-    const html = Core.coursesMine.render({ role: "student" });
+  it("el tab por defecto es Contenido (el temario de la clase)", () => {
+    const html = Core.courseDetail.render({ role: "student" });
     expect(html).toContain("El modelo ARE");
   });
 
   it("sin notas todavía, el tab Calificaciones muestra un vacío honesto y no rompe", () => {
     (DB as any).myGrades = { rows: [], avg: 0, submitted: 0, total: 0, best: 0 };
     win.__courseTab = "grades";
-    expect(() => Core.coursesMine.render({ role: "student" })).not.toThrow();
-    expect(Core.coursesMine.render({ role: "student" })).toContain(t("core.gradesEmpty"));
+    expect(() => Core.courseDetail.render({ role: "student" })).not.toThrow();
+    expect(Core.courseDetail.render({ role: "student" })).toContain(t("core.gradesEmpty"));
   });
 });
 
-/* ================= U1 · la tarjeta del curso, a la mitad ================= */
-describe("U1 · la tarjeta del curso mide la mitad", () => {
-  it("el banner del hero baja de 120px a la mitad o menos", () => {
+/* ================= U1 · el curso NO es una tarjeta gigante =================
+   [RONDA2] El banner de 56px murió con .course-hero. El principio que U1 defendía
+   ("el contenido manda, el curso no se come la pantalla") ahora lo sostiene el menú
+   de clases: una card por curso, sin banner decorativo. */
+describe("U1 · el menú de clases no reintroduce el banner del curso", () => {
+  it("la tarjeta-contenedor .course-hero ya no existe ni en el markup ni en el CSS", () => {
     const css = readFileSync(join(process.cwd(), "app/styles/screens.css"), "utf8");
-    const m = css.match(/\.course-hero\s+\.ch-banner\{[^}]*height:(\d+)px/);
-    expect(m, "existe la regla de altura del banner").toBeTruthy();
-    expect(Number(m![1])).toBeLessThanOrEqual(60);
+    expect(css).not.toMatch(/^\.course-hero\{/m);
+    expect(Core.coursesMine.render({ role: "student" })).not.toContain("course-hero");
+  });
+
+  it("el menú pinta una card por curso con su barra de progreso", () => {
+    const css = readFileSync(join(process.cwd(), "app/styles/screens.css"), "utf8");
+    expect(css).toMatch(/\.cls-card\{/);
+    expect(css).toMatch(/\.cls-bar\{/);
+    const html = Core.coursesMine.render({ role: "student" });
+    expect(html).toContain("cls-card");
+    expect(html).toContain("cls-bar");
   });
 });
 

@@ -4,7 +4,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { videoEmbedHtml } from "./video";
-import { t, tierLabel, getLang, registerDict } from "./i18n";
+import { t, tierLabel, getLang, registerDict, fmtDateTimeRD, fmtDayMonth } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): core.* (directo) + debate.* (vía tierLabel → "debate.tier.*"). Ver app/lib/i18n.ts.
 import { dict as d_core } from "./i18n-keys/core";
 import { dict as d_debate } from "./i18n-keys/debate";
@@ -588,173 +588,307 @@ function activeItemsFlat() {
     </div>`;
   }
 
-  // [EPIC-2] Render de "Mis cursos" (cursos activos con progreso). Antes era el cuerpo
-  // directo de S.course.render; ahora es el sub-tab "Mis cursos" de la sección Cursos.
+  /* ============ [RONDA2 · CLASES] Menú de clases + "adentro" de la clase ============
+     Homologación de la sección Cursos al mockup del cliente (2026-08, Isaac):
+       · MENÚ ('course')        → una card por curso: progreso, siguiente clase y CTA.
+       · ADENTRO ('course-detail') → hero de la clase en curso + "Sobre esta clase" +
+         material de preparación + rail "Contenido del curso" + card del coach.
+     Todo sale de DB (coursesContent / courses / myBookings): sección sin dato real NO se
+     pinta. Contrato de escape: el payload viene esc() de queries.ts → aquí se renderiza
+     CRUDO (re-escapar produciría "&amp;amp;"). Lo que NO viene del payload (it.due,
+     it.dur, códigos) se escapa aquí. */
+
+  // Clases del curso en orden, aplanadas, con su módulo y el bloqueo EFECTIVO
+  // (el de la actividad o el de su módulo).
+  function classesOf(c) {
+    const out = [];
+    (c?.modules || []).forEach((m, mi) => (m.items || []).forEach((it) => {
+      out.push({ it, mi, locked: !!it.locked || !!m.locked });
+    }));
+    return out;
+  }
+
+  // La clase EN CURSO: la primera no completada y navegable. Con todo hecho, la última;
+  // sin nada navegable, la primera del curso. null si el curso no tiene contenido.
+  function currentClass(c) {
+    const all = classesOf(c);
+    const open = all.filter((x) => !x.locked);
+    return open.find((x) => !x.it.doneByMe) || open[open.length - 1] || all[0] || null;
+  }
+
+  // Sesión EN VIVO de HOY para este curso. Booking no lleva courseId (es una reserva 1:1
+  // del marketplace), así que el único vínculo REAL con el programa es el coach: una
+  // reserva CONFIRMADA de hoy con el coach del curso. Sin coincidencia → null y el hero
+  // cae a la variante "Próxima clase / Continuar". Nada se inventa.
+  function liveSessionOf(c) {
+    const coach = String(c?.coach || '').trim();
+    if (!coach) return null;
+    return (Array.isArray(DB.myBookings) ? DB.myBookings : []).find((b) =>
+      b && b.status === 'CONFIRMED' && b.upcoming
+      && String(b.coachName || '').trim() === coach
+      && dashIsToday(Date.parse(b.slotAtIso || ''))) || null;
+  }
+
+  // Iniciales del avatar del coach (el payload del curso solo trae el nombre).
+  function initialsOf(name) {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    return (parts.slice(0, 2).map((w) => w[0]).join('') || 'C').toUpperCase();
+  }
+
+  // Hora RD de un ISO reusando el formateador i18n ("mar 11 ago · 4:00 PM" → "4:00 PM").
+  function clsTime(iso) {
+    const s = fmtDateTimeRD(iso, getLang());
+    const i = s.indexOf(' · ');
+    return i < 0 ? '' : s.slice(i + 3);
+  }
+  // Franja "4:00 PM – 5:00 PM" con la duración REAL de la reserva.
+  function clsRange(iso, min) {
+    const a = clsTime(iso);
+    const ts = Date.parse(iso || '');
+    if (!a || !min || Number.isNaN(ts)) return a;
+    return `${a} – ${clsTime(new Date(ts + min * 60000).toISOString())}`;
+  }
+  // Fecha de entrega de una actividad. `dueAt` es la fecha REAL (se formatea en el idioma
+  // activo); `due` es una etiqueta de texto libre heredada que el profesor escribió a mano
+  // (y que por tanto viaja en su idioma). Se prefiere la fecha real cuando existe.
+  function dueLabel(it) {
+    if (it?.dueAt) { const s = fmtDateTimeRD(it.dueAt, getLang()); if (s) return s; }
+    return it?.due ? esc(it.due) : '';
+  }
+  // Etiqueta del tipo de actividad (misma tabla que el índice del curso).
+  function typeLabel(type) {
+    return ({ video: t('core.typeVideo'), lesson: t('core.typeLesson'), quiz: t('core.typeQuiz'), assign: t('core.typeAssign'), mic: t('core.typeMic') })[type] || esc(String(type || ''));
+  }
+  // Icono del mockup por tipo de actividad (list-checks / presentation / file-text…).
+  function clsMatIcon(type) {
+    return ({ assign: IC.listChecks, quiz: IC.listChecks, mic: IC.mic, video: IC.presentation })[type] || IC.doc;
+  }
+  // Primer párrafo del contenido de la lección. contentHtml YA viene sanitizado del
+  // servidor y S.lesson lo pinta crudo; aquí se reusa esa misma pieza como resumen.
+  function firstParagraph(html) {
+    const m = /<p[^>]*>([\s\S]*?)<\/p>/i.exec(String(html || ''));
+    return m && m[1].trim() ? m[1] : '';
+  }
+
+  /* ---------------- MENÚ DE CLASES (sub-tab "Cursos activos") ----------------
+     [DERIVADO] El share del cliente solo exponía el "adentro"; este menú se deriva del
+     MISMO lenguaje visual (card r6 borde cálido, barra naranja, textos contenidos). */
   function renderMyCourses() {
-      // Curso ACTIVO (multi-curso). El hero, módulos, progreso y % derivan de aquí.
-      const c = activeCourse();
-      if (!c) {
-        // Sin cursos activos: empuja al catálogo cambiando de sub-tab (no a la ruta vieja).
-        return `<div class="page-head"><div><h1 class="page-title">${t("core.courseEmptyTitle")}</h1><div class="page-sub">${t("core.courseEmptySub")}</div></div></div>
-        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h2>${t("core.courseEnrollHeading")}</h2><p>${t("core.courseEnrollBody")}</p><button class="btn btn-primary btn-sm" data-courses-tab="catalog">${t("core.exploreCatalog")}</button></div></div>`;
-      }
-      // Metadatos extra (estudiantes/lecciones) solo viven en DB.courses; los unimos por code.
-      const meta = (DB.courses || []).find((x: any) => x.code === c.code) || {};
-      const cMods = c.modules || [];
-      const allItems = cMods.flatMap(m => m.items || []);
-      const totalActs = allItems.length;
-      const doneActs = allItems.filter(it => it.doneByMe).length;
+    const list = (DB.coursesContent || []);
+    if (!list.length) {
+      // Sin cursos activos: empuja al catálogo cambiando de sub-tab (no a la ruta vieja).
+      return `<div class="page-head"><div><h1 class="page-title">${t("core.courseEmptyTitle")}</h1><div class="page-sub">${t("core.courseEmptySub")}</div></div></div>
+      <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h2>${t("core.courseEnrollHeading")}</h2><p>${t("core.courseEnrollBody")}</p><button class="btn btn-primary btn-sm" data-courses-tab="catalog">${t("core.exploreCatalog")}</button></div></div>`;
+    }
 
-      // SELECTOR "Mis cursos": solo si el alumno tiene >1 curso. Chip por curso con
-      // nombre + progreso; al clicar fija window.__course y recarga la vista.
-      const courseList = (DB.coursesContent || []);
-      const selector = courseList.length > 1
-        ? `<div class="course-switch row wrap fade-up" style="--d:0;gap:10px;margin-bottom:16px">
-            ${courseList.map((x: any) => {
-              const on = x.code === c.code;
-              return `<button class="chip-course${on ? ' active' : ''}" onclick="window.__course='${esc(x.code)}';go('course')" style="display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:12px;border:1.5px solid ${on ? 'var(--otr-sky)' : 'var(--line)'};background:${on ? 'color-mix(in srgb,var(--otr-sky) 12%,#fff)' : '#fff'};cursor:pointer;text-align:left">
-                <span class="cc-code" style="background:${x.color};color:#fff;border-radius:7px;padding:3px 7px;font-size:11px;font-weight:700">${esc(x.code)}</span>
-                <span style="display:flex;flex-direction:column;line-height:1.25"><b style="font-size:12.5px;color:var(--text)">${x.name}</b><span class="muted tnum" style="font-size:11.5px">${x.progress || 0}${t("core.pctCompleted")}</span></span>
-              </button>`;
-            }).join('')}
-          </div>`
-        : '';
+    const head = `
+    <div class="page-head page-head--rule fade-up" style="--d:0">
+      <div>
+        <h1 class="ph-title">${t('core.clsMenuTitle')}</h1>
+        <div class="page-sub">${list.length === 1 ? t('core.clsMenuSubOne') : t('core.clsMenuSubMany').replace('{n}', String(list.length))}</div>
+      </div>
+      ${C.btn(t('core.findCatalogCta'), 'outline', { ic: 'search', attrs: 'data-courses-tab="catalog"' })}
+    </div>`;
 
-      // Layout de la vista del alumno (personalizable por el coach): modules (acordeón,
-      // default) | grid (tarjeta por sección) | single (todas las secciones en una página).
-      const layout = c.layout || 'modules';
-      const itemRow = (it: any) => `
-        <div class="mitem ${it.doneByMe?'done':''} ${it.locked?'lock':''}" ${!it.locked?`role="button" tabindex="0" onclick="${it.type==='quiz'?`window.__quizLesson='${it.id}';`:''}window.__lesson='${it.id}';go('${destFor(it)}')"`:''}>
-          <div class="mi-ic">${it.doneByMe?IC.check:C.typeIcon(it.type)}</div>
-          <div class="mi-t">${esc(it.t)}</div>
-          <div class="mi-meta">${it.grade?C.badge(esc(it.grade),'ok'):''}${it.due?`<span style="color:var(--warn)">${esc(it.due)}</span>`:''}${it.dur?`<span>${esc(it.dur)}</span>`:''}${it.locked?IC.lock:''}</div>
-        </div>`;
-      const secIc = (m: any, mi: number) => `<span class="mh-ic ${m.done?'done':m.locked?'lock':''}" style="width:24px;height:24px;font-size:12px;flex:none">${m.done?IC.check:m.locked?IC.lock:`<b>${mi+1}</b>`}</span>`;
-      const emptyMods = `<div class="card"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h2>${t("core.modsEmptyHeading")}</h2><p>${t("core.modsEmptyBody")}</p></div></div>`;
-      let modules;
-      if (!cMods.length) {
-        modules = emptyMods;
-      } else if (layout === 'grid') {
-        modules = `<div class="grid g-2" style="gap:14px">${cMods.map((m,mi)=>`
-          <div class="card card-pad fade-up" style="--d:${Math.min(mi,6)}">
-            <div class="row vcenter between" style="gap:10px;margin-bottom:10px"><b class="row vcenter" style="gap:8px;font-size:14px;min-width:0">${secIc(m,mi)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.t)}</span></b><span class="badge sky" style="flex:none">${m.items.length}</span></div>
-            <div class="stack" style="gap:3px">${m.items.map(itemRow).join('') || `<div class="faint" style="font-size:12px">${t("core.noActivities")}</div>`}</div>
-          </div>`).join('')}</div>`;
-      } else if (layout === 'single') {
-        modules = `<div class="stack" style="gap:16px">${cMods.map((m,mi)=>`
-          <div class="card card-pad fade-up" style="--d:${Math.min(mi,6)}">
-            <div class="row vcenter" style="gap:8px;margin-bottom:8px">${secIc(m,mi)}<b style="font-size:14.5px">${esc(m.t)}</b>${m.done?`<span class="badge ok" style="flex:none">${t("core.badgeCompleted")}</span>`:m.locked?`<span class="badge" style="flex:none">${t("core.badgeLocked")}</span>`:''}</div>
-            <div class="module-items" style="display:block">${m.items.map(itemRow).join('') || `<div class="faint" style="font-size:12px;padding:6px 0">${t("core.noActivities")}</div>`}</div>
-          </div>`).join('')}</div>`;
-      } else {
-        modules = cMods.map((m,mi)=>`
-        <div class="module ${mi===1?'open':''}">
-          <div class="module-head" data-acc role="button" tabindex="0" aria-expanded="${mi===1?'true':'false'}">
-            <div class="mh-ic ${m.done?'done':m.locked?'lock':''}">${m.done?IC.check:m.locked?IC.lock:`<b>${mi+1}</b>`}</div>
-            <div class="mh-text"><div class="mh-title">${esc(m.t)}</div><div class="mh-sub">${m.items.length} ${t("core.activitiesUnit")}${m.done?` · ${t("core.moduleCompletedSuffix")}`:m.locked?` · ${t("core.moduleLockedSuffix")}`:''}</div></div>
-            <span class="chev">${IC.chevD}</span>
-          </div>
-          <div class="module-items">
-            ${m.items.map(itemRow).join('')}
-          </div>
-        </div>`).join('');
-      }
-
-      // "Continuar": próxima actividad NO completada del curso ACTIVO. Fija
-      // window.__lesson (y __quizLesson si aplica) y enruta por tipo antes de navegar.
-      const flat = activeItemsFlat();
-      const nextItem = flat.find(it => !it.doneByMe) || flat[0] || null;
-      const continueBtn = nextItem
-        ? `<button class="btn btn-primary" onclick="${nextItem.type==='quiz'?`window.__quizLesson='${esc(nextItem.id)}';`:''}window.__lesson='${esc(nextItem.id)}';go('${destFor(nextItem)}')">${t("core.continue")} ${IC.arrowR}</button>`
-        : `<button class="btn btn-primary" disabled style="opacity:.55;cursor:default">${t("core.noActivitiesBtn")}</button>`;
-
-      // Promedio real del alumno (DB.myGrades.avg). Sin notas → se omite la fila.
-      const avgGrade = (DB.myGrades && typeof DB.myGrades.avg === 'number') ? DB.myGrades.avg : null;
-      const hasAvg = avgGrade != null && (DB.myGrades?.submitted || 0) > 0;
-
-      // Barra de "vista previa" para el profesor/admin (ve el curso como alumno) con
-      // botón de volver al constructor.
-      const isPreview = (DB.me?.role === 'teacher' || DB.me?.role === 'admin');
-      const previewBar = isPreview
-        ? `<div class="card card-pad fade-up" style="--d:0;margin-bottom:14px;background:color-mix(in srgb,var(--otr-sky) 8%,#fff);border-color:var(--otr-sky)"><div class="row between vcenter" style="gap:10px;flex-wrap:wrap"><span class="row vcenter" style="gap:8px;font-size:13px"><span style="display:flex;width:16px;color:var(--otr-sky-lo)">${IC.eye}</span><b>${t("core.previewLabel")}</b> ${t("core.previewHint")}</span><button class="btn btn-soft btn-sm" data-go="course-builder">${IC.chevL} ${t("core.backToBuilder")}</button></div></div>`
-        : '';
-
-      // [EPIC-5] Video de bienvenida del curso (kind/src del coach) — embed armado con el
-      // helper compartido videoEmbedHtml; '' si no hay video configurado. Va en una tarjeta
-      // 16:9 dentro del overview del programa, junto al hero.
-      const welcomeEmbed = videoEmbedHtml(c.welcomeVideoKind, c.welcomeVideoSrc);
-      const welcomeVideo = welcomeEmbed
-        ? `<div class="card card-pad fade-up" style="--d:1;margin-bottom:16px">
-            <b class="row vcenter" style="gap:7px;font-size:14px;margin-bottom:10px"><span style="display:flex;width:16px;color:var(--otr-sky)">${IC.play}</span>${t("core.welcomeVideoTitle")}</b>
-            <div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000">${welcomeEmbed}</div>
-          </div>`
-        : '';
-
-      // [EPIC-5] Rating del programa (en vivo desde Review.courseId). Se omite sin reseñas.
-      const courseRating = (typeof c.rating === 'number' && c.rating > 0)
-        ? `<span class="dot-sep"></span><span class="row vcenter" style="gap:4px"><span style="display:flex;width:13px;color:var(--otr-gold)">${IC.star}</span><b>${c.rating}</b>${c.reviewCount ? `<span class="muted">(${c.reviewCount})</span>` : ''}</span>`
-        : '';
-      // [UI-CURSOS U2] Los dos paneles del curso. "Contenido" = temario + progreso (lo que
-      // había); "Calificaciones" = las notas, que antes obligaban a salir de la pantalla.
-      const tab = courseTab();
-      const contentPanel = `
-        ${welcomeVideo}
-        <div class="split">
-          <div>${modules}</div>
-          <div class="stack" style="gap:16px">
-            <div class="card card-pad">
-              <b style="font-size:14px">${t("core.yourProgress")}</b>
-              <div class="row vcenter between" style="margin:14px 0 8px"><span class="muted" style="font-size:13px">${doneActs} ${t("core.ofConnector")} ${totalActs} ${t("core.activitiesCountUnit")}</span><b class="sky">${c.progress}%</b></div>
-              ${C.bar(c.progress)}
-              ${(c.dbId && totalActs > 0 && doneActs === totalActs)
-                ? `<button class="btn btn-primary btn-block" style="margin-top:14px" data-claim-cert="${esc(c.dbId)}">${IC.award} ${t("core.claimCertificate")}</button>`
-                : ''}
-              ${hasAvg ? `<div class="divider"></div>
-              <div class="row between" style="font-size:13px"><span class="muted">${t("core.currentAverage")}</span><b>${avgGrade}%</b></div>` : ''}
-            </div>
-          </div>
-        </div>`;
-
-      // [UI-CURSOS U1] Hero COMPACTO (banner a la mitad, acciones en fila): el curso es el
-      // encabezado de la sección, no la sección entera — el contenido manda.
+    const cards = list.map((c, i) => {
+      const all = classesOf(c);
+      const total = all.length;
+      const done = all.filter((x) => x.it.doneByMe).length;
+      const cur = currentClass(c);
+      const pct = typeof c.progress === 'number' ? c.progress : (total ? Math.round((done * 100) / total) : 0);
+      const cta = cur
+        ? C.btn(done > 0 ? t('core.continue') : t('core.clsStart'), 'accent', { icRight: 'arrowR', attrs: `data-cls-open="${esc(c.code)}"` })
+        // Curso sin clases publicadas: el CTA no puede llevar a ningún sitio. Va en outline
+        // y no en naranja — un botón muerto no debe ser lo más ruidoso de la card.
+        : C.btn(t('core.clsStart'), 'outline', { disabled: true, attrs: 'aria-disabled="true"' });
       return `
-      ${previewBar}
-      ${selector}
-      <div class="course-hero fade-up" style="--d:0">
-        <div class="ch-banner" style="background:linear-gradient(120deg,${c.color},var(--otr-navy))">
-          <div class="stripes"></div>
-          <span class="cc-code" style="position:relative;z-index:2">${esc(c.code)}</span>
+      <article class="cls-card fade-up" style="--d:${Math.min(i + 1, 6)}">
+        <div class="cls-card-h">
+          <h2 class="cls-card-t"><button class="cls-open" data-cls-open="${esc(c.code)}">${c.name}</button></h2>
+          ${c.format ? C.chip(c.format, 'outline') : ''}
         </div>
-        <div class="ch-body">
-          <div style="flex:1;min-width:220px">
-            <h1 style="font-size:var(--fs-16);font-weight:800;letter-spacing:var(--track-tight);margin:0">${c.name}</h1>
-            <div class="row vcenter wrap" style="gap:6px 10px;margin-top:5px;font-size:12.5px;color:var(--text-2)">
-              <span class="row vcenter" style="gap:6px">${C.avatar('SM',{size:'sm'})} ${c.coach}</span>
-              ${meta.students!=null?`<span class="dot-sep"></span><span>${meta.students} ${t("core.studentsUnit")}</span>`:''}
-              ${meta.lessons!=null?`<span class="dot-sep"></span><span>${meta.lessons} ${t("core.lessonsUnit")}</span>`:''}
-              ${courseRating}
-            </div>
-          </div>
-          <div class="row vcenter wrap" style="gap:12px">
-            ${C.ring(c.progress, 44)}
-            <div class="row vcenter wrap" style="gap:8px">
-              ${continueBtn}
-              <button class="btn btn-ghost btn-sm" onclick="go('course-index')">${t("core.viewIndex")}</button>
-              ${/* [EPIC-2] CTA al sub-tab Catálogo (buscar nuevos cursos) sin salir de la sección */""}
-              <button class="btn btn-ghost btn-sm" data-courses-tab="catalog">${IC.search} ${t("core.findCatalogCta")}</button>
-            </div>
-          </div>
+        <div class="cls-card-coach">${C.avatar(initialsOf(c.coach), { size: 'sm' })}<span>${c.coach}</span></div>
+        <div class="cls-prog">
+          <div class="cls-prog-top"><span>${t('core.clsOfClasses').replace('{done}', String(done)).replace('{total}', String(total))}</span><b class="cls-pct tnum">${pct}%</b></div>
+          <div class="cls-bar"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div>
         </div>
-        ${/* [UI-CURSOS U2] Tabs + panel DENTRO de la tarjeta: el curso es un solo bloque. */""}
-        <div class="tabs ch-tabs">
-          <button class="tab ${tab === 'content' ? 'active' : ''}" data-course-tab="content">${t("core.tabContent")}</button>
-          <button class="tab ${tab === 'grades' ? 'active' : ''}" data-course-tab="grades">${t("core.tabGrades")}</button>
-        </div>
-        <div class="ch-panel" id="course-panel">${tab === 'grades' ? renderGradesPanel() : contentPanel}</div>
-      </div><!--/course-hero-->
+        <div class="cls-next">${cur
+          ? `${t('core.clsNextPrefix')}: <b>${cur.it.t}</b>${dueLabel(cur.it) ? ` · ${dueLabel(cur.it)}` : ''}`
+          : t('core.clsNoContentYet')}</div>
+        <div class="cls-card-cta">${cta}</div>
+      </article>`;
+    }).join('');
 
-      ${/* [UI-CURSOS U3] Las sesiones reservadas, bajo el curso (ya no son pantalla aparte). */""}
-      ${renderBookings()}`;
+    return `${head}<div class="cls-grid">${cards}</div>
+    ${/* [UI-CURSOS U3] Las sesiones reservadas, bajo el menú de clases. */''}
+    ${renderBookings()}`;
+  }
+
+  /* ---------------- ADENTRO DE LA CLASE (ruta 'course-detail') ----------------
+     Réplica del mockup de Isaac: rejilla 748 + 24 + 348 sobre el contenido de 1120. */
+  function renderCourseInside() {
+    const c = activeCourse();
+    if (!c) return renderMyCourses();
+
+    const tab = courseTab();
+    const all = classesOf(c);
+    const total = all.length;
+    const doneN = all.filter((x) => x.it.doneByMe).length;
+    const cur = currentClass(c);
+    const curIdx = cur ? all.findIndex((x) => x.it.id === cur.it.id) : -1;
+    const pct = typeof c.progress === 'number' ? c.progress : (total ? Math.round((doneN * 100) / total) : 0);
+    const live = liveSessionOf(c);
+
+    // Barra de "vista previa" para el profesor/admin (ve el curso como alumno).
+    const isPreview = (DB.me?.role === 'teacher' || DB.me?.role === 'admin');
+    const previewBar = isPreview
+      ? `<div class="card card-pad fade-up" style="--d:0;margin-bottom:14px;background:color-mix(in srgb,var(--otr-sky) 8%,#fff);border-color:var(--otr-sky)"><div class="row between vcenter" style="gap:10px;flex-wrap:wrap"><span class="row vcenter" style="gap:8px;font-size:13px"><span style="display:flex;width:16px;color:var(--otr-sky-lo)">${IC.eye}</span><b>${t("core.previewLabel")}</b> ${t("core.previewHint")}</span><button class="btn btn-soft btn-sm" data-go="course-builder">${IC.chevL} ${t("core.backToBuilder")}</button></div></div>`
+      : '';
+
+    // Breadcrumb: vuelve al MENÚ de clases (sub-tab de cursos), no al home.
+    const crumb = `
+    <div class="cls-crumb-row fade-up" style="--d:0">
+      <button class="cls-back" data-cls-back>${IC.arrowL}<span>${t('core.clsBackToMenu')} · ${c.name}</span></button>
+      <button class="btn btn-ghost btn-sm" data-go="course-index">${t('core.viewIndex')}</button>
+    </div>`;
+
+    // [UI-CURSOS U2] Contenido ⇄ Calificaciones siguen siendo sub-tabs in-place.
+    const tabs = `
+    <div class="tabs cls-tabs fade-up" style="--d:0">
+      <button class="tab ${tab === 'content' ? 'active' : ''}" data-course-tab="content">${t("core.tabContent")}</button>
+      <button class="tab ${tab === 'grades' ? 'active' : ''}" data-course-tab="grades">${t("core.tabGrades")}</button>
+    </div>`;
+
+    if (tab === 'grades') {
+      return `${previewBar}${crumb}${tabs}<div class="card card-pad fade-up" style="--d:1" id="course-panel">${renderGradesPanel()}</div>`;
+    }
+
+    /* ---- ① HERO de la clase en curso ---- */
+    const canJoin = !!(live && live.videoUrl);
+    const heroChip = live
+      ? C.chip(t('core.clsLiveToday'), 'accent', { ic: 'video' })
+      : C.chip(t('core.clsNextClass'), 'outline', { ic: 'play' });
+    const heroMeta = [
+      live
+        ? `<span class="cls-m">${IC.calendar}${t('core.clsToday')}, ${fmtDayMonth(live.slotAtIso, getLang())}</span>`
+        : (dueLabel(cur?.it) ? `<span class="cls-m">${IC.calendar}${dueLabel(cur.it)}</span>` : ''),
+      live
+        ? `<span class="cls-m">${IC.clock}${clsRange(live.slotAtIso, live.durationMin)}</span>`
+        : (cur?.it?.dur ? `<span class="cls-m">${IC.clock}${esc(cur.it.dur)}</span>` : ''),
+      `<span class="cls-m">${C.avatar(initialsOf(c.coach), { size: 'sm' })}${c.coach}</span>`,
+    ].filter(Boolean).join('<span class="cls-sep"></span>');
+    const heroCta = canJoin
+      ? `${C.btn(t('core.clsJoin'), 'accent', { size: 'lg', ic: 'video', attrs: `data-cls-room="${esc(live.id)}"` })}
+         <span class="cls-hero-note">${IC.info}${t('core.clsJoinNote')}</span>`
+      : (cur ? C.btn(t('core.continue'), 'accent', { size: 'lg', ic: 'play', attrs: `data-cls-lesson="${esc(cur.it.id)}" data-cls-dest="${destFor(cur.it)}"` }) : '');
+    const hero = `
+    <section class="cls-hero hero-photo fade-up" style="--d:1${heroImgVar(c.image)}">
+      <div class="cls-hero-top">
+        ${heroChip}
+        ${cur ? `<span class="cls-hero-mod">${t('core.clsModuleClassOf').replace('{m}', String(cur.mi + 1)).replace('{i}', String(curIdx + 1)).replace('{n}', String(total))}</span>` : ''}
+      </div>
+      <h1 class="cls-hero-t">${cur ? cur.it.t : c.name}</h1>
+      <div class="cls-hero-meta">${heroMeta}</div>
+      ${heroCta ? `<div class="cls-hero-cta">${heroCta}</div>` : ''}
+    </section>`;
+
+    /* ---- ② "Sobre esta clase" + franja de datos ---- */
+    const lead = firstParagraph(cur?.it?.contentHtml) || c.summary || '';
+    // Celdas de la franja: SOLO datos reales. La tercera va en acento.
+    const facts = [];
+    if (live) {
+      if (live.durationMin) facts.push([t('core.clsFactDuration'), t('core.clsMinutes').replace('{n}', String(live.durationMin)), false]);
+      facts.push([t('core.clsFactFormat'), live.videoUrl ? t('core.clsLiveFormat') : (c.modality || c.format || ''), false]);
+    } else {
+      if (cur?.it?.dur) facts.push([t('core.clsFactDuration'), esc(cur.it.dur), false]);
+      const fmt = [c.format, c.modality].filter(Boolean).join(' · ');
+      if (fmt) facts.push([t('core.clsFactFormat'), fmt, false]);
+    }
+    if (dueLabel(cur?.it)) facts.push([t('core.clsFactDue'), dueLabel(cur.it), true]);
+    else if (cur?.it?.maxPoints != null) facts.push([t('core.clsFactPoints'), String(cur.it.maxPoints), true]);
+    else if (cur?.it?.type) facts.push([t('core.clsFactType'), typeLabel(cur.it.type), false]);
+    const factsHtml = facts.length >= 2
+      ? `<div class="cls-facts" style="grid-template-columns:repeat(${facts.length},1fr)">${facts.map(([l, v, hot]) =>
+          `<div class="cls-fact"><span class="cls-fact-l">${l}</span><span class="cls-fact-v${hot ? ' is-hot' : ''}">${v}</span></div>`).join('')}</div>`
+      : '';
+    const about = `
+      ${C.secTitle(t('core.clsAbout'), { tag: 'h2' })}
+      <div class="card cls-about fade-up" style="--d:2">
+        <p class="cls-about-p">${lead || t('core.clsAboutFallback')}</p>
+        ${factsHtml}
+      </div>`;
+
+    /* ---- ③ Material de preparación: el resto de actividades del MISMO módulo ---- */
+    const mats = cur ? all.filter((x) => x.mi === cur.mi && x.it.id !== cur.it.id) : [];
+    const materials = mats.length ? `
+      ${C.secTitle(t('core.clsMaterials'), { tag: 'h2' })}
+      <div class="cls-mats fade-up" style="--d:3">
+        ${mats.map((x) => {
+          const pending = !x.it.doneByMe && (x.it.type === 'assign' || x.it.type === 'mic' || x.it.type === 'quiz');
+          const action = pending ? t('core.clsMatPending') : x.it.doneByMe ? t('core.clsMatDone') : t('core.clsMatOpen');
+          const meta = [typeLabel(x.it.type), x.it.dur ? esc(x.it.dur) : '', dueLabel(x.it)].filter(Boolean).join(' · ');
+          return `<button class="cls-mat${pending ? ' is-pending' : ''}" ${x.locked ? 'disabled' : `data-cls-lesson="${esc(x.it.id)}" data-cls-dest="${destFor(x.it)}"`}>
+            <span class="cls-mat-ic">${clsMatIcon(x.it.type)}</span>
+            <span class="cls-mat-txt"><span class="cls-mat-n">${x.it.t}</span><span class="cls-mat-m">${meta}</span></span>
+            <span class="cls-mat-a">${action}${pending ? IC.arrowR : IC.arrowUR}</span>
+          </button>`;
+        }).join('')}
+      </div>` : '';
+
+    /* ---- [EPIC-5] Video de bienvenida del curso (si el coach lo configuró) ---- */
+    const welcomeEmbed = videoEmbedHtml(c.welcomeVideoKind, c.welcomeVideoSrc);
+    const welcome = welcomeEmbed
+      ? `${C.secTitle(t('core.welcomeVideoTitle'), { tag: 'h2' })}
+         <div class="card card-pad fade-up" style="--d:4"><div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:var(--r-lg);overflow:hidden;background:#000">${welcomeEmbed}</div></div>`
+      : '';
+
+    /* ---- ④ RAIL: "Contenido del curso" + card del coach ---- */
+    const rows = all.map((x, i) => {
+      const isNow = !!cur && x.it.id === cur.it.id;
+      const st = isNow ? 'now' : x.it.doneByMe ? 'done' : x.locked ? 'lock' : 'next';
+      const dot = st === 'now' ? IC.play : st === 'done' ? IC.check : st === 'lock' ? IC.lock : C.typeIcon(x.it.type);
+      const status = isNow ? (live ? `${t('core.clsToday')} ${clsTime(live.slotAtIso)}` : t('core.clsNow')) : '';
+      const meta = `${t('core.clsModuleN').replace('{n}', String(x.mi + 1))}${x.it.dur ? ` · ${esc(x.it.dur)}` : ''}`;
+      return `<button class="cls-les is-${st}" ${x.locked && !isNow ? 'disabled' : `data-cls-lesson="${esc(x.it.id)}" data-cls-dest="${destFor(x.it)}"`}>
+        <span class="cls-les-dot">${dot}</span>
+        <span class="cls-les-txt"><span class="cls-les-t">${x.it.t}</span><span class="cls-les-m">${meta}</span></span>
+        <span class="cls-les-s">${status}</span>
+      </button>`;
+    }).join('');
+    const caption = cur
+      ? t('core.clsTocCaption').replace('{done}', String(doneN)).replace('{total}', String(total)).replace('{m}', String(cur.mi + 1))
+      : t('core.clsTocCaptionPlain').replace('{done}', String(doneN)).replace('{total}', String(total));
+    const rail = `
+    <aside class="cls-rail fade-up" style="--d:2">
+      <div class="card cls-toc">
+        <div class="cls-toc-head">
+          <div class="cls-toc-row"><h3 class="cls-toc-t">${t('core.clsToc')}</h3><span class="cls-toc-pct tnum">${pct}%</span></div>
+          <div class="cls-bar"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div>
+          <div class="cls-toc-cap">${caption}</div>
+        </div>
+        ${total ? `<div class="cls-toc-list">${rows}</div>` : `<div class="cls-toc-cap" style="padding:16px 20px">${t('core.clsNoContentYet')}</div>`}
+        ${(c.dbId && total > 0 && doneN === total)
+          ? `<div class="cls-toc-foot"><button class="btn btn-primary btn-block" data-claim-cert="${esc(c.dbId)}">${IC.award} ${t("core.claimCertificate")}</button></div>`
+          : ''}
+      </div>
+      <div class="cls-coach">
+        ${C.avatar(initialsOf(c.coach), { size: 'lg' })}
+        <span class="cls-coach-txt"><span class="lbl">${t('core.clsYourCoach')}</span><b class="cls-coach-n">${c.coach}</b></span>
+        <button class="cls-coach-btn" data-go="messages" aria-label="${t('core.clsMessageCoach').replace('{coach}', c.coach)}">${IC.msgCircle}</button>
+      </div>
+    </aside>`;
+
+    // Curso sin clases publicadas: nada que describir ni que preparar. Se conserva el
+    // vacío honesto de siempre (h2 colgando del h1 del hero — contrato K-09).
+    const main = total
+      ? `${hero}${about}${materials}${welcome}`
+      : `${hero}<div class="card fade-up" style="--d:2"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h2>${t("core.modsEmptyHeading")}</h2><p>${t("core.modsEmptyBody")}</p></div></div>`;
+
+    return `${previewBar}${crumb}${tabs}
+    <div class="cls-in">
+      <div class="cls-main">${main}</div>
+      ${rail}
+    </div>`;
   }
 
   // [EPIC-2] Barra de sub-tabs de la sección Cursos (estilo Debate Hub): "Mis cursos"
@@ -768,6 +902,36 @@ function activeItemsFlat() {
     <div class="tabs fade-up" style="--d:0" id="courses-tabs">
       ${tabs.map(x => `<button class="tab ${x.k === active ? 'active' : ''}" data-courses-tab="${x.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[x.ic]}</span>${x.l}</span></button>`).join('')}
     </div>`;
+  }
+
+  // Cableado COMPARTIDO por el menú y el "adentro": abrir un curso, volver al menú,
+  // abrir una clase del rail/material y entrar a la sala de la sesión en vivo.
+  function mountClases(root) {
+    const w = window as any;
+    root.querySelectorAll('[data-cls-open]').forEach((el) =>
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        w.__course = el.getAttribute('data-cls-open');
+        w.__courseTab = 'content';
+        if (w.go) w.go('course-detail');
+      }));
+    root.querySelectorAll('[data-cls-back]').forEach((el) =>
+      el.addEventListener('click', (e) => { e.preventDefault(); if (w.go) w.go('course'); }));
+    root.querySelectorAll('[data-cls-lesson]').forEach((el) =>
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = el.getAttribute('data-cls-lesson');
+        const dest = el.getAttribute('data-cls-dest') || 'lesson';
+        w.__lesson = id;
+        if (dest === 'quiz') w.__quizLesson = id;
+        if (w.go) w.go(dest);
+      }));
+    root.querySelectorAll('[data-cls-room]').forEach((el) =>
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        w.__room = el.getAttribute('data-cls-room');
+        if (w.go) w.go('room');
+      }));
   }
 
   // [EPIC-2] Sección "Cursos" unificada. Un solo item de nav (r:'course') con dos
@@ -802,22 +966,32 @@ function activeItemsFlat() {
           const w = window as any;
           if (w.go) w.go(tab === 'catalog' ? 'catalog' : 'course'); else repaint(false);
         }));
-      // [UI-CURSOS U2] Contenido ⇄ Calificaciones: cambio EN SITIO dentro de la tarjeta del
-      // curso. Conserva el scroll — el alumno no pierde el punto donde estaba mirando.
-      root.querySelectorAll('[data-course-tab]').forEach(el =>
-        el.addEventListener('click', (e) => {
-          e.preventDefault();
-          (window as any).__courseTab = el.getAttribute('data-course-tab');
-          repaint(true);
-        }));
-      // Acordeón de módulos del tab "Mis cursos" (solo presente en ese tab).
-      root.querySelectorAll('[data-acc]').forEach(h =>
-        h.addEventListener('click', () => h.closest('.module').classList.toggle('open')));
+      mountClases(root);
       // [UI-CURSOS U3] Cablea unirse/cancelar/reseñar del panel de reservas embebido.
       mountBookings(root);
       // Mount del tab Catálogo (si lo tuviera): reusa el mount existente de S.catalog.
       if (coursesTab() === 'catalog') extraScreens.catalog.mount?.(root);
     }
+  };
+
+  // [RONDA2] "Adentro" de la clase. Pantalla CON CONTEXTO (window.__course): al recargar
+  // o volver con Atrás sin contexto fresco, el router la devuelve al menú ('course').
+  S.courseDetail = {
+    render() { return renderCourseInside(); },
+    mount(root) {
+      mountClases(root);
+      // [UI-CURSOS U2] Contenido ⇄ Calificaciones: cambio EN SITIO dentro de la pantalla.
+      // Conserva el scroll — el alumno no pierde el punto donde estaba mirando.
+      root.querySelectorAll('[data-course-tab]').forEach(el =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          (window as any).__courseTab = el.getAttribute('data-course-tab');
+          const page = root.querySelector('.page');
+          if (!page) return;
+          page.innerHTML = S.courseDetail.render();
+          S.courseDetail.mount(root);
+        }));
+    },
   };
 
   // [EPIC-2] Wrappers de ENTRADA por ruta: fijan el sub-tab inicial y delegan en

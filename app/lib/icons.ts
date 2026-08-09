@@ -60,6 +60,14 @@ export const IC: Record<string, string> = (() => {
     /* trending-up */  trendUp: w('<path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/>'),
     /* map-pin */      mapPin: w('<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>'),
     /* shield */       shield: w('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>'),
+
+    /* --- [RONDA2 · CLASES] los que usa el mockup del "adentro" de la clase --- */
+    /* info */         info: w('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'),
+    /* list-checks */  listChecks: w('<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>'),
+    /* presentation */ presentation: w('<path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/>'),
+    /* message-circle */ msgCircle: w('<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>'),
+    /* arrow-left */   arrowL: w('<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>'),
+    /* arrow-up-right */ arrowUR: w('<path d="M7 7h10v10"/><path d="M7 17 17 7"/>'),
   };
 })();
 
