@@ -6,34 +6,15 @@ import { safeUrl } from "./api";
 // [GOAL A2 · F2] Los labels de fecha del payload ya NO se arman con tablas en español
 // fijo (consultations.ts / MONTHS_ES local): se delegan a los formateadores de i18n.ts,
 // que reciben el idioma de la request (cookie otr_lang → getAppData(email, lang)).
-import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull, fmtMemberSinceLabel, fmtPlanSinceLabel } from "./i18n";
+import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull, fmtMemberSinceLabel, fmtPlanSinceLabel, fmtRelativeAgo, fmtClockRD } from "./i18n";
 
 const ME_EMAIL = "analia.reyes@otr.do";
 
-// Etiqueta de fecha relativa en español (texto generado por nosotros, no de usuario).
-// [GOAL] nowMs inyectable: computeRosterMetrics ya recibía su propio "ahora" para ser
-// determinista, pero este label usaba Date.now() por dentro — la mezcla hacía que el
-// resultado dependiera del reloj real (test flaky que reventó al cambiar de día).
-function whenLabel(d?: Date | null, lang: string = "es", nowMs: number = Date.now()): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  const ms = nowMs - date.getTime();
-  if (Number.isNaN(ms)) return "";
-  const en = lang === "en";
-  const min = Math.floor(ms / 60000);
-  if (min < 1) return en ? "now" : "ahora";
-  if (min < 60) return en ? `${min} min ago` : `hace ${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return en ? `${h} h ago` : `hace ${h} h`;
-  const days = Math.floor(h / 24);
-  if (days < 7) return en ? `${days} ${days === 1 ? "day" : "days"} ago` : `hace ${days} ${days === 1 ? "día" : "días"}`;
-  const weeks = Math.floor(days / 7);
-  if (weeks < 5) return en ? `${weeks} wk ago` : `hace ${weeks} sem`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return en ? `${months} ${months === 1 ? "month" : "months"} ago` : `hace ${months} ${months === 1 ? "mes" : "meses"}`;
-  const years = Math.floor(days / 365);
-  return en ? `${years} ${years === 1 ? "year" : "years"} ago` : `hace ${years} ${years === 1 ? "año" : "años"}`;
-}
+// Etiqueta de fecha relativa ("hace 2 h" / "2 h ago"). [DEUDA-H] La implementación vive
+// ahora en i18n.ts (fmtRelativeAgo) porque también la necesitan /api/notifications y
+// /api/messages para derivar la etiqueta del timestamp en vez de servir el texto guardado.
+// Se conserva el nombre local para no tocar los seis call-sites de este archivo.
+const whenLabel = fmtRelativeAgo;
 
 // Día calendario en hora RD (UTC-4) como entero, para comparar actividad por día.
 const RD_OFFSET_MS = -4 * 3600000;
@@ -477,7 +458,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           // participantes y con 3+ en el hilo la etiqueta (others[0]) podía cambiar entre
           // cargas. userId asc = orden estable y barato (hay @@index([userId])).
           include: {
-            messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true } },
+            messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true, sentAt: true } },
             participants: { select: { userId: true }, orderBy: { userId: "asc" } },
           },
         })
@@ -2086,11 +2067,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       xp: a.xp || 0, when: whenLabel(a.createdAt, lang),
     })),
     // [F3.2] Ya scopeadas en la DB (where OR userId propio/null) — sin filtro en JS. Mapping/escape intactos.
-    notifications: notifications.map((n) => ({ ic: n.icon, tone: n.tone, t: esc(n.title), d: esc(n.detail), when: n.whenLabel, unread: n.unread })),
-    forum: threads.map((t) => ({ id: t.id, title: esc(t.title), author: esc(t.author), ini: esc(t.initials), tag: esc(t.tag), replies: t.replies, views: t.views, pinned: t.pinned, last: t.lastLabel, excerpt: esc(t.excerpt) })),
+    // [DEUDA-H] La antigüedad se DERIVA del instante (whenAt/lastAt/sentAt) con el idioma de
+    // la request; la columna de TEXTO solo se usa como respaldo de filas legacy sin timestamp.
+    // Antes se servía el texto tal cual y la UI en inglés leía "hace 1h" / "ayer".
+    notifications: notifications.map((n) => ({ ic: n.icon, tone: n.tone, t: esc(n.title), d: esc(n.detail), when: n.whenAt ? whenLabel(n.whenAt, lang) : n.whenLabel, unread: n.unread })),
+    forum: threads.map((t) => ({ id: t.id, title: esc(t.title), author: esc(t.author), ini: esc(t.initials), tag: esc(t.tag), replies: t.replies, views: t.views, pinned: t.pinned, last: t.lastAt ? whenLabel(t.lastAt, lang) : t.lastLabel, excerpt: esc(t.excerpt) })),
     forumThread: mainThread ? {
       id: mainThread.id, title: esc(mainThread.title), tag: esc(mainThread.tag),
-      posts: mainThread.posts.map((p) => ({ author: esc(p.author), ini: esc(p.initials), role: p.role, when: p.whenLabel, op: p.op, body: esc(p.body) })),
+      posts: mainThread.posts.map((p) => ({ author: esc(p.author), ini: esc(p.initials), role: p.role, when: p.whenAt ? whenLabel(p.whenAt, lang) : p.whenLabel, op: p.op, body: esc(p.body) })),
     } : { id: "", title: "", tag: "", posts: [] },
     // [CROSS-02/03] Cada conversación trae su id + sus mensajes (me computado por usuario,
     // consistente con CROSS-01) para que la pantalla pueda CAMBIAR de chat y enviar al hilo
@@ -2114,9 +2098,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         lastMessageBody: thread.length ? thread[thread.length - 1].body : null,
       });
       return {
-        id: c.id, ini: esc(label.initials), name: esc(label.name), last: esc(label.last), when: c.whenLabel,
+        id: c.id, ini: esc(label.initials), name: esc(label.name), last: esc(label.last), when: c.whenAt ? whenLabel(c.whenAt, lang) : c.whenLabel,
         unread: c.unread, online: c.online, navy: c.navy,
-        messages: thread.map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
+        // [DEUDA-H] La hora del mensaje sale de `sentAt` (fmtClockRD, hora RD): timeLabel es
+        // texto congelado y la API lo escribía en español ("ahora") al enviar un mensaje.
+        messages: thread.map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.sentAt ? fmtClockRD(m.sentAt, lang) : m.timeLabel })),
       };
     }),
     // VENTA POR CURSO APAGADA (PRD §13.1): los cursos son valor de la membresía —

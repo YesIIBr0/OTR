@@ -39,7 +39,9 @@ export async function POST(req: Request) {
         initials: coach.initials || (coach.name || "C").slice(0, 2).toUpperCase(),
         name: coach.name || "Coach OTR",
         lastLabel: "Nueva conversación",
-        whenLabel: "ahora",
+        // [DEUDA-H] El instante, no la palabra: "ahora" quedaba congelado y en español.
+        whenLabel: "",
+        whenAt: new Date(),
         position: (last?.position ?? 0) + 1,
         participants: { create: [{ userId: user.id }, { userId: coachId }] },
       },

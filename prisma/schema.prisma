@@ -372,7 +372,13 @@ model Notification {
   tone     String
   title    String
   detail   String
+  // [DEUDA-H] `whenLabel` guardaba TEXTO en español ("hace 1h", "ayer"): se colaba tal cual
+  // en la UI en inglés y además envejecía mal (una notificación de anteayer seguía diciendo
+  // "hace 1h"). `whenAt` guarda el INSTANTE y la etiqueta se DERIVA en lectura con el idioma
+  // de la request. La columna de texto queda como fallback de filas legacy (mismo patrón que
+  // EventItem.startsAt/whenLabel, arriba).
   whenLabel String
+  whenAt    DateTime?
   unread   Boolean @default(true)
   position Int     @default(0)
 
@@ -425,7 +431,9 @@ model ForumThread {
   replies   Int         @default(0)
   views     Int         @default(0)
   pinned    Boolean     @default(false)
+  // [DEUDA-H] lastAt = instante de la última actividad del hilo; lastLabel es el texto legacy.
   lastLabel String
+  lastAt    DateTime?
   excerpt   String
   position  Int         @default(0)
   posts     ForumPost[]
@@ -438,7 +446,9 @@ model ForumPost {
   author    String
   initials  String
   role      String
+  // [DEUDA-H] whenAt = instante de la respuesta; whenLabel es el texto legacy.
   whenLabel String
+  whenAt    DateTime?
   op        Boolean     @default(false)
   body      String
   position  Int         @default(0)
@@ -451,7 +461,9 @@ model Conversation {
   initials  String
   name      String
   lastLabel String
+  // [DEUDA-H] whenAt = instante del último mensaje; whenLabel es el texto legacy.
   whenLabel String
+  whenAt    DateTime?
   unread    Int           @default(0)
   online    Boolean       @default(false)
   navy      Boolean       @default(false)
@@ -498,7 +510,10 @@ model ChatMessage {
   senderId       String?
   me             Boolean      @default(false)
   body           String
+  // [DEUDA-H] sentAt = instante del envío; timeLabel es el texto legacy ("10:02", y "ahora"
+  // en español para los mensajes creados por la API). La hora se DERIVA en lectura.
   timeLabel      String
+  sentAt         DateTime?
   position       Int          @default(0)
 
   @@index([conversationId])

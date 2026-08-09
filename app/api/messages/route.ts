@@ -7,6 +7,7 @@ import { rateLimit } from "../../lib/rate-limit";
 import { filterContactInfo, isMinor } from "../../lib/safety";
 import { logActivitySafe } from "../../lib/activity";
 import { notify } from "../../lib/notify";
+import { fmtRelativeAgo, fmtClockRD, langFromRequest } from "../../lib/i18n";
 
 // PRD §7.4 / §17.4 — Mensajería segura para menores.
 // Scoping real por ConversationParticipant (no por UI) + enmascarado de datos de
@@ -15,9 +16,13 @@ import { notify } from "../../lib/notify";
 // GET — devuelve SOLO las conversaciones del usuario (vía ConversationParticipant).
 // Fallback legacy: una conversación SIN ningún participante registrado (seed viejo)
 // se trata como visible para no romper instalaciones previas a la migración §7.4.
-export async function GET() {
+export async function GET(req?: Request) {
   const user = await getSessionUser();
   if (!user) return bad("No autenticado", 401);
+  // [DEUDA-H] Mismo idioma que /api/app-data (cookie otr_lang): la antigüedad del hilo y la
+  // hora de cada burbuja se DERIVAN de whenAt/sentAt en vez de servir el texto guardado
+  // ("hace 1h", "10:02" y el "ahora" en español que escribía el POST de aquí abajo).
+  const lang = langFromRequest(req);
 
   // [P0-4 + PERF] Solo conversaciones donde el usuario es participante registrado, filtrado
   // EN DB (aprovecha ConversationParticipant.@@index([userId])). Antes traía TODAS las
@@ -67,7 +72,7 @@ export async function GET() {
       ini: esc(label.initials),
       name: esc(label.name),
       last: esc(label.last),
-      when: c.whenLabel,
+      when: c.whenAt ? fmtRelativeAgo(c.whenAt, lang) : c.whenLabel,
       unread: c.unread,
       online: c.online,
       navy: c.navy,
@@ -79,7 +84,7 @@ export async function GET() {
         // senderId (anteriores a la migración) caen a su `me` guardado.
         me: m.senderId ? m.senderId === user.id : m.me,
         body: esc(m.body),
-        when: m.timeLabel,
+        when: m.sentAt ? fmtClockRD(m.sentAt, lang) : m.timeLabel,
       })),
     };
   });
@@ -149,13 +154,14 @@ export async function POST(req: Request) {
     // [CROSS-01] senderId = quién lo envió (lo usa el GET para computar `me` por usuario).
     // me:true se conserva para la respuesta optimista del emisor; el GET ignora el `me`
     // almacenado cuando hay senderId.
-    data: { conversationId: convId, senderId: user.id, me: true, body, timeLabel: "ahora", position: count },
+    // [DEUDA-H] sentAt = instante del envío; timeLabel deja de guardar "ahora" (español fijo).
+    data: { conversationId: convId, senderId: user.id, me: true, body, timeLabel: "", sentAt: new Date(), position: count },
   });
   // [NOTIF-BELL] unread es un contador compartido de la conversación (no hay reset todavía
   // al abrir el hilo): cada mensaje nuevo lo incrementa para que el badge de la lista se mueva.
   await db.conversation.update({
     where: { id: convId },
-    data: { lastLabel: body.slice(0, 40), whenLabel: "ahora", unread: { increment: 1 } },
+    data: { lastLabel: body.slice(0, 40), whenLabel: "", whenAt: new Date(), unread: { increment: 1 } },
   });
 
   // [NOTIF-BELL] Avisa al OTRO participante (nunca al emisor) — una Notification por

@@ -211,12 +211,36 @@ function mountBuilder(root) {
    solo cuando actúa. Mismo endpoint y misma estrategia que el selector de dueño del modal de
    "Nuevo curso" (Aula.tsx, F6.3), cuyo helper es local a ese componente y no se puede reusar. */
 let adminCoachCache = null;
+/* [DEUDA-H] Roles que el backend ACEPTA como dueño de un curso — espejo literal de
+   OWNER_ROLES en app/api/courses/[id]/route.ts. La lista se filtraba contra un endpoint que
+   NO coincidía con esa validación y eso abría dos agujeros reales:
+     · `?role=TEACHER` devuelve TEACHER **+ COACH** (mapeo del chip de la consola de usuarios),
+       así que un usuario legacy con rol COACH salía elegible y el PATCH lo rechazaba con 400.
+     · Los ADMIN, que SÍ pueden ser dueños, no salían en ninguna página: un curso cuyo dueño es
+       admin no tenía opción coincidente, el <select> caía en el primer coach de la lista y un
+       "Guardar" sin tocar nada reasignaba el curso en silencio.
+   Se piden las dos caras (TEACHER y ADMIN), se deduplica y se filtra por rol REAL: la lista
+   ofrecida es exactamente el conjunto que el servidor va a aceptar. */
+const OWNER_ROLES = ["TEACHER", "ADMIN"];
 async function loadOwnerOptions() {
   if (adminCoachCache) return adminCoachCache;
   const w = window;
-  // /api/admin/users?role=TEACHER devuelve TEACHER + COACH: justo OWNER_ROLES del backend.
-  const d = await w.api("/api/admin/users?role=TEACHER", undefined, "GET");
-  adminCoachCache = (d && Array.isArray(d.users) ? d.users : []).map((u) => ({ id: u.id, name: u.name }));
+  const [teacherPage, adminPage] = await Promise.all([
+    w.api("/api/admin/users?role=TEACHER", undefined, "GET"),
+    w.api("/api/admin/users?role=ADMIN", undefined, "GET"),
+  ]);
+  const rows = []
+    .concat(teacherPage && Array.isArray(teacherPage.users) ? teacherPage.users : [])
+    .concat(adminPage && Array.isArray(adminPage.users) ? adminPage.users : []);
+  const seen = new Set();
+  const out = [];
+  rows.forEach((u) => {
+    if (!u || !u.id || seen.has(u.id)) return;
+    if (OWNER_ROLES.indexOf(String(u.role || "").toUpperCase()) < 0) return;
+    seen.add(u.id);
+    out.push({ id: u.id, name: u.name });
+  });
+  adminCoachCache = out;
   return adminCoachCache;
 }
 
@@ -246,17 +270,20 @@ function mountAdminCourses(root) {
         btn.disabled = false;
       }
       if (!coaches.length) { w.toast?.(t("extra.reassignNoCoaches"), "warn"); return; }
-      // [CIERRE · opcional] Guarda del dueño ACTUAL. `value: ownerId` solo preselecciona si
-      // ese id está entre las opciones; /api/admin/users?role=TEACHER puede no traerlo (un
-      // dueño suspendido, o uno que quedó fuera de la primera página). Sin él, el navegador
-      // marcaba la PRIMERA opción y un "Guardar" sin tocar nada reasignaba el curso a otro
-      // coach en silencio. Si falta, se antepone su propia opción (nombre del payload, ya
-      // escapado por queries.ts → el renderer del select lo pinta crudo: una sola capa).
+      // [CIERRE · opcional / DEUDA-H] Guarda del dueño ACTUAL: SIEMPRE tiene que estar
+      // preseleccionado para que "Guardar" sin tocar nada sea un no-op. `value` solo
+      // preselecciona si ese valor existe entre las opciones; si no, el navegador marca la
+      // PRIMERA y el curso se reasigna en silencio. Dos huecos que se tapan aquí:
+      //   · dueño fuera de la lista (suspendido, o fuera de la primera página de 100) → se
+      //     antepone su propia opción con el nombre del payload (ya escapado por queries.ts →
+      //     el renderer del select lo pinta crudo: una sola capa de escape).
+      //   · curso SIN dueño (ownerId vacío) → se antepone la opción "Sin asignar" con value
+      //     "", que es la que el submit de abajo trata como "no cambió nada".
       const ownerRow = (DB.adminCourses || []).find((c) => c.id === id);
-      const ownerMissing = ownerId && !coaches.some((c) => c.id === ownerId);
-      const ownerOpts = ownerMissing
-        ? [{ value: ownerId, label: (ownerRow && ownerRow.ownerName) || t("extra.courseOwnerNone") }, ...coaches.map((c) => ({ value: c.id, label: esc(c.name) }))]
-        : coaches.map((c) => ({ value: c.id, label: esc(c.name) }));
+      const ownerInList = !!ownerId && coaches.some((c) => c.id === ownerId);
+      const ownerOpts = ownerInList
+        ? coaches.map((c) => ({ value: c.id, label: esc(c.name) }))
+        : [{ value: ownerId, label: (ownerId && ownerRow && ownerRow.ownerName) || t("extra.courseOwnerNone") }, ...coaches.map((c) => ({ value: c.id, label: esc(c.name) }))];
       w.otrFormModal(
         t("extra.reassignTitle").split("{course}").join(courseName),
         [{

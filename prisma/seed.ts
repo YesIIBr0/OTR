@@ -403,6 +403,24 @@ async function main() {
     scrimmage: "l-pf-scrimmage",
   };
 
+  // [DEUDA-H] Fechas límite REALES de las dos entregas de la Unidad 2. Antes solo existía el
+  // label libre `due` ("Mañana · 23:59", "Viernes · 23:59"): texto en español que salía intacto
+  // con la UI en inglés y que además mentía al día siguiente. Con `dueAt` sembrado, la vista
+  // (scr-core/scr-learn ya prefieren `dueAt`) formatea la fecha en el idioma activo.
+  // 23:59 hora RD = 03:59 UTC del día siguiente (UTC-4 fijo, sin DST).
+  const dueAtRD = (daysFromToday: number) => {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() + daysFromToday + 1); // el día siguiente…
+    d.setUTCHours(3, 59, 0, 0); // …a las 03:59 UTC = 23:59 RD del día pedido
+    return d;
+  };
+  // Mañana 23:59 RD para el contention; el próximo viernes 23:59 RD para la grabación
+  // (si hoy ES viernes, se va al siguiente: una entrega que vence hoy no es una demo honesta).
+  const dueContention = dueAtRD(1);
+  const daysToFriday = ((5 - new Date().getUTCDay() + 7) % 7) || 7;
+  const dueScrimmage = dueAtRD(daysToFriday);
+
   await db.lesson.createMany({
     data: [
       // --- Unidad 1 ---
@@ -460,7 +478,7 @@ async function main() {
       {
         id: L.contention, moduleId: "m-2", title: "Construye tu primer contention", type: "assign", position: 0, done: false,
         titleEn: "Build your first contention",
-        due: "Mañana · 23:59",
+        dueAt: dueContention,
         contentHtml:
           "<p>Entrega tu primer <strong>contention</strong> completo usando la estructura " +
           "<strong>Claim · Warrant · Impact</strong>. Debe incluir al menos una pieza de evidencia citada " +
@@ -502,7 +520,7 @@ async function main() {
       {
         id: L.scrimmage, moduleId: "m-2", title: "Grabación: discurso constructivo de 2 min", type: "mic", position: 2, done: false,
         titleEn: "Recording: 2-minute constructive speech",
-        due: "Viernes · 23:59",
+        dueAt: dueScrimmage,
         contentHtml:
           "<p>Graba tu discurso constructivo de <strong>2 minutos</strong> presentando tus dos contentions. " +
           "Trabaja la <strong>presencia</strong>: ritmo, pausas y contacto visual con la cámara. " +
@@ -1660,13 +1678,19 @@ async function main() {
   // ----------------------------------------------------------------
   //  13) NOTIFICACIONES (algunas sin leer) — para Analía y globales
   // ----------------------------------------------------------------
+  // [DEUDA-H] Se siembra el INSTANTE (`whenAt`), no la etiqueta. Antes cada fila guardaba
+  // texto en español ("hace 1h", "ayer") que salía intacto con la UI en inglés y que además
+  // envejecía mal (a los tres días la notificación seguía diciendo "hace 1h"). La etiqueta la
+  // deriva queries.ts con el idioma de la request; `whenLabel` queda vacío (columna legacy).
+  const hoursAgoDate = (h: number) => new Date(Date.now() - h * 60 * 60 * 1000);
+  const minsAgoDate = (m: number) => new Date(Date.now() - m * 60 * 1000);
   await db.notification.createMany({
     data: [
-      { userId: "u-ar", icon: "chart", tone: "ok", title: "Tu entrega fue calificada", detail: "Coach Saúl · 92% — “Excelente claim”", whenLabel: "hace 1h", unread: true, position: 0 },
-      { userId: "u-ar", icon: "clock", tone: "warn", title: "Entrega vence mañana", detail: "Construye tu primer contention · PF-101", whenLabel: "hace 3h", unread: true, position: 1 },
-      { userId: null, icon: "msg", tone: "sky", title: "Camila te respondió en el foro", detail: "Hilo: refutación cruzada", whenLabel: "hace 5h", unread: true, position: 2 },
-      { userId: null, icon: "medal", tone: "navy", title: "Nueva insignia disponible", detail: "Refutador · domina el rebuttal", whenLabel: "ayer", unread: false, position: 3 },
-      { userId: null, icon: "calendar", tone: "sky", title: "Simulacro programado", detail: "Hoy 4:00 PM con jueces", whenLabel: "ayer", unread: false, position: 4 },
+      { userId: "u-ar", icon: "chart", tone: "ok", title: "Tu entrega fue calificada", detail: "Coach Saúl · 92% — “Excelente claim”", whenLabel: "", whenAt: hoursAgoDate(1), unread: true, position: 0 },
+      { userId: "u-ar", icon: "clock", tone: "warn", title: "Entrega vence mañana", detail: "Construye tu primer contention · PF-101", whenLabel: "", whenAt: hoursAgoDate(3), unread: true, position: 1 },
+      { userId: null, icon: "msg", tone: "sky", title: "Camila te respondió en el foro", detail: "Hilo: refutación cruzada", whenLabel: "", whenAt: hoursAgoDate(5), unread: true, position: 2 },
+      { userId: null, icon: "medal", tone: "navy", title: "Nueva insignia disponible", detail: "Refutador · domina el rebuttal", whenLabel: "", whenAt: hoursAgoDate(26), unread: false, position: 3 },
+      { userId: null, icon: "calendar", tone: "sky", title: "Simulacro programado", detail: "Hoy 4:00 PM con jueces", whenLabel: "", whenAt: hoursAgoDate(28), unread: false, position: 4 },
     ],
   });
 
@@ -1718,31 +1742,35 @@ async function main() {
   // ----------------------------------------------------------------
   await db.forumThread.createMany({
     data: [
-      { id: "t-1", title: "¿Cómo refutar un argumento de impacto sin caer en falacias?", author: "Camila Núñez", initials: "CN", tag: "Refutación", replies: 8, views: 42, pinned: true, lastLabel: "hace 2h", excerpt: "En el simulacro me costó atacar el impacto sin que el juez lo viera como ataque personal. ¿Tips?", position: 0 },
-      { id: "t-2", title: "Plantilla de Contention que uso para PF (compartida)", author: "Isabella Guzmán", initials: "IG", tag: "Recursos", replies: 14, views: 96, pinned: true, lastLabel: "hace 6h", excerpt: "Les dejo mi estructura Claim · Warrant · Impact en una página. Me sirvió para romper en Blue Key.", position: 1 },
-      { id: "t-3", title: "Dudas sobre el crossfire — ¿quién pregunta primero?", author: "Diego Fermín", initials: "DF", tag: "Reglas", replies: 3, views: 21, pinned: false, lastLabel: "hace 1d", excerpt: "Nunca me queda claro el orden en Public Forum. ¿Alguien me lo explica simple?", position: 2 },
-      { id: "t-4", title: "Mi evidencia para el tema de este mes", author: "Analía Reyes", initials: "AR", tag: "Evidencia", replies: 5, views: 33, pinned: false, lastLabel: "hace 2d", excerpt: "Encontré un estudio de 2025 muy fuerte. ¿Lo revisamos juntos antes del torneo?", position: 3 },
+      { id: "t-1", title: "¿Cómo refutar un argumento de impacto sin caer en falacias?", author: "Camila Núñez", initials: "CN", tag: "Refutación", replies: 8, views: 42, pinned: true, lastLabel: "", lastAt: hoursAgoDate(2), excerpt: "En el simulacro me costó atacar el impacto sin que el juez lo viera como ataque personal. ¿Tips?", position: 0 },
+      { id: "t-2", title: "Plantilla de Contention que uso para PF (compartida)", author: "Isabella Guzmán", initials: "IG", tag: "Recursos", replies: 14, views: 96, pinned: true, lastLabel: "", lastAt: hoursAgoDate(6), excerpt: "Les dejo mi estructura Claim · Warrant · Impact en una página. Me sirvió para romper en Blue Key.", position: 1 },
+      { id: "t-3", title: "Dudas sobre el crossfire — ¿quién pregunta primero?", author: "Diego Fermín", initials: "DF", tag: "Reglas", replies: 3, views: 21, pinned: false, lastLabel: "", lastAt: hoursAgoDate(26), excerpt: "Nunca me queda claro el orden en Public Forum. ¿Alguien me lo explica simple?", position: 2 },
+      { id: "t-4", title: "Mi evidencia para el tema de este mes", author: "Analía Reyes", initials: "AR", tag: "Evidencia", replies: 5, views: 33, pinned: false, lastLabel: "", lastAt: hoursAgoDate(50), excerpt: "Encontré un estudio de 2025 muy fuerte. ¿Lo revisamos juntos antes del torneo?", position: 3 },
     ],
   });
   await db.forumPost.createMany({
     data: [
-      { threadId: "t-1", author: "Camila Núñez", initials: "CN", role: "Estudiante", whenLabel: "hace 2h", op: true, body: "En el simulacro me costó atacar el impacto del rival sin que el juez lo viera como ataque personal. ¿Cómo lo separan ustedes?", position: 0 },
-      { threadId: "t-1", author: "Saúl Méndez", initials: "SM", role: "Coach", whenLabel: "hace 1h", op: false, body: "Buena pregunta. Ataca la <b>lógica</b>, no a la persona: cuestiona la probabilidad y la magnitud del impacto. “Aunque eso fuera cierto, su probabilidad es baja porque…”. Eso es refutar, no descalificar.", position: 1 },
-      { threadId: "t-1", author: "Isabella Guzmán", initials: "IG", role: "Estudiante", whenLabel: "hace 40 min", op: false, body: "A mí me funciona el “turn”: tomo su impacto y muestro que en realidad juega a mi favor. El juez lo ama.", position: 2 },
+      { threadId: "t-1", author: "Camila Núñez", initials: "CN", role: "Estudiante", whenLabel: "", whenAt: hoursAgoDate(2), op: true, body: "En el simulacro me costó atacar el impacto del rival sin que el juez lo viera como ataque personal. ¿Cómo lo separan ustedes?", position: 0 },
+      { threadId: "t-1", author: "Saúl Méndez", initials: "SM", role: "Coach", whenLabel: "", whenAt: hoursAgoDate(1), op: false, body: "Buena pregunta. Ataca la <b>lógica</b>, no a la persona: cuestiona la probabilidad y la magnitud del impacto. “Aunque eso fuera cierto, su probabilidad es baja porque…”. Eso es refutar, no descalificar.", position: 1 },
+      { threadId: "t-1", author: "Isabella Guzmán", initials: "IG", role: "Estudiante", whenLabel: "", whenAt: minsAgoDate(40), op: false, body: "A mí me funciona el “turn”: tomo su impacto y muestro que en realidad juega a mi favor. El juez lo ama.", position: 2 },
     ],
   });
 
   // ----------------------------------------------------------------
   //  17) MENSAJERÍA — conversaciones y chat
   // ----------------------------------------------------------------
+  // [DEUDA-H] `whenAt` = instante del último movimiento del hilo (el label relativo se deriva
+  // con el idioma de la request; antes viajaba el texto "hace 1h"/"ayer" en español fijo).
+  // [MARCA · «Emoji: nunca»] Los tres emoji que quedaban en la demo (dos aplausos y un bíceps,
+  // todos en cv-1) se quitan: el sentido de la frase no depende de ellos.
   await db.conversation.createMany({
     data: [
-      { id: "cv-1", initials: "SM", name: "Coach Saúl Méndez", lastLabel: "Te dejé feedback en la entrega 👏", whenLabel: "hace 1h", unread: 2, online: true, navy: true, position: 0 },
-      { id: "cv-2", initials: "CN", name: "Camila Núñez", lastLabel: "¿Practicamos crossfire mañana?", whenLabel: "hace 3h", unread: 0, online: true, navy: false, position: 1 },
-      { id: "cv-3", initials: "OTR", name: "Equipo OTR (anuncios)", lastLabel: "Recordatorio: torneo interno el sábado", whenLabel: "ayer", unread: 0, online: false, navy: true, position: 2 },
-      { id: "cv-4", initials: "SE", name: "Silvana Espaillat", lastLabel: "Te paso mi evidencia del tema", whenLabel: "ayer", unread: 0, online: false, navy: false, position: 3 },
+      { id: "cv-1", initials: "SM", name: "Coach Saúl Méndez", lastLabel: "Te dejé feedback en la entrega", whenLabel: "", whenAt: minsAgoDate(60), unread: 2, online: true, navy: true, position: 0 },
+      { id: "cv-2", initials: "CN", name: "Camila Núñez", lastLabel: "¿Practicamos crossfire mañana?", whenLabel: "", whenAt: hoursAgoDate(3), unread: 0, online: true, navy: false, position: 1 },
+      { id: "cv-3", initials: "OTR", name: "Equipo OTR (anuncios)", lastLabel: "Recordatorio: torneo interno el sábado", whenLabel: "", whenAt: hoursAgoDate(26), unread: 0, online: false, navy: true, position: 2 },
+      { id: "cv-4", initials: "SE", name: "Silvana Espaillat", lastLabel: "Te paso mi evidencia del tema", whenLabel: "", whenAt: hoursAgoDate(28), unread: 0, online: false, navy: false, position: 3 },
       // Conversación menor↔coach (PRD §7.4): activa el filtro de contact-info.
-      { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach", whenLabel: "hace 2h", unread: 0, online: false, navy: false, position: 4 },
+      { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach", whenLabel: "", whenAt: minsAgoDate(120), unread: 0, online: false, navy: false, position: 4 },
     ],
   });
   // [GOAL S5] El hilo de Diego se sembraba VACÍO mientras la lista previsualizaba "Gracias
@@ -1751,17 +1779,21 @@ async function main() {
   // (app/lib/queries.ts → conversationLabel), no de un lastLabel escrito a mano.
   // [GOAL S4] Además todos los mensajes llevan senderId: `me` (legacy, por fila) estaba escrito
   // desde el lado de Analía, así que el coach veía los mensajes de su alumna como propios.
+  // [DEUDA-H] `sentAt` = instante real del envío. `timeLabel` guardaba la hora como TEXTO por
+  // fila ("10:02") y la API escribía "ahora" —en español— al crear un mensaje nuevo: con la UI
+  // en inglés el hilo mezclaba idiomas. Ahora la hora se formatea en lectura (hora RD) y los
+  // instantes se anclan a "hace N minutos" para que la demo no envejezca al día siguiente.
   await db.chatMessage.createMany({
     data: [
-      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "¡Hola Analía! Vi tu diagnóstico de 1 minuto.", timeLabel: "10:02", position: 0 },
-      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Tu claim quedó clarísimo en los primeros 10 segundos 👏", timeLabel: "10:02", position: 1 },
-      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "¡Gracias coach! Sentí que el cierre me quedó flojo.", timeLabel: "10:05", position: 2 },
-      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Un poco. Cierra siempre con el impacto, no con un resumen. Vuelve a grabar el último tramo y me lo mandas.", timeLabel: "10:06", position: 3 },
-      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "Hecho. Lo subo hoy mismo 💪", timeLabel: "10:08", position: 4 },
-      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Diego, buen trabajo en la ronda de ayer: el segundo contention quedó sólido.", timeLabel: "16:40", position: 0 },
-      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Para el sábado practica el crossfire: respuestas de 15 segundos, sin leer.", timeLabel: "16:41", position: 1 },
-      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Perfecto, lo practico esta semana con el cronómetro.", timeLabel: "17:02", position: 2 },
-      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Gracias coach", timeLabel: "17:02", position: 3 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "¡Hola Analía! Vi tu diagnóstico de 1 minuto.", timeLabel: "", sentAt: minsAgoDate(66), position: 0 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Tu claim quedó clarísimo en los primeros 10 segundos.", timeLabel: "", sentAt: minsAgoDate(66), position: 1 },
+      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "¡Gracias coach! Sentí que el cierre me quedó flojo.", timeLabel: "", sentAt: minsAgoDate(63), position: 2 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Un poco. Cierra siempre con el impacto, no con un resumen. Vuelve a grabar el último tramo y me lo mandas.", timeLabel: "", sentAt: minsAgoDate(62), position: 3 },
+      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "Hecho. Lo subo hoy mismo.", timeLabel: "", sentAt: minsAgoDate(60), position: 4 },
+      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Diego, buen trabajo en la ronda de ayer: el segundo contention quedó sólido.", timeLabel: "", sentAt: minsAgoDate(142), position: 0 },
+      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Para el sábado practica el crossfire: respuestas de 15 segundos, sin leer.", timeLabel: "", sentAt: minsAgoDate(141), position: 1 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Perfecto, lo practico esta semana con el cronómetro.", timeLabel: "", sentAt: minsAgoDate(120), position: 2 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Gracias coach", timeLabel: "", sentAt: minsAgoDate(120), position: 3 },
     ],
   });
 

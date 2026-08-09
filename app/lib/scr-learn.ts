@@ -4,7 +4,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { videoEmbedHtml } from "./video";
 import { esc } from "./esc";
-import { t, registerDict } from "./i18n";
+import { t, registerDict, getLang, fmtDayMonthYear } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): learn.*. Ver app/lib/i18n.ts.
 import { dict as d_learn } from "./i18n-keys/learn";
 registerDict(d_learn);
@@ -92,10 +92,12 @@ function priorQuizAttempt() {
         (DB.courses && DB.courses[0] && DB.courses[0].code) || "";
       const due = L && L.due ? esc(L.due) : "";
       // Fecha límite real (dueAt) con fallback al label legacy (due); y puntos de la actividad.
+      // [DEUDA-H] El locale estaba FIJO en "es" (toLocaleDateString("es", …)): con la UI en
+      // inglés la fecha de entrega salía "15 de agosto de 2026" en medio de la pantalla
+      // traducida. Se usa fmtDayMonthYear de i18n —el formateador compartido, con tablas de
+      // meses propias— para dar el mismo resultado en cualquier runtime (con o sin ICU).
       const dueAtIso = L && L.dueAt ? L.dueAt : null;
-      const dueLabel = dueAtIso
-        ? (() => { try { const d = new Date(dueAtIso); return isNaN(d.getTime()) ? due : d.toLocaleDateString("es", { day: "numeric", month: "long", year: "numeric" }); } catch { return due; } })()
-        : due;
+      const dueLabel = dueAtIso ? (fmtDayMonthYear(dueAtIso, getLang()) || due) : due;
       const maxPoints = (L && L.maxPoints != null) ? L.maxPoints : 100;
 
       // [COG-04] Respeta los métodos de entrega que el coach configuró (L.submitKinds).
