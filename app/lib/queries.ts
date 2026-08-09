@@ -361,6 +361,35 @@ function buildQuiz(quiz: any, isTeacher: boolean) {
   };
 }
 
+/* ===================== [RONDA3 · CURSOS] Categoría del catálogo =====================
+   El cliente pidió un catálogo "por tipos de clase, como Preply". El modelo Course NO
+   tiene columna `category`: el único campo que clasifica un programa es `format`
+   (PF | LD | Parli | Policy | Oratoria | …), el mismo que ya se pinta como chip en la
+   ficha. Así que la categoría se DERIVA de `format` (y, si viniera vacío, del prefijo
+   del `code`) — no se inventa ni se siembra un campo nuevo. Devuelve una CLAVE estable;
+   la etiqueta visible la pone la UI en el idioma activo (core.cat*), para no romper i18n.
+   Formato desconocido → "other" (la tile se rotula "Otros programas"): nada se pierde. */
+export function courseCategoryKey(format?: string | null, code?: string | null): string {
+  const norm = (s?: string | null) =>
+    String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  const f = norm(format);
+  const c = norm(code);
+  const table: Array<[string, RegExp]> = [
+    ["pf", /^(pf|public ?forum)/],
+    ["ld", /^(ld|lincoln)/],
+    ["parli", /^(parli|parlament|british|bp|wsdc|worlds)/],
+    ["policy", /^(policy|cx)/],
+    ["oratoria", /^(ora|speech|speaking)/],
+  ];
+  for (const [key, re] of table) if (f && re.test(f)) return key;
+  for (const [key, re] of table) if (c && re.test(c)) return key;
+  return "other";
+}
+
 export async function getAppData(email: string = ME_EMAIL, lang: string = "es", preloaded?: any) {
   // PRD §17.3: "i18n is structural, not a wrapper". El contenido de cursos y
   // lecciones se sirve en el idioma activo, cayendo al ES si no hay traducción.
@@ -453,7 +482,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           },
         })
       : Promise.resolve([] as any[]),
-    db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true, summary: true, summaryEn: true, welcomeVideoKind: true, welcomeVideoSrc: true } }),
+    // [RONDA3 · CURSOS] `studentsCount` (denormalizado, coste 0) y el conteo REAL de
+    // módulos/clases publicadas alimentan las tiles de categoría y las recomendaciones
+    // del catálogo por categorías. El join de módulos es el MISMO patrón que ya usa la
+    // lista de cursos de admin (abajo) y corre sobre el catálogo publicado (decenas de
+    // filas), no sobre toda la tabla.
+    db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true, summary: true, summaryEn: true, welcomeVideoKind: true, welcomeVideoSrc: true, studentsCount: true, modules: { select: { _count: { select: { lessons: true } } } } } }),
     // Mapa de módulos para gestión de contenido: solo profesor/admin.
     isTeacher ? db.module.findMany({ where: { course: { teacher: { email } } }, orderBy: { position: "asc" }, select: { id: true, courseId: true, title: true } }) : Promise.resolve([]),
     // Cursos impartidos (con reseñas para el perfil del coach): solo profesor/admin.
@@ -2081,7 +2115,17 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       rating: reviewByCourse.get(c.id)?.avg ?? null,
       reviewCount: reviewByCourse.get(c.id)?.count ?? 0,
       welcomeVideoKind: c.welcomeVideoKind || "none",
-      welcomeVideoSrc: c.welcomeVideoSrc || "" })),
+      welcomeVideoSrc: c.welcomeVideoSrc || "",
+      // [RONDA3 · CURSOS] Datos que el catálogo por CATEGORÍAS necesita, todos reales:
+      //   · category  → clave derivada de `format`/`code` (ver courseCategoryKey arriba).
+      //   · moduleCount / lessonCount → conteo REAL de lo publicado (no lessonsCount,
+      //     que es la columna denormalizada y puede quedar desfasada del contenido).
+      //   · students  → Course.studentsCount (el mismo número que ya usa el Hub).
+      // Sin dato, quedan en 0 y la UI no pinta esa meta (nada inventado).
+      category: courseCategoryKey(c.format, c.code),
+      moduleCount: (c as any).modules?.length ?? 0,
+      lessonCount: ((c as any).modules ?? []).reduce((n: number, m: any) => n + (m?._count?.lessons ?? 0), 0),
+      students: (c as any).studentsCount ?? 0 })),
     // --- Hub: campos nuevos (visibles para todos los roles) ---
     arsenal,
     skills,
