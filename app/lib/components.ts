@@ -58,6 +58,12 @@ interface StatOpts {
   accent?: boolean;      // número en naranja (racha)
   attrs?: string;
 }
+interface StarsOpts {
+  size?: number;         // lado de cada estrella en px (def. 13)
+  gap?: number;          // separación entre estrellas en px (def. 2)
+  color?: string;        // relleno de la parte "llena" (def. var(--otr-sky-lo))
+  empty?: string;        // relleno de la parte "vacía" (def. var(--n-200))
+}
 
 export const C = {
   avatar(initials: string, opts: AvatarOpts = {}) {
@@ -171,5 +177,26 @@ export const C = {
   ringConic(pct: number, num: string | number, cap: string = '', opts: { light?: boolean } = {}) {
     const deg = Math.round(Math.max(0, Math.min(100, pct)) * 3.6);
     return `<span class="ring${opts.light ? ' ring--light' : ''}" style="--deg:${deg}deg">${cap ? `<span class="ring-cap">${cap}</span>` : ''}<b class="ring-num">${num}</b></span>`;
+  },
+  // [M3] Estrellas de rating de SOLO lectura: RELLENAS y proporcionales al valor (un 3.5 se ve
+  // medio, un 5.0 se ve lleno). Fuente ÚNICA de estrellas de la casa — la usan el marketplace
+  // (scr-marketplace) y los perfiles de coach (scr-profile) para que el MISMO rating se vea
+  // idéntico en las dos pantallas (antes el perfil pintaba IC.star en trazo fino, casi vacío).
+  // Técnica: una fila base "vacía" + una capa "llena" recortada por ancho — sin ids de gradiente
+  // (determinista para los tests) y sin CSS externo (todo inline). Devuelve HTML para innerHTML.
+  stars(rating: number, opts: StarsOpts = {}) {
+    const size = Number(opts.size) || 13;
+    const gap = opts.gap != null ? Number(opts.gap) : 2;
+    const fillColor = opts.color || 'var(--otr-sky-lo)';
+    const emptyColor = opts.empty || 'var(--n-200)';
+    const val = Math.max(0, Math.min(5, Number(rating) || 0));
+    const w = size * 5 + gap * 4;                          // ancho total de la fila (px)
+    const fillW = Math.round((val / 5) * w * 100) / 100;   // ancho de la capa llena (px)
+    const star = (c: string) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${c}" style="flex:none;display:block"><path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 17l-5.3 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>`;
+    const row = `display:inline-flex;gap:${gap}px`;
+    return `<span class="otr-stars" role="img" aria-label="${val.toFixed(1)}/5" style="position:relative;display:inline-flex;width:${w}px;height:${size}px;flex:none;vertical-align:middle">`
+      + `<span aria-hidden="true" style="${row}">${star(emptyColor).repeat(5)}</span>`
+      + (fillW > 0 ? `<span aria-hidden="true" style="position:absolute;top:0;left:0;height:100%;width:${fillW}px;overflow:hidden;${row}">${star(fillColor).repeat(5)}</span>` : '')
+      + `</span>`;
   },
 };

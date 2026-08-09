@@ -137,6 +137,7 @@ export const dict = {
     "mkt.safetyFirstBody": "Las sesiones se hacen dentro de OTR, los pagos quedan en custodia (escrow) y nunca se comparte contacto fuera de la plataforma.",
     "mkt.reportCoach": "Reportar a este coach",
     "mkt.cancelPolicyTitle": "Política de cancelación",
+    "mkt.cancelPolicyBody": "Cancelación gratis hasta 24 h antes de la sesión. Dentro de las 24 h se retiene el 50%; las ausencias sin aviso no tienen reembolso. Los pagos quedan en custodia (escrow) hasta que la sesión se completa.",
 
     // modal de reporte
     "mkt.reportModalTitle": "Reportar a",
@@ -286,6 +287,7 @@ export const dict = {
     "mkt.safetyFirstBody": "Sessions take place inside OTR, payments are held in escrow, and contact is never shared outside the platform.",
     "mkt.reportCoach": "Report this coach",
     "mkt.cancelPolicyTitle": "Cancellation policy",
+    "mkt.cancelPolicyBody": "Free cancellation up to 24 h before the session. Within 24 h, 50% is withheld; no-shows are non-refundable. Payments stay in escrow until the session is completed.",
 
     // report modal
     "mkt.reportModalTitle": "Report",
