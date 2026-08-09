@@ -165,14 +165,16 @@ describe("A · la navegación vive en una top-nav horizontal", () => {
 
 /* ================= C · dashboard ================= */
 describe("C · el dashboard replica el mockup con datos reales", () => {
-  it("abre con la cabecera del mockup: fecha de hoy + 'Hola, <nombre>'", () => {
+  it("abre con la cabecera del mockup: 'Hola, <nombre>' SIN eyebrow encima", () => {
     const html = Core.dashboard.render({ role: "student" });
     expect(html).toContain(`${t("core.dashHello")}, Isaac`);
     const head = html.indexOf("page-head--rule");
     const grid = html.indexOf("dash-grid");
     expect(head).toBeGreaterThanOrEqual(0);
     expect(head).toBeLessThan(grid);            // la cabecera abre la pantalla
-    expect(html).toContain("ph-eyebrow");       // eyebrow con la fecha de hoy
+    // [R3 · Isaac] Los eyebrows de cabecera se retiraron de todas las pantallas:
+    // el título es el PRIMER elemento del page-head.
+    expect(html).not.toContain("ph-eyebrow");
   });
 
   it("el hero negro es lo primero de la columna principal", () => {

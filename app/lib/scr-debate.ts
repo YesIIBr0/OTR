@@ -607,7 +607,7 @@ function viewHistory(d) {
   }).join("");
   return `
     <div class="page-head page-head--rule fade-up">
-      <div><span class="ph-eyebrow">${t("debate.historyEyebrow")}</span><h1 class="ph-title">${t("debate.historyTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("debate.historySubTap")}</div></div>
+      <div><h1 class="ph-title">${t("debate.historyTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("debate.historySubTap")}</div></div>
       <div class="row vcenter" style="gap:16px">
         <div class="stat-group">${C.statInline(d.history.length, d.history.length === 1 ? t("debate.roundSingular") : t("debate.roundPlural"))}</div>
         ${C.btn(t("debate.recordDebate"), "accent", { ic: "plus", attrs: 'data-action="debate-record"' })}
@@ -653,7 +653,7 @@ function viewPractice() {
     </div>`;
 
   return `
-    <div class="page-head page-head--rule fade-up"><div><span class="ph-eyebrow">${t("debate.practiceEyebrow")}</span><h1 class="ph-title">${t("debate.practiceTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("debate.practiceSub")}</div></div></div>
+    <div class="page-head page-head--rule fade-up"><div><h1 class="ph-title">${t("debate.practiceTitle")}</h1><div class="page-sub" style="margin-top:8px">${t("debate.practiceSub")}</div></div></div>
     <div class="split">${drills}<div class="stack" style="gap:16px">${finder}</div></div>`;
 }
 
@@ -708,7 +708,7 @@ function viewLeaderboard(staff) {
 
   return `
     <div class="page-head page-head--rule fade-up">
-      <div><span class="ph-eyebrow">${t("debate.lbEyebrow")}</span><h1 class="ph-title">${t("debate.lbPageTitle")}</h1></div>
+      <div><h1 class="ph-title">${t("debate.lbPageTitle")}</h1></div>
       ${stats}
     </div>
     ${staff ? "" : proStrip(t("debate.lbUpsell"))}

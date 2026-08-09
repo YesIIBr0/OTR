@@ -117,7 +117,6 @@ S.listings = {
       .join("");
     return `
     <div class="page-head page-head--rule fade-up"><div>
-      <p class="ph-eyebrow">${t("lst.eyebrow")}</p>
       <h1 class="ph-title">${t("lst.title")}</h1>
       <div class="page-sub">${t("lst.subtitle")}</div>
     </div></div>

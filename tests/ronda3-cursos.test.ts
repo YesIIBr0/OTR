@@ -110,9 +110,10 @@ function rowOf(html: string, name: string) {
 
 /* ============ ① Cabecera: los números son los reales ============ */
 describe("① Cabecera de 'Mis clases'", () => {
-  it("lleva eyebrow, título y los DOS stats del mockup", () => {
+  it("lleva título y los DOS stats del mockup, SIN eyebrow encima", () => {
     const html = mine();
-    expect(html).toContain(t("core.clsEyebrow"));
+    // [R3 · Isaac] "Tu formación" desapareció: el h1 abre la cabecera.
+    expect(html).not.toContain("ph-eyebrow");
     expect(html).toContain(t("core.clsMenuTitle"));
     expect(html).toContain(t("core.clsStatPrograms"));
     expect(html).toContain(t("core.clsStatAvg"));

@@ -119,7 +119,6 @@ S.myListings = {
     const st = mineState();
     return `
     <div class="page-head page-head--rule fade-up"><div>
-      <p class="ph-eyebrow">${t("lst.myEyebrow")}</p>
       <h1 class="ph-title">${t("lst.myTitle")}</h1>
       <div class="page-sub">${t("lst.mySubtitle")}</div>
     </div></div>

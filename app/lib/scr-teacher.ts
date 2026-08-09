@@ -69,7 +69,7 @@ export const S = {};
 
       return `
       <div class="page-head page-head--rule">
-        <div><p class="ph-eyebrow">${t("teacher.eyebrow")}</p>
+        <div>
         <h1 class="ph-title">${t("teacher.title")}</h1>
         <div class="page-sub">${t("teacher.trackingSub").replace("{students}", `${DB.students.length} ${DB.students.length===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural")}`).replace("{courses}", `${courseCount} ${courseCount===1?t("teacher.courseUnitSingular"):t("teacher.courseUnitPlural")}`)}</div></div>
         <div class="row" style="gap:8px">
@@ -187,7 +187,7 @@ export const S = {};
       return `
       <div class="kit-section" style="margin-top:28px">
         <div class="page-head page-head--rule" style="margin-bottom:14px">
-          <div><p class="ph-eyebrow">${t("teacher.manageEyebrow")}</p>
+          <div>
           <h2 class="ph-title" style="font-size:22px">${t("teacher.manageTitle")}</h2>
           <div class="page-sub">${t("teacher.manageSub")}</div></div>
           <div class="row" style="gap:8px">
@@ -634,7 +634,7 @@ export const S = {};
       </tr>`;
 
       return `
-      <div class="page-head page-head--rule"><div><p class="ph-eyebrow">${t("teacher.ptEyebrow")}</p>
+      <div class="page-head page-head--rule"><div>
       <h1 class="ph-title">${t("teacher.ptTitle")}</h1><div class="page-sub">${t("teacher.ptCountsSub").replace("{students}", `${studentCount} ${studentCount===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural")}`).replace("{coaches}", `${coachCount} ${t("teacher.coachUnit")}`)}</div></div>
       <div class="stat-group">
         ${C.statInline(studentCount, studentCount===1?t("teacher.studentUnitSingular"):t("teacher.studentUnitPlural"))}

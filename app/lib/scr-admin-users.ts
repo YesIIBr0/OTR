@@ -177,7 +177,6 @@ S.adminUsers = {
 
     return `
     <div class="page-head page-head--rule fade-up"><div>
-      <p class="ph-eyebrow">${t("au.eyebrow")}</p>
       <h1 class="ph-title">${t("au.title")}</h1>
       <div class="page-sub">${t("au.subtitle")}</div>
     </div></div>

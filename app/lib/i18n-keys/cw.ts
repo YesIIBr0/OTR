@@ -10,7 +10,6 @@ export const dict = {
     "cw.tabAvailability": "Disponibilidad",
 
     // page head
-    "cw.eyebrow": "Espacio de coach",
     "cw.title": "Reservas e ingresos",
     "cw.subtitle": "Reservas, pagos con escrow y disponibilidad — todo dentro de OTR",
 
@@ -154,7 +153,6 @@ export const dict = {
     "cw.tabAvailability": "Availability",
 
     // page head
-    "cw.eyebrow": "Coach Workspace",
     "cw.title": "Bookings & earnings",
     "cw.subtitle": "Bookings, escrow payments and availability — all inside OTR",
 

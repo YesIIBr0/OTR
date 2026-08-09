@@ -417,7 +417,6 @@ S.coachwork = {
     const tab = activeTab();
     return `
     <div class="page-head page-head--rule fade-up"><div>
-      <p class="ph-eyebrow">${t("cw.eyebrow")}</p>
       <h1 class="ph-title">${t("cw.title")}</h1>
       <div class="page-sub">${t("cw.subtitle")}</div>
     </div></div>

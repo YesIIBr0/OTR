@@ -114,11 +114,6 @@ function activeItemsFlat() {
      etiqueta ya formateada de los torneos (startsLabel, "mié 12 ago · 7:00 PM",
      el payload del alumno no trae ISO crudo). */
   const dashLoc = () => (getLang() === 'en' ? 'en-US' : 'es-ES');
-  // "miércoles, 6 de agosto" — .ph-eyebrow lo pone en versalitas por CSS.
-  function dashTodayLabel() {
-    try { return new Date().toLocaleDateString(dashLoc(), { weekday: 'long', day: 'numeric', month: 'long' }); }
-    catch (e) { return ''; }
-  }
   function dashIsToday(ts) {
     if (!ts) return false;
     const d = new Date(ts), n = new Date();
@@ -195,7 +190,6 @@ function activeItemsFlat() {
       const head = `
       <div class="page-head page-head--rule fade-up" style="--d:0">
         <div>
-          <span class="ph-eyebrow">${esc(dashTodayLabel())}</span>
           <h1 class="ph-title">${t('core.dashHello')}, ${firstName}</h1>
         </div>
         ${stats ? `<div class="stat-group">${stats}</div>` : ''}
@@ -786,7 +780,6 @@ function activeItemsFlat() {
     const head = `
     <div class="page-head page-head--rule fade-up" style="--d:0">
       <div>
-        <span class="ph-eyebrow">${t('core.clsEyebrow')}</span>
         <h1 class="ph-title">${t('core.clsMenuTitle')}</h1>
       </div>
       <div class="stat-group">
@@ -992,7 +985,7 @@ function activeItemsFlat() {
     const all = (DB.catalog || []);
     if (!all.length) {
       return full
-        ? `<div class="page-head page-head--rule fade-up" style="--d:0"><div><span class="ph-eyebrow">${t('core.clsEyebrow')}</span><h1 class="ph-title">${t('core.discoverTitle')}</h1></div></div>
+        ? `<div class="page-head page-head--rule fade-up" style="--d:0"><div><h1 class="ph-title">${t('core.discoverTitle')}</h1></div></div>
            <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h2>${t('core.catalogEmpty')}</h2><p>${t('core.catalogEmptyBody')}</p></div></div>`
         : '';
     }
@@ -1011,7 +1004,6 @@ function activeItemsFlat() {
     const head = full
       ? `<div class="page-head page-head--rule fade-up" style="--d:0">
           <div>
-            <span class="ph-eyebrow">${t('core.clsEyebrow')}</span>
             <h1 class="ph-title">${t('core.discoverTitle')}</h1>
           </div>
           <div class="stat-group">${C.statInline(all.length, t('core.clsStatPrograms'))}</div>

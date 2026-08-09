@@ -1,7 +1,5 @@
 export const dict = {
   es: {
-    "room.eyebrowSession": "Sesión",
-    "room.eyebrowCoaching": "Sesión de coaching",
     "room.title": "Sala de sesión",
     "room.notFoundHeading": "No encontramos esta sesión",
     "room.notFoundBody": "El enlace puede haber caducado o la reserva ya no está disponible.",
@@ -36,8 +34,6 @@ export const dict = {
     "room.countdownStartsPrefix": "comienza en",
   },
   en: {
-    "room.eyebrowSession": "Session",
-    "room.eyebrowCoaching": "Coaching session",
     "room.title": "Session room",
     "room.notFoundHeading": "We couldn't find this session",
     "room.notFoundBody": "The link may have expired or the booking is no longer available.",
