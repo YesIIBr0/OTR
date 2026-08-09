@@ -93,6 +93,9 @@ const DICT: LangDict = {
     "top.more": "Más",
     "top.navPrimary": "Navegación principal",
     "top.navMobile": "Navegación móvil",
+    // [RONDA 2 · R1] Nombre accesible del escudo de la esquina: el lockup perdió su texto
+    // visible ("Aula") por pedido de Isaac, y el enlace no puede quedarse mudo.
+    "top.brandHome": "OTR — inicio",
 
     // roles (footer del sidebar)
     "role.student": "Estudiante",
@@ -428,6 +431,8 @@ const DICT: LangDict = {
     "top.more": "More",
     "top.navPrimary": "Primary navigation",
     "top.navMobile": "Mobile navigation",
+    // [RONDA 2 · R1] ver el bloque ES.
+    "top.brandHome": "OTR — home",
 
     // roles (sidebar footer)
     "role.student": "Student",
