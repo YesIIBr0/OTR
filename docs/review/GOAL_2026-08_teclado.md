@@ -347,3 +347,19 @@ constructor de cursos por dentro (drag & drop — su accesibilidad de teclado me
 propia), el flujo de grabación (`.rec-btn`, solo detectado por CSS) y el registro/recuperación
 de contraseña. Tampoco se probó con un lector de pantalla real (VoiceOver/NVDA): todo lo de
 aquí es árbol de accesibilidad de Chromium + `getComputedStyle`.
+
+## Cierre de campaña (2026-08-08)
+
+| Grupo | Estado |
+|---|---|
+| K-01 anillo en primarios/acento (+`.rec-btn` reposo, + tiles/cards `role="button"`) | **CORREGIDO** (E2 + E5 + ola final) |
+| K-02 `--ring` a #C8401A pleno (4,99:1) — con reposo del `.q-dot` diferenciado del foco | **CORREGIDO** (E2 + ola final) |
+| K-03 bordes de input 3,41:1 (`--border-field`) | **CORREGIDO** (E2) |
+| K-04/K-05 landmarks + autocomplete del login (incl. modo reset) | **CORREGIDO** (E2 + ola final) |
+| K-06/K-07/K-08/K-10/K-11 popovers con Escape+foco, roles honestos, "Más", aria-current móvil, Salir botón | **CORREGIDO** (E3; el Escape del modal ya no se filtra al popover) |
+| K-09 escalera de encabezados (Cursos, Debate Hub, Niveles, vacíos) | **CORREGIDO** (F3 + E2 + E4) |
+| K-12 reduced-motion (ecualizador, chevrones, estrellas, `.typing`, `:active` de acento) | **CORREGIDO** (E2 + E5 + ola final) |
+| K-13 svg del anillo | **CORREGIDO** (E2) |
+| K-14–K-17 labels del modal Adjudicar, enviar/buscar/composer con nombre | **CORREGIDO** (F4) |
+
+Abierto conocido (post-despliegue): el panel de notificaciones (3er popover) no cierra con Escape; contraste de `--ink-400` sobre card oscura corregido en la ola final con override `.card--dark`.

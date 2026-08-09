@@ -24,3 +24,15 @@ Leyenda de gravedad: **bloquea** / **molesta** / **cosmético**
 | lifetime | OK | "Tu historia en OTR": radar de 6 habilidades (promedio 82), 7 métricas de trayectoria y línea de tiempo de 17 hitos. Cero errores, sin textos cortados, sin paleta vieja; el switch icónico de perfil público sí tiene `aria-label="Perfil público"`. Interacción principal OK: `Copiar enlace` no lanza error y muestra el toast de enlace copiado. | app/lib/scr-lifetime.ts | — |
 | progress | OK | "Progreso y niveles": 3120 XP, racha 5, escalera de 5 tiers con el actual (OTR Competitor) marcado, barra "1880 XP para OTR Strategist" y las 6 competencias. Cero errores, sin textos cortados, sin paleta vieja. | app/lib/scr-core.ts | — |
 | progress | defecto | La pantalla **no tiene ni un solo control** (`main button` = 0): es 100% lectura, sin filtro, sin enlace a Logros ni a Debate Hub. Nada roto, pero no hay "interacción principal" que probar. | app/lib/scr-core.ts | cosmético |
+
+## Cierre de campaña (2026-08-08)
+
+Los 5 defectos quedaron corregidos en `feat/goal-extras` y verificados con clicks sobre el build integrado:
+
+| Defecto | Estado | Ola |
+|---|---|---|
+| URL no refleja la pantalla (router) | **CORREGIDO** — hash como fuente de verdad, deep-link, Atrás/Adelante, F5; contexto stale cae al padre | F1 (`app/lib/router.ts`, 28 tests) |
+| Fechas ES con `otr_lang=en` | **CORREGIDO** — formatters con idioma en los 14 call-sites; test de cableado que muerde | F2 |
+| Chip "Semifinalista" cortado | **CORREGIDO** — 2 líneas con guion (`hyphens:auto` + `-webkit-`), tile sin crecer | F3 + cierre |
+| "Single" como título de próxima clase | **CORREGIDO** — título real ("Sesión de Public Forum"); el paquete queda de metadato | F2 |
+| `progress` sin controles | **CORREGIDO** — salidas "Ver insignias" y "Debate Hub" (ES/EN) | F3 |

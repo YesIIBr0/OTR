@@ -351,3 +351,9 @@ payload de datos comprimido (5,6 kB).
 
 > Recordatorio del encargo: nada de esto se aplicó. `public/img/` sigue con el único
 > `hero-speaking.jpg` de 182.424 B.
+
+## Cierre de campaña (2026-08-08)
+
+- **§3 índices: APLICADOS los 8** en ambos schemas + migración `20260808000000_add_perf_indexes` (nombres canónicos de Prisma, aditiva; el VPS tiene las 12 previas aplicadas → entra limpia). Ola E1.
+- **§5 hero: APLICADO** — 182.424 → **84.760 B** (1280×989, mismo aspect), in-place sin tocar referencias. Ola E1.
+- §2: los p50/p95 de staging se re-medirán tras el deploy de esta rama (comparativa julio: 335/543 ms).
