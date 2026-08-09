@@ -50,20 +50,24 @@ export const dict = {
     "extra.newCourse": "Nuevo curso",
     "extra.myCoursesEmptyHeading": "Sin cursos todavía",
     "extra.myCoursesEmptyBody": "Crea tu primer curso para empezar a construir su contenido.",
-    // [GOAL-E4 #9] Cara de ADMIN de la misma pantalla: catálogo completo con su dueño.
+    // [GOAL-E4 #9] Cara de ADMIN de la misma pantalla: catálogo completo con su coach responsable.
+    // [DEUDA-H] "Dueño" era un calco del inglés ("owner") y sonaba a propiedad, no a rol: en OTR
+    // el curso es de la academia y el coach es quien RESPONDE por él. Se rotula "Coach
+    // responsable" en toda la consola (7 apariciones); el inglés conserva "owner", que allí sí
+    // es el término natural del producto.
     "extra.eyebrowAdmin": "Administración",
     "extra.allCoursesTitle": "Cursos",
-    "extra.allCoursesSub": "Todos los cursos de la plataforma, con el coach dueño de cada uno",
+    "extra.allCoursesSub": "Todos los cursos de la plataforma, con su coach responsable",
     "extra.allCoursesEmptyHeading": "Aún no hay cursos en la plataforma",
     "extra.allCoursesEmptyBody": "Cuando un coach publique su primer curso, aparecerá aquí.",
-    "extra.courseOwner": "Dueño",
+    "extra.courseOwner": "Coach responsable",
     "extra.courseOwnerNone": "Sin asignar",
-    // [revisión · Important-2] Reasignación de dueño (PATCH /api/courses/[id], solo ADMIN).
-    "extra.reassignOwner": "Reasignar dueño",
-    "extra.reassignAria": "Reasignar el dueño de {course}",
-    "extra.reassignTitle": "Reasignar dueño · {course}",
-    "extra.reassignField": "Nuevo dueño",
-    "extra.reassignOk": "Dueño del curso actualizado",
+    // [revisión · Important-2] Reasignación del coach responsable (PATCH /api/courses/[id], solo ADMIN).
+    "extra.reassignOwner": "Cambiar coach responsable",
+    "extra.reassignAria": "Cambiar el coach responsable de {course}",
+    "extra.reassignTitle": "Cambiar coach responsable · {course}",
+    "extra.reassignField": "Nuevo coach responsable",
+    "extra.reassignOk": "Coach responsable actualizado",
     "extra.reassignNoCoaches": "No hay coaches a los que asignar el curso",
     "extra.reassignLoadFail": "No se pudo cargar la lista de coaches",
     "extra.draft": "Borrador",
@@ -160,7 +164,7 @@ export const dict = {
     "extra.allCoursesSub": "Every course on the platform, with the coach who owns it",
     "extra.allCoursesEmptyHeading": "No courses on the platform yet",
     "extra.allCoursesEmptyBody": "Once a coach publishes their first course, it will show up here.",
-    "extra.courseOwner": "Owner",
+    "extra.courseOwner": "Course owner",
     "extra.courseOwnerNone": "Unassigned",
     // [revisión · Important-2] Owner reassignment (PATCH /api/courses/[id], ADMIN only).
     "extra.reassignOwner": "Reassign owner",

@@ -20,6 +20,12 @@ import { S as extraScreens } from "./scr-extra";
 import { renderBookings, mountBookings } from "./scr-mybookings";
 export const S = {};
 
+// [Isaac 2026-08-09] Tiers con metal propio en el chip de "Tu rango". Espejo deliberado del
+// TIER_TONE de scr-debate.ts: son dos líneas y evitan que el dashboard (chunk inicial) tenga
+// que importar el chunk del Debate Hub solo para colorear un chip. Los estilos son los mismos
+// (.chip--tier-* en screens.css) y el contraste está medido en tokens.css.
+const DASH_TIER_TONE: Record<string, string> = { gold: "gold", platinum: "platinum" };
+
 // Sub-tab activo de la sección Cursos. Patrón window.__x como el resto del SPA
 // (cf. window.__debateTab). "mine" = cursos activos; "catalog" = buscar nuevos.
 function coursesTab() {
@@ -149,6 +155,14 @@ function activeItemsFlat() {
   function hlImgUrl(url) {
     const u = String(url || '');
     return /^(\/|https:\/\/)[^'"()\s]+$/.test(u) ? esc(u) : '';
+  }
+
+  /* [RONDA3 · Isaac] Enlace a la publicación de Instagram de un highlight. queries.ts ya
+     lo saneó con safeUrl + http(s); aquí se vuelve a exigir absoluto http(s) porque el
+     builder también corre con payloads viejos o de test. '' → la tarjeta NO navega. */
+  function hlPostUrl(url) {
+    const u = String(url || '');
+    return /^https?:\/\/[^'"<>\s]+$/.test(u) ? esc(u) : '';
   }
 
   S.dashboard = {
@@ -333,8 +347,12 @@ function activeItemsFlat() {
       <div class="card--dark dash-rank">
         <div class="dr-head">
           <span class="lbl">${t('core.dashRankTitle')}</span>
-          ${/* [MOCKUP §3.8] El badge de tier ("ORO") va con escudo, no con medalla. */''}
-          ${tier ? C.chip(esc(tier), 'accent', { ic: 'shield' }) : ''}
+          ${/* [MOCKUP §3.8] El badge de tier ("ORO") va con escudo, no con medalla.
+                [Isaac 2026-08-09] "que no sea «Gold» en naranja, que sea gold… igualito que en
+                dashboard": el chip toma el METAL de su tier, con las mismas clases del kit que
+                usa el Debate Hub (.chip--tier-*, contraste medido en tokens.css). Los tiers sin
+                metal propio (bronce, plata…) siguen en el acento de la marca. */''}
+          ${tier ? C.chip(esc(tier), 'accent', { ic: 'shield', cls: DASH_TIER_TONE[String(DB.debateRank?.tier || '').toLowerCase()] ? `chip--tier-${DASH_TIER_TONE[String(DB.debateRank?.tier || '').toLowerCase()]}` : '' }) : ''}
         </div>
         <div class="dr-body">
           ${C.ringConic(pct, levelNum, t('core.dashLevelCap'))}
@@ -434,8 +452,13 @@ function activeItemsFlat() {
         </div>`;
       // Con un cohorte de 3 o menos, la columna de la lista quedaría vacía: el
       // podio pasa a ocupar la card entera en vez de dejar medio bloque en blanco.
+      /* [RONDA3] Fila de cortesía cuando el alumno cae fuera del top 8: la cifra tiene que
+         ser la de ESTA tabla. Antes usaba `xp` (= DB.xp, la XP DE POR VIDA), así que en la
+         tabla mensual se pintaba 3.120 XP junto a puestos de 840 XP. Con solo 3 elegibles
+         nadie llegaba a esa rama; al poblar la temporada sí se alcanza. Ahora sale de
+         `lbMe.xp`, que es la XP del mes que ya calcula queries.ts. */
       const listBody = (podium.length >= 3 ? listRows : lbRows.slice(0, 8)).map((r) => lbRow(r, !!r.you)).join('')
-        + ((!meInShown && lbMe) ? lbRow({ rank: lbMe.rank, name: DB.me?.name || '', rating: lbMe.rating, xp }, true) : '');
+        + ((!meInShown && lbMe) ? lbRow({ rank: lbMe.rank, name: DB.me?.name || '', rating: lbMe.rating, xp: lbMe.xp ?? 0 }, true) : '');
       const standings = lbRows.length ? `
       <section class="card--dark card--glow dash-lb fade-up" style="--d:3">
         <div class="dlb-head">
@@ -451,23 +474,31 @@ function activeItemsFlat() {
       </section>` : '';
 
       /* ---- ⑦ LO MEJOR DE LA TEMPORADA — solo con media real en la DB ------
-         DB.highlights: [{ id, title, dateLabel, category, imageUrl }]. Son textos de
-         CATÁLOGO (tabla Highlight), que queries.ts NO escapa —igual que badges y
-         events—, así que se escapan aquí.
-         Sin imageUrl la card cae a negra plana: degrada sin hueco roto. */
+         DB.highlights: [{ id, title, dateLabel, category, imageUrl, instagramUrl }]. Son
+         textos de CATÁLOGO (tabla Highlight), que queries.ts NO escapa —igual que badges
+         y events—, así que se escapan aquí.
+         Sin imageUrl la card cae a negra plana: degrada sin hueco roto.
+         [RONDA3 · Isaac] Dos correcciones pedidas por el cliente:
+           · "Ver todo" ya NO manda a Eventos (eran cosas distintas): va a la pantalla
+             propia `highlights`, la lista larga de 1 por fila.
+           · Cada tarjeta enlaza a SU publicación de Instagram, en pestaña nueva y con
+             rel="noopener noreferrer". Sin URL la tarjeta se queda en <article>: no
+             navega a ningún sitio, que es mejor que un enlace roto. */
       const highlights = Array.isArray(DB.highlights) ? DB.highlights : [];
       const highlightsSection = highlights.length ? `
       <section class="fade-up" style="--d:4">
-        ${C.secTitle(t('core.dashHighlightsTitle'), { right: `<a class="hl-all" href="#" data-go="events">${t('core.dashHighlightsAll')}</a>` })}
+        ${C.secTitle(t('core.dashHighlightsTitle'), { right: `<a class="hl-all" href="#" data-go="highlights">${t('core.dashHighlightsAll')}</a>` })}
         <div class="hl-grid">
           ${highlights.slice(0, 4).map((h) => {
             const img = hlImgUrl(h.imageUrl);
-            return `
-            <article class="hl">
+            const post = hlPostUrl(h.instagramUrl);
+            const inner = `
               ${img ? `<span class="hl-img" style="background-image:url('${img}')"></span>` : ''}
               ${h.category ? C.chip(esc(h.category), 'accent', { cls: 'hl-tag' }) : ''}
-              <div class="hl-txt"><div class="hl-t">${esc(h.title || '')}</div><div class="hl-d">${esc(h.dateLabel || '')}</div></div>
-            </article>`;
+              <div class="hl-txt"><div class="hl-t">${esc(h.title || '')}</div><div class="hl-d">${esc(h.dateLabel || '')}</div></div>`;
+            return post
+              ? `<a class="hl hl--ig" href="${post}" target="_blank" rel="noopener noreferrer">${inner}</a>`
+              : `<article class="hl">${inner}</article>`;
           }).join('')}
         </div>
       </section>` : '';
@@ -670,58 +701,347 @@ function activeItemsFlat() {
     return m && m[1].trim() ? m[1] : '';
   }
 
-  /* ---------------- MENÚ DE CLASES (sub-tab "Cursos activos") ----------------
-     [DERIVADO] El share del cliente solo exponía el "adentro"; este menú se deriva del
-     MISMO lenguaje visual (card r6 borde cálido, barra naranja, textos contenidos). */
+  /* ============ [RONDA3 · CURSOS] "Mis clases" LISTA + catálogo por CATEGORÍAS =====
+     Segunda vuelta del mockup de Isaac sobre la sección Cursos:
+       · ARRIBA  → "Mis clases" deja de ser una rejilla de cards y pasa a ser una LISTA
+         de 1 programa por fila (PROGRAMA · PROGRESO · PRÓXIMA CLASE · acción), con
+         stats en la cabecera, filtros Todas/En curso/Completadas y buscador.
+       · ABAJO   → "Descubre nuevos cursos" por CATEGORÍAS ("como Preply"): tiras de
+         tiles con conteo REAL + recomendados + el catálogo filtrable por categoría.
+     Todo sale de DB (coursesContent / catalog / myBookings / tournaments). La categoría
+     NO existe en el modelo Course: se DERIVA de `format` en queries.ts
+     (courseCategoryKey) y aquí solo se rotula en el idioma activo. Contrato de escape:
+     lo que viene del payload (name/coach/summary) se pinta CRUDO; lo que no (code,
+     color, textos propios) se escapa aquí. */
+
+  // --- Estado de la lista y del catálogo (patrón window.__x del resto del SPA) ---
+  function clsFilter() {
+    const v = (window as any).__clsFilter;
+    return v === 'active' || v === 'done' ? v : 'all';
+  }
+  function clsQuery() { return String((window as any).__clsQ || ''); }
+  function catFilter() { return String((window as any).__catCat || ''); }
+
+  // Resumen REAL de un programa inscrito. `state`:
+  //   empty  → sin clases publicadas (no hay a dónde ir)
+  //   done   → todas las clases hechas       → "Repasar"
+  //   active → empezado y sin terminar       → "Continuar"
+  //   new    → inscrito y sin empezar        → "Empezar"
+  function courseStats(c) {
+    const all = classesOf(c);
+    const total = all.length;
+    const done = all.filter((x) => x.it.doneByMe).length;
+    const pct = typeof c.progress === 'number' ? c.progress : (total ? Math.round((done * 100) / total) : 0);
+    const cur = currentClass(c);
+    const mods = (c.modules || []).length;
+    // Módulo en curso (1-based) para "Módulo 5/8"; con el curso terminado, el último.
+    const curMod = cur ? cur.mi + 1 : (done && mods ? mods : 0);
+    const state = !total ? 'empty' : (done >= total || pct >= 100) ? 'done' : done > 0 ? 'active' : 'new';
+    return { all, total, done, pct, cur, mods, curMod, state };
+  }
+
+  // Color de curso saneado: solo hex. Cualquier otra cosa cae al naranja de marca —
+  // el valor entra en un atributo style, no puede venir crudo de la DB.
+  function safeColor(v) {
+    return /^#[0-9a-fA-F]{3,8}$/.test(String(v || '')) ? String(v) : 'var(--otr-green)';
+  }
+
+  // Celda "PRÓXIMA CLASE": el dato REAL, en este orden de verdad.
+  function nextClassCell(c, st) {
+    const live = liveSessionOf(c);
+    if (live) return `<span class="cls-row-hot">${IC.video}${t('core.clsTodayAt').replace('{time}', clsTime(live.slotAtIso))}</span>`;
+    if (st.state === 'done') return `<span class="cls-row-hot">${IC.award}${t('core.clsCertReady')}</span>`;
+    if (!st.cur) return `<span class="faint">${t('core.clsNoContentYet')}</span>`;
+    const due = dueLabel(st.cur.it);
+    return `<b class="cls-row-nextt">${st.cur.it.t}</b>${due ? `<span class="cls-row-nextd">${due}</span>` : ''}`;
+  }
+
+  // Botón de la fila según el estado REAL del programa (mismos tres pesos del mockup:
+  // naranja para seguir, negro para arrancar, contorno para repasar).
+  function rowCta(c, st) {
+    const open = `data-cls-open="${esc(c.code)}"`;
+    if (st.state === 'done') return C.btn(t('core.clsReview'), 'outline', { size: 'sm', attrs: open });
+    if (st.state === 'active') return C.btn(t('core.continue'), 'accent', { size: 'sm', icRight: 'arrowR', attrs: open });
+    if (st.state === 'new') return C.btn(t('core.clsStart'), 'primary', { size: 'sm', icRight: 'arrowR', attrs: open });
+    // Sin clases publicadas el CTA no lleva a ningún sitio: va apagado, no en naranja.
+    return C.btn(t('core.clsStart'), 'outline', { size: 'sm', disabled: true, attrs: 'aria-disabled="true"' });
+  }
+
+  /* ---------------- ARRIBA · "Mis clases" como LISTA ---------------- */
   function renderMyCourses() {
     const list = (DB.coursesContent || []);
     if (!list.length) {
       // Sin cursos activos: empuja al catálogo cambiando de sub-tab (no a la ruta vieja).
       return `<div class="page-head"><div><h1 class="page-title">${t("core.courseEmptyTitle")}</h1><div class="page-sub">${t("core.courseEmptySub")}</div></div></div>
-      <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h2>${t("core.courseEnrollHeading")}</h2><p>${t("core.courseEnrollBody")}</p><button class="btn btn-primary btn-sm" data-courses-tab="catalog">${t("core.exploreCatalog")}</button></div></div>`;
+      <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h2>${t("core.courseEnrollHeading")}</h2><p>${t("core.courseEnrollBody")}</p><button class="btn btn-primary btn-sm" data-courses-tab="catalog">${t("core.exploreCatalog")}</button></div></div>
+      ${renderDiscover(false)}`;
     }
+
+    const rows = list.map((c) => ({ c, st: courseStats(c) }));
+    // Progreso medio REAL: media de los % de los programas inscritos.
+    const avg = Math.round(rows.reduce((n, r) => n + r.st.pct, 0) / rows.length);
+    const nDone = rows.filter((r) => r.st.state === 'done').length;
+    const nActive = rows.length - nDone;
 
     const head = `
     <div class="page-head page-head--rule fade-up" style="--d:0">
       <div>
+        <span class="ph-eyebrow">${t('core.clsEyebrow')}</span>
         <h1 class="ph-title">${t('core.clsMenuTitle')}</h1>
-        <div class="page-sub">${list.length === 1 ? t('core.clsMenuSubOne') : t('core.clsMenuSubMany').replace('{n}', String(list.length))}</div>
       </div>
-      ${C.btn(t('core.findCatalogCta'), 'outline', { ic: 'search', attrs: 'data-courses-tab="catalog"' })}
+      <div class="stat-group">
+        ${C.statInline(rows.length, t('core.clsStatPrograms'))}
+        ${C.statInline(`${avg}%`, t('core.clsStatAvg'), { accent: true })}
+      </div>
     </div>`;
 
-    const cards = list.map((c, i) => {
-      const all = classesOf(c);
-      const total = all.length;
-      const done = all.filter((x) => x.it.doneByMe).length;
-      const cur = currentClass(c);
-      const pct = typeof c.progress === 'number' ? c.progress : (total ? Math.round((done * 100) / total) : 0);
-      const cta = cur
-        ? C.btn(done > 0 ? t('core.continue') : t('core.clsStart'), 'accent', { icRight: 'arrowR', attrs: `data-cls-open="${esc(c.code)}"` })
-        // Curso sin clases publicadas: el CTA no puede llevar a ningún sitio. Va en outline
-        // y no en naranja — un botón muerto no debe ser lo más ruidoso de la card.
-        : C.btn(t('core.clsStart'), 'outline', { disabled: true, attrs: 'aria-disabled="true"' });
-      return `
-      <article class="cls-card fade-up" style="--d:${Math.min(i + 1, 6)}">
-        <div class="cls-card-h">
-          <h2 class="cls-card-t"><button class="cls-open" data-cls-open="${esc(c.code)}">${c.name}</button></h2>
-          ${c.format ? C.chip(c.format, 'outline') : ''}
-        </div>
-        <div class="cls-card-coach">${C.avatar(initialsOf(c.coach), { size: 'sm' })}<span>${c.coach}</span></div>
-        <div class="cls-prog">
-          <div class="cls-prog-top"><span>${t('core.clsOfClasses').replace('{done}', String(done)).replace('{total}', String(total))}</span><b class="cls-pct tnum">${pct}%</b></div>
-          <div class="cls-bar"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div>
-        </div>
-        <div class="cls-next">${cur
-          ? `${t('core.clsNextPrefix')}: <b>${cur.it.t}</b>${dueLabel(cur.it) ? ` · ${dueLabel(cur.it)}` : ''}`
-          : t('core.clsNoContentYet')}</div>
-        <div class="cls-card-cta">${cta}</div>
-      </article>`;
-    }).join('');
+    // Filtros + buscador. Los conteos son los REALES de cada grupo.
+    const f = clsFilter();
+    const q = clsQuery();
+    const chip = (k, label, n) =>
+      `<button class="cls-fchip${k === f ? ' is-on' : ''}" data-cls-filter="${k}" aria-pressed="${k === f}">${label} <span class="n tnum">(${n})</span></button>`;
+    const toolbar = `
+    <div class="cls-toolbar fade-up" style="--d:1">
+      <div class="cls-fchips" role="group" aria-label="${t('core.clsFilterAll')}">
+        ${chip('all', t('core.clsFilterAll'), rows.length)}
+        ${chip('active', t('core.clsFilterActive'), nActive)}
+        ${chip('done', t('core.clsFilterDone'), nDone)}
+      </div>
+      <div class="cls-search">
+        <span class="cls-search-ic">${IC.search}</span>
+        <input id="cls-q" type="search" class="cls-search-in" value="${esc(q)}"
+          placeholder="${t('core.clsSearchPh')}" aria-label="${t('core.clsSearchAria')}" autocomplete="off">
+      </div>
+    </div>`;
 
-    return `${head}<div class="cls-grid">${cards}</div>
-    ${/* [UI-CURSOS U3] Las sesiones reservadas, bajo el menú de clases. */''}
-    ${renderBookings()}`;
+    // Filtro + búsqueda sobre el MISMO conjunto que se acaba de contar.
+    const needle = q.trim().toLowerCase();
+    const shown = rows.filter(({ c, st }) => {
+      if (f === 'done' && st.state !== 'done') return false;
+      if (f === 'active' && st.state === 'done') return false;
+      if (!needle) return true;
+      return `${c.name} ${c.coach} ${c.code} ${c.format || ''}`.toLowerCase().includes(needle);
+    });
+
+    const listHead = `
+    <div class="cls-list-head" aria-hidden="true">
+      <span>${t('core.clsColProgram')}</span><span>${t('core.clsColProgress')}</span>
+      <span>${t('core.clsColNext')}</span><span></span>
+    </div>`;
+
+    const body = shown.length ? shown.map(({ c, st }, i) => `
+      <div class="cls-row fade-up" style="--d:${Math.min(i + 2, 6)}">
+        <div class="cls-row-main">
+          <span class="cls-row-thumb" style="--cc:${safeColor(c.color)}" aria-hidden="true"><span>${esc(c.code)}</span></span>
+          <span class="cls-row-txt">
+            <span class="cls-row-h">
+              <span class="cls-row-t"><button class="cls-open" data-cls-open="${esc(c.code)}">${c.name}</button></span>
+              ${st.state === 'done' ? C.chip(t('core.clsChipDone'), 'tint', { ic: 'check' }) : (c.format ? C.chip(c.format, 'outline') : '')}
+            </span>
+            <span class="cls-row-coach">${C.avatar(initialsOf(c.coach), { size: 'sm' })}<span>${c.coach}</span></span>
+          </span>
+        </div>
+        <div class="cls-row-prog">
+          <div class="cls-prog-top">
+            <span>${!st.total ? '<span class="faint">—</span>'
+              : st.mods && st.curMod ? t('core.clsModuleOf').replace('{m}', String(st.curMod)).replace('{n}', String(st.mods))
+              : t('core.clsOfClasses').replace('{done}', String(st.done)).replace('{total}', String(st.total))}</span>
+            <b class="cls-pct tnum">${st.pct}%</b>
+          </div>
+          <div class="cls-bar"><i style="width:${Math.max(0, Math.min(100, st.pct))}%"></i></div>
+        </div>
+        <div class="cls-row-next">${nextClassCell(c, st)}</div>
+        <div class="cls-row-act">${rowCta(c, st)}</div>
+      </div>`).join('')
+      : `<div class="cls-row-empty"><div class="ill">${IC.search}</div><h2>${t('core.clsNoMatchTitle')}</h2><p>${t('core.clsNoMatchBody')}</p>
+         <button class="btn btn-outline btn--sm" data-cls-filter="all" data-cls-clear>${t('core.clsClearFilters')}</button></div>`;
+
+    return `${head}${toolbar}
+    <div class="cls-list">${listHead}${body}</div>
+    ${/* [UI-CURSOS U3] Las sesiones reservadas, justo bajo lo que YA cursas. */''}
+    ${renderBookings()}
+    ${/* [RONDA3] Y al FONDO, "Descubre nuevos cursos" por categorías. */''}
+    ${renderDiscover(false)}`;
+  }
+
+  /* ---------------- ABAJO · Catálogo por CATEGORÍAS ("como Preply") ----------------
+     La categoría no está en el modelo: viene DERIVADA de `format` desde queries.ts
+     (c.category). Aquí solo se rotula y se cuenta — los conteos son los reales del
+     catálogo publicado, y una categoría sin cursos NO pinta tile. */
+  const CAT_KEYS = ['pf', 'ld', 'parli', 'policy', 'oratoria', 'other'];
+  function catLabel(k) {
+    return ({ pf: t('core.catPf'), ld: t('core.catLd'), parli: t('core.catParli'),
+      policy: t('core.catPolicy'), oratoria: t('core.catOratoria'), other: t('core.catOther') })[k] || t('core.catOther');
+  }
+  function catIcon(k) {
+    return ({ all: IC.grid, pf: IC.users, ld: IC.msgCircle, parli: IC.flag, policy: IC.doc, oratoria: IC.mic })[k] || IC.book;
+  }
+  // Formatos de competición reales (los que llevan a torneo). Sirve para el chip.
+  function isCompetitive(k) { return k === 'pf' || k === 'ld' || k === 'parli' || k === 'policy'; }
+
+  // Agrupa el catálogo por categoría. Devuelve solo grupos CON cursos, en el orden del
+  // catálogo (Course.position) y con "Otros programas" siempre al final.
+  function catalogGroups() {
+    const counts = new Map();
+    for (const c of (DB.catalog || [])) {
+      const k = CAT_KEYS.includes(c.category) ? c.category : 'other';
+      counts.set(k, (counts.get(k) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([k, n]) => ({ k, n }))
+      .sort((a, b) => (a.k === 'other' ? 1 : 0) - (b.k === 'other' ? 1 : 0));
+  }
+  const catCountLabel = (n) => (n === 1 ? t('core.catCountOne') : t('core.catCountMany').replace('{n}', String(n)));
+
+  // Meta de una ficha del catálogo: SOLO lo que existe ("3 módulos · 9 clases · Online").
+  function catalogMeta(c) {
+    const bits = [];
+    if (c.moduleCount) bits.push(c.moduleCount === 1 ? t('core.metaModulesOne') : t('core.metaModulesMany').replace('{n}', String(c.moduleCount)));
+    if (c.lessonCount) bits.push(c.lessonCount === 1 ? t('core.metaClassesOne') : t('core.metaClassesMany').replace('{n}', String(c.lessonCount)));
+    if (c.modality) bits.push(c.modality);
+    return bits.join(' · ');
+  }
+
+  // Chip de la tarjeta recomendada. Cada valor sale de un dato REAL: "Popular" al que
+  // MÁS alumnos inscritos tiene de los que se están recomendando (Course.studentsCount,
+  // y solo si hay alguno), "Competición" a los formatos que llevan a torneo y, si no,
+  // su propia categoría. Nada de etiquetas decorativas ("Nuevo"): el modelo no guarda
+  // fecha de alta del curso, así que ese chip del mockup sería inventado.
+  function recoChip(c, topStudents) {
+    const k = CAT_KEYS.includes(c.category) ? c.category : 'other';
+    if (topStudents > 0 && (c.students || 0) === topStudents) return C.chip(t('core.chipPopular'), 'accent', { ic: 'flame' });
+    if (isCompetitive(k)) return C.chip(t('core.chipCompetition'), 'black', { ic: 'trophy' });
+    return C.chip(catLabel(k), 'outline');
+  }
+
+  // Tira de tiles de categoría. `full` = estamos en el sub-tab "Buscar nuevos" (filtra en
+  // sitio); desde "Mis clases" la tile salta al catálogo ya filtrado.
+  function categoryTiles(full) {
+    const groups = catalogGroups();
+    if (!groups.length) return '';
+    const active = catFilter();
+    const tile = (k, label, count, on, attrs) =>
+      `<button class="cat-tile${on ? ' is-on' : ''}" ${attrs} aria-pressed="${!!on}" aria-label="${t('core.catFilterAria').replace('{cat}', label)}">
+        <span class="cat-tile-ic">${catIcon(k)}</span>
+        <span class="cat-tile-txt"><span class="cat-tile-n">${label}</span><span class="cat-tile-c">${count}</span></span>
+      </button>`;
+    const tiles = [
+      tile('all', t('core.catAll'), catCountLabel((DB.catalog || []).length), !active, `data-cat=""`),
+      ...groups.map((g) => tile(g.k, catLabel(g.k), catCountLabel(g.n), active === g.k, `data-cat="${esc(g.k)}"`)),
+    ];
+    // [MOCKUP] La quinta tile del share es "Torneos y liga · N eventos". No es una
+    // categoría de curso (por eso dice "eventos"): es el atajo a Eventos con el conteo
+    // REAL de torneos próximos. Sin torneos, no se pinta.
+    const nT = (DB.tournaments || []).length;
+    if (nT) tiles.push(`<button class="cat-tile cat-tile--link" data-go="events">
+      <span class="cat-tile-ic">${IC.trophy}</span>
+      <span class="cat-tile-txt"><span class="cat-tile-n">${t('core.catTournaments')}</span><span class="cat-tile-c">${nT === 1 ? t('core.catEventsOne') : t('core.catEventsMany').replace('{n}', String(nT))}</span></span>
+      <span class="cat-tile-go">${IC.arrowUR}</span>
+    </button>`);
+    return `<div class="cat-tiles${full ? '' : ' cat-tiles--strip'}">${tiles.join('')}</div>`;
+  }
+
+  // Ficha grande de "Recomendado para ti" (foto + chip + título + meta + inscribirme).
+  function recoCard(c, topStudents, i) {
+    return `
+    <article class="reco-card fade-up" style="--d:${Math.min(i + 1, 6)};--cc:${safeColor(c.color)}">
+      <div class="reco-photo"><span class="reco-code">${esc(c.code)}</span></div>
+      <div class="reco-body">
+        <div class="reco-chips">${recoChip(c, topStudents)}</div>
+        <h3 class="reco-t">${c.name}</h3>
+        <div class="reco-coach">${C.avatar(initialsOf(c.coach), { size: 'sm' })}<span>${c.coach}</span></div>
+        ${/* La meta abre con la categoría (dato real) para que un programa sin módulos
+              publicados no se quede en un escueto "híbrido". */''}
+        <div class="reco-meta">${[catLabel(CAT_KEYS.includes(c.category) ? c.category : 'other'), catalogMeta(c)].filter(Boolean).join(' · ')}</div>
+        <div class="reco-cta">${C.btn(t('core.catalogEnroll'), 'accent', { size: 'sm', ic: 'plus', attrs: `data-enroll="${esc(c.id)}"` })}</div>
+      </div>
+    </article>`;
+  }
+
+  // Ficha compacta del catálogo filtrado. El COACH va SIEMPRE visible: el cliente pidió
+  // "y así los cursos con diferentes profesores".
+  function catalogCard(c, i) {
+    const k = CAT_KEYS.includes(c.category) ? c.category : 'other';
+    return `
+    <article class="cat-card fade-up" style="--d:${Math.min(i + 1, 6)};--cc:${safeColor(c.color)}">
+      <div class="cat-card-h">
+        <span class="cat-card-ic">${catIcon(k)}</span>
+        <span class="cat-card-cat">${catLabel(k)}</span>
+      </div>
+      <h3 class="cat-card-t">${c.name}</h3>
+      <div class="cat-card-coach">${C.avatar(initialsOf(c.coach), { size: 'sm' })}<span class="cat-card-coachn">${c.coach}</span></div>
+      ${c.rating != null ? `<div class="cat-card-rate"><span class="star">${IC.star}</span><b class="tnum">${Number(c.rating).toFixed(1)}</b>${c.reviewCount ? `<span class="faint">· ${Number(c.reviewCount)}</span>` : ''}</div>` : ''}
+      ${c.summary ? `<p class="cat-card-p">${c.summary}</p>` : ''}
+      ${/* [CATÁLOGO · llamada Isaac] El video de bienvenida del profe se conserva: el
+            visor lo cablea extraScreens.catalog.mount (mismo data-welcome-video). */''}
+      ${c.welcomeVideoKind && c.welcomeVideoKind !== 'none' && c.welcomeVideoSrc
+        ? `<button class="btn btn-soft btn-sm cat-card-wv" data-welcome-video data-wv-kind="${esc(c.welcomeVideoKind)}" data-wv-src="${esc(c.welcomeVideoSrc)}" data-wv-name="${c.name}">${IC.play} ${t('core.catalogWelcomeVideo')}</button>`
+        : ''}
+      <div class="cat-card-foot">
+        ${catalogMeta(c) ? `<span class="cat-card-meta">${catalogMeta(c)}</span>` : '<span></span>'}
+        ${c.enrolled
+          ? C.chip(t('core.catalogEnrolled'), 'tint', { ic: 'check' })
+          : C.btn(t('core.catalogEnroll'), 'accent', { size: 'sm', ic: 'plus', attrs: `data-enroll="${esc(c.id)}"` })}
+      </div>
+    </article>`;
+  }
+
+  /* "Descubre nuevos cursos". full=false → tira bajo "Mis clases"; full=true → el
+     sub-tab "Buscar nuevos" completo (tiles + recomendados + catálogo filtrado). */
+  function renderDiscover(full) {
+    const all = (DB.catalog || []);
+    if (!all.length) {
+      return full
+        ? `<div class="page-head page-head--rule fade-up" style="--d:0"><div><span class="ph-eyebrow">${t('core.clsEyebrow')}</span><h1 class="ph-title">${t('core.discoverTitle')}</h1></div></div>
+           <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h2>${t('core.catalogEmpty')}</h2><p>${t('core.catalogEmptyBody')}</p></div></div>`
+        : '';
+    }
+
+    const active = catFilter();
+    // Recomendados: los que AÚN NO cursas, por valoración y alumnos inscritos (real).
+    const reco = all.filter((c) => !c.enrolled)
+      .slice()
+      .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0)
+        || (Number(b.students) || 0) - (Number(a.students) || 0)
+        || (Number(b.reviewCount) || 0) - (Number(a.reviewCount) || 0))
+      .slice(0, 3);
+    // "Popular" se mide DENTRO de lo recomendado (es lo que el alumno está viendo).
+    const topStudents = Math.max(0, ...reco.map((c) => Number(c.students) || 0));
+
+    const head = full
+      ? `<div class="page-head page-head--rule fade-up" style="--d:0">
+          <div>
+            <span class="ph-eyebrow">${t('core.clsEyebrow')}</span>
+            <h1 class="ph-title">${t('core.discoverTitle')}</h1>
+          </div>
+          <div class="stat-group">${C.statInline(all.length, t('core.clsStatPrograms'))}</div>
+        </div>`
+      : C.secTitle(t('core.discoverTitle'), {
+          tag: 'h2',
+          right: C.btn(t('core.discoverAllCta'), 'ghost', { size: 'sm', icRight: 'arrowR', attrs: 'data-courses-tab="catalog"' }),
+        });
+
+    const recoBlock = reco.length
+      ? `${C.secTitle(t('core.discoverRecoTitle'), { tag: 'h3', sm: true })}
+         <div class="reco-sub">${t('core.discoverRecoSub')}</div>
+         <div class="reco-grid">${reco.map((c, i) => recoCard(c, topStudents, i)).join('')}</div>`
+      : '';
+
+    if (!full) {
+      return `<section class="discover discover--strip">${head}${categoryTiles(false)}${recoBlock}</section>`;
+    }
+
+    const shown = active ? all.filter((c) => (CAT_KEYS.includes(c.category) ? c.category : 'other') === active) : all;
+    const grid = shown.length
+      ? `<div class="cat-grid">${shown.map(catalogCard).join('')}</div>`
+      : `<div class="card"><div class="empty"><div class="ill">${IC.search}</div><h2>${t('core.catalogEmpty')}</h2><p>${t('core.catalogEmptyBody')}</p><button class="btn btn-outline btn--sm" data-cat="">${t('core.catAll')}</button></div></div>`;
+
+    return `<section class="discover">${head}${categoryTiles(true)}${recoBlock}
+      ${C.secTitle(active ? catLabel(active) : t('core.catalogTitle'), {
+        tag: 'h2',
+        right: `<span class="lbl">${t('core.catalogCount').replace('{n}', String(shown.length)).replace('{total}', String(all.length))}</span>`,
+      })}
+      ${grid}</section>`;
   }
 
   /* ---------------- ADENTRO DE LA CLASE (ruta 'course-detail') ----------------
@@ -935,13 +1255,13 @@ function activeItemsFlat() {
   }
 
   // [EPIC-2] Sección "Cursos" unificada. Un solo item de nav (r:'course') con dos
-  // sub-tabs; cada uno REUSA el render existente (no duplica lógica): "Mis cursos"
-  // → renderMyCourses() (arriba); "Catálogo" → S.catalog.render() de scr-extra.
+  // sub-tabs: "Mis clases" → renderMyCourses() (lista) y "Buscar nuevos" →
+  // renderDiscover(true) (catálogo por categorías, [RONDA3]).
   S.course = {
     render() {
       const tab = coursesTab();
       const body = tab === 'catalog'
-        ? extraScreens.catalog.render()
+        ? renderDiscover(true)
         : renderMyCourses();
       return `${coursesSubTabs(tab)}<div class="fade-up" style="--d:1" id="courses-body">${body}</div>`;
     },
@@ -966,11 +1286,46 @@ function activeItemsFlat() {
           const w = window as any;
           if (w.go) w.go(tab === 'catalog' ? 'catalog' : 'course'); else repaint(false);
         }));
+
+      /* [RONDA3] Filtros/buscador de "Mis clases" y tiles de categoría del catálogo.
+         Todo repinta EN SITIO (sin navegar): el alumno no pierde el sub-tab ni el scroll. */
+      root.querySelectorAll('[data-cls-filter]').forEach((el) =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          (window as any).__clsFilter = el.getAttribute('data-cls-filter') || 'all';
+          if (el.hasAttribute('data-cls-clear')) (window as any).__clsQ = '';
+          repaint(true);
+        }));
+      const q = root.querySelector('#cls-q');
+      if (q) {
+        q.addEventListener('input', () => {
+          (window as any).__clsQ = (q as any).value || '';
+          repaint(true);
+          // Repintar mata el input: se devuelve el foco y el cursor al final para poder
+          // seguir escribiendo sin volver a hacer clic.
+          const next = root.querySelector('#cls-q') as any;
+          if (next) { next.focus(); const v = next.value; next.value = ''; next.value = v; }
+        });
+      }
+      root.querySelectorAll('[data-cat]').forEach((el) =>
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          (window as any).__catCat = el.getAttribute('data-cat') || '';
+          const w = window as any;
+          // Desde "Mis clases" la tile lleva al catálogo YA filtrado; dentro del catálogo
+          // filtra en sitio.
+          if (coursesTab() !== 'catalog') {
+            (window as any).__coursesTab = 'catalog';
+            if (w.go) w.go('catalog'); else repaint(false);
+          } else repaint(true);
+        }));
+
       mountClases(root);
       // [UI-CURSOS U3] Cablea unirse/cancelar/reseñar del panel de reservas embebido.
       mountBookings(root);
-      // Mount del tab Catálogo (si lo tuviera): reusa el mount existente de S.catalog.
-      if (coursesTab() === 'catalog') extraScreens.catalog.mount?.(root);
+      // El visor del video de bienvenida del catálogo sigue siendo el de S.catalog
+      // (mismo data-welcome-video): se reusa su mount, no se duplica.
+      extraScreens.catalog.mount?.(root);
     }
   };
 

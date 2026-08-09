@@ -54,7 +54,9 @@ const DICT: LangDict = {
     "nav.coursesActive": "Activos",
     "nav.coursesFind": "Buscar nuevos",
     "nav.myListings": "Mis clases",
-    "nav.progress": "Niveles",
+    // [RONDA 3 · Isaac] "«Levels» reemplazando por → «Ranks»": misma pantalla ('progress'),
+    // nombre nuevo. Vive dentro del desplegable "Progreso" de la barra.
+    "nav.progress": "Rangos",
     "nav.badges": "Logros",
     "nav.grades": "Asignaciones",
     "nav.lifetime": "Trayectoria",
@@ -396,7 +398,7 @@ const DICT: LangDict = {
     "nav.coursesActive": "Active",
     "nav.coursesFind": "Find new",
     "nav.myListings": "My classes",
-    "nav.progress": "Levels",
+    "nav.progress": "Ranks",
     "nav.badges": "Achievements",
     "nav.grades": "Assignments",
     "nav.lifetime": "Journey",
@@ -866,6 +868,66 @@ export function fmtDateTimeRD(d?: Date | string | number | null, lang?: string |
   const time = clock12(rd.getUTCHours(), rd.getUTCMinutes());
   const datePart = l === "en" ? `${day}, ${rd.getUTCDate()} ${mon}` : `${day} ${rd.getUTCDate()} ${mon}`;
   return `${datePart} · ${time}`;
+}
+
+/**
+ * [DEUDA-H] Idioma de una request desde la cabecera Cookie (otr_lang); cualquier otra cosa →
+ * 'es', el default del producto. Se lee del propio Request y NO con cookies() de next/headers
+ * a propósito: es el MISMO dato, pero así la ruta sigue siendo una función pura de su Request
+ * y se puede probar sin montar un request scope de Next. Mismo criterio —y misma expresión—
+ * que el reqLang() de app/api/membership/route.ts, que abrió el patrón.
+ */
+export function langFromRequest(req?: { headers: { get(name: string): string | null } } | null): Lang {
+  const raw = req?.headers?.get("cookie") || "";
+  return /(?:^|;\s*)otr_lang=en(?:\s*;|$)/.test(raw) ? "en" : "es";
+}
+
+/**
+ * Hora del reloj de un instante, en hora RD: "10:02 AM". Idéntica en ES y EN (el producto
+ * usa 12 h en ambos), pero vive aquí —y no en la vista— porque la genera el SERVIDOR: es
+ * la que sustituye a `ChatMessage.timeLabel`, un texto que se guardaba por fila y que la
+ * API escribía en español ("ahora") al crear un mensaje nuevo.
+ * `lang` se acepta por simetría con el resto de formateadores (hoy no cambia el resultado).
+ */
+export function fmtClockRD(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  void dateLangOf(lang);
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  return clock12(rd.getUTCHours(), rd.getUTCMinutes());
+}
+
+/**
+ * [DEUDA-H] Antigüedad relativa de un instante: es → "hace 2 h" · en → "2 h ago".
+ *
+ * Vivía como función PRIVADA de queries.ts, así que solo el payload del Aula podía usarla;
+ * las etiquetas de notificaciones/foro/mensajes se guardaban como TEXTO en español dentro de
+ * la fila (Notification.whenLabel, ForumThread.lastLabel, …) y salían en español con la UI
+ * en inglés. Ahora es el formateador COMPARTIDO: queries.ts y las rutas /api/notifications
+ * y /api/messages derivan la etiqueta del timestamp con el idioma de la request.
+ *
+ * `nowMs` es inyectable a propósito (determinismo en tests: sin él el resultado dependía del
+ * reloj real y un test reventaba al cambiar de día).
+ */
+export function fmtRelativeAgo(d?: Date | string | number | null, lang?: string | null, nowMs: number = Date.now()): string {
+  const date = toDate(d);
+  if (!date) return "";
+  const ms = nowMs - date.getTime();
+  if (Number.isNaN(ms)) return "";
+  const en = dateLangOf(lang) === "en";
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return en ? "now" : "ahora";
+  if (min < 60) return en ? `${min} min ago` : `hace ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return en ? `${h} h ago` : `hace ${h} h`;
+  const days = Math.floor(h / 24);
+  if (days < 7) return en ? `${days} ${days === 1 ? "day" : "days"} ago` : `hace ${days} ${days === 1 ? "día" : "días"}`;
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return en ? `${weeks} wk ago` : `hace ${weeks} sem`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return en ? `${months} ${months === 1 ? "month" : "months"} ago` : `hace ${months} ${months === 1 ? "mes" : "meses"}`;
+  const years = Math.floor(days / 365);
+  return en ? `${years} ${years === 1 ? "year" : "years"} ago` : `hace ${years} ${years === 1 ? "año" : "años"}`;
 }
 
 /** Día + mes corto: es → "11 ago" · en → "11 Aug" (mismo orden que fmtDateTimeRD). */

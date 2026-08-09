@@ -493,6 +493,9 @@ describe("Caso dirigido — marketplace: panel de reserva ya confirmada/pendient
 
   beforeEach(() => {
     resetFixture("student");
+    // [G2] Estas pruebas fuerzan la FICHA del coach con __mkCoachId. Tras el fix, render() solo
+    // conserva la ficha en un repintado interno de la pantalla; marcamos ese modo aquí.
+    win.__mkInternalRepaint = true;
   });
 
   it("perfil de coach con reserva CONFIRMED no explota (bookedPanel)", () => {

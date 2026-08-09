@@ -163,6 +163,10 @@ describe("C2 · la ficha del marketplace no crea el elemento ni antes ni despué
     win.__mkCoachId = null;
     win.__mkDetail = null;
     win.__mkDetailFail = null;
+    // [G2] Estas pruebas ejercitan el render de la FICHA presembrando __mkCoachId. Tras el fix,
+    // render() descarta la ficha salvo en un repintado interno; marcamos ese modo para que la
+    // ficha se pinte de verdad (las de GRID dejan __mkCoachId=null y siguen dando la lista).
+    win.__mkInternalRepaint = true;
   });
 
   it("el GRID pinta el markup como TEXTO (queda la entidad, no el elemento)", () => {

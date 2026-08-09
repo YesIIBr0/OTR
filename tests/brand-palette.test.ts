@@ -103,6 +103,18 @@ const HEX_RE = /#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g;
  */
 const COOL_ALLOWED: Array<{ hex: string; file: string; why: string }> = [
   {
+    hex: "#2FA84F",
+    file: "app/styles/tokens.css",
+    why:
+      "[PEDIDO DE ISAAC · 2026-08-09] Verde de VICTORIA (--win) de la tarjeta de rating del " +
+      "Debate Hub. Textual del cliente sobre esa card: «Las W - verde», «Las L - así negro». " +
+      "Aquí el color no decora: SIGNIFICA el resultado de la ronda, así que la regla del " +
+      "acento único cede ante la semántica del cliente. Vive SOLO en tokens.css (lo amarra " +
+      "el test «los colores semánticos de Isaac no se escapan de tokens.css» de este mismo " +
+      "archivo); las pantallas lo consumen por var(--win), nunca por hex. " +
+      "Contraste MEDIDO (WCAG 2.1): letra negra #171717 encima → 5,83:1 (AA, ≥4,5).",
+  },
+  {
     hex: "#E8EDF3",
     file: "app/components/Aula.tsx",
     why:
@@ -203,5 +215,70 @@ describe("paleta de marca (Brand Book V1.0)", () => {
     const violations = findViolations();
     // El diff de este expect lista TODAS las violaciones: es el inventario del rebrand.
     expect(violations).toEqual([]);
+  });
+});
+
+/* ============================================================================
+   [PEDIDO DE ISAAC · 2026-08-09] La puerta semántica del Debate Hub, y SOLO esa.
+
+   El cliente pidió, sobre la tarjeta oscura de rating: victoria en verde, derrota en
+   negro, tier Gold en dorado y Platinum en platino. Son los tres únicos colores del
+   producto que no son negro/gris/naranja, y entran como TOKENS con significado —
+   no como decoración suelta. Este bloque es el contrato de esa excepción:
+
+     1) cada token está declarado, con su valor exacto, en app/styles/tokens.css;
+     2) su hex NO aparece en ningún otro archivo del producto (quien quiera el color
+        lo consume por var(--…): así la excepción no se convierte en una barra libre
+        de hexes por las pantallas);
+     3) queda anotado el contraste MEDIDO que justifica cada valor (WCAG 2.1).
+
+   La derrota NO necesita token: es el negro de marca (--otr-black #171717).
+   ========================================================================== */
+const ISAAC_TOKENS: Array<{ name: string; hex: string; contraste: string }> = [
+  {
+    name: "--win",
+    hex: "#2FA84F",
+    contraste: "letra negra #171717 encima → 5,83:1 (AA)",
+  },
+  {
+    name: "--tier-gold",
+    hex: "#D4AF37",
+    contraste: "letra negra encima → 8,53:1 · como texto sobre la card #171717 → 8,53:1",
+  },
+  {
+    name: "--tier-platinum",
+    hex: "#D6D5D1",
+    contraste: "letra negra encima → 12,21:1 · como texto sobre la card #171717 → 12,21:1",
+  },
+];
+
+describe("excepción semántica del Debate Hub (pedido de Isaac, 2026-08-09)", () => {
+  it("los tres tokens están declarados en tokens.css con el valor medido", () => {
+    const tokensCss = readFileSync(path.join(ROOT, "app/styles/tokens.css"), "utf8");
+    for (const { name, hex } of ISAAC_TOKENS) {
+      expect(tokensCss).toContain(`${name}:${hex}`);
+    }
+  });
+
+  it("los colores semánticos de Isaac no se escapan de tokens.css", () => {
+    const files = SCAN_TARGETS.flatMap((target) => collectFiles(target));
+    const fugas: string[] = [];
+    for (const relPath of files) {
+      if (relPath === "app/styles/tokens.css") continue;
+      const lines = readFileSync(path.join(ROOT, relPath), "utf8").split("\n");
+      lines.forEach((line, index) => {
+        for (const { name, hex } of ISAAC_TOKENS) {
+          if (line.toUpperCase().includes(hex.toUpperCase())) {
+            fugas.push(`${relPath}:${index + 1} → ${hex} suelto (usa var(${name}))`);
+          }
+        }
+      });
+    }
+    expect(fugas).toEqual([]);
+  });
+
+  it("la derrota se pinta con el NEGRO de marca, sin token nuevo", () => {
+    const screens = readFileSync(path.join(ROOT, "app/styles/screens.css"), "utf8");
+    expect(screens).toMatch(/\.form-sq--loss\{background:var\(--otr-black\)/);
   });
 });

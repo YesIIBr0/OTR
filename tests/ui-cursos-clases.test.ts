@@ -183,7 +183,7 @@ describe("U2 · los tabs viven dentro de la clase", () => {
 /* ================= U1 · el curso NO es una tarjeta gigante =================
    [RONDA2] El banner de 56px murió con .course-hero. El principio que U1 defendía
    ("el contenido manda, el curso no se come la pantalla") ahora lo sostiene el menú
-   de clases: una card por curso, sin banner decorativo. */
+   de clases: una FILA por curso ([RONDA3] antes card), sin banner decorativo. */
 describe("U1 · el menú de clases no reintroduce el banner del curso", () => {
   it("la tarjeta-contenedor .course-hero ya no existe ni en el markup ni en el CSS", () => {
     const css = readFileSync(join(process.cwd(), "app/styles/screens.css"), "utf8");
@@ -191,12 +191,12 @@ describe("U1 · el menú de clases no reintroduce el banner del curso", () => {
     expect(Core.coursesMine.render({ role: "student" })).not.toContain("course-hero");
   });
 
-  it("el menú pinta una card por curso con su barra de progreso", () => {
+  it("el menú pinta una fila por curso con su barra de progreso", () => {
     const css = readFileSync(join(process.cwd(), "app/styles/screens.css"), "utf8");
-    expect(css).toMatch(/\.cls-card\{/);
+    expect(css).toMatch(/\.cls-row\{/);
     expect(css).toMatch(/\.cls-bar\{/);
     const html = Core.coursesMine.render({ role: "student" });
-    expect(html).toContain("cls-card");
+    expect(html).toContain("cls-row");
     expect(html).toContain("cls-bar");
   });
 });

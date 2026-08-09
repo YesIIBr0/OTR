@@ -62,4 +62,16 @@
   .hide-m{display:none!important}
 }
 
+/* ---- Teléfono estrecho ---- */
+@media (max-width:520px){
+  /* [G3] Fila de lista (`.lrow`) con un grupo de acciones al final (`.row` con botones):
+     en el portal de familia ("Diego Fermín quiere reservar con Saúl Méndez") los dos botones
+     —flex:none— no cedían ancho y aplastaban la columna de texto (flex:1) a ~11px, partiendo
+     la frase letra por letra. En teléfono el grupo de botones baja a su propia línea y el
+     texto recupera el ancho completo. Se limita a filas cuyo `.row` final trae un `.btn`
+     (grupo de acción real), no cualquier `.row`. */
+  .lrow:has(> .row .btn){flex-wrap:wrap}
+  .lrow > .row:has(.btn){flex:0 0 100% !important;justify-content:flex-end;margin-top:6px}
+}
+
 @media (min-width:761px){ .only-m{display:none!important} }

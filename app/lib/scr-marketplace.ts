@@ -31,14 +31,9 @@ import { money } from "./money";
 export const S = {};
 
 /* ---------------- helpers visuales ---------------- */
-const stars = (n, size = 13) => {
-  let s = "";
-  for (let i = 1; i <= 5; i++) {
-    const fill = i <= Math.round(n || 0) ? "var(--otr-sky-lo)" : "var(--n-200)";
-    s += `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${fill}" style="flex:none"><path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 17l-5.3 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>`;
-  }
-  return `<span style="display:inline-flex;gap:2px;align-items:center">${s}</span>`;
-};
+// [M3] Las estrellas de rating viven en el helper ÚNICO de la casa: C.stars (components.ts).
+// Rellenas y proporcionales, idénticas a las del perfil del coach (scr-profile). Aquí solo se
+// invoca C.stars(rating, { size }); la implementación NO se duplica.
 const ini = (name) => (String(name || "C").replace(/Coach /i, "").split(" ").map((w) => w[0]).join("") || "C").slice(0, 2).toUpperCase();
 // Solo deja pasar URLs http(s) o rutas locales (nunca javascript: u otros esquemas).
 const safeSrc = (u) => {
@@ -49,8 +44,30 @@ const safeSrc = (u) => {
    CIERRA una entidad HTML. El texto llega escapado (queries.ts y, desde el cierre, también
    /api/coaches/[id]), así que un coach de "St. Michael's" viaja como "St. Michael&#39;s" y
    el `split(/\n|;/)` de antes lo partía en "St. Michael&#39" — la línea se leía rota en la
-   ficha. El lookbehind deja pasar &amp; &lt; &gt; &quot; &#39; y los numéricos. */
-const CRED_SEP = /\n|(?<!&(?:#\d{1,7}|#x[\da-f]{1,6}|[a-z]{2,8}));/i;
+   ficha. Deja pasar &amp; &lt; &gt; &quot; &#39; y los numéricos.
+
+   [DEUDA-H] La versión anterior usaba un LOOKBEHIND —/(?<!&(?:#\d{1,7}|…));/— y eso no era
+   un problema de credenciales sino del chunk entero: Safari < 16.4 no soporta lookbehind y
+   lanza SyntaxError AL EVALUAR EL MÓDULO, así que el marketplace completo (ficha de coach,
+   listado, reservas) moría antes de pintar, no solo esta línea. Se recorre la cadena y se
+   decide en cada ';' si cierra una entidad mirando lo que quedó DETRÁS: mismo resultado,
+   sin sintaxis que dependa de la versión del navegador. */
+const ENTITY_TAIL = /&(?:#\d{1,7}|#x[\da-f]{1,6}|[a-z]{2,8})$/i;
+function splitCredentials(raw) {
+  const s = String(raw || "");
+  const out = [];
+  let start = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch !== "\n" && ch !== ";") continue;
+    // Un ';' que cierra una entidad (&#39; &amp; &#x27;…) NO separa: es parte del texto.
+    if (ch === ";" && ENTITY_TAIL.test(s.slice(start, i))) continue;
+    out.push(s.slice(start, i));
+    start = i + 1;
+  }
+  out.push(s.slice(start));
+  return out.map((x) => x.trim()).filter(Boolean);
+}
 const langBadges = (languages) =>
   String(languages || "ES").split(/[,·/]/).map((l) => l.trim()).filter(Boolean).slice(0, 3)
     .map((l) => `<span class="chip chip--outline">${esc(l.toUpperCase())}</span>`).join("");
@@ -245,7 +262,7 @@ function coachCard(c, i) {
         <div class="muted" style="font-size:12px;margin-top:3px">${c.headline}</div>
         <div class="row vcenter" style="gap:6px;margin-top:6px">
           ${c.reviews > 0
-            ? `${stars(c.rating, 12)}<b style="font-size:12.5px">${c.rating.toFixed(1)}</b><span class="faint" style="font-size:12px">(${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")})</span>`
+            ? `${C.stars(c.rating, { size: 12 })}<b style="font-size:12.5px">${c.rating.toFixed(1)}</b><span class="faint" style="font-size:12px">(${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")})</span>`
             : C.chip(t("mkt.newCoach"), "tint")}
         </div>
       </div>
@@ -543,7 +560,7 @@ function renderProfile(state) {
           <div class="muted" style="font-size:13px;margin-top:4px">${c.headline}</div>
           <div class="row vcenter wrap" style="gap:8px;margin-top:8px;font-size:12.5px">
             ${c.reviews > 0
-              ? `${stars(c.rating, 13)}<b>${c.rating.toFixed(1)}</b><span class="faint">${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")}</span>`
+              ? `${C.stars(c.rating, { size: 13 })}<b>${c.rating.toFixed(1)}</b><span class="faint">${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")}</span>`
               : C.chip(t("mkt.newCoach"), "tint")}
             ${c.bookingCount ? `<span class="dot-sep"></span><span class="faint">${t("mkt.sessionsBooked").replace("{n}", String(c.bookingCount))}</span>` : ""}
             ${respondsInValue(c.responseTime) ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${respondsInValue(c.responseTime)}</span>` : ""}
@@ -560,7 +577,7 @@ function renderProfile(state) {
       <div class="card card-pad fade-up" style="--d:1">
         ${C.secTitle(`${t("mkt.aboutPrefix")} ${c.name.split(" ")[0] || t("mkt.theCoach")}`, { sm: true, tag: "h2" })}
         <p class="muted" style="font-size:13.5px;line-height:1.6">${c.bio ? c.bio : t("mkt.noBio")}</p>
-        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true, tag: "h2" })}<div class="stack" style="gap:6px">${String(c.credentials).split(CRED_SEP).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${x}</div>`).join("")}</div>` : ""}
+        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true, tag: "h2" })}<div class="stack" style="gap:6px">${splitCredentials(c.credentials).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${x}</div>`).join("")}</div>` : ""}
         ${specs.length ? `<div class="divider"></div>${C.secTitle(t("mkt.specialties"), { sm: true, tag: "h2" })}<div class="row wrap" style="gap:6px">${specs.map((s) => `<span class="chip chip--outline">${s}</span>`).join("")}</div>` : ""}
       </div>
 
@@ -572,7 +589,7 @@ function renderProfile(state) {
             <div class="row vcenter" style="gap:9px">
               ${C.avatar(r.initials || ini(r.author || r.name), { size: "sm", bg: "var(--otr-sky-lo)" })}
               <b style="font-size:12.5px">${r.author || r.name || t("mkt.studentFallback")}</b>
-              ${stars(Number(r.rating) || 0, 11)}
+              ${C.stars(Number(r.rating) || 0, { size: 11 })}
               ${r.verified ? C.chip(t("mkt.reviewVerified"), "tint") : ""}
               <span class="faint" style="font-size:11.5px;margin-left:auto">${r.when || ""}</span>
             </div>
@@ -591,7 +608,13 @@ function renderProfile(state) {
 
     <div class="stack" style="gap:16px">
       <div class="fade-up" style="--d:1" id="mk-booking">${bookingCard(c, canBook, role)}</div>
-      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2">${C.secTitle(t("mkt.cancelPolicyTitle"), { sm: true, tag: "h2" })}<p class="muted" style="font-size:12.5px;line-height:1.55">${c.cancelPolicy}</p></div>` : ""}
+      ${/* [menor · i18n] La política de cancelación es copy de PLATAFORMA (la regla de escrow/
+           reembolso, igual para todos los coaches en una plataforma con menores), así que va por
+           i18n y traduce ES+EN. Antes se pintaba el texto LIBRE del coach (CoachProfile.cancelPolicy,
+           en un solo idioma): bajo el heading ya traducido "Cancellation policy" salía en español.
+           El campo del coach se sigue guardando; si más adelante se quiere mostrar por-coach,
+           necesita un modelo traducible (enum de políticas), no texto libre. */""}
+      <div class="card card-pad fade-up" style="--d:2">${C.secTitle(t("mkt.cancelPolicyTitle"), { sm: true, tag: "h2" })}<p class="muted" style="font-size:12.5px;line-height:1.55">${t("mkt.cancelPolicyBody")}</p></div>
     </div>
   </div>`;
 }
@@ -599,7 +622,18 @@ function renderProfile(state) {
 /* ---------------- pantalla ---------------- */
 S.marketplace = {
   render(state) {
-    return (window).__mkCoachId ? renderProfile(state) : renderGrid();
+    const w = window;
+    // [G2] La ficha de un coach (sub-estado __mkCoachId) es TRANSITORIA de una visita: se abre
+    // con un clic en una tarjeta y se cierra con "Volver". Un render disparado por una ENTRADA
+    // DE RUTA del núcleo —clic del top-nav (explore y marketplace son la MISMA pantalla), un
+    // deep-link, F5 o un refresh— NO trae la marca del repintado interno; en ese caso se descarta
+    // la ficha para que navegar a Coaches SIEMPRE caiga en la LISTA (antes quedaba CONGELADA en
+    // la ficha anterior y solo "← Volver a coaches" la reparaba). Solo el repintado interno de la
+    // pantalla (abrir coach / filtros / volver / reserva) marca __mkInternalRepaint y conserva la
+    // ficha. El deep-link a la lista (#explore/#marketplace) sigue bien; un clic en una tarjeta
+    // abre la ficha como siempre.
+    if (!w.__mkInternalRepaint) w.__mkCoachId = null;
+    return w.__mkCoachId ? renderProfile(state) : renderGrid();
   },
 
   mount(root, state) {
@@ -607,7 +641,12 @@ S.marketplace = {
     const repaint = () => {
       const page = root.querySelector(".page");
       if (!page) return;
-      page.innerHTML = S.marketplace.render(state);
+      // [G2] Repintado INTERNO de la pantalla (abrir coach / filtros / volver / reserva): se
+      // marca para que render() RESPETE el sub-estado de ficha en vez de descartarlo (eso solo
+      // ocurre en una entrada de ruta del núcleo). La marca vale para UN render.
+      w.__mkInternalRepaint = true;
+      try { page.innerHTML = S.marketplace.render(state); }
+      finally { w.__mkInternalRepaint = false; }
       S.marketplace.mount(root, state);
     };
 

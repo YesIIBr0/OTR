@@ -21,8 +21,9 @@ export async function POST(req: Request) {
   if (!threadId || !body) return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
   const count = await db.forumPost.count({ where: { threadId } });
   const post = await db.forumPost.create({
-    data: { threadId, author: user.name, initials: user.initials, role: user.role === "TEACHER" ? "Coach" : "Estudiante", whenLabel: "ahora", op: false, body, position: count },
+    // [DEUDA-H] whenAt = instante de la respuesta; whenLabel deja de guardar "ahora" (español fijo).
+    data: { threadId, author: user.name, initials: user.initials, role: user.role === "TEACHER" ? "Coach" : "Estudiante", whenLabel: "", whenAt: new Date(), op: false, body, position: count },
   });
-  await db.forumThread.update({ where: { id: threadId }, data: { replies: { increment: 1 }, lastLabel: "ahora" } });
+  await db.forumThread.update({ where: { id: threadId }, data: { replies: { increment: 1 }, lastLabel: "", lastAt: new Date() } });
   return NextResponse.json({ ok: true, post });
 }

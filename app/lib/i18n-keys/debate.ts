@@ -71,6 +71,20 @@ export const dict = {
     "debate.practiceTitle": "Práctica",
     "debate.practiceSub": "Entrena destrezas puntuales con drills enfocados. Tu rating solo se mueve en rondas adjudicadas por un coach.",
 
+    // [SONDEO M1] cara de OBSERVADOR del staff (admin): el Hub visto desde fuera de la
+    // arena. Ni rating propio, ni inscripción, ni "tu coach" — datos del circuito.
+    "debate.staffEyebrow": "Debate Hub · Observación",
+    "debate.staffLead": "Miras el circuito desde fuera de la arena: el rating lo mueven las rondas que registran y adjudican los coaches.",
+    "debate.staffStatDebaters": "Debatientes clasificados",
+    "debate.staffStatTopRating": "Rating más alto",
+    "debate.staffStatTournaments": "Torneos en el radar",
+    "debate.staffKpiProvisional": "Aún provisionales",
+    "debate.staffTopTitle": "Cabeza de la tabla",
+    "debate.staffModTitle": "Moderación y cuentas",
+    "debate.staffModBody": "Las solicitudes de debate y los reportes se resuelven en la consola; aquí solo se observa.",
+    "debate.staffGoConsole": "Ir a moderación",
+    "debate.staffGoUsers": "Ir a usuarios",
+
     // leaderboard
     "debate.lbEmptyTitle": "Entra en la clasificación",
     "debate.lbEmptyBody": "Compite en rondas adjudicadas y reclama tu posición antes que el resto del cohort.",
@@ -263,6 +277,19 @@ export const dict = {
     "debate.practiceEyebrow": "Train under pressure",
     "debate.practiceTitle": "Practice",
     "debate.practiceSub": "Train specific skills with focused drills. Your rating only moves on rounds adjudicated by a coach.",
+
+    // [SONDEO M1] staff / observer face of the Hub (admin).
+    "debate.staffEyebrow": "Debate Hub · Oversight",
+    "debate.staffLead": "You watch the circuit from outside the arena: ratings move on rounds that coaches record and adjudicate.",
+    "debate.staffStatDebaters": "Ranked debaters",
+    "debate.staffStatTopRating": "Highest rating",
+    "debate.staffStatTournaments": "Tournaments on the radar",
+    "debate.staffKpiProvisional": "Still provisional",
+    "debate.staffTopTitle": "Top of the table",
+    "debate.staffModTitle": "Moderation and accounts",
+    "debate.staffModBody": "Debate requests and reports are resolved in the console; this screen is for watching only.",
+    "debate.staffGoConsole": "Go to moderation",
+    "debate.staffGoUsers": "Go to users",
 
     // leaderboard
     "debate.lbEmptyTitle": "Join the standings",

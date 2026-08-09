@@ -43,6 +43,9 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   settings:    () => import("./scr-settings"),
   events:      () => import("./scr-events"),
   room:        () => import("./scr-room"),
+  // [RONDA3 · HIGHLIGHTS] Destino de "Ver todos" del dashboard: la vista larga de
+  // "Lo mejor de la temporada" (1 logro por fila) + su gestión para coach/admin.
+  highlights:  () => import("./scr-highlights"),
 };
 
 // Nombre de pantalla → módulo que la exporta. Best-effort: ensureScreen tiene fallback
@@ -59,6 +62,7 @@ const SCREEN_MODULE: Record<string, string> = {
   lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
   adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp',
   placement:'placement', settings:'settings', events:'events', room:'room',
+  highlights:'highlights',
 };
 
 // Cache de runtime: se va llenando con la S de cada módulo cargado. Laxo por la misma
@@ -130,7 +134,13 @@ export const ROUTES: Record<string, RouteDef> = {
   // [EPIC-2] 'catalog' ya no es un item de nav propio: enruta a la sección "Cursos"
   // unificada (nav:'course') forzando el sub-tab Catálogo. El screen S.catalog crudo
   // sigue existiendo (reusado dentro de S.course); aquí usamos el wrapper coursesCatalog.
-  catalog:        { screen:'coursesCatalog', nav:'catalog',    crumbs:['Cursos','Buscar nuevos'] },
+  // [RONDA 3 · BUG de Isaac: "en «find New» ¿por qué se abre otra pestaña arriba?"] El
+  // comentario de arriba decía nav:'course' pero el código declaraba nav:'catalog'. Como
+  // 'catalog' SÍ es un ítem del NAV del alumno (vive en "Más"), el shell trataba la ruta
+  // activa como un destino propio y la SUBÍA a la barra: aparecía un "Buscar nuevos" nuevo
+  // al lado de "Cursos". El catálogo es un SUB-TAB dentro de Cursos, no una sección: con
+  // nav:'course' la barra sigue marcando "Cursos" y no crece.
+  catalog:        { screen:'coursesCatalog', nav:'course',     crumbs:['Cursos','Buscar nuevos'] },
   // Crumbs genéricos (Moodle multi-curso): el nombre real del curso/lección se
   // muestra en el hero de cada pantalla, no se hardcodea aquí.
   // [EPIC-2] La ruta raíz 'course' entra por "Mis cursos" (wrapper coursesMine);
@@ -146,7 +156,8 @@ export const ROUTES: Record<string, RouteDef> = {
   quiz:           { screen:'quiz',         nav:'course',       crumbs:['Cursos','Examen'] },
   'quiz-results': { screen:'quizResults',  nav:'course',       crumbs:['Cursos','Resultados'] },
   player:         { screen:'player',       nav:'player',       crumbs:['Cursos','Lección'] },
-  progress:       { screen:'progress',     nav:'progress',     crumbs:['Centro de progreso','Niveles'] },
+  // [RONDA 3 · Isaac] "Levels → Ranks": misma pantalla, nombre nuevo (nav.progress).
+  progress:       { screen:'progress',     nav:'progress',     crumbs:['Progreso','Rangos'] },
   badges:         { screen:'badges',       nav:'badges',       crumbs:['Centro de progreso','Logros'] },
   // RE-REGISTRADA: el alumno necesita ver sus notas + el feedback del coach (S.grades).
   grades:         { screen:'grades',       nav:'grades',       crumbs:['Progreso','Asignaciones'] },
@@ -201,6 +212,11 @@ export const ROUTES: Record<string, RouteDef> = {
   settings:       { screen:'settings',     nav:'settings',     crumbs:['Cuenta','Ajustes'] },
   // Eventos (PRD §3.1 📅 Events): seminarios, sesiones en vivo y torneos → scr-events.ts.
   events:         { screen:'events',       nav:'events',       crumbs:['Eventos'] },
+  // [RONDA3 · HIGHLIGHTS] "Lo mejor de la temporada" completo (1 logro por fila) → scr-highlights.ts.
+  // Destino de "Ver todos" del dashboard, que hasta ahora caía en Eventos (defecto reportado
+  // por el cliente). Es una sub-vista de Inicio → nav:'dashboard' (mismo criterio que
+  // 'onboarding'/'placement'); sin `role` porque el alumno la LEE y el staff además la gestiona.
+  highlights:     { screen:'highlights',   nav:'dashboard',    crumbs:['Inicio','Lo mejor de la temporada'] },
   // Consola de moderación (PRD §3.3 admin console mínima, §7.4 reportes) → scr-admin.ts.
   admin:          { screen:'adminConsole', nav:'admin',        crumbs:['Administración','Moderación'], role:'admin' },
   // Admin → Gestión de usuarios (PRD §3.3): roles, verificación de coach, suspensión → scr-admin-users.ts.

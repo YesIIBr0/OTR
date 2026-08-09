@@ -6,34 +6,15 @@ import { safeUrl } from "./api";
 // [GOAL A2 · F2] Los labels de fecha del payload ya NO se arman con tablas en español
 // fijo (consultations.ts / MONTHS_ES local): se delegan a los formateadores de i18n.ts,
 // que reciben el idioma de la request (cookie otr_lang → getAppData(email, lang)).
-import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull, fmtMemberSinceLabel, fmtPlanSinceLabel } from "./i18n";
+import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull, fmtMemberSinceLabel, fmtPlanSinceLabel, fmtRelativeAgo, fmtClockRD } from "./i18n";
 
 const ME_EMAIL = "analia.reyes@otr.do";
 
-// Etiqueta de fecha relativa en español (texto generado por nosotros, no de usuario).
-// [GOAL] nowMs inyectable: computeRosterMetrics ya recibía su propio "ahora" para ser
-// determinista, pero este label usaba Date.now() por dentro — la mezcla hacía que el
-// resultado dependiera del reloj real (test flaky que reventó al cambiar de día).
-function whenLabel(d?: Date | null, lang: string = "es", nowMs: number = Date.now()): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  const ms = nowMs - date.getTime();
-  if (Number.isNaN(ms)) return "";
-  const en = lang === "en";
-  const min = Math.floor(ms / 60000);
-  if (min < 1) return en ? "now" : "ahora";
-  if (min < 60) return en ? `${min} min ago` : `hace ${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return en ? `${h} h ago` : `hace ${h} h`;
-  const days = Math.floor(h / 24);
-  if (days < 7) return en ? `${days} ${days === 1 ? "day" : "days"} ago` : `hace ${days} ${days === 1 ? "día" : "días"}`;
-  const weeks = Math.floor(days / 7);
-  if (weeks < 5) return en ? `${weeks} wk ago` : `hace ${weeks} sem`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return en ? `${months} ${months === 1 ? "month" : "months"} ago` : `hace ${months} ${months === 1 ? "mes" : "meses"}`;
-  const years = Math.floor(days / 365);
-  return en ? `${years} ${years === 1 ? "year" : "years"} ago` : `hace ${years} ${years === 1 ? "año" : "años"}`;
-}
+// Etiqueta de fecha relativa ("hace 2 h" / "2 h ago"). [DEUDA-H] La implementación vive
+// ahora en i18n.ts (fmtRelativeAgo) porque también la necesitan /api/notifications y
+// /api/messages para derivar la etiqueta del timestamp en vez de servir el texto guardado.
+// Se conserva el nombre local para no tocar los seis call-sites de este archivo.
+const whenLabel = fmtRelativeAgo;
 
 // Día calendario en hora RD (UTC-4) como entero, para comparar actividad por día.
 const RD_OFFSET_MS = -4 * 3600000;
@@ -361,6 +342,35 @@ function buildQuiz(quiz: any, isTeacher: boolean) {
   };
 }
 
+/* ===================== [RONDA3 · CURSOS] Categoría del catálogo =====================
+   El cliente pidió un catálogo "por tipos de clase, como Preply". El modelo Course NO
+   tiene columna `category`: el único campo que clasifica un programa es `format`
+   (PF | LD | Parli | Policy | Oratoria | …), el mismo que ya se pinta como chip en la
+   ficha. Así que la categoría se DERIVA de `format` (y, si viniera vacío, del prefijo
+   del `code`) — no se inventa ni se siembra un campo nuevo. Devuelve una CLAVE estable;
+   la etiqueta visible la pone la UI en el idioma activo (core.cat*), para no romper i18n.
+   Formato desconocido → "other" (la tile se rotula "Otros programas"): nada se pierde. */
+export function courseCategoryKey(format?: string | null, code?: string | null): string {
+  const norm = (s?: string | null) =>
+    String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  const f = norm(format);
+  const c = norm(code);
+  const table: Array<[string, RegExp]> = [
+    ["pf", /^(pf|public ?forum)/],
+    ["ld", /^(ld|lincoln)/],
+    ["parli", /^(parli|parlament|british|bp|wsdc|worlds)/],
+    ["policy", /^(policy|cx)/],
+    ["oratoria", /^(ora|speech|speaking)/],
+  ];
+  for (const [key, re] of table) if (f && re.test(f)) return key;
+  for (const [key, re] of table) if (c && re.test(c)) return key;
+  return "other";
+}
+
 export async function getAppData(email: string = ME_EMAIL, lang: string = "es", preloaded?: any) {
   // PRD §17.3: "i18n is structural, not a wrapper". El contenido de cursos y
   // lecciones se sirve en el idioma activo, cayendo al ES si no hay traducción.
@@ -405,13 +415,16 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const [
     levels, meEnrollments, badges, notifications, events,
     threads, mainThread, convos, allCourses, allModules, taughtCourses,
-    myStudentSkills, myCertificates, coachProfiles,
+    myStudentSkills, myCertificates, marketplaceCoaches,
     seasonPrizes, highlightRows, adminCourseRows,
+    reviewAgg, reviewByCourseAgg, upcomingTournaments,
   ] = await Promise.all([
     // [GOAL G3] Global e idéntico para todos → micro-caché (ver lib/cache.ts).
     cached("levels", GLOBAL_TTL_MS, () => db.level.findMany({ orderBy: { position: "asc" } })),
     db.enrollment.findMany({ where: { user: { email } }, include: { course: true }, orderBy: { course: { position: "asc" } } }),
-    db.badge.findMany({ orderBy: { position: "asc" } }),
+    // [PERF-P] Catálogo de insignias: tabla completa, sin filtro por usuario y sin PII →
+    // misma clase que levels/events (el `got` por usuario se deriva después, en JS).
+    cached("badges", GLOBAL_TTL_MS, () => db.badge.findMany({ orderBy: { position: "asc" } })),
     // [F3.2 fix] Notificaciones scopeadas EN LA DB (no en JS): antes se traían las 200 GLOBALES
     // por posición (sin where) y se filtraban por userId en memoria (:1699) → con más usuarios
     // las 200 posiciones se llenaban de notificaciones ajenas y las PROPIAS del usuario
@@ -448,12 +461,20 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           // participantes y con 3+ en el hilo la etiqueta (others[0]) podía cambiar entre
           // cargas. userId asc = orden estable y barato (hay @@index([userId])).
           include: {
-            messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true } },
+            messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true, sentAt: true } },
             participants: { select: { userId: true }, orderBy: { userId: "asc" } },
           },
         })
       : Promise.resolve([] as any[]),
-    db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true, summary: true, summaryEn: true, welcomeVideoKind: true, welcomeVideoSrc: true } }),
+    // [RONDA3 · CURSOS] `studentsCount` (denormalizado, coste 0) y el conteo REAL de
+    // módulos/clases publicadas alimentan las tiles de categoría y las recomendaciones
+    // del catálogo por categorías. El join de módulos es el MISMO patrón que ya usa la
+    // lista de cursos de admin (abajo) y corre sobre el catálogo publicado (decenas de
+    // filas), no sobre toda la tabla.
+    // [PERF-P] El catálogo publicado NO depende del usuario (`enrolled` se deriva después
+    // con enrolledIds) → micro-caché global. Con N alumnos entrando a la vez se lee UNA vez.
+    cached("catalog:published", GLOBAL_TTL_MS, () =>
+      db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true, summary: true, summaryEn: true, welcomeVideoKind: true, welcomeVideoSrc: true, studentsCount: true, modules: { select: { _count: { select: { lessons: true } } } } } })),
     // Mapa de módulos para gestión de contenido: solo profesor/admin.
     isTeacher ? db.module.findMany({ where: { course: { teacher: { email } } }, orderBy: { position: "asc" }, select: { id: true, courseId: true, title: true } }) : Promise.resolve([]),
     // Cursos impartidos (con reseñas para el perfil del coach): solo profesor/admin.
@@ -478,16 +499,35 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // ALMACENADOS ratingAvg/reviewCount (se derivan EN VIVO de Review, ver reviewByTeacher) →
     // no viajan (evita leer por error el valor stale). `active` SÍ se incluye: el coach que ve su
     // propio perfil lo obtiene de aquí (está active:true) y el workspace lee myCoachProfile.active.
-    db.coachProfile.findMany({
-      where: { active: true },
-      select: {
-        id: true, userId: true, introVideoUrl: true, credentials: true, specialties: true,
-        languages: true, hourlyCents: true, responseTime: true, cancelPolicy: true,
-        bookingCount: true, active: true,
-        packages: { orderBy: { position: "asc" }, select: { id: true, name: true, sessions: true, priceCents: true, discountPct: true } },
-        availability: { orderBy: [{ weekday: "asc" }, { startMin: "asc" }], select: { id: true, weekday: true, startMin: true, endMin: true } },
-      },
-      take: 500,
+    // [PERF-P] El browse del marketplace es el MISMO para todo el mundo (where active:true,
+    // sin filtro por usuario y sin PII: el select ya excluye email/passwordHash). Era la
+    // consulta más cara del payload — 4 sentencias (perfil + paquetes + disponibilidad +
+    // los User públicos de esos coaches) en CADA carga de CUALQUIER rol, incluido el alumno
+    // que nunca abre el marketplace. Ahora es UNA clave global: perfiles y usuarios viajan
+    // juntos porque el 2º depende de los ids del 1º (antes eso era una ola extra de fan-out).
+    // El coach que edita SU perfil no lee de aquí: `myCoachProfileRow` (abajo) va siempre
+    // fresco a la DB y tiene precedencia, así que nunca ve su propia escritura con retraso.
+    cached("marketplace:coaches", GLOBAL_TTL_MS, async () => {
+      const profiles = await db.coachProfile.findMany({
+        where: { active: true },
+        select: {
+          id: true, userId: true, introVideoUrl: true, credentials: true, specialties: true,
+          languages: true, hourlyCents: true, responseTime: true, cancelPolicy: true,
+          bookingCount: true, active: true,
+          packages: { orderBy: { position: "asc" }, select: { id: true, name: true, sessions: true, priceCents: true, discountPct: true } },
+          availability: { orderBy: [{ weekday: "asc" }, { startMin: "asc" }], select: { id: true, weekday: true, startMin: true, endMin: true } },
+        },
+        take: 500,
+      });
+      // Datos públicos del User de cada coach activo.
+      // select defensivo: NUNCA passwordHash ni email (no se exponen en browse).
+      const users = profiles.length
+        ? await db.user.findMany({
+            where: { id: { in: profiles.map((p) => p.userId) } },
+            select: { id: true, name: true, initials: true, headline: true, avatarUrl: true, coachVerified: true, location: true },
+          })
+        : [];
+      return { profiles, users };
     }),
     // [DASHBOARD] Premios del podio de la temporada. Catálogo global e idéntico para
     // todos → micro-caché, igual que levels/events. Adorno ⇒ optionalRows: si la tabla
@@ -513,7 +553,37 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           },
         })
       : Promise.resolve([] as any[]),
+    // [auditoría/stale-stored] Rating y nº de reseñas del coach DERIVADOS EN VIVO de las Review
+    // reales (fuente canónica), no del agregado ALMACENADO en CoachProfile (que podía estar
+    // desfasado del seed o en 0 para coaches nuevos). Una sola agregación por teacher para todo
+    // el payload (marketplace + workspace). Así el valor mostrado siempre coincide con las reseñas.
+    // [PERF-P] Estas dos agregaciones van con `WHERE 1=1`: agregan la tabla Review ENTERA de la
+    // plataforma y su resultado es IDÉNTICO para todo el mundo. Antes eran una ola PROPIA en
+    // serie después de esta (dos round-trips extra en la ruta crítica) y ninguna caché las
+    // tocaba (§3.4 del diagnóstico). Ahora: dentro de esta ola y con micro-caché global.
+    cached("reviewAgg:byTeacher", GLOBAL_TTL_MS, () =>
+      db.review.groupBy({ by: ["teacherId"], _avg: { rating: true }, _count: { _all: true } })),
+    // [EPIC-5] Rating POR CURSO (reseñas de programa: Review.courseId != null) — valoración
+    // del programa en la cabecera del curso del alumno.
+    cached("reviewAgg:byCourse", GLOBAL_TTL_MS, () =>
+      db.review.groupBy({ by: ["courseId"], _avg: { rating: true }, _count: { _all: true } })),
+    // tournaments: UPCOMING|LIVE (take 20) ordenados por fecha de inicio.
+    // [PERF-P] La LISTA es global; lo único por usuario era el flag `registered`, que antes
+    // viajaba como un `include registrations where userId` (una sentencia extra por carga).
+    // Ahora la lista se cachea y el flag se deriva de myTournamentRegRows (la misma consulta
+    // que ya contaba los registros del usuario) → una sentencia menos y sin scan repetido.
+    me
+      ? cached("tournaments:upcoming", GLOBAL_TTL_MS, () =>
+          db.tournament.findMany({
+            where: { status: { in: ["UPCOMING", "LIVE"] } },
+            orderBy: [{ startsAt: "asc" }],
+            take: 20,
+          }))
+      : Promise.resolve([] as any[]),
   ]);
+  // [PERF-P] El browse del marketplace viaja cacheado en un solo objeto (ver arriba).
+  const coachProfiles = marketplaceCoaches.profiles;
+  const coachUsers = marketplaceCoaches.users;
 
   // [fix nivel] El rango (Novato 0-999 · JV 1000-2499 · Varsity 2500-4999 · Elite 5000+) se
   // DERIVA del XP, NO del User.level almacenado: el placement llegó a fijar level por el promedio
@@ -526,19 +596,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // del portal de familia) — la fuente canónica del rango es el XP, no el User.level almacenado.
   const levelNameForXp = (xp: number) => ([...levels].sort((a, b) => (b.startXp ?? 0) - (a.startXp ?? 0)).find((l) => (Number(xp) || 0) >= (l.startXp ?? 0)) ?? levels[0])?.name || "OTR Initiate";
   const nextLevel = levels.find((l) => l.position === (curLevel?.position ?? 0) + 1);
-  // [auditoría/stale-stored] Rating y nº de reseñas del coach DERIVADOS EN VIVO de las Review
-  // reales (fuente canónica), no del agregado ALMACENADO en CoachProfile (que podía estar
-  // desfasado del seed o en 0 para coaches nuevos). Una sola agregación por teacher para todo
-  // el payload (marketplace + workspace). Así el valor mostrado siempre coincide con las reseñas.
-  // [PERF] Las dos agregaciones de Review son independientes → en paralelo (antes eran dos
-  // round-trips EN SERIE en la ruta crítica de app-data). Misma técnica: una sola pasada por
-  // agregado, en vivo desde las Review reales (fuente canónica).
-  const [reviewAgg, reviewByCourseAgg] = await Promise.all([
-    db.review.groupBy({ by: ["teacherId"], _avg: { rating: true }, _count: { _all: true } }),
-    // [EPIC-5] Rating POR CURSO (reseñas de programa: Review.courseId != null) — valoración
-    // del programa en la cabecera del curso del alumno.
-    db.review.groupBy({ by: ["courseId"], _avg: { rating: true }, _count: { _all: true } }),
-  ]);
+  // [PERF-P] Las dos agregaciones de Review ya vienen de la ola de arriba (cacheadas): aquí
+  // solo se reducen a mapas. Antes ocupaban una ola PROPIA en serie entre las dos grandes.
   const reviewByTeacher = new Map<string, { avg: number; count: number }>(
     reviewAgg.map((r: any) => [r.teacherId, { avg: Math.round((r._avg.rating || 0) * 10) / 10, count: r._count._all || 0 }]),
   );
@@ -588,7 +647,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         })
       : Promise.resolve(null),
     (isTeacher && firstTaughtCourseId)
-      ? db.enrollment.findMany({ where: { courseId: firstTaughtCourseId }, include: { user: true }, orderBy: { user: { xp: "desc" } }, take: 200 })
+      // [PERF-P] `include: { user: true }` traía la fila COMPLETA del alumno —passwordHash y
+      // totpSecret incluidos— para usar 5 campos (base.students). select explícito: menos
+      // bytes por fila del roster y los secretos ni salen de la DB.
+      ? db.enrollment.findMany({ where: { courseId: firstTaughtCourseId }, select: { userId: true, user: { select: { id: true, name: true, initials: true, level: true, xp: true } } }, orderBy: { user: { xp: "desc" } }, take: 200 })
       : Promise.resolve([] as any[]),
     convoOtherIds.length
       ? db.user.findMany({ where: { id: { in: convoOtherIds } }, select: { id: true, name: true, initials: true } })
@@ -631,13 +693,15 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const [
     myProgress, mySubs, myQuizzes, enrolledLessons, pendingSubs, quizRows, studentModules,
     coachPrograms, myReviewRow, activityEvents,
-    debateRecords, debateCriteriaScores, leaderboardRows, upcomingTournaments, myLeaderboardAhead,
-    coachUsers, myBookingRows, parentGuardianships, studentGuardianRequests, myTournamentRegs,
+    debateRecords, debateCriteriaScores, leaderboardRows, myLeaderboardAhead,
+    myBookingRows, parentGuardianships, studentGuardianRequests, myTournamentRegRows,
     coachBookingRows, myCoachProfileRow,
     rosterGradeAgg, rosterQuizRows, rosterBookingAgg, rosterProgressRows, rosterLastEventAgg, rosterRecentEvents,
-    monthXpBoard,
+    monthXpBoard, streakRows, myReviewedRows,
+    coachHeldAgg, coachRelAgg, coachMonthRelAgg, coachCompletedCount, coachByStudentAgg,
   ] = await Promise.all([
-    me ? db.lessonProgress.findMany({ where: { userId: me.id, done: true } }) : Promise.resolve([]),
+    // [PERF-P] select: del progreso solo se usan el lessonId (doneSet) y el nº de filas.
+    me ? db.lessonProgress.findMany({ where: { userId: me.id, done: true }, select: { lessonId: true } }) : Promise.resolve([] as Array<{ lessonId: string }>),
     // Una sola consulta de TODAS las entregas del usuario; las GRADED se derivan en JS.
     // (Antes había dos findMany: GRADED + todas. select defensivo: solo campos usados.)
     me ? db.submission.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" }, take: 300, select: { id: true, status: true, activity: true, grade: true, feedback: true, kind: true, fileUrl: true, fileName: true, textBody: true, courseCode: true, createdLabel: true } }) : Promise.resolve([]),
@@ -647,9 +711,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // reciente (sesgo documentado). Histórico completo/paginado → server-side, F10.
     me ? db.quizAttempt.findMany({ where: { userId: me.id }, orderBy: { createdAt: "desc" }, take: 200 }) : Promise.resolve([]),
     // Lecciones (id + courseId) de los cursos en que está inscrito, para el % real.
-    meEnrollments.length
+    // [PERF-P] Para el ESTUDIANTE esto era trabajo DUPLICADO: `studentModules` (dos filas más
+    // abajo) ya trae exactamente los mismos módulos de los mismos cursos con sus lecciones.
+    // Se leía la tabla Lesson dos veces por carga. Ahora el alumno deriva el conteo de ahí
+    // (ver `enrolledLessonRows`) y esta consulta solo corre para el caso que NO cubre
+    // studentModules: un profesor/admin que además esté inscrito en cursos.
+    isTeacher && meEnrollments.length
       ? db.lesson.findMany({ where: { module: { courseId: { in: [...enrolledIds] } } }, select: { id: true, hidden: true, module: { select: { courseId: true, hidden: true } } } })
-      : Promise.resolve([]),
+      : Promise.resolve([] as Array<{ id: string; hidden: boolean; module: { courseId: string; hidden: boolean } | null }>),
     // Entregas pendientes (no calificadas) de los cursos del profesor.
     isTeacher && taughtCodes.length
       ? db.submission.count({ where: { status: { not: "GRADED" }, courseCode: { in: taughtCodes } } })
@@ -722,26 +791,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
             select: { id: true, name: true, initials: true, debateRating: true, debateTier: true },
           }))
       : Promise.resolve([]),
-    // tournaments: UPCOMING|LIVE (take 20) ordenados por fecha de inicio.
-    me
-      ? db.tournament.findMany({
-          where: { status: { in: ["UPCOMING", "LIVE"] } },
-          orderBy: [{ startsAt: "asc" }],
-          take: 20,
-          include: { registrations: { where: { userId: me.id }, select: { id: true } } },
-        })
-      : Promise.resolve([]),
     // Rank real del usuario en el leaderboard global: nº de usuarios con
     // debateRating ESTRICTAMENTE mayor + 1 (sirve aunque no esté en el top 50).
     me ? db.user.count({ where: { ageBand: { not: "minor" }, leaderboardOptIn: true, debateRating: { gt: me.debateRating } } }) : Promise.resolve(0),
-    // Marketplace (PRD §7): datos públicos del User de cada coach activo.
-    // select defensivo: NUNCA passwordHash ni email (no se exponen en browse).
-    coachProfiles.length
-      ? db.user.findMany({
-          where: { id: { in: coachProfiles.map((p) => p.userId) } },
-          select: { id: true, name: true, initials: true, headline: true, avatarUrl: true, coachVerified: true, location: true },
-        })
-      : Promise.resolve([]),
     // "Mis reservas" (PRD §7): bookings del STUDENT con su escrow (precio/estado).
     me && me.role === "STUDENT"
       ? db.booking.findMany({ where: { studentId: me.id }, include: { escrow: true }, orderBy: { slotAt: "desc" }, take: 100 })
@@ -759,8 +811,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     me && me.role === "STUDENT"
       ? db.guardianship.findMany({ where: { studentId: me.id, status: "PENDING", initiatedBy: "parent" }, include: { parent: { select: { id: true, name: true, email: true, initials: true } } }, orderBy: { createdAt: "asc" } })
       : Promise.resolve([]),
-    // PRD §8 ledger: nº de torneos en los que el usuario se ha registrado.
-    me ? db.tournamentRegistration.count({ where: { userId: me.id } }) : Promise.resolve(0),
+    // PRD §8 ledger: torneos en los que el usuario se ha registrado. [PERF-P] Antes era un
+    // `count` y ADEMÁS un `include registrations` dentro de la consulta de torneos: dos
+    // sentencias sobre la misma tabla. Una sola findMany de una columna sirve a las dos
+    // (el nº para el ledger, el Set de ids para el flag `registered`).
+    me ? db.tournamentRegistration.findMany({ where: { userId: me.id }, select: { tournamentId: true } }) : Promise.resolve([] as Array<{ tournamentId: string }>),
     // Coach Workspace (PRD §7.5): TODOS los bookings donde el usuario es el coach,
     // con su escrow (inbox + earnings se derivan en JS, una sola consulta).
     isTeacher && me
@@ -768,10 +823,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       // alto volumen). 200 reservas recientes cubren agenda próxima + historial mostrado.
       ? db.booking.findMany({ where: { coachId: me.id }, include: { escrow: true }, orderBy: { slotAt: "desc" }, take: 200 })
       : Promise.resolve([]),
-    // Coach Workspace (PRD §7.5): perfil propio del coach. Se reusa coachProfiles
-    // (browse) si ya viene ahí; esta consulta extra solo corre si NO está (p.ej.
-    // perfil desactivado — el browse filtra active:true).
-    isTeacher && me && !coachProfiles.some((p) => p.userId === me.id)
+    // Coach Workspace (PRD §7.5): perfil propio del coach, SIEMPRE fresco de la DB.
+    // [PERF-P] Antes solo corría si el perfil NO estaba en el browse (perfil desactivado).
+    // Ahora que el browse va por micro-caché global (30 s), el coach no puede leer su propio
+    // perfil de ahí: acabaría viendo su edición de tarifa/paquetes/disponibilidad con retraso.
+    // Esta consulta tiene PRECEDENCIA sobre la copia cacheada (ver `myCoachProfile` abajo) y
+    // cuesta lo mismo que costaba el perfil en el browse, que ya no se paga.
+    isTeacher && me
       ? db.coachProfile.findUnique({
           where: { userId: me.id },
           include: {
@@ -840,6 +898,43 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
             .map((r: any) => ({ ...byId.get(r.userId)!, monthXp: r._sum?.xp ?? 0 }));
         }))
       : Promise.resolve([] as any[]),
+    // [GAMIFICATION-2 §9] Fechas de los últimos 70 días para la racha real (con grace de 1 día).
+    // La racha necesita cobertura por DÍAS, no por eventos: activityEvents está topado a take:60
+    // (feed/journey) y un usuario muy activo llenaría esos 60 cupos con pocos días → racha
+    // truncada. [PERF-P] Solo depende de `me` (ya resuelto): estaba en un `await` SUELTO justo
+    // después de esta ola, o sea una ola entera de ida y vuelta para una única consulta.
+    me
+      ? db.activityEvent.findMany({
+          where: { userId: me.id, createdAt: { gte: new Date(Date.now() - 70 * 86400000) } },
+          select: { createdAt: true },
+        })
+      : Promise.resolve([] as Array<{ createdAt: Date }>),
+    // [REVIEW-CHAIN §7.4] Coaches que el alumno YA reseñó (por cualquier curso o reseña directa)
+    // → no volver a ofrecer "Dejar reseña" para ese coach. [PERF-P] Igual que streakRows: solo
+    // depende de `me`, y estaba en otro `await` suelto ~600 líneas más abajo (otra ola).
+    me && me.role === "STUDENT"
+      ? db.review.findMany({ where: { studentId: me.id }, select: { teacherId: true } })
+      : Promise.resolve([] as Array<{ teacherId: string }>),
+    // [ENT-08] Totales financieros y de éxito del Coach Workspace. NO pueden derivar del array
+    // de bookings (capado a take:200 para el inbox): un coach con >200 reservas subreportaría
+    // sus ingresos de por vida. [PERF-P] Solo dependen de me.id → suben a esta ola; antes eran
+    // un Promise.all propio dentro del bloque `if (isTeacher)`, es decir una 5ª ola en serie
+    // que solo pagaban profesores y admins.
+    isTeacher && me
+      ? db.escrowTxn.aggregate({ where: { status: "HELD", booking: { coachId: me.id } }, _sum: { amountCents: true } })
+      : Promise.resolve(null),
+    isTeacher && me
+      ? db.escrowTxn.aggregate({ where: { status: "RELEASED", booking: { coachId: me.id } }, _sum: { amountCents: true } })
+      : Promise.resolve(null),
+    isTeacher && me
+      ? db.escrowTxn.aggregate({ where: { status: "RELEASED", releasedAt: { gte: monthStart }, booking: { coachId: me.id } }, _sum: { amountCents: true } })
+      : Promise.resolve(null),
+    isTeacher && me
+      ? db.booking.count({ where: { coachId: me.id, status: "COMPLETED" } })
+      : Promise.resolve(0),
+    isTeacher && me
+      ? db.booking.groupBy({ by: ["studentId"], where: { coachId: me.id }, _count: { studentId: true } })
+      : Promise.resolve([] as any[]),
   ]);
 
   // Entregas calificadas (GRADED) derivadas en JS de la consulta única de entregas.
@@ -893,16 +988,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     bucket.set(e.userId, (bucket.get(e.userId) || 0) + 1);
   });
 
-  // [GAMIFICATION-2 §9] Racha real (con grace de 1 día). La racha necesita cobertura por
-  // DÍAS, no por eventos: activityEvents está topado a take:60 (feed/journey) y un usuario
-  // muy activo (varios eventos/día) llenaría esos 60 cupos con pocos días → racha truncada.
-  // Consulta dedicada: solo las FECHAS de los últimos 70 días (índice [userId,createdAt]).
-  const streakRows = me
-    ? await db.activityEvent.findMany({
-        where: { userId: me.id, createdAt: { gte: new Date(Date.now() - 70 * 86400000) } },
-        select: { createdAt: true },
-      })
-    : [];
+  // [GAMIFICATION-2 §9] Racha real (con grace de 1 día) — las fechas ya vienen de la ola de
+  // arriba (streakRows: últimos 70 días, índice [userId,createdAt]).
   const streakDays = computeStreak(streakRows as any[]);
   // [DASHBOARD-ACCESS-2 §4] Ciclo de vida: solo necesita el evento MÁS reciente, que el
   // take:60 desc siempre incluye (incluso si fue hace meses → 'lapsed' correcto).
@@ -937,9 +1024,16 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     l?.locked === true || (l?.releaseAfterId ? !doneSet.has(l.releaseAfterId) : false);
 
   // Total de lecciones por curso inscrito y cuántas ha completado el alumno.
+  // [PERF-P] Para el alumno las filas salen de studentModules (mismos módulos → mismas
+  // lecciones, ya cargadas); solo el profesor/admin inscrito paga la consulta dedicada.
+  const enrolledLessonRows: any[] = isTeacher
+    ? (enrolledLessons as any[])
+    : (studentModules as any[]).flatMap((m: any) =>
+        (m.lessons || []).map((l: any) => ({ id: l.id, hidden: l.hidden, module: { courseId: m.courseId, hidden: m.hidden } })),
+      );
   const totalByCourse = new Map<string, number>();
   const doneByCourse = new Map<string, number>();
-  (enrolledLessons || []).forEach((l: any) => {
+  (enrolledLessonRows || []).forEach((l: any) => {
     const cid = l.module?.courseId;
     if (!cid) return;
     if (l.hidden || l.module?.hidden) return; // lo oculto por el profesor no cuenta para el progreso del alumno
@@ -1227,7 +1321,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       .toUpperCase();
   // [DASHBOARD] Premio del puesto (solo podio): puesto → texto, leído de SeasonPrize.
   // Contenido editable en DB; la vista NO lleva los textos hardcodeados.
-  const prizeByRank = new Map<number, string>((seasonPrizes || []).map((p: any) => [p.rank, p.text]));
+  // [RONDA3 · i18n] El premio se sirve en el idioma activo con el MISMO pickLang que el
+  // resto del contenido de catálogo: `textEn` si el usuario está en EN y existe; si no, el
+  // ES. Antes la card en inglés pintaba "Beca completa · próximo módulo" bajo una interfaz
+  // en inglés (la fuga que se ve en la captura del cliente). El premio sigue viviendo en la
+  // DB —editable sin deploy—, que es la razón por la que existe SeasonPrize.
+  const prizeByRank = new Map<number, string>(
+    (seasonPrizes || []).map((p: any) => [p.rank, pickLang(p.text, p.textEn)]),
+  );
 
   // [DASHBOARD] CONTRATO DE LA TARJETA DE CLASIFICACIÓN (lo consume scr-core.ts):
   //   · Con `period` presente ⇒ la tabla es el ranking de XP del MES EN CURSO. La vista
@@ -1307,6 +1408,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // se exponen al alumno (payload intacto). Los strings van escapados (contrato de escape): al
   // colocarse en un value="…" el navegador los decodifica de vuelta al valor real al editar.
   const isStaff = !!me && (me.role === "ADMIN" || me.role === "TEACHER");
+  // [PERF-P] Ids de torneos en los que ESTE usuario está inscrito — sustituye al
+  // `include registrations where userId` que impedía cachear la lista de torneos.
+  const myTournamentRegIds = new Set((myTournamentRegRows as Array<{ tournamentId: string }>).map((r) => r.tournamentId));
   const tournaments = me
     ? (upcomingTournaments || []).map((t: any) => ({
         id: t.id,
@@ -1324,7 +1428,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         // leía "Free entry" en la etiqueta de al lado y "Gratis" en el torneo. Se traduce
         // con el mismo `lang` de la request que usa startsLabel dos líneas arriba.
         entryLabel: t.entryCents > 0 ? `$${(t.entryCents / 100).toLocaleString("es-DO")}` : (lang === "en" ? "Free" : "Gratis"),
-        registered: (t.registrations || []).length > 0,
+        registered: myTournamentRegIds.has(t.id),
         ...(isStaff
           ? {
               ageDivision: esc(t.ageDivision || ""),
@@ -1479,11 +1583,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
 
   const nowMs = Date.now();
 
-  // [REVIEW-CHAIN §7.4] Coaches que el alumno YA reseñó (por cualquier curso o reseña directa)
-  // → no volver a ofrecer "Dejar reseña" para ese coach. Una sola consulta para el flag canReview.
-  const myReviewedCoachIds = me && me.role === "STUDENT"
-    ? new Set((await db.review.findMany({ where: { studentId: me.id }, select: { teacherId: true } })).map((r) => r.teacherId))
-    : new Set<string>();
+  // [REVIEW-CHAIN §7.4] Coaches que el alumno YA reseñó → no volver a ofrecer "Dejar reseña"
+  // para ese coach. Las filas ya vienen de la ola de arriba (myReviewedRows).
+  const myReviewedCoachIds = new Set((myReviewedRows as Array<{ teacherId: string }>).map((r) => r.teacherId));
 
   // --- "Mis reservas" (STUDENT): bookings propios con coach + slot + precio --
   const myBookings = (myBookingRows as any[]).map((b) => ({
@@ -1523,7 +1625,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   if (isTeacher && me) {
     const coachStudentById = new Map<string, any>((coachStudentUsers as any[]).map((u: any) => [u.id, u]));
     // Perfil propio: del browse (activo) o de la consulta directa (inactivo).
-    const myCoachProfile: any = coachProfiles.find((p: any) => p.userId === me.id) ?? myCoachProfileRow ?? null;
+    // [PERF-P] La consulta directa manda sobre la copia del browse: el browse va por micro-caché
+    // global (30 s) y el coach DEBE ver su propia edición al instante. Es un superset de campos.
+    const myCoachProfile: any = myCoachProfileRow ?? coachProfiles.find((p: any) => p.userId === me.id) ?? null;
     // Sus paquetes resuelven nombre en el inbox aunque el perfil esté inactivo
     // (packageById solo trae los de perfiles activos del browse).
     if (myCoachProfile) {
@@ -1578,23 +1682,16 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // subreportaría sus ingresos de por vida. Se calculan con agregaciones dedicadas (sin
     // límite) sobre TODO el historial. takeRatePct es uniforme (EscrowTxn @default 18, y todo
     // el código crea el escrow con 18), así que payout = liberado × (1 − 18%).
-    const coachId = me.id;
-    const nowDate = new Date(nowMs);
-    const monthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
+    // [PERF-P] Las 5 agregaciones ya vienen de la ola grande (coach*Agg): dependían solo de
+    // me.id, así que estar aquí las convertía en una ola en serie extra para el profesor.
+    // `monthStart` es el mismo del mes en curso que fija la ola (1º del mes a las 00:00).
     const TAKE_PCT = 18;
     const payoutOfCents = (cents: number): number => Math.round((cents || 0) * (1 - TAKE_PCT / 100));
-    const [heldAgg, relAgg, monthRelAgg, completedCount, byStudent] = await Promise.all([
-      db.escrowTxn.aggregate({ where: { status: "HELD", booking: { coachId } }, _sum: { amountCents: true } }),
-      db.escrowTxn.aggregate({ where: { status: "RELEASED", booking: { coachId } }, _sum: { amountCents: true } }),
-      db.escrowTxn.aggregate({ where: { status: "RELEASED", releasedAt: { gte: monthStart }, booking: { coachId } }, _sum: { amountCents: true } }),
-      db.booking.count({ where: { coachId, status: "COMPLETED" } }),
-      db.booking.groupBy({ by: ["studentId"], where: { coachId }, _count: { studentId: true } }),
-    ]);
-    const heldCents = heldAgg._sum.amountCents || 0;
-    const releasedCents = relAgg._sum.amountCents || 0;
+    const heldCents = coachHeldAgg?._sum.amountCents || 0;
+    const releasedCents = coachRelAgg?._sum.amountCents || 0;
     const payoutCents = payoutOfCents(releasedCents);
-    const monthPayoutCents = payoutOfCents(monthRelAgg._sum.amountCents || 0);
-    const repeatStudents = byStudent.filter((g: any) => (g._count?.studentId || 0) > 1).length;
+    const monthPayoutCents = payoutOfCents(coachMonthRelAgg?._sum.amountCents || 0);
+    const repeatStudents = (coachByStudentAgg as any[]).filter((g: any) => (g._count?.studentId || 0) > 1).length;
 
     coachwork = {
       inbox: { upcoming: inboxUpcoming, past: inboxPast },
@@ -1613,7 +1710,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         ratingAvg: reviewByTeacher.get(myCoachProfile?.userId ?? "")?.avg ?? 0, // [auditoría] en vivo desde Review
         reviewCount: reviewByTeacher.get(myCoachProfile?.userId ?? "")?.count ?? 0,
         bookingCount: myCoachProfile?.bookingCount ?? 0,
-        completed: completedCount,
+        completed: coachCompletedCount,
         repeatStudents,
       },
       // Sin CoachProfile → profile null (la UI muestra el CTA de crear perfil).
@@ -1819,7 +1916,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     debates: records.length,
     wins: records.filter((r) => r.result === "WIN").length,
     sessionsAttended,
-    tournaments: myTournamentRegs as number,
+    tournaments: myTournamentRegIds.size, // [PERF-P] antes un count() propio; misma cifra
     // [fix] Horas REALES de coaching = sesiones completadas (cada Booking ~1h). Antes sumaba
     // lecciones×0.4 (24 min/lección inventados — no hay tracking de tiempo de lección en el schema).
     hoursStudied: sessionsAttended,
@@ -2020,13 +2117,21 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // dateLabel se DERIVA de `date` (vivo, como los eventos); vacío si el logro no tiene
     // fecha documentada. imageUrl vacío ⇒ la card degrada a fondo negro sin foto.
     // Texto de catálogo (no de usuario) → sin esc(), igual que badges/events.
-    highlights: (highlightRows || []).map((h: any) => ({
-      id: h.id,
-      title: h.title,
-      dateLabel: h.date ? shortDateLabel(h.date, lang) : "",
-      category: h.category,
-      imageUrl: h.imageUrl || "",
-    })),
+    // [RONDA3 · Isaac] instagramUrl: la publicación de IG del logro. Sanea con safeUrl
+    // (bloquea javascript:/data:) y ADEMÁS exige http(s) absoluto: un post de Instagram
+    // nunca es una ruta interna ni un mailto:, así que todo lo demás cae a "" y la
+    // tarjeta simplemente no navega, en vez de abrir un enlace roto.
+    highlights: (highlightRows || []).map((h: any) => {
+      const ig = safeUrl(h.instagramUrl);
+      return {
+        id: h.id,
+        title: h.title,
+        dateLabel: h.date ? shortDateLabel(h.date, lang) : "",
+        category: h.category,
+        imageUrl: h.imageUrl || "",
+        instagramUrl: ig && /^https?:\/\//i.test(ig) ? ig : "",
+      };
+    }),
     // [auditoría] La etiqueta de fecha se DERIVA de startsAt (viva, como los torneos); whenLabel
     // es solo fallback para eventos legados sin startsAt. Así "Hoy/Mañana" no queda congelado.
     events: events.map((e) => ({ t: e.title, c: e.course, when: (e as any).startsAt ? eventDateLabel((e as any).startsAt, lang) : e.whenLabel, tone: e.tone })),
@@ -2037,11 +2142,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       xp: a.xp || 0, when: whenLabel(a.createdAt, lang),
     })),
     // [F3.2] Ya scopeadas en la DB (where OR userId propio/null) — sin filtro en JS. Mapping/escape intactos.
-    notifications: notifications.map((n) => ({ ic: n.icon, tone: n.tone, t: esc(n.title), d: esc(n.detail), when: n.whenLabel, unread: n.unread })),
-    forum: threads.map((t) => ({ id: t.id, title: esc(t.title), author: esc(t.author), ini: esc(t.initials), tag: esc(t.tag), replies: t.replies, views: t.views, pinned: t.pinned, last: t.lastLabel, excerpt: esc(t.excerpt) })),
+    // [DEUDA-H] La antigüedad se DERIVA del instante (whenAt/lastAt/sentAt) con el idioma de
+    // la request; la columna de TEXTO solo se usa como respaldo de filas legacy sin timestamp.
+    // Antes se servía el texto tal cual y la UI en inglés leía "hace 1h" / "ayer".
+    notifications: notifications.map((n) => ({ ic: n.icon, tone: n.tone, t: esc(n.title), d: esc(n.detail), when: n.whenAt ? whenLabel(n.whenAt, lang) : n.whenLabel, unread: n.unread })),
+    forum: threads.map((t) => ({ id: t.id, title: esc(t.title), author: esc(t.author), ini: esc(t.initials), tag: esc(t.tag), replies: t.replies, views: t.views, pinned: t.pinned, last: t.lastAt ? whenLabel(t.lastAt, lang) : t.lastLabel, excerpt: esc(t.excerpt) })),
     forumThread: mainThread ? {
       id: mainThread.id, title: esc(mainThread.title), tag: esc(mainThread.tag),
-      posts: mainThread.posts.map((p) => ({ author: esc(p.author), ini: esc(p.initials), role: p.role, when: p.whenLabel, op: p.op, body: esc(p.body) })),
+      posts: mainThread.posts.map((p) => ({ author: esc(p.author), ini: esc(p.initials), role: p.role, when: p.whenAt ? whenLabel(p.whenAt, lang) : p.whenLabel, op: p.op, body: esc(p.body) })),
     } : { id: "", title: "", tag: "", posts: [] },
     // [CROSS-02/03] Cada conversación trae su id + sus mensajes (me computado por usuario,
     // consistente con CROSS-01) para que la pantalla pueda CAMBIAR de chat y enviar al hilo
@@ -2065,9 +2173,11 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         lastMessageBody: thread.length ? thread[thread.length - 1].body : null,
       });
       return {
-        id: c.id, ini: esc(label.initials), name: esc(label.name), last: esc(label.last), when: c.whenLabel,
+        id: c.id, ini: esc(label.initials), name: esc(label.name), last: esc(label.last), when: c.whenAt ? whenLabel(c.whenAt, lang) : c.whenLabel,
         unread: c.unread, online: c.online, navy: c.navy,
-        messages: thread.map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
+        // [DEUDA-H] La hora del mensaje sale de `sentAt` (fmtClockRD, hora RD): timeLabel es
+        // texto congelado y la API lo escribía en español ("ahora") al enviar un mensaje.
+        messages: thread.map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.sentAt ? fmtClockRD(m.sentAt, lang) : m.timeLabel })),
       };
     }),
     // VENTA POR CURSO APAGADA (PRD §13.1): los cursos son valor de la membresía —
@@ -2081,7 +2191,17 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       rating: reviewByCourse.get(c.id)?.avg ?? null,
       reviewCount: reviewByCourse.get(c.id)?.count ?? 0,
       welcomeVideoKind: c.welcomeVideoKind || "none",
-      welcomeVideoSrc: c.welcomeVideoSrc || "" })),
+      welcomeVideoSrc: c.welcomeVideoSrc || "",
+      // [RONDA3 · CURSOS] Datos que el catálogo por CATEGORÍAS necesita, todos reales:
+      //   · category  → clave derivada de `format`/`code` (ver courseCategoryKey arriba).
+      //   · moduleCount / lessonCount → conteo REAL de lo publicado (no lessonsCount,
+      //     que es la columna denormalizada y puede quedar desfasada del contenido).
+      //   · students  → Course.studentsCount (el mismo número que ya usa el Hub).
+      // Sin dato, quedan en 0 y la UI no pinta esa meta (nada inventado).
+      category: courseCategoryKey(c.format, c.code),
+      moduleCount: (c as any).modules?.length ?? 0,
+      lessonCount: ((c as any).modules ?? []).reduce((n: number, m: any) => n + (m?._count?.lessons ?? 0), 0),
+      students: (c as any).studentsCount ?? 0 })),
     // --- Hub: campos nuevos (visibles para todos los roles) ---
     arsenal,
     skills,

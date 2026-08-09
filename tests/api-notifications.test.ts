@@ -71,9 +71,11 @@ describe("POST /api/messages — alimenta la campana", () => {
     expect(res.status).toBe(200);
     expect(json.ok).toBe(true);
 
+    // [DEUDA-H] La conversación guarda el INSTANTE (whenAt), no la palabra "ahora": esa
+    // etiqueta quedaba congelada y en español, y salía tal cual con la UI en inglés.
     expect(db.fn("conversation.update")).toHaveBeenCalledWith({
       where: { id: CONV_ID },
-      data: { lastLabel: "Hola, ¿cómo vas?", whenLabel: "ahora", unread: { increment: 1 } },
+      data: { lastLabel: "Hola, ¿cómo vas?", whenLabel: "", whenAt: expect.any(Date), unread: { increment: 1 } },
     });
 
     expect(db.fn("notification.create")).toHaveBeenCalledOnce();

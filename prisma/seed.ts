@@ -155,6 +155,18 @@ async function main() {
     { id: "u-sg", name: "Sigmund Castillo", email: "sigmund.castillo@otr.do", initials: "SC", level: "OTR Apprentice", xp: 2480, streak: 5, location: "La Vega, RD", debateRating: 1545, debateRd: 120, debateVol: 0.06, debateTier: "Silver", birthYear: 2010, ageBand: "minor" },
     { id: "u-cn", name: "Camila Núñez", email: "camila.nunez@otr.do", initials: "CN", level: "OTR Apprentice", xp: 1980, streak: 3, location: "Santo Domingo, RD", debateRating: 1420, debateRd: 160, debateVol: 0.062, debateTier: "Bronze", birthYear: 2010, ageBand: "minor" },
     { id: "u-df", name: "Diego Fermín", email: "diego.fermin@otr.do", initials: "DF", level: "OTR Initiate", xp: 820, streak: 0, location: "Punta Cana, RD", debateRating: 1360, debateRd: 220, debateVol: 0.065, debateTier: "Bronze", birthYear: 2011, ageBand: "minor" }, // [fix] tierFor(1360)=Bronze (no Novato)
+    // [RONDA3 · leaderboard] Cohorte ADULTA de la sede (mayores de edad ⇒ elegibles para
+    // el ranking público, igual que Analía/Silvana/Isabella). Antes el seed solo tenía 3
+    // adultos: el ranking del dashboard se quedaba en 3 filas y la tarjeta caía a "solo
+    // podio" — la lista de puestos 4-8 del mockup de Isaac no tenía a quién listar.
+    // El rating de todos queda POR DEBAJO de Analía (1720) a propósito: el podio del
+    // Debate Hub (Isabella 1850 · Silvana 1815 · Analía 1720) no se mueve.
+    // debateTier respeta tierFor(): 1450-1599 Silver, 1600-1749 Gold.
+    { id: "u-mv", name: "Mariela Valdez", email: "mariela.valdez@otr.do", initials: "MV", level: "OTR Competitor", xp: 3060, streak: 9, location: "Santiago, RD", debateRating: 1665, debateRd: 100, debateVol: 0.055, debateTier: "Gold", birthYear: 2007, ageBand: "adult" },
+    { id: "u-lp", name: "Leonel Peña", email: "leonel.pena@otr.do", initials: "LP", level: "OTR Competitor", xp: 2890, streak: 6, location: "Santo Domingo, RD", debateRating: 1620, debateRd: 105, debateVol: 0.056, debateTier: "Gold", birthYear: 2006, ageBand: "adult" },
+    { id: "u-yb", name: "Yamilet Bautista", email: "yamilet.bautista@otr.do", initials: "YB", level: "OTR Apprentice", xp: 2640, streak: 5, location: "San Cristóbal, RD", debateRating: 1565, debateRd: 115, debateVol: 0.058, debateTier: "Silver", birthYear: 2007, ageBand: "adult" },
+    { id: "u-rq", name: "Rafael Disla", email: "rafael.disla@otr.do", initials: "RD", level: "OTR Apprentice", xp: 2350, streak: 3, location: "Puerto Plata, RD", debateRating: 1510, debateRd: 125, debateVol: 0.059, debateTier: "Silver", birthYear: 2006, ageBand: "adult" },
+    { id: "u-nc", name: "Noelia Cabrera", email: "noelia.cabrera@otr.do", initials: "NC", level: "OTR Apprentice", xp: 2120, streak: 2, location: "Moca, RD", debateRating: 1470, debateRd: 140, debateVol: 0.06, debateTier: "Silver", birthYear: 2007, ageBand: "adult" },
   ];
   await db.user.createMany({
     data: students.map((s) => ({
@@ -391,6 +403,24 @@ async function main() {
     scrimmage: "l-pf-scrimmage",
   };
 
+  // [DEUDA-H] Fechas límite REALES de las dos entregas de la Unidad 2. Antes solo existía el
+  // label libre `due` ("Mañana · 23:59", "Viernes · 23:59"): texto en español que salía intacto
+  // con la UI en inglés y que además mentía al día siguiente. Con `dueAt` sembrado, la vista
+  // (scr-core/scr-learn ya prefieren `dueAt`) formatea la fecha en el idioma activo.
+  // 23:59 hora RD = 03:59 UTC del día siguiente (UTC-4 fijo, sin DST).
+  const dueAtRD = (daysFromToday: number) => {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() + daysFromToday + 1); // el día siguiente…
+    d.setUTCHours(3, 59, 0, 0); // …a las 03:59 UTC = 23:59 RD del día pedido
+    return d;
+  };
+  // Mañana 23:59 RD para el contention; el próximo viernes 23:59 RD para la grabación
+  // (si hoy ES viernes, se va al siguiente: una entrega que vence hoy no es una demo honesta).
+  const dueContention = dueAtRD(1);
+  const daysToFriday = ((5 - new Date().getUTCDay() + 7) % 7) || 7;
+  const dueScrimmage = dueAtRD(daysToFriday);
+
   await db.lesson.createMany({
     data: [
       // --- Unidad 1 ---
@@ -448,7 +478,7 @@ async function main() {
       {
         id: L.contention, moduleId: "m-2", title: "Construye tu primer contention", type: "assign", position: 0, done: false,
         titleEn: "Build your first contention",
-        due: "Mañana · 23:59",
+        dueAt: dueContention,
         contentHtml:
           "<p>Entrega tu primer <strong>contention</strong> completo usando la estructura " +
           "<strong>Claim · Warrant · Impact</strong>. Debe incluir al menos una pieza de evidencia citada " +
@@ -490,7 +520,7 @@ async function main() {
       {
         id: L.scrimmage, moduleId: "m-2", title: "Grabación: discurso constructivo de 2 min", type: "mic", position: 2, done: false,
         titleEn: "Recording: 2-minute constructive speech",
-        due: "Viernes · 23:59",
+        dueAt: dueScrimmage,
         contentHtml:
           "<p>Graba tu discurso constructivo de <strong>2 minutos</strong> presentando tus dos contentions. " +
           "Trabaja la <strong>presencia</strong>: ritmo, pausas y contacto visual con la cámara. " +
@@ -837,6 +867,28 @@ async function main() {
       { userId: "u-ar", lessonId: L.quizU1, done: true },
       { userId: "u-ar", lessonId: L.evidence, done: true },
     ],
+  });
+
+  // [RONDA3 · CURSOS] LD-101 de Analía queda TERMINADO. No es un dato inventado: el seed
+  // ya le emite el certificado "Advanced Rebuttal" de c-ld (más abajo) sin marcarle una
+  // sola lección — un certificado con 10% de avance era la incoherencia. Con sus 6 clases
+  // hechas, la lista de "Mis clases" muestra sus tres estados reales (Continuar /
+  // Empezar / Repasar), el filtro "Completadas" cuenta 1 y la fila ofrece "Certificado
+  // disponible" en vez de una próxima clase que ya no existe.
+  await db.lessonProgress.createMany({
+    data: [
+      { userId: "u-ar", lessonId: LD.intro, done: true },
+      { userId: "u-ar", lessonId: LD.format, done: true },
+      { userId: "u-ar", lessonId: LD.quizU1, done: true },
+      { userId: "u-ar", lessonId: LD.value, done: true },
+      { userId: "u-ar", lessonId: LD.criterion, done: true },
+      { userId: "u-ar", lessonId: LD.caseStruct, done: true },
+    ],
+  });
+  // El % denormalizado del Enrollment se alinea con el progreso REAL recién sembrado.
+  await db.enrollment.updateMany({
+    where: { userId: "u-ar", courseId: "c-ld" },
+    data: { progress: 100, due: 0 },
   });
 
   // Entregas reales: 2 GRADED (con feedback) + 1 SUBMITTED pendiente.
@@ -1367,6 +1419,12 @@ async function main() {
   // por debajo de ella en rating de por vida. Son dos rankings distintos.
   // Aaron/Sigmund/Camila son MENORES: suman XP real pero el ranking público nunca los
   // muestra (regla de privacidad) — sirven para comprobar que el filtro funciona.
+  // [RONDA3] La temporada la corren OCHO adultos elegibles, que es lo que pide el mockup
+  // de Isaac: podio (1-3) a la izquierda y lista de puestos 4-8 a la derecha. El orden del
+  // mes queda: Isabella 840 · Mariela 780 · Leonel 700 · Yamilet 620 · ANALÍA 560 ·
+  // Silvana 360 · Rafael 300 · Noelia 240. Analía cae en el 5º puesto A PROPÓSITO: el
+  // mockup enseña la fila del usuario RESALTADA dentro de la lista, y con ella en el podio
+  // esa fila no existiría. Sigue por delante de Silvana, como estaba documentado.
   await db.activityEvent.createMany({
     data: [
       // Isabella Guzmán (u-is) — 840 XP
@@ -1389,6 +1447,45 @@ async function main() {
       { userId: "u-si", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 88%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.5) },
       { userId: "u-si", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Loyola", detail: "Scrim OTR · Ronda 3", xp: 120, createdAt: thisMonthAt(0.65) },
       { userId: "u-si", type: "tournament_result", source: "debate", title: "Cuartofinalista del interno OTR", detail: "Cuartos Varsity · récord 3-2", xp: 140, createdAt: thisMonthAt(0.85) },
+
+      // Mariela Valdez (u-mv) — 780 XP
+      { userId: "u-mv", type: "lesson_done", source: "course", title: "Completó “Cross-ex: preguntas que rompen el caso”", detail: "Public Forum I · Unidad 3", xp: 40, createdAt: thisMonthAt(0.18) },
+      { userId: "u-mv", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 94%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.35) },
+      { userId: "u-mv", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Babeque", detail: "Scrim OTR · Ronda 2", xp: 120, createdAt: thisMonthAt(0.5) },
+      { userId: "u-mv", type: "debate_logged", source: "debate", title: "Ganó vs Instituto Iberia", detail: "Scrim OTR · Ronda 4", xp: 120, createdAt: thisMonthAt(0.68) },
+      { userId: "u-mv", type: "tournament_result", source: "debate", title: "Finalista del interno OTR", detail: "Final Varsity · récord 4-1", xp: 240, createdAt: thisMonthAt(0.92) },
+      { userId: "u-mv", type: "session_done", source: "marketplace", title: "Sesión 1:1 con Coach Saúl", detail: "Reconstrucción del segundo contention", xp: 80, createdAt: thisMonthAt(0.8) },
+      { userId: "u-mv", type: "lesson_done", source: "course", title: "Completó “Final focus: cerrar en el impacto”", detail: "Public Forum I · Unidad 3", xp: 120, createdAt: thisMonthAt(0.6) },
+
+      // Leonel Peña (u-lp) — 700 XP
+      { userId: "u-lp", type: "lesson_done", source: "course", title: "Completó “Construir el segundo contention”", detail: "Public Forum I · Unidad 2", xp: 40, createdAt: thisMonthAt(0.22) },
+      { userId: "u-lp", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Estructura · 90%", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.38) },
+      { userId: "u-lp", type: "debate_logged", source: "debate", title: "Ganó vs Saint George", detail: "Scrim OTR · Ronda 2", xp: 120, createdAt: thisMonthAt(0.52) },
+      { userId: "u-lp", type: "debate_logged", source: "debate", title: "Ganó vs Carol Morgan School", detail: "Scrim OTR · Ronda 5", xp: 120, createdAt: thisMonthAt(0.72) },
+      { userId: "u-lp", type: "tournament_result", source: "debate", title: "Semifinalista del interno OTR", detail: "Semifinal Varsity · récord 4-1", xp: 200, createdAt: thisMonthAt(0.9) },
+      { userId: "u-lp", type: "session_done", source: "marketplace", title: "Sesión 1:1 con Coach Alberto", detail: "Cross-ex agresivo sin perder credibilidad", xp: 80, createdAt: thisMonthAt(0.83) },
+      { userId: "u-lp", type: "lesson_done", source: "course", title: "Completó “Claim · Warrant · Impact en video”", detail: "Public Forum I · Unidad 1", xp: 80, createdAt: thisMonthAt(0.3) },
+
+      // Yamilet Bautista (u-yb) — 620 XP
+      { userId: "u-yb", type: "lesson_done", source: "course", title: "Completó “Qué es Public Forum”", detail: "Public Forum I · Unidad 1", xp: 40, createdAt: thisMonthAt(0.2) },
+      { userId: "u-yb", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Evidencia · 86%", detail: "Public Forum I · Unidad 3", xp: 60, createdAt: thisMonthAt(0.42) },
+      { userId: "u-yb", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Quisqueya", detail: "Scrim OTR · Ronda 3", xp: 120, createdAt: thisMonthAt(0.58) },
+      { userId: "u-yb", type: "debate_logged", source: "debate", title: "Ganó vs Liceo Científico", detail: "Scrim OTR · Ronda 5", xp: 120, createdAt: thisMonthAt(0.74) },
+      { userId: "u-yb", type: "tournament_result", source: "debate", title: "Cuartofinalista del interno OTR", detail: "Cuartos Varsity · récord 3-2", xp: 140, createdAt: thisMonthAt(0.88) },
+      { userId: "u-yb", type: "session_done", source: "marketplace", title: "Sesión 1:1 con Coach Saúl", detail: "Primer contention: del warrant al impacto", xp: 80, createdAt: thisMonthAt(0.66) },
+      { userId: "u-yb", type: "lesson_done", source: "course", title: "Completó “Bienvenida y diagnóstico”", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.12) },
+
+      // Rafael Disla (u-rq) — 300 XP
+      { userId: "u-rq", type: "lesson_done", source: "course", title: "Completó “Bienvenida y diagnóstico”", detail: "Public Forum I · Unidad 1", xp: 40, createdAt: thisMonthAt(0.28) },
+      { userId: "u-rq", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Estructura · 82%", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.5) },
+      { userId: "u-rq", type: "debate_logged", source: "debate", title: "Ganó vs Instituto Iberia", detail: "Scrim OTR · Ronda 1", xp: 120, createdAt: thisMonthAt(0.72) },
+      { userId: "u-rq", type: "lesson_done", source: "course", title: "Completó “Qué es Public Forum”", detail: "Public Forum I · Unidad 1", xp: 80, createdAt: thisMonthAt(0.86) },
+
+      // Noelia Cabrera (u-nc) — 240 XP
+      { userId: "u-nc", type: "lesson_done", source: "course", title: "Completó “Bienvenida y diagnóstico”", detail: "Public Forum I · Unidad 1", xp: 40, createdAt: thisMonthAt(0.33) },
+      { userId: "u-nc", type: "quiz_passed", source: "course", title: "Aprobó el quiz de Estructura · 78%", detail: "Public Forum I · Unidad 1", xp: 60, createdAt: thisMonthAt(0.55) },
+      { userId: "u-nc", type: "debate_logged", source: "debate", title: "Ganó vs Colegio Loyola", detail: "Scrim OTR · Ronda 1", xp: 120, createdAt: thisMonthAt(0.78) },
+      { userId: "u-nc", type: "lesson_done", source: "course", title: "Completó “Claim · Warrant · Impact en video”", detail: "Public Forum I · Unidad 1", xp: 20, createdAt: thisMonthAt(0.9) },
 
       // Menores (fuera del ranking público por edad, con actividad real igualmente)
       { userId: "u-aa", type: "lesson_done", source: "course", title: "Completó “Construir el segundo contention”", detail: "Public Forum I · Unidad 2", xp: 40, createdAt: thisMonthAt(0.3) },
@@ -1538,11 +1635,15 @@ async function main() {
   //  12.1) PREMIOS DE LA TEMPORADA (podio del leaderboard)
   // ----------------------------------------------------------------
   // Contenido de producto editable: el texto del premio vive en DB, no en la vista.
+  // [RONDA3 · i18n] `textEn` es el MISMO premio en inglés. Sin él la card en EN mezclaba
+  // interfaz inglesa con premios en español (fuga visible en la captura del cliente).
+  // Si algún día un premio se crea sin traducción, la vista cae al texto ES: se ve el
+  // premio real en el otro idioma, nunca una cajita vacía.
   await db.seasonPrize.createMany({
     data: [
-      { rank: 1, text: "Beca completa · próximo módulo", position: 0 },
-      { rank: 2, text: "Sesión 1:1 con coach", position: 1 },
-      { rank: 3, text: "Kit oficial OTR + credencial", position: 2 },
+      { rank: 1, text: "Beca completa · próximo módulo", textEn: "Full scholarship · next module", position: 0 },
+      { rank: 2, text: "Sesión 1:1 con coach", textEn: "1:1 session with a coach", position: 1 },
+      { rank: 3, text: "Kit oficial OTR + credencial", textEn: "Official OTR kit + credential", position: 2 },
     ],
   });
 
@@ -1560,26 +1661,36 @@ async function main() {
   // (`--hl-pos`, ver screens.css) para que no canten como repetidas.
   // SUSTITUIR por las fotos reales en cuanto lleguen; la vista ya degrada a card negra
   // si `imageUrl` viene vacío.
+  // [RONDA3 · Isaac] `instagramUrl`: cada logro enlaza a SU publicación de Instagram
+  // ("cada publicación de esa a un post de IG"). Estas cuatro son PLACEHOLDERS hasta que
+  // Isaac mande los enlaces reales de @otr.academy — sustituirlas es cambiar el string.
+  // Un highlight sin instagramUrl no navega a ningún sitio (la vista ya degrada).
   const MOCK_FOTO = "/img/hero-speaking.jpg";
   await db.highlight.createMany({
     data: [
-      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: MOCK_FOTO, position: 0 },
-      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: MOCK_FOTO, position: 1 },
-      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: MOCK_FOTO, position: 2 },
-      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: MOCK_FOTO, position: 3 },
+      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: MOCK_FOTO, instagramUrl: "https://instagram.com/p/EJEMPLO1", position: 0 },
+      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: MOCK_FOTO, instagramUrl: "https://instagram.com/p/EJEMPLO2", position: 1 },
+      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: MOCK_FOTO, instagramUrl: "https://instagram.com/p/EJEMPLO3", position: 2 },
+      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: MOCK_FOTO, instagramUrl: "https://instagram.com/p/EJEMPLO4", position: 3 },
     ],
   });
 
   // ----------------------------------------------------------------
   //  13) NOTIFICACIONES (algunas sin leer) — para Analía y globales
   // ----------------------------------------------------------------
+  // [DEUDA-H] Se siembra el INSTANTE (`whenAt`), no la etiqueta. Antes cada fila guardaba
+  // texto en español ("hace 1h", "ayer") que salía intacto con la UI en inglés y que además
+  // envejecía mal (a los tres días la notificación seguía diciendo "hace 1h"). La etiqueta la
+  // deriva queries.ts con el idioma de la request; `whenLabel` queda vacío (columna legacy).
+  const hoursAgoDate = (h: number) => new Date(Date.now() - h * 60 * 60 * 1000);
+  const minsAgoDate = (m: number) => new Date(Date.now() - m * 60 * 1000);
   await db.notification.createMany({
     data: [
-      { userId: "u-ar", icon: "chart", tone: "ok", title: "Tu entrega fue calificada", detail: "Coach Saúl · 92% — “Excelente claim”", whenLabel: "hace 1h", unread: true, position: 0 },
-      { userId: "u-ar", icon: "clock", tone: "warn", title: "Entrega vence mañana", detail: "Construye tu primer contention · PF-101", whenLabel: "hace 3h", unread: true, position: 1 },
-      { userId: null, icon: "msg", tone: "sky", title: "Camila te respondió en el foro", detail: "Hilo: refutación cruzada", whenLabel: "hace 5h", unread: true, position: 2 },
-      { userId: null, icon: "medal", tone: "navy", title: "Nueva insignia disponible", detail: "Refutador · domina el rebuttal", whenLabel: "ayer", unread: false, position: 3 },
-      { userId: null, icon: "calendar", tone: "sky", title: "Simulacro programado", detail: "Hoy 4:00 PM con jueces", whenLabel: "ayer", unread: false, position: 4 },
+      { userId: "u-ar", icon: "chart", tone: "ok", title: "Tu entrega fue calificada", detail: "Coach Saúl · 92% — “Excelente claim”", whenLabel: "", whenAt: hoursAgoDate(1), unread: true, position: 0 },
+      { userId: "u-ar", icon: "clock", tone: "warn", title: "Entrega vence mañana", detail: "Construye tu primer contention · PF-101", whenLabel: "", whenAt: hoursAgoDate(3), unread: true, position: 1 },
+      { userId: null, icon: "msg", tone: "sky", title: "Camila te respondió en el foro", detail: "Hilo: refutación cruzada", whenLabel: "", whenAt: hoursAgoDate(5), unread: true, position: 2 },
+      { userId: null, icon: "medal", tone: "navy", title: "Nueva insignia disponible", detail: "Refutador · domina el rebuttal", whenLabel: "", whenAt: hoursAgoDate(26), unread: false, position: 3 },
+      { userId: null, icon: "calendar", tone: "sky", title: "Simulacro programado", detail: "Hoy 4:00 PM con jueces", whenLabel: "", whenAt: hoursAgoDate(28), unread: false, position: 4 },
     ],
   });
 
@@ -1631,31 +1742,35 @@ async function main() {
   // ----------------------------------------------------------------
   await db.forumThread.createMany({
     data: [
-      { id: "t-1", title: "¿Cómo refutar un argumento de impacto sin caer en falacias?", author: "Camila Núñez", initials: "CN", tag: "Refutación", replies: 8, views: 42, pinned: true, lastLabel: "hace 2h", excerpt: "En el simulacro me costó atacar el impacto sin que el juez lo viera como ataque personal. ¿Tips?", position: 0 },
-      { id: "t-2", title: "Plantilla de Contention que uso para PF (compartida)", author: "Isabella Guzmán", initials: "IG", tag: "Recursos", replies: 14, views: 96, pinned: true, lastLabel: "hace 6h", excerpt: "Les dejo mi estructura Claim · Warrant · Impact en una página. Me sirvió para romper en Blue Key.", position: 1 },
-      { id: "t-3", title: "Dudas sobre el crossfire — ¿quién pregunta primero?", author: "Diego Fermín", initials: "DF", tag: "Reglas", replies: 3, views: 21, pinned: false, lastLabel: "hace 1d", excerpt: "Nunca me queda claro el orden en Public Forum. ¿Alguien me lo explica simple?", position: 2 },
-      { id: "t-4", title: "Mi evidencia para el tema de este mes", author: "Analía Reyes", initials: "AR", tag: "Evidencia", replies: 5, views: 33, pinned: false, lastLabel: "hace 2d", excerpt: "Encontré un estudio de 2025 muy fuerte. ¿Lo revisamos juntos antes del torneo?", position: 3 },
+      { id: "t-1", title: "¿Cómo refutar un argumento de impacto sin caer en falacias?", author: "Camila Núñez", initials: "CN", tag: "Refutación", replies: 8, views: 42, pinned: true, lastLabel: "", lastAt: hoursAgoDate(2), excerpt: "En el simulacro me costó atacar el impacto sin que el juez lo viera como ataque personal. ¿Tips?", position: 0 },
+      { id: "t-2", title: "Plantilla de Contention que uso para PF (compartida)", author: "Isabella Guzmán", initials: "IG", tag: "Recursos", replies: 14, views: 96, pinned: true, lastLabel: "", lastAt: hoursAgoDate(6), excerpt: "Les dejo mi estructura Claim · Warrant · Impact en una página. Me sirvió para romper en Blue Key.", position: 1 },
+      { id: "t-3", title: "Dudas sobre el crossfire — ¿quién pregunta primero?", author: "Diego Fermín", initials: "DF", tag: "Reglas", replies: 3, views: 21, pinned: false, lastLabel: "", lastAt: hoursAgoDate(26), excerpt: "Nunca me queda claro el orden en Public Forum. ¿Alguien me lo explica simple?", position: 2 },
+      { id: "t-4", title: "Mi evidencia para el tema de este mes", author: "Analía Reyes", initials: "AR", tag: "Evidencia", replies: 5, views: 33, pinned: false, lastLabel: "", lastAt: hoursAgoDate(50), excerpt: "Encontré un estudio de 2025 muy fuerte. ¿Lo revisamos juntos antes del torneo?", position: 3 },
     ],
   });
   await db.forumPost.createMany({
     data: [
-      { threadId: "t-1", author: "Camila Núñez", initials: "CN", role: "Estudiante", whenLabel: "hace 2h", op: true, body: "En el simulacro me costó atacar el impacto del rival sin que el juez lo viera como ataque personal. ¿Cómo lo separan ustedes?", position: 0 },
-      { threadId: "t-1", author: "Saúl Méndez", initials: "SM", role: "Coach", whenLabel: "hace 1h", op: false, body: "Buena pregunta. Ataca la <b>lógica</b>, no a la persona: cuestiona la probabilidad y la magnitud del impacto. “Aunque eso fuera cierto, su probabilidad es baja porque…”. Eso es refutar, no descalificar.", position: 1 },
-      { threadId: "t-1", author: "Isabella Guzmán", initials: "IG", role: "Estudiante", whenLabel: "hace 40 min", op: false, body: "A mí me funciona el “turn”: tomo su impacto y muestro que en realidad juega a mi favor. El juez lo ama.", position: 2 },
+      { threadId: "t-1", author: "Camila Núñez", initials: "CN", role: "Estudiante", whenLabel: "", whenAt: hoursAgoDate(2), op: true, body: "En el simulacro me costó atacar el impacto del rival sin que el juez lo viera como ataque personal. ¿Cómo lo separan ustedes?", position: 0 },
+      { threadId: "t-1", author: "Saúl Méndez", initials: "SM", role: "Coach", whenLabel: "", whenAt: hoursAgoDate(1), op: false, body: "Buena pregunta. Ataca la <b>lógica</b>, no a la persona: cuestiona la probabilidad y la magnitud del impacto. “Aunque eso fuera cierto, su probabilidad es baja porque…”. Eso es refutar, no descalificar.", position: 1 },
+      { threadId: "t-1", author: "Isabella Guzmán", initials: "IG", role: "Estudiante", whenLabel: "", whenAt: minsAgoDate(40), op: false, body: "A mí me funciona el “turn”: tomo su impacto y muestro que en realidad juega a mi favor. El juez lo ama.", position: 2 },
     ],
   });
 
   // ----------------------------------------------------------------
   //  17) MENSAJERÍA — conversaciones y chat
   // ----------------------------------------------------------------
+  // [DEUDA-H] `whenAt` = instante del último movimiento del hilo (el label relativo se deriva
+  // con el idioma de la request; antes viajaba el texto "hace 1h"/"ayer" en español fijo).
+  // [MARCA · «Emoji: nunca»] Los tres emoji que quedaban en la demo (dos aplausos y un bíceps,
+  // todos en cv-1) se quitan: el sentido de la frase no depende de ellos.
   await db.conversation.createMany({
     data: [
-      { id: "cv-1", initials: "SM", name: "Coach Saúl Méndez", lastLabel: "Te dejé feedback en la entrega 👏", whenLabel: "hace 1h", unread: 2, online: true, navy: true, position: 0 },
-      { id: "cv-2", initials: "CN", name: "Camila Núñez", lastLabel: "¿Practicamos crossfire mañana?", whenLabel: "hace 3h", unread: 0, online: true, navy: false, position: 1 },
-      { id: "cv-3", initials: "OTR", name: "Equipo OTR (anuncios)", lastLabel: "Recordatorio: torneo interno el sábado", whenLabel: "ayer", unread: 0, online: false, navy: true, position: 2 },
-      { id: "cv-4", initials: "SE", name: "Silvana Espaillat", lastLabel: "Te paso mi evidencia del tema", whenLabel: "ayer", unread: 0, online: false, navy: false, position: 3 },
+      { id: "cv-1", initials: "SM", name: "Coach Saúl Méndez", lastLabel: "Te dejé feedback en la entrega", whenLabel: "", whenAt: minsAgoDate(60), unread: 2, online: true, navy: true, position: 0 },
+      { id: "cv-2", initials: "CN", name: "Camila Núñez", lastLabel: "¿Practicamos crossfire mañana?", whenLabel: "", whenAt: hoursAgoDate(3), unread: 0, online: true, navy: false, position: 1 },
+      { id: "cv-3", initials: "OTR", name: "Equipo OTR (anuncios)", lastLabel: "Recordatorio: torneo interno el sábado", whenLabel: "", whenAt: hoursAgoDate(26), unread: 0, online: false, navy: true, position: 2 },
+      { id: "cv-4", initials: "SE", name: "Silvana Espaillat", lastLabel: "Te paso mi evidencia del tema", whenLabel: "", whenAt: hoursAgoDate(28), unread: 0, online: false, navy: false, position: 3 },
       // Conversación menor↔coach (PRD §7.4): activa el filtro de contact-info.
-      { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach", whenLabel: "hace 2h", unread: 0, online: false, navy: false, position: 4 },
+      { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach", whenLabel: "", whenAt: minsAgoDate(120), unread: 0, online: false, navy: false, position: 4 },
     ],
   });
   // [GOAL S5] El hilo de Diego se sembraba VACÍO mientras la lista previsualizaba "Gracias
@@ -1664,17 +1779,21 @@ async function main() {
   // (app/lib/queries.ts → conversationLabel), no de un lastLabel escrito a mano.
   // [GOAL S4] Además todos los mensajes llevan senderId: `me` (legacy, por fila) estaba escrito
   // desde el lado de Analía, así que el coach veía los mensajes de su alumna como propios.
+  // [DEUDA-H] `sentAt` = instante real del envío. `timeLabel` guardaba la hora como TEXTO por
+  // fila ("10:02") y la API escribía "ahora" —en español— al crear un mensaje nuevo: con la UI
+  // en inglés el hilo mezclaba idiomas. Ahora la hora se formatea en lectura (hora RD) y los
+  // instantes se anclan a "hace N minutos" para que la demo no envejezca al día siguiente.
   await db.chatMessage.createMany({
     data: [
-      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "¡Hola Analía! Vi tu diagnóstico de 1 minuto.", timeLabel: "10:02", position: 0 },
-      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Tu claim quedó clarísimo en los primeros 10 segundos 👏", timeLabel: "10:02", position: 1 },
-      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "¡Gracias coach! Sentí que el cierre me quedó flojo.", timeLabel: "10:05", position: 2 },
-      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Un poco. Cierra siempre con el impacto, no con un resumen. Vuelve a grabar el último tramo y me lo mandas.", timeLabel: "10:06", position: 3 },
-      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "Hecho. Lo subo hoy mismo 💪", timeLabel: "10:08", position: 4 },
-      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Diego, buen trabajo en la ronda de ayer: el segundo contention quedó sólido.", timeLabel: "16:40", position: 0 },
-      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Para el sábado practica el crossfire: respuestas de 15 segundos, sin leer.", timeLabel: "16:41", position: 1 },
-      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Perfecto, lo practico esta semana con el cronómetro.", timeLabel: "17:02", position: 2 },
-      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Gracias coach", timeLabel: "17:02", position: 3 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "¡Hola Analía! Vi tu diagnóstico de 1 minuto.", timeLabel: "", sentAt: minsAgoDate(66), position: 0 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Tu claim quedó clarísimo en los primeros 10 segundos.", timeLabel: "", sentAt: minsAgoDate(66), position: 1 },
+      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "¡Gracias coach! Sentí que el cierre me quedó flojo.", timeLabel: "", sentAt: minsAgoDate(63), position: 2 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Un poco. Cierra siempre con el impacto, no con un resumen. Vuelve a grabar el último tramo y me lo mandas.", timeLabel: "", sentAt: minsAgoDate(62), position: 3 },
+      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "Hecho. Lo subo hoy mismo.", timeLabel: "", sentAt: minsAgoDate(60), position: 4 },
+      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Diego, buen trabajo en la ronda de ayer: el segundo contention quedó sólido.", timeLabel: "", sentAt: minsAgoDate(142), position: 0 },
+      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Para el sábado practica el crossfire: respuestas de 15 segundos, sin leer.", timeLabel: "", sentAt: minsAgoDate(141), position: 1 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Perfecto, lo practico esta semana con el cronómetro.", timeLabel: "", sentAt: minsAgoDate(120), position: 2 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Gracias coach", timeLabel: "", sentAt: minsAgoDate(120), position: 3 },
     ],
   });
 

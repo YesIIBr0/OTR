@@ -37,9 +37,26 @@ const TABS = [
   { k: "practice", l: t("debate.tabPractice"), ic: "mic" },
   { k: "leaderboard", l: t("debate.tabLeaderboard"), ic: "trophy" },
 ];
-function activeTab() {
+
+/* ---------------- rol activo (rama del STAFF) ----------------
+   [SONDEO 2026-08-09 · M1] El Hub era ciego al rol: la cuenta admin veía la cara de
+   COMPETIDOR (rating 1500 "suyo", "Tu coach registra y adjudica tus rondas", CTA
+   "Registrarme"). Misma familia que el fix de perfil 7d70cc3 — cada rol con su cara,
+   sin inventar datos. Alumno y coach NO cambian: para ellos esto devuelve false. */
+function roleOf(state) {
+  return String((state && state.role) || (DB.me && DB.me.role) || "student").toLowerCase();
+}
+function isStaffView(state) {
+  return roleOf(state) === "admin";
+}
+// El observador no compite: solo las dos pestañas que sí puede mirar.
+function tabsFor(state) {
+  return isStaffView(state) ? TABS.filter((x) => x.k === "overview" || x.k === "leaderboard") : TABS;
+}
+function activeTab(state) {
   const t = (window as any).__debateTab;
-  return TABS.some((x) => x.k === t) ? t : "overview";
+  const tabs = tabsFor(state);
+  return tabs.some((x) => x.k === t) ? t : "overview";
 }
 
 /* ---------------- Drills de práctica (Fase 1) ----------------
@@ -249,6 +266,25 @@ function nextTier(tier) {
   return i >= 0 && i < TIER_LADDER.length - 1 ? TIER_LADDER[i + 1] : null;
 }
 
+/* [Isaac 2026-08-09] "que no sea «Gold» en naranja, que sea gold" / "si dice «platinum»
+   que no sea en naranja que sea en platino". SOLO los dos tiers que el cliente nombró
+   tienen metal propio; el resto conserva el chip de acento del kit (nada de inventar
+   una paleta de 8 colores por nuestra cuenta). Los tokens viven en tokens.css. */
+const TIER_TONE = { gold: "gold", platinum: "platinum" };
+function tierTone(tier) {
+  return TIER_TONE[String(tier || "").toLowerCase()] || "";
+}
+
+/* [Isaac 2026-08-09] "Al cuadrado atrás ponle la foto del estudiante… igualito que en
+   dashboard": misma mecánica que el héroe del dashboard (.hero-photo + --hero-img).
+   El guard de URL es el mismo que el de scr-core (solo rutas propias o https, sin
+   comillas ni paréntesis): la foto entra en una `url()` de CSS, no en un src. */
+function heroImgVar(url) {
+  const u = String(url || "").trim();
+  if (!u) return "";
+  return /^(\/|https:\/\/)[^'"()\s]+$/.test(u) ? `;--hero-img:url('${esc(u)}')` : "";
+}
+
 // Color-coding de resultado (WIN verde / LOSS rojo). En debate no hay empates.
 function resultStyle(result) {
   const r = String(result || "").toUpperCase();
@@ -306,22 +342,37 @@ function proStrip(upsellLine) {
 /* ---------------- panel HERO (card NEGRA del mockup: rating GRANDE + tier) ----------------
    [MOCKUP · Task 6, spec §3.2] La tarjeta de rating es la pieza estrella del Debate Hub:
    .card--dark (negro plano, sin sombra) + .card--glow (halo naranja de la esquina), rating
-   a 64/800 y racha de resultados en cuadrados r4 — victoria naranja con texto NEGRO. */
+   a 64/800 y racha de resultados en cuadrados r4.
+   [Isaac 2026-08-09] Tres cambios pedidos por el cliente sobre esta card:
+     · el tier va en SU metal (oro/platino), no en naranja;
+     · victoria verde y derrota negra (el color lo pone screens.css, sección RONDA3);
+     · de fondo, la FOTO del estudiante — y si no hay foto, el avatar de iniciales
+       del kit (nunca una foto de archivo haciéndose pasar por la suya). */
 function heroPanel(d) {
   const nt = nextTier(d.tier);
   const forms = d.recentForm.slice(0, 6);
+  const me = DB.me || {};
+  const photo = heroImgVar(me.avatarUrl);
+  // Con foto manda .hero-photo (la textura naranja de .card--glow sobraría: ambas
+  // pintan el MISMO ::before). Sin foto, la card se queda exactamente como estaba.
+  const cardCls = photo ? "card card--dark hero-photo dbt-card--photo" : "card card--dark card--glow";
+  const tone = tierTone(d.tier);
+  const ntTone = tierTone(nt);
   return `
-  <div class="card card--dark card--glow fade-up" style="--d:0;margin-bottom:18px">
+  <div class="${cardCls} fade-up" style="--d:0;margin-bottom:18px${photo}">
     <div class="card-pad" style="padding:26px 28px 28px">
       <div class="dbt-hero">
         <div class="dbt-id">
           <h1 class="sr-only">${t("debate.heroSrTitle")}</h1>
-          <span class="lbl">${t("debate.heroEyebrow")}</span>
+          <div class="row vcenter" style="gap:10px">
+            ${photo ? "" : `<span class="dbt-face">${C.avatar(esc(me.initials || "?"), { size: "sm", bg: "rgba(255,255,255,.16)" })}</span>`}
+            <span class="lbl">${t("debate.heroEyebrow")}</span>
+          </div>
           <div class="row vcenter" style="gap:16px;margin-top:10px">
             <span class="dbt-rating tnum">${d.rating}</span>
             ${/* align-items:flex-start — si no, el chip (hijo flex) se estira a lo ancho. */""}
             <div class="stack" style="gap:8px;min-width:0;align-items:flex-start">
-              ${C.chip(esc(tierLabel(d.tier)), "accent", { ic: "award" })}
+              ${C.chip(esc(tierLabel(d.tier)), "accent", { ic: "award", cls: tone ? `chip--tier-${tone}` : "" })}
               <span class="dbt-sub">±${d.rd} RD ${d.provisional ? "· " + t("debate.rdProvisional") : "· " + t("debate.rdStable")}</span>
               ${d.speakerAvg != null ? `<span class="dbt-sub" title="${t("debate.speakerTitle")}">${t("debate.speakerLabel")} <b>${d.speakerAvg}</b>/100 · ${d.speakerRounds} ${d.speakerRounds === 1 ? t("debate.roundSingular") : t("debate.roundPlural")}</span>` : ""}
             </div>
@@ -329,8 +380,8 @@ function heroPanel(d) {
           ${d.provisional
             ? `<div class="alert" style="margin-top:16px;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:#fff"><span class="ai">${IC.target}</span><div><div class="at" style="color:#fff">${t("debate.provisionalTitle")}</div><span style="color:rgba(255,255,255,.78)">${t("debate.provisionalBody")}</span></div></div>`
             : nt
-              ? `<p class="dbt-sub" style="margin-top:14px;font-size:13px">${t("debate.nextTierPrefix")} <b>${esc(tierLabel(nt))}</b> ${t("debate.nextTierSuffix")}</p>`
-              : `<p class="dbt-sub" style="margin-top:14px;font-size:13px"><b>${t("debate.topPrefix")} ${esc(tierLabel(d.tier))}.</b> ${t("debate.topSuffix")}</p>`}
+              ? `<p class="dbt-sub" style="margin-top:14px;font-size:13px">${t("debate.nextTierPrefix")} <b${ntTone ? ` class="dbt-tier--${ntTone}"` : ""}>${esc(tierLabel(nt))}</b> ${t("debate.nextTierSuffix")}</p>`
+              : `<p class="dbt-sub" style="margin-top:14px;font-size:13px"><b${tone ? ` class="dbt-tier--${tone}"` : ""}>${t("debate.topPrefix")} ${esc(tierLabel(d.tier))}.</b> ${t("debate.topSuffix")}</p>`}
         </div>
         <div style="flex:none;min-width:210px">
           <span class="lbl" style="margin-bottom:10px">${t("debate.recentForm")}</span>
@@ -347,11 +398,42 @@ function heroPanel(d) {
   </div>`;
 }
 
+/* ---------------- panel HERO del STAFF (M1) ----------------
+   [SONDEO 2026-08-09 · M1] Al admin no se le atribuye un rating de competidor: la misma
+   card negra hospeda lo que SÍ es suyo — la foto del circuito. Las tres cifras salen del
+   payload que ya recibe (debateLeaderboard + tournaments); no se inventa ninguna. */
+function heroPanelStaff() {
+  const lb = getLeaderboard();
+  const rows = lb.rows.filter((r) => typeof r.rating === "number");
+  const top = rows.reduce((best, r) => (!best || r.rating > best.rating ? r : best), null);
+  const tn = getTournaments();
+  return `
+  <div class="card card--dark card--glow fade-up" style="--d:0;margin-bottom:18px">
+    <div class="card-pad" style="padding:26px 28px 28px">
+      <div class="dbt-staff">
+        <div style="min-width:260px;flex:1">
+          <h1 class="sr-only">${t("debate.heroSrTitle")}</h1>
+          <span class="lbl">${t("debate.staffEyebrow")}</span>
+          <p class="dbt-sub dbt-staff-lead" style="margin-top:10px;font-size:13px">${t("debate.staffLead")}</p>
+          <div style="margin-top:14px">
+            ${C.btn(t("debate.staffGoConsole"), "outline", { size: "sm", ic: "shield", icRight: "arrowR", attrs: 'data-go="admin"' })}
+          </div>
+        </div>
+        <div class="stat-group">
+          ${C.statInline(rows.length, t("debate.staffStatDebaters"))}
+          ${C.statInline(top ? top.rating : "—", t("debate.staffStatTopRating"))}
+          ${C.statInline(tn.length, t("debate.staffStatTournaments"))}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
 /* ---------------- barra de sub-tabs ---------------- */
-function subTabs(active) {
+function subTabs(active, state) {
   return `
   <div class="tabs fade-up" style="--d:1" id="debate-tabs">
-    ${TABS.map((t) => `<button class="tab ${t.k === active ? "active" : ""}" data-dtab="${t.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[t.ic]}</span>${t.l}</span></button>`).join("")}
+    ${tabsFor(state).map((t) => `<button class="tab ${t.k === active ? "active" : ""}" data-dtab="${t.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[t.ic]}</span>${t.l}</span></button>`).join("")}
   </div>`;
 }
 
@@ -391,7 +473,19 @@ function viewOverview(d) {
       </div>
     </div>`;
 
-  const nextEventCard = `
+  return `
+    ${kpis}
+    <div class="split fade-up" style="--d:0">
+      <div class="stack" style="gap:16px">${recentCard}</div>
+      <div class="stack" style="gap:16px">${nextEventCard(nextEvent, { canRegister: true })}${nsdaCard()}</div>
+    </div>`;
+}
+
+/* Tarjeta del próximo torneo. `canRegister:false` la deja en modo FICHA: el staff
+   observa el calendario, no se inscribe (M1 del sondeo: al admin se le ofrecía
+   "Registrarme" como a un alumno). */
+function nextEventCard(nextEvent, opts = {}) {
+  return `
     <div class="card card-pad">
       ${/* [K-09] Hermana de "Debates recientes": mismo nivel, h2 (antes h4 por defecto de sm). */""}
       ${C.secTitle(t("debate.nextTournament"), { sm: true, tag: "h2" })}
@@ -403,18 +497,22 @@ function viewOverview(d) {
              ${nextEvent.modality ? `<span class="dot-sep"></span><span>${esc(nextEvent.modality)}</span>` : ""}
            </div>
            ${nextEvent.startsLabel ? `<div class="row vcenter" style="gap:6px;margin-top:10px;font-size:13px;color:var(--text)">${IC.calendar} ${esc(nextEvent.startsLabel)}</div>` : ""}
-           ${nextEvent.registered
-             ? `<div style="margin-top:12px">${C.chip(t("debate.registered"), "tint", { ic: "check" })}</div>`
-             : `<div style="margin-top:12px">${C.btn(t("debate.register"), "accent", { block: true, icRight: "arrowR", attrs: `data-tn-register="${esc(nextEvent.id)}"` })}</div>`}`
+           ${!opts.canRegister
+             ? ""
+             : nextEvent.registered
+               ? `<div style="margin-top:12px">${C.chip(t("debate.registered"), "tint", { ic: "check" })}</div>`
+               : `<div style="margin-top:12px">${C.btn(t("debate.register"), "accent", { block: true, icRight: "arrowR", attrs: `data-tn-register="${esc(nextEvent.id)}"` })}</div>`}`
         /* [K-09] El vacío cuelga de la sección h2 de arriba → h3 (antes h4 = salto h2→h4).
            `.empty h3` replica el tipado de `.empty h4` (screens.css, sección A11Y). */
         : `<div class="empty" style="padding:18px"><div class="ill">${IC.calendar}</div><h3>${t("debate.noEventsTitle")}</h3><p>${t("debate.noEventsBody")}</p></div>`}
     </div>`;
+}
 
-  // [NSDA Fase-1] Torneos del circuito vía la API pública oficial de Tabroom (indexcards).
-  // Placeholder que mount() llena con un fetch al proxy server-side /api/tabroom/tourns
-  // (sin key, sin datos personales de terceros). El récord personal es Fase-2.
-  const nsdaCard = `
+// [NSDA Fase-1] Torneos del circuito vía la API pública oficial de Tabroom (indexcards).
+// Placeholder que mount() llena con un fetch al proxy server-side /api/tabroom/tourns
+// (sin key, sin datos personales de terceros). El récord personal es Fase-2.
+function nsdaCard() {
+  return `
     <div class="card card-pad" data-nsda>
       ${/* [K-09] Tercera sección de primer nivel del hub → h2. */""}
       ${C.secTitle("NSDA · Tabroom", { sm: true, tag: "h2" })}
@@ -422,12 +520,53 @@ function viewOverview(d) {
       <p class="faint" style="font-size:12px;margin-top:2px">${t("debate.nsdaSub")}</p>
       <div data-nsda-body style="margin-top:10px"><p class="faint" style="font-size:12.5px">${t("debate.nsdaLoading")}</p></div>
     </div>`;
+}
+
+/* ================= SECCIÓN · RESUMEN (STAFF) =================
+   [SONDEO M1] Mismo esqueleto que el resumen del alumno, con los datos que SÍ son del
+   admin: el pulso del circuito. Ni KPIs personales en cero, ni "tu coach registra tus
+   rondas", ni CTA de inscripción. */
+function viewOverviewStaff() {
+  const rows = getLeaderboard().rows.filter((r) => typeof r.rating === "number");
+  const tn = getTournaments();
+  const prov = rows.filter((r) => String(r.tier || "").toLowerCase() === "novato").length;
+  const kpis = `
+    <div class="grid g-3" style="margin-bottom:18px">
+      <div class="tile">${C.kpi(t("debate.staffStatDebaters"), String(rows.length), { ic: "users" })}</div>
+      <div class="tile">${C.kpi(t("debate.staffKpiProvisional"), String(prov), { ic: "target" })}</div>
+      <div class="tile">${C.kpi(t("debate.staffStatTournaments"), String(tn.length), { ic: "trophy" })}</div>
+    </div>`;
+
+  const topList = rows.slice().sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 4);
+  const topCard = `
+    <div class="card">
+      <div class="card-head"><div class="sec-title sec-title--sm"><h2>${t("debate.staffTopTitle")}</h2></div><a href="#" onclick="return false" data-dtab="leaderboard" class="rlink" style="font-size:12.5px">${t("debate.seeAll")}</a></div>
+      <div class="card-body" style="padding:6px 16px 12px">
+        ${topList.length ? topList.map((r) => `
+          <div class="agenda-item">
+            ${C.avatar(r.initials || "?", { size: "sm", bg: "var(--otr-black)" })}
+            <div style="flex:1;min-width:0"><div class="ai-t">${r.name || t("debate.fallbackDebater")}</div><div class="ai-c">${esc(tierLabel(r.tier || ""))}</div></div>
+            <span class="ai-w tnum">${r.rating}</span>
+          </div>`).join("")
+          : `<div style="padding:14px 0"><p class="faint" style="font-size:13px">${t("debate.lbEmptyBody")}</p></div>`}
+      </div>
+    </div>`;
+
+  const modCard = `
+    <div class="card card-pad">
+      ${C.secTitle(t("debate.staffModTitle"), { sm: true, tag: "h2" })}
+      <p class="faint" style="font-size:12.5px;margin-top:4px;line-height:1.5">${t("debate.staffModBody")}</p>
+      <div class="row wrap" style="gap:8px;margin-top:12px">
+        ${C.btn(t("debate.staffGoConsole"), "outline", { size: "sm", ic: "flag", icRight: "chevR", attrs: 'data-go="admin"' })}
+        ${C.btn(t("debate.staffGoUsers"), "outline", { size: "sm", ic: "users", icRight: "chevR", attrs: 'data-go="admin-users"' })}
+      </div>
+    </div>`;
 
   return `
     ${kpis}
     <div class="split fade-up" style="--d:0">
-      <div class="stack" style="gap:16px">${recentCard}</div>
-      <div class="stack" style="gap:16px">${nextEventCard}${nsdaCard}</div>
+      <div class="stack" style="gap:16px">${topCard}</div>
+      <div class="stack" style="gap:16px">${modCard}${nextEventCard(tn.find((x) => !x.registered) || tn[0] || null)}${nsdaCard()}</div>
     </div>`;
 }
 
@@ -523,7 +662,7 @@ function viewPractice() {
    165° naranja y TODO su texto en negro) + lista de puestos con la fila propia en
    rgba(242,86,35,.12) y barra izquierda de 2px. Sin premios: el modelo no los tiene,
    así que la caja `.pod-t` no se pinta (nada inventado). */
-function viewLeaderboard() {
+function viewLeaderboard(staff) {
   const lb = getLeaderboard();
   if (!lb.rows.length) {
     return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>${t("debate.lbEmptyTitle")}</h4><p>${t("debate.lbEmptyBody")}</p></div></div>`;
@@ -552,12 +691,15 @@ function viewLeaderboard() {
   // Si el usuario no aparece en la lista visible, su fila se añade al final para que
   // "dónde estoy" siempre esté a la vista (misma idea que la fila "Tú" del mockup).
   const meShown = lb.rows.some((r) => r.you);
-  const meExtra = (!meShown && lb.me)
+  // [SONDEO M1] El staff no compite: no se le añade una fila "Tú" ni se le atribuye
+  // posición/rating propios (era el rating falso 1500 del defecto). La tabla en sí
+  // queda COMPLETA — es su herramienta de observación.
+  const meExtra = (!staff && !meShown && lb.me)
     ? lbRow({ rank: lb.me.rank, name: (DB.me && DB.me.name) || "", rating: lb.me.rating, tier: lb.me.tier, you: true })
     : "";
   const listHtml = listRows.map(lbRow).join("") + meExtra;
 
-  const stats = lb.me
+  const stats = (lb.me && !staff)
     ? `<div class="stat-group">
          ${C.statInline(`#${lb.me.rank}`, t("debate.yourPosition"))}
          ${C.statInline(lb.me.rating, t("debate.colRating"), { accent: true })}
@@ -569,7 +711,7 @@ function viewLeaderboard() {
       <div><span class="ph-eyebrow">${t("debate.lbEyebrow")}</span><h1 class="ph-title">${t("debate.lbPageTitle")}</h1></div>
       ${stats}
     </div>
-    ${proStrip(t("debate.lbUpsell"))}
+    ${staff ? "" : proStrip(t("debate.lbUpsell"))}
     <section class="card card--dark card--glow fade-up">
       <div class="card-pad" style="padding:24px 26px 26px">
         ${/* El h1 de la página ya dice "Leaderboard": la cabecera de la card lleva el
@@ -587,11 +729,12 @@ function viewLeaderboard() {
 }
 
 /* ---------------- router de secciones ---------------- */
-function renderTab(tab, d) {
+function renderTab(tab, d, staff) {
+  if (staff) return tab === "leaderboard" ? viewLeaderboard(true) : viewOverviewStaff();
   switch (tab) {
     case "history": return viewHistory(d);
     case "practice": return viewPractice();
-    case "leaderboard": return viewLeaderboard();
+    case "leaderboard": return viewLeaderboard(false);
     default: return viewOverview(d);
   }
 }
@@ -600,11 +743,12 @@ function renderTab(tab, d) {
 S.debateHub = {
   render(state) {
     const d = getDebate();
-    const tab = activeTab();
+    const staff = isStaffView(state);
+    const tab = activeTab(state);
     return `
-      ${heroPanel(d)}
-      ${subTabs(tab)}
-      <div class="fade-up" style="--d:2" id="debate-body">${renderTab(tab, d)}</div>`;
+      ${staff ? heroPanelStaff() : heroPanel(d)}
+      ${subTabs(tab, state)}
+      <div class="fade-up" style="--d:2" id="debate-body">${renderTab(tab, d, staff)}</div>`;
   },
 
   mount(root, state) {
