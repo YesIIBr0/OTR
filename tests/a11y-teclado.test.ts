@@ -124,11 +124,19 @@ describe("K-01 · foco visible en .btn-primary / .btn-accent / .rec-btn.recordin
     expect(focusRule!.index).toBeGreaterThan(killer);
   });
 
-  it("hover + foco conserva el glow del acento y suma el anillo", () => {
-    const m = /\.btn\.btn-accent:hover:focus-visible\{([^}]*)\}/.exec(SCREENS);
-    expect(m).toBeTruthy();
-    expect(m![1]).toContain("var(--sh-glow)");
-    expect(m![1]).toContain("var(--ring)");
+  it("hover + foco NUNCA se queda sin anillo (ni en el acento ni en el primario)", () => {
+    // [ISAAC 2026-08-09] Antes este test exigía además `var(--sh-glow)`: el CTA de acción
+    // era naranja y llevaba un glow naranja al hover, que había que conservar al sumar el
+    // anillo. Ahora el CTA es NEGRO con texto blanco y no tiene glow, así que la única
+    // propiedad que este test protege —y la única que importa para WCAG 2.4.7— es que el
+    // par hover+foco no vuelva a quedarse en `box-shadow:none`.
+    for (const sel of [".btn.btn-accent", ".btn.btn-primary"]) {
+      const re = new RegExp(sel.replace(/\./g, "\\.") + ":hover:focus-visible\\{([^}]*)\\}");
+      const m = re.exec(SCREENS);
+      expect(m, `falta ${sel}:hover:focus-visible`).toBeTruthy();
+      expect(m![1]).toContain("var(--ring)");
+      expect(m![1]).not.toMatch(/box-shadow:\s*none/);
+    }
   });
 });
 

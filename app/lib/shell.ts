@@ -269,7 +269,9 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
     `<a class="${it.r===activeNav?'active':''}" href="#${it.r}" data-go="${it.r}"${it.r===activeNav?' aria-current="page"':''}>${IC[it.ic]}<span>${L(it)}</span></a>`).join('');
 
   const u = DB.me;
-  const avBg = role === 'teacher' ? 'var(--otr-navy)' : 'var(--otr-sky-lo)';
+  // [ISAAC 2026-08-09] El avatar de la top-nav traía el naranja INLINE, así que no
+  // heredaba el gris de tinta al que pasó `.avatar` en app.css. Se alinea con el kit.
+  const avBg = role === 'teacher' ? 'var(--otr-navy)' : 'var(--n-600)';
   const roleLabel = role==='admin'?t('role.admin',lang):role==='teacher'?t('role.teacher',lang):role==='parent'?t('role.parent',lang):t('role.student',lang);
   // Sub del chip: "Tier · Nivel" con el dato REAL del ALUMNO (tier de debate + nombre de
   // nivel); si falta, el rol — nunca un dato inventado. Coach/padre/admin ven su rol: el

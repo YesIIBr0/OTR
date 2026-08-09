@@ -49,16 +49,27 @@
 /* ---- Chips (rectangulares 3px, versalitas 10/800; CERO pills) ----
    Cada variante trae la base completa: así el .chip de app.css (pill 28px) queda
    intacto para las pantallas que aún no han pasado por el rediseño. */
-.chip--black,.chip--accent,.chip--outline,.chip--tint,.chip--info{
+.chip--black,.chip--accent,.chip--outline,.chip--tint,.chip--info,
+.chip--done,.chip--done-soft{
   display:inline-flex;align-items:center;gap:5px;height:auto;min-height:0;padding:3px 8px;
   border:0;border-radius:var(--r-xs);font-size:10px;font-weight:800;letter-spacing:.07em;
   line-height:1.4;text-transform:uppercase;white-space:nowrap;
 }
-.chip--black .ic,.chip--accent .ic,.chip--outline .ic,.chip--tint .ic,.chip--info .ic{width:12px;height:12px}
+.chip--black .ic,.chip--accent .ic,.chip--outline .ic,.chip--tint .ic,.chip--info .ic,
+.chip--done .ic,.chip--done-soft .ic{width:12px;height:12px}
 .chip--black{background:var(--otr-black);color:#fff}
 .chip--accent{background:var(--otr-green);color:var(--text-on-accent)}
 .chip--outline{background:transparent;border:1px solid var(--border-strong);color:var(--n-600)}
 .chip--tint{background:rgba(242,86,35,.045);color:var(--otr-green-text)}
+/* [ISAAC 2026-08-09] «Para completed - verde». Dos pesos, uno por cada peso que ya
+   existía, para que el rediseño cambie el TONO y no la jerarquía de la pantalla:
+     · --done      releva a --accent      (chip sólido: "LECCIÓN COMPLETADA", "CALIFICADA")
+     · --done-soft releva a --tint        (chip suave: "COMPLETADO", "INSCRITO")
+   Los reparte C.chip() en app/lib/components.ts: cualquier chip que lleve el icono
+   check/checkCircle es, por definición, un estado hecho/confirmado.
+   Contraste: #171717 sobre --success 5,83:1 · --success-strong sobre --success-soft 4,70:1. */
+.chip--done{background:var(--success);color:var(--text-on-accent)}
+.chip--done-soft{background:var(--success-soft);color:var(--ok)}
 /* [GOAL-E4 #10] Este chip llevaba un fondo y un texto azul-pizarra FRÍOS hardcodeados en hex
    (resto de la paleta anterior), ajenos a la "paleta ESTRICTA" que declara tokens.css: negro
    + naranja como ÚNICO acento sobre neutros cálidos. Pasa a los tokens neutros que ya
@@ -71,17 +82,37 @@
 /* [A11Y] El media query de móvil de app.css estira .chip a min-height:44px; estos
    chips son etiquetas (no controles táctiles), así que conservan su altura. */
 @media (max-width:640px){
-  .chip--black,.chip--accent,.chip--outline,.chip--tint,.chip--info{min-height:0}
+  .chip--black,.chip--accent,.chip--outline,.chip--tint,.chip--info,
+  .chip--done,.chip--done-soft{min-height:0}
 }
 
-/* ---- Botones (h44, r4, 15/700; texto NEGRO sobre naranja) ---- */
+/* ---- Botones (h44, r4, 15/700; NEGRO con texto BLANCO) ---- */
 .btn.btn-accent,.btn.btn-primary,.btn.btn-outline{
   height:44px;padding:0 20px;border-radius:var(--r-sm);font-size:15px;font-weight:700;letter-spacing:-.01em;
 }
-.btn.btn-accent{background:var(--otr-green);color:var(--text-on-accent);border-color:transparent;font-weight:800;box-shadow:none}
-.btn.btn-accent:hover{background:var(--otr-green);color:var(--text-on-accent);box-shadow:var(--sh-glow)}
+/* [ISAAC 2026-08-09] El CTA de acción deja el naranja: negro con texto blanco
+   (17,9:1) y sin el glow naranja del mockup, que bajo un botón negro solo sería un
+   halo de color sin dueño. Sigue distinguiéndose de .btn-outline (blanco con borde),
+   que es quien acompaña al CTA cuando hay dos acciones en la misma fila. */
+.btn.btn-accent{background:var(--otr-black);color:#fff;border-color:transparent;font-weight:800;box-shadow:none}
+.btn.btn-accent:hover{background:var(--ink-800);color:#fff;box-shadow:none}
 .btn.btn-primary{background:var(--otr-black);color:#fff;border-color:transparent;box-shadow:none}
 .btn.btn-primary:hover{background:var(--ink-800);box-shadow:none;transform:none}
+/* Sobre superficie OSCURA (héroe del dashboard, héroe de la clase, cards negras, el
+   grabador, el héroe del coach) el CTA se INVIERTE: blanco con texto negro. Es el
+   mismo par "negro con blanco" que pidió el cliente, leído en el otro sentido —
+   dejarlo negro sobre negro lo haría desaparecer.
+   Contraste: #171717 sobre #FFFFFF = 17,9:1. */
+.card--dark .btn.btn-accent,.card--dark .btn.btn-primary,
+.hero-photo .btn.btn-accent,.hero-photo .btn.btn-primary,
+.recorder .btn.btn-accent,.recorder .btn.btn-primary,
+.mkt-hero .btn.btn-accent,.mkt-hero .btn.btn-primary{
+  background:#fff;color:var(--otr-black);border-color:transparent;box-shadow:none}
+.card--dark .btn.btn-accent:hover,.card--dark .btn.btn-primary:hover,
+.hero-photo .btn.btn-accent:hover,.hero-photo .btn.btn-primary:hover,
+.recorder .btn.btn-accent:hover,.recorder .btn.btn-primary:hover,
+.mkt-hero .btn.btn-accent:hover,.mkt-hero .btn.btn-primary:hover{
+  background:var(--n-150);color:var(--otr-black);box-shadow:none}
 /* El mockup no tiene brillos ni elevación al hover: solo color. */
 .btn.btn-primary::after{display:none}
 /* [MOCKUP V2 · deltas §5] El borde del outline baja de 1.5 a 1px: menos peso, más aire. */
@@ -167,14 +198,18 @@
    Uso: <span class="ring" style="--deg:223deg"><span class="ring-cap">Nivel</span>
         <b class="ring-num">7</b></span>  ·  deg = pct * 3.6 */
 .ring{position:relative;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:96px;height:96px;flex:none;border-radius:var(--r-pill);line-height:1}
+/* [ISAAC 2026-08-09] El anillo ES la barra de progreso del camino de nivel → verde.
+   Sobre la card negra va el verde VIVO (--success, 5,83:1 contra el negro y de sobra
+   contra la pista rgba(255,255,255,.14)); sobre claro, --success-strong (4,37:1
+   contra la pista #E7E7E7 — WCAG 1.4.11 pide 3:1). */
 .ring::before{content:"";position:absolute;inset:0;border-radius:inherit;
-  background:conic-gradient(var(--otr-green) var(--deg,0deg),rgba(255,255,255,.14) 0);
+  background:conic-gradient(var(--success) var(--deg,0deg),rgba(255,255,255,.14) 0);
   -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 9px));
   mask:radial-gradient(farthest-side,transparent calc(100% - 9px),#000 calc(100% - 9px));}
 .ring .ring-num{position:relative;font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1;color:#fff;font-variant-numeric:tabular-nums}
 .ring .ring-cap{position:relative;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-400);margin-bottom:3px}
 /* Sobre fondo claro: pista gris y número en tinta */
-.ring--light::before{background:conic-gradient(var(--otr-green) var(--deg,0deg),var(--n-150) 0)}
+.ring--light::before{background:conic-gradient(var(--success-strong) var(--deg,0deg),var(--n-150) 0)}
 .ring--light .ring-num{color:var(--text)}
 
 /* ---- Cabecera de página del mockup ----
@@ -223,7 +258,8 @@
 .course-card .cc-coach{font-size:12px;color:var(--text-2);margin-top:2px}
 .course-card .cc-meta{display:flex;align-items:center;gap:10px;margin:13px 0 10px;font-size:12px;color:var(--text-2)}
 .course-card .cc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:11px}
-.course-card .cc-pct{font-weight:700;font-size:12.5px;color:var(--otr-green-text)}
+/* [ISAAC 2026-08-09] El % de progreso acompaña a su barra → verde (--ok, 5,41:1). */
+.course-card .cc-pct{font-weight:700;font-size:12.5px;color:var(--ok)}
 
 .agenda-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
 .agenda-item:last-child{border-bottom:0}
@@ -235,9 +271,9 @@
 .lvl-widget{display:flex;flex-direction:column;gap:14px}
 .lvl-ladder{display:flex;gap:6px}
 .lvl-step{flex:1;text-align:center;padding:9px 4px;border-radius:var(--r-sm);background:var(--otr-offwhite);font-size:11px;font-weight:700;color:var(--text-3);border:1px solid transparent}
-/* [BRAND V1.0 · moderación] La escalera muestra varios pasos "hechos" a la vez: en tinte
-   naranja serían 3-4 piezas de acento por vista. Hechos = gris; el paso ACTUAL = negro. */
-.lvl-step.done{background:var(--n-150);color:var(--text)}
+/* [ISAAC 2026-08-09] Un paso "hecho" es un completado → tinte verde con la etiqueta en
+   --ok (4,70:1). El paso ACTUAL sigue siendo negro, que es lo que manda la jerarquía. */
+.lvl-step.done{background:var(--success-soft);color:var(--ok)}
 .lvl-step.cur{background:var(--otr-navy);color:#fff;border-color:var(--otr-navy)}
 
 /* ---------------- COURSE ---------------- */
@@ -358,7 +394,9 @@
 .player-bigplay .ic{width:34px;height:34px}
 .player-bar{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;background:linear-gradient(transparent,rgba(0,0,0,.6));z-index:3}
 .pscrub{height:5px;border-radius:3px;background:rgba(255,255,255,.25);position:relative;cursor:pointer;margin-bottom:10px}
-.pscrub > i{position:absolute;left:0;top:0;bottom:0;width:38%;border-radius:3px;background:var(--otr-sky)}
+/* [ISAAC 2026-08-09] La barra del reproductor también es progreso → verde vivo (sobre
+   la pista rgba(255,255,255,.25) del vídeo se distingue de sobra). */
+.pscrub > i{position:absolute;left:0;top:0;bottom:0;width:38%;border-radius:3px;background:var(--success)}
 .pscrub > i::after{content:"";position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:12px;height:12px;border-radius:50%;background:#fff}
 .pctrls{display:flex;align-items:center;gap:14px;color:#fff;font-size:12.5px}
 .pctrls .ic{width:20px;height:20px}
@@ -573,10 +611,12 @@
 .rate-star svg{transition:transform .15s var(--ease),fill .15s}
 .mini-program{border:1px solid var(--border);border-radius:var(--r-md);padding:11px 13px;background:var(--n-25)}
 .xp-prog{cursor:default;border-width:1.5px;transition:border-color .15s,background .15s}
-.xp-prog.on{border-color:var(--otr-sky-lo);background:color-mix(in srgb,var(--otr-pale) 55%,white)}
+/* [ISAAC 2026-08-09] Tarea de XP HECHA = completado → verde (el check en blanco sobre
+   --success-strong mide 5,41:1). */
+.xp-prog.on{border-color:var(--ok);background:var(--success-soft)}
 .xp-check{width:26px;height:26px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border-strong);color:var(--text-3)}
 .xp-check .ic{width:14px;height:14px}
-.xp-check.on{background:var(--otr-sky-lo);border-color:var(--otr-sky-lo);color:#fff}
+.xp-check.on{background:var(--ok);border-color:var(--ok);color:#fff}
 
 /* ---------------- ONBOARDING ---------------- */
 .ob{display:flex;align-items:center;justify-content:center}
@@ -728,7 +768,9 @@
 .pl-out.sky{background:var(--otr-green);border-color:transparent;color:var(--text-on-accent)}
 /* La pista va en --border (#E4E3DF): --bg-sunken quedaba invisible sobre el canvas greige. */
 .pl-track{height:8px;background:var(--border);border-radius:var(--r-xs);overflow:hidden}
-.pl-track > i{display:block;height:100%;width:0;background:var(--otr-green);transition:width .25s var(--ease)}
+/* [ISAAC 2026-08-09] Barra de progreso → verde (mismo degradado vivo→oscuro que .bar,
+   para que el borde con la pista quede en --success-strong). */
+.pl-track > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--success),var(--success-strong));transition:width .25s var(--ease)}
 /* === FIN MOCKUP GRUPO APRENDIZAJE ========================================= */
 
 /* === MOCKUP GRUPO MARKETPLACE ==============================================
@@ -945,7 +987,8 @@
 .dash-hero .dh-sep{width:1px;height:15px;background:rgba(255,255,255,.18)}
 .dash-hero .dh-side{display:flex;flex-direction:column;align-items:flex-end;gap:15px;flex:none}
 .dash-hero .dh-cd{font-size:42px;font-weight:800;letter-spacing:-.04em;line-height:1;color:#fff}
-.dash-hero .btn.btn-accent{box-shadow:var(--sh-glow)}
+/* [ISAAC 2026-08-09] El CTA del héroe ya no es naranja: sin glow naranja. Sobre la card
+   negra lo pinta blanco el bloque "superficie OSCURA" del kit. */
 /* Punto del badge "En vivo pronto" (spec §3.1) */
 .chip--accent.chip--dot::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--text-on-accent);flex:none}
 @media (max-width:640px){
@@ -1319,9 +1362,10 @@
 .btn.btn-primary:focus-visible,
 .btn.btn-accent:focus-visible,
 .rec-btn.recording:focus-visible{box-shadow:var(--ring)}
-/* Hover + foco a la vez: el acento conserva su glow y suma el anillo (el primario no
-   tiene sombra en hover, así que le basta el anillo). */
-.btn.btn-accent:hover:focus-visible{box-shadow:var(--sh-glow),var(--ring)}
+/* Hover + foco a la vez. [ISAAC 2026-08-09] El acento ya no lleva glow naranja (es negro
+   con texto blanco), así que hover+foco es exactamente el anillo, igual que el primario:
+   lo que K-01 protege es que el indicador de foco NUNCA se quede en `none`. */
+.btn.btn-accent:hover:focus-visible{box-shadow:var(--ring)}
 .btn.btn-primary:hover:focus-visible{box-shadow:var(--ring)}
 
 /* --- K-01 (bis · GOAL E5) · el .rec-btn EN REPOSO tampoco tenía anillo -------
@@ -1440,9 +1484,10 @@
 .cls-card-coach .avatar{width:24px;height:24px;font-size:10px}
 .cls-prog{display:flex;flex-direction:column;gap:7px}
 .cls-prog-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:12.5px;font-weight:500;color:var(--ink-400)}
-.cls-pct{font-size:12px;font-weight:700;color:var(--otr-green-text)}
+/* [ISAAC 2026-08-09] Barra + % de "Mis clases" y del rail "Contenido del curso" → verde. */
+.cls-pct{font-size:12px;font-weight:700;color:var(--ok)}
 .cls-bar{height:6px;border-radius:var(--r-pill);background:var(--bg-sunken);overflow:hidden}
-.cls-bar > i{display:block;height:100%;border-radius:inherit;background:var(--otr-green)}
+.cls-bar > i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--success),var(--success-strong))}
 .cls-next{font-size:12.5px;font-weight:500;line-height:1.45;color:var(--ink-400)}
 .cls-next b{font-weight:700;color:var(--text)}
 /* Empuja el CTA al pie: con textos de distinto alto los botones siguen alineados. */
@@ -1475,7 +1520,7 @@
 .cls-hero-meta .cls-m .avatar{width:24px;height:24px;font-size:10px}
 .cls-hero-meta .cls-sep{width:1px;height:14px;background:rgba(255,255,255,.18);flex:none}
 .cls-hero-cta{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
-.cls-hero-cta .btn.btn-accent{box-shadow:var(--sh-glow)}
+/* [ISAAC 2026-08-09] Ídem en el héroe de la clase: sin glow naranja bajo el CTA. */
 .cls-hero-note{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink-300)}
 .cls-hero-note .ic{width:14px;height:14px;flex:none}
 
@@ -1516,7 +1561,7 @@
 .cls-toc-head{padding:18px 20px;border-bottom:1px solid var(--bg-sunken)}
 .cls-toc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 .cls-toc-t{margin:0;font-size:15px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
-.cls-toc-pct{font-size:12px;font-weight:700;color:var(--otr-green-text)}
+.cls-toc-pct{font-size:12px;font-weight:700;color:var(--ok)}
 .cls-toc-cap{margin-top:8px;font-size:12px;font-weight:500;color:var(--ink-400)}
 .cls-toc-list{max-height:520px;overflow-y:auto}
 .cls-toc-foot{padding:14px 20px;border-top:1px solid var(--bg-sunken)}
@@ -1533,8 +1578,11 @@
 .cls-les-t{font-size:13.5px;font-weight:600;letter-spacing:-.015em;line-height:1.2;color:var(--text)}
 .cls-les-m{font-size:11px;font-weight:500;color:var(--ink-400)}
 .cls-les-s{font-size:11px;font-weight:700;color:var(--otr-green-text);flex:none}
-.cls-les.is-done .cls-les-dot{background:rgba(242,86,35,.1);border-color:transparent;color:var(--otr-green-lo)}
+/* [ISAAC 2026-08-09] «Para completed - verde», el check incluido: la lección hecha
+   lleva el check en --ok sobre --success-soft (4,70:1). */
+.cls-les.is-done .cls-les-dot{background:var(--success-soft);border-color:transparent;color:var(--ok)}
 .cls-les.is-done .cls-les-t{color:var(--n-600)}
+.cls-les.is-done .cls-les-s{color:var(--ok)}
 .cls-les.is-lock .cls-les-dot{background:var(--bg);border-color:var(--border)}
 .cls-les.is-lock .cls-les-t{color:var(--ink-400)}
 .cls-les.is-now{background:rgba(242,86,35,.06)}
@@ -1896,6 +1944,15 @@ a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
    sobre la card, por encima del 3:1 que WCAG 1.4.11 pide a un componente. */
 .form-sq--win{background:var(--win);color:var(--text-on-accent)}
 .form-sq--loss{background:var(--otr-black);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.38)}
+
+/* --- El chip "WIN" del historial y de "Debates recientes" ---
+   [ISAAC 2026-08-09] Los cuadrados de FORMA RECIENTE ya eran verdes ("las W - verde")
+   pero el CHIP de la misma victoria seguía saliendo naranja en las dos listas: el mismo
+   dato con dos colores. Se alinea con --win desde el CSS (el marcado lo emite
+   scr-debate.ts con `.dbt-res` en una lista y con `.dbt-row--win` en la otra, así que no
+   hace falta tocar el builder). Letra NEGRA encima: 5,83:1. */
+.chip--accent.dbt-res,
+.dbt-row--win .chip--accent{background:var(--win);color:var(--text-on-accent)}
 
 /* --- Tier en su metal (chip del rating y texto de "Próximo tier") ---
    El chip conserva la geometría del kit (.chip + .chip--accent); aquí solo cambia
