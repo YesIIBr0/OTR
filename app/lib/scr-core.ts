@@ -20,6 +20,12 @@ import { S as extraScreens } from "./scr-extra";
 import { renderBookings, mountBookings } from "./scr-mybookings";
 export const S = {};
 
+// [Isaac 2026-08-09] Tiers con metal propio en el chip de "Tu rango". Espejo deliberado del
+// TIER_TONE de scr-debate.ts: son dos líneas y evitan que el dashboard (chunk inicial) tenga
+// que importar el chunk del Debate Hub solo para colorear un chip. Los estilos son los mismos
+// (.chip--tier-* en screens.css) y el contraste está medido en tokens.css.
+const DASH_TIER_TONE: Record<string, string> = { gold: "gold", platinum: "platinum" };
+
 // Sub-tab activo de la sección Cursos. Patrón window.__x como el resto del SPA
 // (cf. window.__debateTab). "mine" = cursos activos; "catalog" = buscar nuevos.
 function coursesTab() {
@@ -341,8 +347,12 @@ function activeItemsFlat() {
       <div class="card--dark dash-rank">
         <div class="dr-head">
           <span class="lbl">${t('core.dashRankTitle')}</span>
-          ${/* [MOCKUP §3.8] El badge de tier ("ORO") va con escudo, no con medalla. */''}
-          ${tier ? C.chip(esc(tier), 'accent', { ic: 'shield' }) : ''}
+          ${/* [MOCKUP §3.8] El badge de tier ("ORO") va con escudo, no con medalla.
+                [Isaac 2026-08-09] "que no sea «Gold» en naranja, que sea gold… igualito que en
+                dashboard": el chip toma el METAL de su tier, con las mismas clases del kit que
+                usa el Debate Hub (.chip--tier-*, contraste medido en tokens.css). Los tiers sin
+                metal propio (bronce, plata…) siguen en el acento de la marca. */''}
+          ${tier ? C.chip(esc(tier), 'accent', { ic: 'shield', cls: DASH_TIER_TONE[String(DB.debateRank?.tier || '').toLowerCase()] ? `chip--tier-${DASH_TIER_TONE[String(DB.debateRank?.tier || '').toLowerCase()]}` : '' }) : ''}
         </div>
         <div class="dr-body">
           ${C.ringConic(pct, levelNum, t('core.dashLevelCap'))}
