@@ -851,6 +851,28 @@ async function main() {
     ],
   });
 
+  // [RONDA3 · CURSOS] LD-101 de Analía queda TERMINADO. No es un dato inventado: el seed
+  // ya le emite el certificado "Advanced Rebuttal" de c-ld (más abajo) sin marcarle una
+  // sola lección — un certificado con 10% de avance era la incoherencia. Con sus 6 clases
+  // hechas, la lista de "Mis clases" muestra sus tres estados reales (Continuar /
+  // Empezar / Repasar), el filtro "Completadas" cuenta 1 y la fila ofrece "Certificado
+  // disponible" en vez de una próxima clase que ya no existe.
+  await db.lessonProgress.createMany({
+    data: [
+      { userId: "u-ar", lessonId: LD.intro, done: true },
+      { userId: "u-ar", lessonId: LD.format, done: true },
+      { userId: "u-ar", lessonId: LD.quizU1, done: true },
+      { userId: "u-ar", lessonId: LD.value, done: true },
+      { userId: "u-ar", lessonId: LD.criterion, done: true },
+      { userId: "u-ar", lessonId: LD.caseStruct, done: true },
+    ],
+  });
+  // El % denormalizado del Enrollment se alinea con el progreso REAL recién sembrado.
+  await db.enrollment.updateMany({
+    where: { userId: "u-ar", courseId: "c-ld" },
+    data: { progress: 100, due: 0 },
+  });
+
   // Entregas reales: 2 GRADED (con feedback) + 1 SUBMITTED pendiente.
   await db.submission.createMany({
     data: [

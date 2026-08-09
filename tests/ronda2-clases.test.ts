@@ -222,12 +222,20 @@ describe("Sobre esta clase y material de preparación", () => {
 
 /* ============ ④ Menú de clases + navegación ============ */
 describe("Menú de clases", () => {
-  it("pinta una card por curso con progreso, siguiente clase y CTA que abre el adentro", () => {
+  // [RONDA3] El menú dejó de ser una rejilla de cards: ahora es una LISTA de 1 fila por
+  // programa (2ª vuelta del mockup de Isaac). Lo que se blinda es lo MISMO de siempre —
+  // el programa, su progreso REAL, cuál es su próxima clase y un CTA que abre el adentro.
+  it("pinta una FILA por curso con progreso, próxima clase y CTA que abre el adentro", () => {
     const html = Core.coursesMine.render({ role: "student" });
     expect(html).toContain(t("core.clsMenuTitle"));
     expect(html).toContain("Public Forum I");
-    expect(html).toContain(t("core.clsOfClasses").replace("{done}", "2").replace("{total}", "5"));
-    expect(html).toContain(`${t("core.clsNextPrefix")}: <b>Construye tu primer contention</b> · Mañana · 23:59`);
+    expect(html).toContain("cls-row");
+    // Progreso: módulo en curso sobre el total de módulos + el % real del payload.
+    expect(html).toContain(t("core.clsModuleOf").replace("{m}", "2").replace("{n}", "2"));
+    expect(html).toContain(">40%<");
+    // Próxima clase: la primera no completada y navegable, con su entrega real.
+    expect(html).toContain("Construye tu primer contention");
+    expect(html).toContain("Mañana · 23:59");
     expect(html).toContain('data-cls-open="PF-101"');
     expect(html).toContain(t("core.continue"));
   });

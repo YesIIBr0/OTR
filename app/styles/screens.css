@@ -1669,3 +1669,182 @@ a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
   a.hlv-link:hover .hlv-cta .ic{transform:none}
 }
 /* === FIN RONDA3 · HIGHLIGHTS ============================================== */
+/* ==========================================================================
+   === RONDA3 · CURSOS PREPLY (Isaac) ===
+   Segunda vuelta del mockup sobre la sección Cursos:
+     ① "Mis clases" pasa de rejilla de cards a LISTA de 1 programa por fila
+        (PROGRAMA · PROGRESO · PRÓXIMA CLASE · acción) con stats, filtros y buscador.
+     ② "Descubre nuevos cursos" por CATEGORÍAS ("como Preply"): tira de tiles con
+        conteo real, recomendados con foto y catálogo filtrable con el coach visible.
+   Reusa el kit ya existente (.card, .btn, .chip--*, .sec-title, .avatar, .hero-photo,
+   .cls-bar, .cls-pct del bloque RONDA2). Mismo criterio de color que RONDA2: naranja
+   PLENO solo en fondos/barras/puntos; en texto pequeño va --otr-green-text (#9E3211),
+   y sobre naranja el texto es --text-on-accent (negro), nunca blanco.
+   ========================================================================== */
+
+/* ---- ① Barra de filtros + buscador ---- */
+.cls-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.cls-fchips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.cls-fchip{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;flex:none;
+  border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);
+  font-family:inherit;font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);
+  cursor:pointer;transition:border-color .15s var(--ease),background .15s var(--ease)}
+.cls-fchip:hover{border-color:var(--ink-700)}
+.cls-fchip .n{font-size:12px;font-weight:600;color:var(--ink-400)}
+.cls-fchip.is-on{background:var(--otr-black);border-color:var(--otr-black);color:#fff}
+.cls-fchip.is-on .n{color:var(--ink-300)}
+.cls-search{position:relative;flex:none;width:248px;max-width:100%}
+.cls-search-ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);display:inline-flex;
+  width:15px;height:15px;color:var(--ink-400);pointer-events:none}
+.cls-search-ic .ic{width:15px;height:15px}
+.cls-search-in{width:100%;height:34px;padding:0 12px 0 33px;border:1px solid var(--border);
+  border-radius:var(--r-md);background:var(--surface);font-family:inherit;font-size:13px;
+  font-weight:500;color:var(--text)}
+.cls-search-in::placeholder{color:var(--ink-400)}
+.cls-search-in:focus{outline:2px solid var(--otr-green);outline-offset:1px;border-color:transparent}
+
+/* ---- ① La LISTA: 1 programa por fila ---- */
+.cls-list{--cls-cols:minmax(0,1.5fr) 186px minmax(0,1.15fr) 138px;
+  margin-bottom:34px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);box-shadow:var(--sh-1);overflow:hidden}
+.cls-list-head{display:grid;grid-template-columns:var(--cls-cols);gap:18px;align-items:center;
+  padding:11px 20px;background:var(--bg);border-bottom:1px solid var(--border);
+  font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400)}
+.cls-row{display:grid;grid-template-columns:var(--cls-cols);gap:18px;align-items:center;
+  padding:15px 20px;border-bottom:1px solid #F0F0EE;transition:background .14s var(--ease)}
+.cls-row:last-child{border-bottom:0}
+.cls-row:hover{background:var(--n-25)}
+.cls-row-main{display:flex;align-items:center;gap:13px;min-width:0}
+/* Miniatura cuadrada: foto de marca teñida con el color del programa (decorativa). */
+.cls-row-thumb{position:relative;display:inline-flex;align-items:flex-end;width:54px;height:54px;
+  flex:none;border-radius:var(--r-md);overflow:hidden;background:var(--otr-black)}
+.cls-row-thumb::before{content:"";position:absolute;inset:0;
+  background-image:linear-gradient(155deg,color-mix(in srgb,var(--cc) 72%,transparent),rgba(18,18,18,.88)),
+    url("/img/hero-speaking.jpg");
+  background-size:cover;background-position:center 30%}
+.cls-row-thumb > span{position:relative;padding:0 6px 5px;font-size:9px;font-weight:800;
+  letter-spacing:.06em;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cls-row-txt{display:flex;flex-direction:column;gap:5px;min-width:0}
+.cls-row-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.cls-row-t{font-size:15.5px;font-weight:800;letter-spacing:-.022em;line-height:1.2;min-width:0}
+.cls-row-coach{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink-400)}
+.cls-row-coach .avatar{width:22px;height:22px;font-size:9px}
+.cls-row-prog{display:flex;flex-direction:column;gap:7px;min-width:0}
+.cls-row-next{display:flex;flex-direction:column;gap:3px;min-width:0}
+.cls-row-nextt{font-size:13px;font-weight:700;letter-spacing:-.01em;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cls-row-nextd{font-size:12px;font-weight:500;color:var(--ink-400)}
+.cls-row-next .faint{font-size:12.5px}
+.cls-row-hot{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;
+  color:var(--otr-green-text)}
+.cls-row-hot .ic{width:14px;height:14px;flex:none}
+.cls-row-act{display:flex;justify-content:flex-end;min-width:0}
+.cls-row-act .btn{white-space:nowrap}
+.cls-row-empty{padding:44px 22px;text-align:center}
+.cls-row-empty .ill{display:inline-flex;width:30px;height:30px;margin-bottom:10px;color:var(--ink-400)}
+.cls-row-empty h2{margin:0 0 6px;font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.cls-row-empty p{margin:0 0 14px;font-size:13px;font-weight:500;color:var(--ink-400)}
+
+/* ---- ② "Descubre nuevos cursos": tiles de categoría ---- */
+.discover{margin-bottom:34px}
+.discover--strip{margin-top:6px}
+.cat-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(166px,1fr));gap:10px;
+  margin:14px 0 28px}
+.cat-tile{display:flex;align-items:center;gap:11px;padding:12px 13px;text-align:left;min-width:0;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  font-family:inherit;cursor:pointer;box-shadow:var(--sh-1);
+  transition:border-color .15s var(--ease),background .15s var(--ease)}
+.cat-tile:hover{border-color:var(--ink-700)}
+.cat-tile-ic{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;
+  flex:none;border-radius:var(--r-md);background:var(--bg);color:var(--ink-700)}
+.cat-tile-ic .ic{width:17px;height:17px}
+.cat-tile-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+/* El nombre de la categoría NUNCA se corta: envuelve a 2 líneas antes que truncar
+   ("Torneos y liga" salía como "Torneos y…"). */
+.cat-tile-n{font-size:13.5px;font-weight:700;letter-spacing:-.015em;line-height:1.22;color:var(--text)}
+.cat-tile-c{font-size:11.5px;font-weight:600;color:var(--ink-400)}
+.cat-tile-go{margin-left:auto;display:inline-flex;flex:none;color:var(--ink-400)}
+.cat-tile-go .ic{width:15px;height:15px}
+/* Activa: negra. El icono pasa a naranja con el glifo en NEGRO (--text-on-accent). */
+.cat-tile.is-on{background:var(--otr-black);border-color:var(--otr-black)}
+.cat-tile.is-on .cat-tile-n{color:#fff}
+.cat-tile.is-on .cat-tile-c{color:var(--ink-300)}
+.cat-tile.is-on .cat-tile-ic{background:var(--otr-green);color:var(--text-on-accent)}
+
+/* ---- ② Recomendados: tarjeta grande con foto ---- */
+.reco-sub{margin:-4px 0 14px;font-size:12.5px;font-weight:500;color:var(--ink-400)}
+.reco-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(264px,1fr));gap:16px;margin-bottom:28px}
+.reco-card{display:flex;flex-direction:column;min-width:0;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-1);overflow:hidden}
+/* La foto de marca se ve DE VERDAD: velo suave arriba y scrim abajo solo para que
+   el código del programa mantenga contraste (no el degradado del héroe, que la apaga). */
+.reco-photo{position:relative;display:flex;align-items:flex-end;height:126px;overflow:hidden;
+  background:var(--otr-black)}
+.reco-photo::before{content:"";position:absolute;inset:0;z-index:0;
+  background-image:linear-gradient(180deg,rgba(18,18,18,.14) 42%,rgba(18,18,18,.74) 100%),
+    url("/img/hero-speaking.jpg");
+  background-size:cover;background-position:center 24%}
+.reco-photo > *{position:relative;z-index:1}
+.reco-photo::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cc);z-index:2}
+.reco-code{padding:0 0 12px 16px;font-size:10px;font-weight:800;letter-spacing:.1em;color:#fff}
+.reco-body{display:flex;flex-direction:column;gap:9px;flex:1;padding:15px 17px 17px;min-width:0}
+.reco-chips{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.reco-t{margin:0;font-size:16.5px;font-weight:800;letter-spacing:-.025em;line-height:1.2;color:var(--text)}
+.reco-coach{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink-400)}
+.reco-coach .avatar{width:22px;height:22px;font-size:9px}
+.reco-meta{font-size:12px;font-weight:500;color:var(--ink-400)}
+.reco-cta{margin-top:auto;padding-top:6px}
+
+/* ---- ② Catálogo filtrado: el COACH siempre visible ---- */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(296px,1fr));gap:16px}
+.cat-card{display:flex;flex-direction:column;gap:9px;min-width:0;padding:17px 19px;
+  background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--cc);
+  border-radius:var(--r-lg);box-shadow:var(--sh-1)}
+.cat-card-h{display:flex;align-items:center;gap:8px}
+.cat-card-ic{display:inline-flex;width:15px;height:15px;flex:none;color:var(--otr-green-lo)}
+.cat-card-ic .ic{width:15px;height:15px}
+.cat-card-cat{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400)}
+.cat-card-t{margin:0;font-size:16px;font-weight:800;letter-spacing:-.025em;line-height:1.2;color:var(--text)}
+.cat-card-coach{display:flex;align-items:center;gap:7px;min-width:0}
+.cat-card-coach .avatar{width:22px;height:22px;font-size:9px}
+.cat-card-coachn{font-size:12.5px;font-weight:700;color:var(--ink-700);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cat-card-rate{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--text)}
+.cat-card-rate .star{display:inline-flex;width:13px;height:13px;color:var(--otr-green-lo)}
+.cat-card-rate .star .ic{width:13px;height:13px}
+.cat-card-p{margin:0;font-size:12.5px;font-weight:500;line-height:1.5;color:var(--ink-400);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cat-card-wv{align-self:flex-start}
+.cat-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:auto;padding-top:8px}
+.cat-card-meta{font-size:11.5px;font-weight:600;color:var(--ink-400);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- Responsive: la tabla se convierte en tarjetas apiladas (nada se corta) ---- */
+@media (max-width:1080px){
+  .cls-list{--cls-cols:minmax(0,1.4fr) 160px minmax(0,1fr) 128px}
+}
+@media (max-width:860px){
+  .cls-list{background:none;border:0;box-shadow:none;overflow:visible;
+    display:flex;flex-direction:column;gap:12px}
+  .cls-list-head{display:none}
+  .cls-row{display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:16px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    box-shadow:var(--sh-1)}
+  .cls-row:hover{background:var(--surface)}
+  .cls-row-act{justify-content:stretch}
+  .cls-row-act .btn{width:100%}
+  .cls-row-empty{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg)}
+}
+@media (max-width:640px){
+  .cls-toolbar{flex-direction:column;align-items:stretch;gap:10px}
+  .cls-search{width:100%}
+  .cls-fchips{gap:6px}
+  .cls-fchip{padding:0 11px;font-size:12.5px}
+  .cat-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .cat-tile{padding:10px 11px;gap:9px}
+  .cat-tile-ic{width:32px;height:32px}
+  .reco-grid,.cat-grid{grid-template-columns:1fr}
+  .cls-row-thumb{width:46px;height:46px}
+  .cls-row-t{font-size:15px}
+}
