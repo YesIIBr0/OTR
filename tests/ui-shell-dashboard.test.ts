@@ -71,7 +71,10 @@ describe("A · la navegación vive en una top-nav horizontal", () => {
   it("la barra trae links de nav y el bloque derecho", () => {
     const html = renderShell("dashboard", ["Inicio"], "<div></div>", "student");
     expect(html).toContain('class="tn-links"');
-    expect(html).toContain('id="bell"');                       // campana (mismo id: mismo handler)
+    // [RONDA 3 · Isaac] El tile de la derecha es MENSAJES; la campana conserva su id (mismo
+    // handler de Aula.tsx) pero su disparador vive ahora dentro del menú "Más".
+    expect(html).toContain('id="tn-messages"');
+    expect(html).toContain('id="bell"');
     expect(html).toContain("data-user-menu");                  // chip de usuario
     expect(html).toContain('id="sb-usermenu"');
   });

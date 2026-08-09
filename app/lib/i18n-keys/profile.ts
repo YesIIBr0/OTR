@@ -7,8 +7,11 @@ export const dict = {
     // ── programCard (reutilizada en perfiles de coach) ──
     "profile.viewProgram": "Ver programa",
 
-    // ── Progreso y niveles ──
-    "profile.progressTitle": "Progreso y niveles",
+    // ── Rangos ──
+    // [RONDA 3 · Isaac] "«Levels» reemplazando por → «Ranks»". El menú dice "Rangos": si el
+    // H1 siguiera diciendo "Progreso y niveles", pulsar "Rangos" te dejaría en una pantalla
+    // con otro nombre. Es la MISMA pantalla, solo se renombra.
+    "profile.progressTitle": "Rangos",
     "profile.progressSub": "Tu camino de Novato a Elite en el sistema OTR",
     "profile.yourProgress": "Nivel y XP",
     "profile.pathTo": "Camino a",
@@ -125,8 +128,8 @@ export const dict = {
     // ── programCard (reused on coach profiles) ──
     "profile.viewProgram": "View program",
 
-    // ── Progress and levels ──
-    "profile.progressTitle": "Progress and levels",
+    // ── Ranks ──
+    "profile.progressTitle": "Ranks",
     "profile.progressSub": "Your path from Novice to Elite in the OTR system",
     "profile.yourProgress": "Level & XP",
     "profile.pathTo": "Path to",

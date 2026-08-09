@@ -1193,7 +1193,16 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         return;
       }
       if (t.closest('[data-action="edit-profile"]')) { e.preventDefault(); openEditProfile(); return; }
-      if (t.closest("#bell")) { e.stopPropagation(); toggleNotif(); return; }
+      // [RONDA 3 · Isaac] El disparador de notificaciones se mudó al final del menú "Más"
+      // (el tile de la derecha ahora es Mensajes). Mismo id → mismo handler; lo único nuevo
+      // es CERRAR el <details> que lo contiene: sus vecinos son enlaces que repintan el shell
+      // y lo cierran solos, pero este abre un panel encima y el menú se quedaría abierto.
+      if (t.closest("#bell")) {
+        e.stopPropagation();
+        (t.closest("details.tn-more") as HTMLDetailsElement | null)?.removeAttribute("open");
+        toggleNotif();
+        return;
+      }
       if (notifOpen && !t.closest("#notif-panel") && !t.closest("#bell")) toggleNotif(false);
       if (t.closest('[data-action="new-resource"]')) { e.preventDefault(); openNewResource(); return; }
       if (t.closest('[data-action="edit-coach"]')) { e.preventDefault(); openEditProfile(); return; }
@@ -1302,8 +1311,9 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       };
       let closed = false;
 
-      const more = document.querySelector(".tn-more[open]") as HTMLDetailsElement | null;
-      if (more) {
+      // [RONDA 3] La barra tiene DOS <details class="tn-more">: "Más" y el desplegable de
+      // grupo "Progreso". Con querySelector solo se cerraba el primero — se recorren todos.
+      for (const more of Array.from(document.querySelectorAll(".tn-more[open]")) as HTMLDetailsElement[]) {
         const summary = more.querySelector("summary") as HTMLElement | null;
         const inside = !!focused && more.contains(focused);
         more.open = false;
