@@ -27,7 +27,9 @@
      destinos que no caben en las 5 pestañas. */
   .topnav-in{padding:0 15px;gap:10px}
   .tn-right{gap:9px}
-  .tn-word,.tn-umeta,.tn-sep,.tn-more > summary .lbl,.tn-more > summary .chev{display:none}
+  /* [RONDA 2 · R1] El wordmark "Aula" salió de esta lista porque ya no existe en NINGÚN
+     tamaño (el lockup es solo el escudo): esconderlo aquí era un selector muerto. */
+  .tn-umeta,.tn-sep,.tn-more > summary .lbl,.tn-more > summary .chev{display:none}
   .tn-more > summary{width:34px;padding:0;justify-content:center;background:#ECEBE7;color:var(--n-600)}
   .tn-menu{width:min(84vw,270px)}
   .tn-user{padding:0}

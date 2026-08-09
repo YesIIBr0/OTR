@@ -47,9 +47,29 @@ describe("A · la navegación vive en una top-nav horizontal", () => {
     expect(html).toContain('<header class="topnav">');
   });
 
-  it("la barra trae escudo + wordmark 'Aula', links de nav y el bloque derecho", () => {
+  // [RONDA 2 · R1] Isaac: "quítale el Aula — deja el logo y ya". El lockup es SOLO el escudo;
+  // el wordmark .tn-word ya no existe en ningún tamaño.
+  it("el lockup es SOLO el escudo: sin wordmark 'Aula' en ningún rol ni idioma", () => {
+    for (const role of ["student", "teacher", "parent", "admin"] as const) {
+      const html = renderShell("dashboard", ["Inicio"], "<div></div>", role);
+      expect(html, `rol ${role}`).not.toContain("tn-word");
+      expect(html, `rol ${role}`).not.toMatch(/<a class="tn-logo"[^>]*>[\s\S]*?>Aula</);
+    }
+  });
+
+  // Sin texto visible el enlace se quedaría MUDO (otrCrest sale aria-hidden): el nombre
+  // accesible pasa a aria-label, y sale del diccionario (bilingüe), no hardcodeado.
+  it("el enlace del logo conserva nombre accesible vía aria-label bilingüe", () => {
     const html = renderShell("dashboard", ["Inicio"], "<div></div>", "student");
-    expect(html).toContain('class="tn-word">Aula<');
+    expect(html).toContain(`<a class="tn-logo" href="#dashboard" data-go="dashboard" aria-label="${t("top.brandHome", "es")}"`);
+    expect(t("top.brandHome", "es")).toBe("OTR — inicio");
+    expect(t("top.brandHome", "en")).toBe("OTR — home");
+    // el escudo sigue siendo decorativo: el nombre lo pone el enlace, no el SVG
+    expect(html).toMatch(/<a class="tn-logo"[\s\S]*?<svg viewBox="0 0 274 288" fill="none" aria-hidden="true"/);
+  });
+
+  it("la barra trae links de nav y el bloque derecho", () => {
+    const html = renderShell("dashboard", ["Inicio"], "<div></div>", "student");
     expect(html).toContain('class="tn-links"');
     expect(html).toContain('id="bell"');                       // campana (mismo id: mismo handler)
     expect(html).toContain("data-user-menu");                  // chip de usuario
@@ -91,6 +111,39 @@ describe("A · la navegación vive en una top-nav horizontal", () => {
     expect(css).toMatch(/\.page\{max-width:1180px;margin:0 auto;padding:30px 30px 80px\}/);
     // la top-nav va A SANGRE: su interior ya no lleva contenedor centrado
     expect(css).not.toMatch(/\.topnav-in\{[^}]*max-width/);
+    // borde inferior y separador: el gris cálido del mockup (#E4E3DF vive en --border)
+    expect(css).toMatch(/\.topnav\{[^}]*border-bottom:1px solid var\(--border\)/);
+    expect(css).toContain(".tn-sep{width:1px;height:24px;background:var(--border)");
+  });
+
+  // [RONDA 2 · R1] Homologación al mockup nuevo: medidas del grupo izquierdo/derecho.
+  it("el CSS homologa el mockup: gaps 38/26/14 y las piezas de la derecha a 34px", () => {
+    const css = readFileSync(join(process.cwd(), "app/styles/app.css"), "utf8");
+    expect(css).toContain(".tn-left{display:flex;align-items:center;gap:38px");
+    expect(css).toMatch(/\.tn-links\{[^}]*gap:26px/);
+    expect(css).toContain(".tn-right{display:flex;align-items:center;gap:14px");
+    // link apagado 14/500 --ink-400 · activo 14/700 negro
+    expect(css).toMatch(/\.tn-link\{[\s\S]*?font-size:14px;font-weight:500;[^}]*color:var\(--ink-400\)/);
+    expect(css).toContain(".tn-link.active{font-weight:700;color:var(--otr-black)}");
+    // pill de XP: h34, radio 5 (--r-md), fondo negro, rayo 14px naranja, 13/700 + 11/600
+    expect(css).toMatch(/\.tn-xp\{[^}]*height:34px;[^}]*border-radius:var\(--r-md\);background:var\(--otr-black\)/);
+    expect(css).toContain(".tn-xp .ic{width:14px;height:14px;color:var(--otr-sky)}");
+    expect(css).toContain(".tn-xp b{font-size:13px;font-weight:700;color:#fff}");
+    expect(css).toContain(".tn-xp .u{font-size:11px;font-weight:600;color:var(--ink-300)}");
+    // campana: tile 34×34 r5 #ECEBE7 con icono de 17
+    expect(css).toMatch(/\.tn-icon\{width:34px;height:34px;[^}]*border-radius:var\(--r-md\);background:#ECEBE7/);
+    expect(css).toContain(".tn-icon .ic{width:17px;height:17px}");
+    // avatar del chip: 34px
+    expect(css).toContain(".tn-av{width:34px;height:34px");
+  });
+
+  // El mockup NO pinta subrayado bajo el activo: el peso + la tinta lo marcan solos.
+  it("el link activo NO lleva subrayado naranja (lo marcan peso y color)", () => {
+    const css = readFileSync(join(process.cwd(), "app/styles/app.css"), "utf8");
+    expect(css).not.toMatch(/\.tn-link\.active::after/);
+    // …pero el marcador semántico sigue: aria-current lo anuncia al lector de pantalla.
+    const html = renderShell("course", ["Cursos"], "", "student");
+    expect(html).toMatch(/class="tn-link active"[^>]*data-go="course"[^>]*aria-current="page"/);
   });
 
   it("móvil (<=760px) conserva la bottom-tab-bar y compacta la barra", () => {
@@ -99,7 +152,10 @@ describe("A · la navegación vive en una top-nav horizontal", () => {
     const css = readFileSync(join(process.cwd(), "app/styles/responsive.css"), "utf8");
     const movil = css.slice(css.indexOf("@media (max-width:760px)"));
     expect(movil).toContain(".tabbar{");
-    expect(movil).toContain(".tn-word");   // sin wordmark ni nombre: solo escudo/XP/campana/avatar
+    // [RONDA 2 · R1] Ya no se esconde el wordmark (no existe): lo que se esconde en móvil es el
+    // NOMBRE del chip. La barra queda escudo · Más · XP · campana · avatar.
+    expect(movil).toContain(".tn-umeta");
+    expect(movil).not.toContain(".tn-word");
   });
 
 });
