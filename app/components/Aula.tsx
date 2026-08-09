@@ -4,7 +4,7 @@ import { renderShell } from "../lib/shell";
 import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
 // [ROUTER-HASH] Mapeo puro ruta↔URL (tests/router-hash.test.ts). La URL manda: sin esto
 // no había deep-link, ni Atrás/Adelante, ni F5 estable en /aula.
-import { parseHash, routeToHash, resolveHashRoute, defaultRouteForRole, isRouteAllowed, isInPageAnchor, routeNeedsContext, contextFallbackRoute } from "../lib/router";
+import { parseHash, routeToHash, resolveHashRoute, defaultRouteForRole, isRouteAllowed, isInPageAnchor, routeNeedsContext, contextFallbackRoute, contextGlobalFor, contextParamIsValid } from "../lib/router";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
@@ -80,12 +80,37 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     let ctxSeal: string | null = null;
     let mounted = false; // true tras el primer render: a partir de ahí ya hay historial propio
 
-    async function renderApp(r: string, opts?: { keepScroll?: boolean; fromHash?: boolean }) {
+    // [SONDEO 2026-08-09 · R4] Ids VÁLIDOS del contexto que viaja en el hash. Vive aquí y no en
+    // router.ts porque el router es puro (no ve DB) y porque la lista es la del USUARIO: sus
+    // cursos inscritos. Un código que no esté aquí es de otro (o no existe) → no se pinta.
+    function validContextIds(route: string): string[] {
+      if (route === "course-detail") return ((DB as any).coursesContent || []).map((c: any) => c && c.code).filter(Boolean);
+      return [];
+    }
+    // Param que go() debe escribir en el hash: el valor VIVO de la global de contexto que el
+    // llamador acaba de fijar (window.__course = 'PF-101'; go('course-detail')).
+    function contextParamFor(route: string): string {
+      const g = contextGlobalFor(route);
+      if (!g) return "";
+      const v = (window as any)[g];
+      return typeof v === "string" ? v : "";
+    }
+
+    async function renderApp(r: string, opts?: { keepScroll?: boolean; fromHash?: boolean; param?: string }) {
       let def = (ROUTES as any)[r];
       if (!def) return;
       const keep = !!(opts && opts.keepScroll);
       const fromHash = !!(opts && opts.fromHash);
+      const param = (opts && opts.param) || "";
       const prevRoute = currentRoute;
+      // [SONDEO 2026-08-09 · R4] Contexto que SÍ viaja en la URL (#course-detail/PF-101): si el
+      // hash trae un código y ese código es de verdad uno de SUS cursos, se rehidrata la global
+      // y el render vale — F5, deep-link y Atrás devuelven LA MISMA clase. Si no cuadra, no se
+      // sella nada y cae al padre por el camino de siempre (jamás se pinta otra clase).
+      if (fromHash && contextGlobalFor(r) && contextParamIsValid(r, param, validContextIds(r))) {
+        (window as any)[contextGlobalFor(r)] = param;
+        ctxSeal = r;
+      }
       // [ROUTER-CTX] Pantalla con contexto (lección, ficha de clase, certificado, sala) abierta
       // desde Atrás/Adelante, F5 o un hash a mano: la global lleva el ítem de OTRA visita (o
       // ninguno) y se pintaría algo que el usuario no pidió. Se cae al padre de la sección.
@@ -113,8 +138,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       // cuando el guard de rol o el fallback de contexto redirigieron, y cuando un handler
       // llamó a renderApp() directo. replaceState no dispara 'hashchange' ni añade entrada al
       // historial → no hay doble render ni basura en el botón Atrás.
-      if (!keep && parseHash(window.location.hash)?.route !== r) {
-        try { history.replaceState(null, "", window.location.pathname + window.location.search + routeToHash(r)); } catch { /* navegadores sin History API: la nav sigue funcionando */ }
+      // [SONDEO 2026-08-09 · R4] La comparación es con el hash COMPLETO (ruta + param) y no
+      // solo con la ruta: un '#course-detail/PF-101' viejo con otra clase abierta mentiría.
+      const desiredHash = routeToHash(r, contextParamFor(r) || undefined);
+      if (!keep && window.location.hash !== desiredHash) {
+        try { history.replaceState(null, "", window.location.pathname + window.location.search + desiredHash); } catch { /* navegadores sin History API: la nav sigue funcionando */ }
       }
       // [UI-CURSOS U4] Publica la ruta viva: los paneles EMBEBIDOS (p.ej. las reservas dentro
       // de Cursos) necesitan repintar "donde estoy" tras una mutación, no saltar a una
@@ -182,7 +210,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (!isRouteAllowed(r, state.role)) { void renderApp(r); return; }
       // Se escribe el hash destino COMPLETO: así un '#lesson/L-101' viejo no se queda mintiendo
       // al saltar a otra lección de la misma ruta.
-      const h = routeToHash(r);
+      // [SONDEO 2026-08-09 · R4] Y si la ruta serializa su contexto (CONTEXT_PARAM), el hash se
+      // lleva el id que el llamador acaba de fijar: '#course-detail/PF-101'. Ese es TODO el
+      // arreglo del F5 — a partir de aquí la URL sabe qué clase estaba abierta.
+      const h = routeToHash(r, contextParamFor(r) || undefined);
       // ÚNICA rama sin evento: el hash ya es exactamente el destino → no habrá 'hashchange'
       // que espere nadie, así que se repinta directo (salto misma-ruta-otro-contexto: otra
       // ficha de clase, otro curso, refresco tras mutación).
@@ -201,7 +232,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       // Un hash que SÍ es ruta repinta SIEMPRE, aunque coincida con la ruta actual: eso ES el
       // refresco tras mutación (crear un torneo → go('events')), que antes se perdía cuando el
       // hash venía desincronizado por un ancla in-page.
-      void renderApp(parsed.route, { fromHash: true });
+      void renderApp(parsed.route, { fromHash: true, param: parsed.param });
     };
     window.addEventListener("hashchange", onHashChange);
 
@@ -1369,6 +1400,9 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // [ROUTER-HASH] Arranque: si la URL trae una ruta VÁLIDA PARA EL ROL, se abre esa
     // (deep-link y F5 se quedan donde estabas); si no —o si es de otro rol— el home del rol.
     let startRoute = resolveHashRoute(window.location.hash, state.role);
+    // [SONDEO 2026-08-09 · R4] El deep-link EN FRÍO también trae su contexto: '#course-detail/
+    // PF-101' abierto en una pestaña nueva tiene que pintar esa clase, no el menú.
+    const startParam = parseHash(window.location.hash)?.param || "";
     // [ONBOARDING-1] Orden correcto del arranque: el placement del alumno nuevo (PRD §2.2
     // Journey A) DEBE ganar sobre el flag de onboarding del registro — antes `otr_onboard`
     // lo pisaba y el alumno nunca hacía su evaluación inicial (radar vacío para siempre).
@@ -1380,7 +1414,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // fromHash: el arranque tampoco trae contexto fresco → un F5 sobre #lesson cae a #course
     // en vez de pintar la lección de otra visita. mounted se activa DESPUÉS: durante el primer
     // render todavía no hay entrada de historial propia que retirar.
-    renderApp(startRoute, { fromHash: true }).finally(() => { mounted = true; });
+    renderApp(startRoute, { fromHash: true, param: startParam }).finally(() => { mounted = true; });
     return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); window.removeEventListener("hashchange", onHashChange); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); document.removeEventListener("keydown", onPopoverKey); };
   }, []);
 
