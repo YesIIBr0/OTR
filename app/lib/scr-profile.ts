@@ -20,17 +20,21 @@ export const S = {};
     }</span>`;
   };
   // Tarjeta de una reseña individual.
+  // [CIERRE · O7] author/ini/body YA vienen esc() de queries.ts (reviewsReceived y el perfil
+  // público del coach) → aquí se pintan CRUDOS, que es el contrato de la casa. Con el esc()
+  // de más, una reseña que citaba "St. Michael's" se leía "St. Michael&#39;s". `when` no es
+  // texto de usuario: lo compone queries con whenLabel().
   const reviewCard = (rv, opts = {}) => `
     <div class="card card-pad" style="padding:15px 16px;background:var(--surface-2)">
       <div class="row vcenter between" style="gap:10px">
         <div class="row vcenter" style="gap:11px;min-width:0">
-          ${C.avatar(esc(rv.ini), { size: 'sm', bg: 'var(--otr-black)' })}
-          <div style="min-width:0"><div style="font-weight:700;font-size:13.5px;line-height:1.2">${esc(rv.author)}</div>
+          ${C.avatar(rv.ini, { size: 'sm', bg: 'var(--otr-black)' })}
+          <div style="min-width:0"><div style="font-weight:700;font-size:13.5px;line-height:1.2">${rv.author}</div>
           <div class="faint" style="font-size:11.5px;margin-top:2px">${esc(rv.when)}${opts.showProgram && rv.programName ? ` · ${rv.programName}` : ''}</div></div>
         </div>
         ${starsRO(rv.rating)}
       </div>
-      ${rv.body ? `<p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:11px;white-space:pre-wrap">${esc(rv.body)}</p>` : ''}
+      ${rv.body ? `<p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:11px;white-space:pre-wrap">${rv.body}</p>` : ''}
     </div>`;
   // Tarjeta de un programa (course) — usada en perfiles de coach.
   const programCard = (p) => `
@@ -235,18 +239,19 @@ export const S = {};
     return `
     <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
       <div class="profile-head">
-        ${C.avatar(esc(ini), { size: 'xl', bg: 'var(--otr-navy)' })}
+        ${/* [CIERRE · O7] cp.* y me.* llegan esc() de queries.ts → crudo aquí (contrato). */''}
+        ${C.avatar(ini, { size: 'xl', bg: 'var(--otr-navy)' })}
         <div style="flex:1;min-width:200px">
           <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
-            <h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${esc(name)}</h1>${C.chip('Coach', 'black')}
+            <h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${name}</h1>${C.chip('Coach', 'black')}
           </div>
-          ${headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${esc(headline)}</div>` : ''}
+          ${headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${headline}</div>` : ''}
           <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
             <span class="row vcenter" style="gap:6px">${starsRO(rating)}<b class="tnum" style="font-size:13.5px">${Number(rating).toFixed(1)}</b></span>
             <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</span>
-            ${location ? `<span class="faint" style="font-size:12.5px">· ${esc(location)}</span>` : ''}
+            ${location ? `<span class="faint" style="font-size:12.5px">· ${location}</span>` : ''}
           </div>
-          ${bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(bio)}</p>` : ''}
+          ${bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${bio}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
             ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-coach"' })}
             ${C.btn(t("profile.marketplaceProfile"), 'outline', { size: 'sm', ic: 'sliders', attrs: 'data-action="edit-coach-market"' })}
@@ -264,7 +269,7 @@ export const S = {};
       <div class="stack" style="gap:18px">
         <div class="card card-pad">
           ${C.secTitle(t("profile.howIWork"), { sm: true })}
-          <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${teachingStyle ? esc(teachingStyle) : t("profile.noMethodologySelf")}</p>
+          <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${teachingStyle ? teachingStyle : t("profile.noMethodologySelf")}</p>
         </div>
 
         <div class="card card-pad">
@@ -311,12 +316,13 @@ export const S = {};
     return `
     <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
       <div class="profile-head">
-        ${C.avatar(esc(me.initials), { size: 'xl', bg: 'var(--otr-sky-lo)' })}
+        ${/* [CIERRE · O7] me.* llega esc() de queries.ts (salvo `email`) → crudo aquí. */''}
+        ${C.avatar(me.initials, { size: 'xl', bg: 'var(--otr-sky-lo)' })}
         <div style="flex:1;min-width:200px">
           <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${me.name}</h1>${C.chip(esc(me.level || 'OTR Initiate'), 'black', { ic: 'levels' })}</div>
           ${me.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${me.headline}</div>` : ''}
-          <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${esc(me.location)}` : ''}</div>
-          ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(me.bio)}</p>` : ''}
+          <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${me.location}` : ''}</div>
+          ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${me.bio}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px">
             ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-profile"' })}
           </div>
@@ -485,7 +491,8 @@ export const S = {};
       return `
       <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
         <div class="profile-head">
-          ${C.avatar(esc(cp.initials), { size: 'xl', bg: 'var(--otr-navy)' })}
+          ${/* [CIERRE · O7] cp.* llega esc() de queries.ts → crudo aquí (contrato). */''}
+          ${C.avatar(cp.initials, { size: 'xl', bg: 'var(--otr-navy)' })}
           <div style="flex:1;min-width:200px">
             <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
               <h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${cp.name}</h1>${C.chip('Coach', 'black')}
@@ -494,9 +501,9 @@ export const S = {};
             <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
               <span class="row vcenter" style="gap:6px">${starsRO(rating)}<b class="tnum" style="font-size:13.5px">${Number(rating).toFixed(1)}</b></span>
               <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</span>
-              ${cp.location ? `<span class="faint" style="font-size:12.5px">· ${esc(cp.location)}</span>` : ''}
+              ${cp.location ? `<span class="faint" style="font-size:12.5px">· ${cp.location}</span>` : ''}
             </div>
-            ${cp.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(cp.bio)}</p>` : ''}
+            ${cp.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${cp.bio}</p>` : ''}
           </div>
         </div>
       </div>
@@ -505,7 +512,7 @@ export const S = {};
         <div class="stack" style="gap:18px">
           <div class="card card-pad">
             ${C.secTitle(t("profile.howTheyWork"), { sm: true })}
-            <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${cp.teachingStyle ? esc(cp.teachingStyle) : t("profile.noMethodologyCoach")}</p>
+            <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${cp.teachingStyle ? cp.teachingStyle : t("profile.noMethodologyCoach")}</p>
           </div>
 
           <div class="card card-pad">

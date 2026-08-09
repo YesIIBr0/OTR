@@ -261,7 +261,10 @@ export function mountBookings(root) {
         const coachId = btn.getAttribute("data-coach") || "";
         const coachName = btn.getAttribute("data-coach-name") || t("mb.reviewCoachFallback");
         if (!coachId || !w.otrFormModal) return;
-        w.otrFormModal(t("mb.reviewModalTitle").replace("{name}", coachName), [
+        // [CIERRE · O9] split/join y no replace: `coachName` es texto de usuario y
+        // String.replace interpreta $&, $', $` y $1 en el reemplazo (un coach llamado
+        // "A$&B" corrompería el título). Mismo criterio que el resto de la campaña.
+        w.otrFormModal(t("mb.reviewModalTitle").split("{name}").join(coachName), [
           { name: "rating", label: t("mb.reviewRatingLabel"), type: "select", value: "5", options: [
             { value: "5", label: t("mb.reviewRating5") },
             { value: "4", label: t("mb.reviewRating4") },

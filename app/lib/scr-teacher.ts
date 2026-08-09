@@ -134,7 +134,7 @@ export const S = {};
                      lo anuncian vacío). aria-label con el nombre del alumno, que además distingue los
                      N botones idénticos de la lista. s.n ya viene escapado de queries.ts (contrato de
                      escape: aquí se renderiza crudo). */""}
-                <div class="ev-actions"><button class="btn btn-outline btn--sm" data-go="messages" aria-label="${t("teacher.sendMessageTo").replace("{name}", s.n)}" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>
+                <div class="ev-actions"><button class="btn btn-outline btn--sm" data-go="messages" aria-label="${t("teacher.sendMessageTo").split("{name}").join(s.n)}" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>
               </div>`).join('')}
             ${atRisk.length?'':'<div class="empty"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.noAlertsTitle")+'</h4><p>'+t("teacher.noAlertsBody")+'</p></div>'}
           </div>
@@ -629,7 +629,7 @@ export const S = {};
           <button class="btn btn-outline btn-sm" data-action="eval-skills" data-user="${s.id}" data-name="${esc(s.n)}">${t("teacher.evaluate")}</button>
           ${/* [GOAL S1] Ídem que en el panel del profesor: solo-icono ⇒ aria-label obligatorio.
                Sin él la tabla ofrece 8 botones que el lector de pantalla anuncia todos vacíos. */""}
-          <button class="icon-btn" style="width:30px;height:30px" data-go="messages" aria-label="${t("teacher.sendMessageTo").replace("{name}", s.n)}" title="${t("teacher.sendMessage")}">${IC.msg}</button>
+          <button class="icon-btn" style="width:30px;height:30px" data-go="messages" aria-label="${t("teacher.sendMessageTo").split("{name}").join(s.n)}" title="${t("teacher.sendMessage")}">${IC.msg}</button>
         </div></td>
       </tr>`;
 

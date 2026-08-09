@@ -58,7 +58,7 @@ export const dict = {
     // /api/conversations); reservar NO crea conversación. Así que la copy nombra ese camino y
     // el botón lleva a 'explore', que está en el nav de las 4 caras.
     "comm.msg.emptyHeading": "Sin conversaciones",
-    "comm.msg.emptyBody": "Abre la ficha de un coach y pulsa «Enviar mensaje»: el hilo se abrirá aquí.",
+    "comm.msg.emptyBody": "Abre la ficha de un coach y toca «Enviar mensaje»: el hilo se abrirá aquí.",
     "comm.msg.emptyCta": "Buscar coaches",
     "comm.msg.now": "ahora",
 

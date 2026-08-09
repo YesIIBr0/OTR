@@ -512,6 +512,14 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
   .btn-navy:hover,
   .btn-navy:active{transform:none}
   .btn-primary::after{display:none}
+  /* [CIERRE · O4] El bloque solo neutralizaba primary y navy, pero el `scale(.97)` al
+     pulsar lo declara `.btn:active` (línea 238) para TODOS los botones — el CTA naranja
+     (.btn-accent) incluido, que es el que más se toca. Se apaga en la raíz: `.btn:active`
+     cubre accent, ghost, soft, quiet, outline y danger de una vez. Y `.tile.click:hover`
+     levantaba la tarjeta 2px en cada pasada del ratón por el grid de coaches, que era el
+     otro movimiento que la preferencia del sistema no paraba. */
+  .btn:active{transform:none}
+  .tile.click:hover{transform:none}
 }
 
 /* ============================================================

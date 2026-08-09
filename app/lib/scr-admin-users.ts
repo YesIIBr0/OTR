@@ -363,7 +363,11 @@ S.adminUsers = {
         try {
           await w.api("/api/admin/erase", { userId: id }, "POST");
           w.toast?.(t("au.erased"), "ok");
-          loadUsers(); // recarga: el usuario aparece anonimizado y suspendido
+          // [CIERRE · O1] Era `loadUsers()`, que NO EXISTE: la función local se llama
+          // `load` (línea 222). El ReferenceError caía en el catch de abajo, así que un
+          // borrado GDPR que el servidor había ejecutado BIEN terminaba con toast rojo
+          // "No se pudo borrar" y la fila sin refrescar — el admin creía que había fallado.
+          load(); // recarga: el usuario aparece anonimizado y suspendido
         } catch (e) {
           w.toast?.((e && e.message) || t("au.eraseFailed"), "danger");
           btn.disabled = false;

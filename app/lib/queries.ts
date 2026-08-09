@@ -1320,7 +1320,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         // (app/lib/money.ts) en marketplace, coachwork, listings y padres. El torneo era el
         // último sitio que rotulaba una tercera moneda junto a precios en "$" de la misma
         // pantalla. Solo cambia la PRESENTACIÓN: entryCents no se toca.
-        entryLabel: t.entryCents > 0 ? `$${(t.entryCents / 100).toLocaleString("es-DO")}` : "Gratis",
+        // [CIERRE · O5] "Gratis" estaba fijo en español: un alumno con la UI en inglés
+        // leía "Free entry" en la etiqueta de al lado y "Gratis" en el torneo. Se traduce
+        // con el mismo `lang` de la request que usa startsLabel dos líneas arriba.
+        entryLabel: t.entryCents > 0 ? `$${(t.entryCents / 100).toLocaleString("es-DO")}` : (lang === "en" ? "Free" : "Gratis"),
         registered: (t.registrations || []).length > 0,
         ...(isStaff
           ? {
