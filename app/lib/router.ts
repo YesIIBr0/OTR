@@ -102,7 +102,11 @@ export const CONTEXT_PARENT: Record<string, string> = {
   // [RONDA2 · CLASES] El "adentro" de la clase depende de window.__course, que fija el
   // menú al abrir una tarjeta. Sin ese contexto (F5 / Atrás) se cae al MENÚ de clases,
   // que es justo lo que el alumno espera ver — no un curso ajeno.
-  'course-detail': 'course',   // window.__course
+  // [SONDEO 2026-08-09 · R4] Sigue siendo la red de seguridad de 'course-detail', pero ya
+  // casi no salta: el curso VIAJA en el hash (#course-detail/PF-101, ver CONTEXT_PARAM) y el
+  // F5 vuelve a LA MISMA clase. Se cae al menú solo si el hash no trae código, o si el código
+  // no corresponde a ningún curso del alumno — nunca se pinta otra clase.
+  'course-detail': 'course',   // window.__course (+ param en el hash)
   lesson:         'course',    // window.__lesson
   assignment:     'course',    // window.__lesson
   player:         'course',    // window.__lesson
@@ -126,4 +130,48 @@ export function contextFallbackRoute(route: string, role: string): string {
   const parent = CONTEXT_PARENT[route];
   if (parent && isRouteAllowed(parent, role)) return parent;
   return defaultRouteForRole(role);
+}
+
+/**
+ * [SONDEO 2026-08-09 · R4] CONTEXTO QUE SÍ VIAJA EN LA URL.
+ *
+ * CONTEXT_PARENT (arriba) es la red: sin contexto, al padre. Pero caer al menú en cada F5 es
+ * un peaje que el usuario paga por una limitación nuestra — Isaac abre una clase, recarga y
+ * pierde la clase. Cuando el contexto es un identificador ESTABLE y comprobable, no hace falta
+ * ese peaje: se serializa en el hash (`#course-detail/PF-101`) y el F5, el deep-link y el
+ * Atrás devuelven LA MISMA clase.
+ *
+ * Mapa: ruta → nombre de la global que el hash rehidrata. Añadir una ruta es UNA línea, pero
+ * solo se gana el sitio quien cumple las dos condiciones: (1) su id es estable y legible por
+ * humanos, (2) quien pinta puede COMPROBAR que ese id es del usuario (si no, se caería en lo
+ * que CONTEXT_PARENT evita: pintar el ítem de otro).
+ *
+ * Deliberadamente FUERA por ahora:
+ *  · lesson/assignment/player → los tres leen la MISMA global (__lesson): serializarlos pide
+ *    un validador de lecciones propio, no el de cursos. Trabajo aparte.
+ *  · quiz          → necesita DOS globales (__lesson y __quizLesson): no es "una línea".
+ *  · 'quiz-results'→ __quizResult es el resultado del intento recién hecho, no un id estable.
+ *  · listing       → su ficha se resuelve por fetch al servidor: el cliente no tiene lista
+ *                    contra la que validar el id sin inventarse una petición nueva.
+ *  · certificate   → __cert sin match ya pinta el PRIMER certificado (otro ítem): validarlo
+ *                    es cambiar esa pantalla, no el router.
+ *  · room          → la sala es efímera; su id no sobrevive con sentido a un F5.
+ */
+export const CONTEXT_PARAM: Record<string, string> = {
+  'course-detail': '__course',   // el CÓDIGO del curso (PF-101, PF-FUND-2026…)
+};
+
+/** ¿Esta ruta serializa su contexto en el hash? Devuelve la global que rehidrata, o ''. */
+export function contextGlobalFor(route: string): string {
+  return CONTEXT_PARAM[route] || '';
+}
+
+/**
+ * ¿El param del hash identifica algo REAL y del usuario? La lista de ids válidos la pasa quien
+ * llama (Aula.tsx, que sí ve DB): este módulo se mantiene PURO y testeable. Un param vacío,
+ * desconocido o de un curso ajeno devuelve false → el llamador cae al padre, como hasta ahora.
+ */
+export function contextParamIsValid(route: string, param: string, validIds: readonly string[]): boolean {
+  if (!CONTEXT_PARAM[route] || !param) return false;
+  return validIds.includes(param);
 }

@@ -110,6 +110,19 @@ async function main() {
   if (!process.env.SEED_PASSWORD) console.log(`→ Password de las cuentas demo (generada — guárdala): ${SEED_PW}`);
   const pw = hashPassword(SEED_PW);
 
+  // ==== FOTO DE PERFIL DE DEMO — PLACEHOLDER, no es la cara de nadie ==========================
+  // [SONDEO 2026-08-09 · R4] Isaac pidió "al cuadrado atrás ponle la foto del estudiante" y el
+  // código ya lo hace (scr-debate.ts → heroImgVar(me.avatarUrl), con degradado honesto a las
+  // iniciales si no hay foto). El defecto NO era de código: el seed nunca sembraba avatarUrl,
+  // así que en producción `me.avatarUrl` era null PARA TODOS y la tarjeta del Debate Hub se veía
+  // siempre sin foto. Se siembra la única imagen de marca que existe en public/img/ — la misma
+  // que el cliente ya aceptó como mock en los héroes del dashboard y de los highlights.
+  //
+  // ES UN PLACEHOLDER: en cuanto lleguen las fotos reales de cada alumno/coach (subida por
+  // /api/profile → User.avatarUrl), esta constante sale del seed. No se usa para nada que
+  // afirme identidad — no hay pie de foto ni "así se ve fulano": es el fondo de una tarjeta.
+  const DEMO_AVATAR = "/img/hero-speaking.jpg";
+
   // Coach / Head Coach — perfil completo (cara profesor del Hub)
   await db.user.create({
     data: {
@@ -135,6 +148,12 @@ async function main() {
         "Trabajo por drills progresivos: primero vencemos la ansiedad escénica, luego construimos casos con la " +
         "estructura Claim · Warrant · Impact, y cerramos con simulacros semanales con jueces y feedback personalizado.",
       location: "Santo Domingo, RD",
+      // Placeholder (ver DEMO_AVATAR arriba). Solo el HEAD coach la lleva, no los dos: la foto
+      // del profesor SUSTITUYE al emblema de materia en el cover de sus clases
+      // (lib/listing-cover.ts §1) y, con los dos coaches sembrados con la MISMA imagen, todo el
+      // marketplace quedaba empapelado con la misma foto y el registro institucional del emblema
+      // desaparecía de la pantalla. Con uno sí y otro no, la demo enseña los DOS caminos.
+      avatarUrl: DEMO_AVATAR,
     },
   });
 
@@ -187,6 +206,11 @@ async function main() {
       debateTier: s.debateTier,
       birthYear: s.birthYear,
       ageBand: s.ageBand,
+      // Placeholder (ver DEMO_AVATAR arriba): sin esto la tarjeta de rating del Debate Hub se
+      // veía SIEMPRE sin foto, que es justo lo que Isaac pidió arreglar. Del alumno, la foto
+      // solo la consume esa tarjeta (su propio `me`): ni el chip del top-nav —que pinta
+      // iniciales— ni el leaderboard ni el roster muestran avatares de foto.
+      avatarUrl: DEMO_AVATAR,
       // PRD §2.2: los estudiantes sembrados ya tienen historia → placement hecho.
       // (Un alumno NUEVO registrado en vivo nace con placedAt=null y ve el placement.)
       placedAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
