@@ -99,6 +99,10 @@ export function isInPageAnchor(hash: string): boolean {
  *  · 'search'         → __q es la búsqueda que el propio usuario escribió, no otro ítem.
  */
 export const CONTEXT_PARENT: Record<string, string> = {
+  // [RONDA2 · CLASES] El "adentro" de la clase depende de window.__course, que fija el
+  // menú al abrir una tarjeta. Sin ese contexto (F5 / Atrás) se cae al MENÚ de clases,
+  // que es justo lo que el alumno espera ver — no un curso ajeno.
+  'course-detail': 'course',   // window.__course
   lesson:         'course',    // window.__lesson
   assignment:     'course',    // window.__lesson
   player:         'course',    // window.__lesson

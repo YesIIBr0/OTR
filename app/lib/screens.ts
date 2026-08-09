@@ -48,7 +48,7 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
 // Nombre de pantalla → módulo que la exporta. Best-effort: ensureScreen tiene fallback
 // load-all si alguna llave no está aquí, así que un mapeo incompleto NUNCA rompe la nav.
 const SCREEN_MODULE: Record<string, string> = {
-  dashboard:'core', course:'core', courseIndex:'core', coursesCatalog:'core', coursesMine:'core', lesson:'core',
+  dashboard:'core', course:'core', courseIndex:'core', coursesCatalog:'core', coursesMine:'core', courseDetail:'core', lesson:'core',
   assignment:'learn', grades:'learn', player:'learn', quiz:'learn', quizResults:'learn',
   teacher:'teacher', participants:'teacher',
   badges:'profile', coach:'profile', profile:'profile', progress:'profile',
@@ -136,6 +136,10 @@ export const ROUTES: Record<string, RouteDef> = {
   // [EPIC-2] La ruta raíz 'course' entra por "Mis cursos" (wrapper coursesMine);
   // S.course es el renderer interno con los dos sub-tabs.
   course:         { screen:'coursesMine',   nav:'course',       crumbs:['Cursos','Activos'] },
+  // [RONDA2 · CLASES] "Adentro" de la clase: el menú ('course') abre ESTA ruta con
+  // window.__course fijado. Es pantalla-con-contexto → el router la devuelve al menú
+  // al recargar/volver sin contexto (ver CONTEXT_PARENT en router.ts).
+  'course-detail':{ screen:'courseDetail', nav:'course',       crumbs:['Cursos','Clase'] },
   'course-index': { screen:'courseIndex',  nav:'course',       crumbs:['Cursos','Índice'] },
   lesson:         { screen:'lesson',       nav:'course',       crumbs:['Cursos','Lección'] },
   assignment:     { screen:'assignment',   nav:'course',       crumbs:['Cursos','Entrega'] },

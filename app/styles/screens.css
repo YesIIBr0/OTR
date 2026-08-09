@@ -241,20 +241,10 @@
 .lvl-step.cur{background:var(--otr-navy);color:#fff;border-color:var(--otr-navy)}
 
 /* ---------------- COURSE ---------------- */
-/* [UI-CURSOS U1] El hero del curso mide LA MITAD que antes (banner 120→56, cuerpo denso):
-   es el encabezado de la sección, no la sección. [U2] Y contiene sus propios tabs
-   (Contenido/Calificaciones) + el panel activo: el curso es UN bloque, no tres apilados. */
-.course-hero{border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--border);background:#fff;box-shadow:var(--sh-1);margin-bottom:18px}
-.course-hero .ch-banner{height:56px;position:relative;display:flex;align-items:flex-end;padding:10px 20px;background:linear-gradient(120deg,var(--otr-navy),var(--otr-sky-lo))}
-.course-hero .ch-banner .stripes{position:absolute;inset:0;background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 18px,transparent 18px 40px)}
-.course-hero .ch-body{padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-/* [MOCKUP V2 · deltas §5] Con las tabs convertidas en control segmentado, el aire vertical
-   de la banda lo pone el contenedor (antes lo daba el padding de cada .tab). */
-.course-hero .ch-tabs{margin:0;padding:10px 20px;border-bottom:1px solid var(--border);border-top:1px solid var(--border)}
-/* El panel va sobre un tono, no sobre blanco: así las tarjetas anidadas (módulos, progreso)
-   se leen como contenido DENTRO del curso y no como cajas sueltas encima de otra caja. */
-.course-hero .ch-panel{padding:18px 20px;background:var(--n-25)}
-@media (max-width:640px){ .course-hero .ch-body,.course-hero .ch-panel{padding-left:14px;padding-right:14px} .course-hero .ch-tabs{padding:10px 14px} }
+/* [RONDA2 · CLASES] .course-hero (la tarjeta-contenedor del curso con banner y tabs
+   dentro) DESAPARECE: la sección Cursos pasó al mockup del cliente — menú de clases
+   (.cls-card) + "adentro" (.cls-in / .cls-hero / .cls-toc), al final de este archivo.
+   Los tabs Contenido/Calificaciones siguen existiendo, ahora en el "adentro". */
 .module{border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;margin-bottom:12px;overflow:hidden;box-shadow:var(--sh-1)}
 .module-head{display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer}
 .module-head:hover{background:var(--n-25)}
@@ -1412,3 +1402,161 @@
 .tile.click:hover:focus-visible{box-shadow:var(--sh-2),var(--ring)}
 .card[role]:focus-visible{box-shadow:var(--sh-1),var(--ring)}
 .card[role].lift:hover:focus-visible{box-shadow:var(--sh-3),var(--ring)}
+
+/* ==========================================================================
+   RONDA2 · CLASES (mockup Isaac)
+   Homologación de la sección Cursos al mockup del cliente: el MENÚ de clases
+   (derivado del mismo lenguaje visual) y el ADENTRO de la clase (réplica del
+   share, medido al píxel). Reusa el kit ya existente (.card, .btn.btn-accent,
+   .chip--*, .sec-title, .avatar, .hero-photo, .lbl) — aquí solo va lo propio
+   de estas dos vistas. Grises del mockup mapeados a los tokens ACCESIBLES del
+   repo: el #808080 original NO se usa como color de texto (falla AA sobre el
+   greige); va --ink-400 (#6B6B6B). Naranja en texto pequeño = --otr-green-text
+   (#9E3211); el naranja pleno queda para fondos, barras y puntos.
+   ========================================================================== */
+
+/* ---- MENÚ de clases (derivado) ---- */
+.cls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:30px}
+.cls-card{display:flex;flex-direction:column;gap:14px;padding:20px 22px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-1)}
+.cls-card-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.cls-card-t{margin:0;font-size:17px;font-weight:800;letter-spacing:-.025em;line-height:1.2;min-width:0}
+.cls-open{padding:0;border:0;background:none;font:inherit;color:var(--text);text-align:left;cursor:pointer}
+.cls-open:hover{color:var(--otr-green-lo)}
+.cls-card-coach{display:flex;align-items:center;gap:8px;margin-top:-4px;font-size:12.5px;font-weight:600;color:var(--ink-400)}
+.cls-card-coach .avatar{width:24px;height:24px;font-size:10px}
+.cls-prog{display:flex;flex-direction:column;gap:7px}
+.cls-prog-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:12.5px;font-weight:500;color:var(--ink-400)}
+.cls-pct{font-size:12px;font-weight:700;color:var(--otr-green-text)}
+.cls-bar{height:6px;border-radius:var(--r-pill);background:var(--bg-sunken);overflow:hidden}
+.cls-bar > i{display:block;height:100%;border-radius:inherit;background:var(--otr-green)}
+.cls-next{font-size:12.5px;font-weight:500;line-height:1.45;color:var(--ink-400)}
+.cls-next b{font-weight:700;color:var(--text)}
+/* Empuja el CTA al pie: con textos de distinto alto los botones siguen alineados. */
+.cls-card-cta{margin-top:auto;padding-top:2px}
+.cls-card-cta .btn{height:40px;font-size:14px}
+
+/* ---- ADENTRO · breadcrumb + rejilla 748 + 24 + 348 (sobre el contenido de 1120) ---- */
+.cls-crumb-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.cls-back{display:inline-flex;align-items:center;gap:7px;padding:0;border:0;background:none;
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-400);cursor:pointer;
+  transition:color .15s var(--ease);min-width:0}
+.cls-back:hover{color:var(--text)}
+.cls-back .ic{width:15px;height:15px;flex:none}
+.cls-back span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cls-tabs{margin-bottom:18px}
+.cls-in{display:grid;grid-template-columns:1fr 348px;gap:24px;align-items:start}
+.cls-main{min-width:0}
+
+/* ---- ① Hero de la clase en curso ---- */
+.cls-hero{position:relative;border-radius:var(--r-lg);overflow:hidden;padding:26px 30px 28px;margin-bottom:24px}
+.cls-hero::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--otr-green);z-index:1}
+.cls-hero-top{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+/* El chip de contorno del mockup, sobre superficie oscura. */
+.cls-hero .chip--outline{border-color:rgba(255,255,255,.34);color:#fff;background:transparent}
+.cls-hero-mod{font-size:12px;font-weight:600;color:var(--n-200)}
+.cls-hero-t{margin:0 0 16px;font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.04;color:#fff;max-width:18ch}
+.cls-hero-meta{display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px}
+.cls-hero-meta .cls-m{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:var(--n-100)}
+.cls-hero-meta .cls-m .ic{width:15px;height:15px;flex:none;color:var(--otr-green)}
+.cls-hero-meta .cls-m .avatar{width:24px;height:24px;font-size:10px}
+.cls-hero-meta .cls-sep{width:1px;height:14px;background:rgba(255,255,255,.18);flex:none}
+.cls-hero-cta{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+.cls-hero-cta .btn.btn-accent{box-shadow:var(--sh-glow)}
+.cls-hero-note{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink-300)}
+.cls-hero-note .ic{width:14px;height:14px;flex:none}
+
+/* ---- ② "Sobre esta clase" + franja de datos ---- */
+.cls-about{padding:20px 22px;margin-bottom:24px}
+.cls-about-p{margin:0 0 18px;font-size:14.5px;font-weight:500;line-height:1.6;color:var(--ink-700)}
+.cls-about-p:last-child{margin-bottom:0}
+.cls-facts{display:grid;gap:1px;background:var(--bg-sunken);border:1px solid var(--bg-sunken);
+  border-radius:var(--r-lg);overflow:hidden}
+.cls-fact{background:var(--surface);padding:13px 15px;min-width:0}
+.cls-fact-l{display:block;margin-bottom:5px;font-size:10px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-400)}
+.cls-fact-v{display:block;font-size:14px;font-weight:700;color:var(--text)}
+.cls-fact-v.is-hot{color:var(--otr-green-text)}
+
+/* ---- ③ Material de preparación ---- */
+.cls-mats{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.cls-mat{display:flex;align-items:center;gap:13px;width:100%;padding:14px 16px;text-align:left;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  font-family:inherit;cursor:pointer;transition:border-color .15s var(--ease)}
+.cls-mat:hover:not(:disabled){border-color:var(--ink-700)}
+.cls-mat:disabled{cursor:default;opacity:.6}
+.cls-mat-ic{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex:none;
+  border-radius:var(--r-lg);background:var(--bg);color:var(--ink-700)}
+.cls-mat-ic .ic{width:18px;height:18px}
+.cls-mat.is-pending .cls-mat-ic{background:rgba(242,86,35,.12);color:var(--otr-green-lo)}
+.cls-mat-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.cls-mat-n{font-size:14px;font-weight:700;letter-spacing:-.015em;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cls-mat-m{font-size:12px;font-weight:500;color:var(--ink-400)}
+.cls-mat-a{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:12.5px;font-weight:700;color:var(--n-600)}
+.cls-mat-a .ic{width:15px;height:15px}
+.cls-mat.is-pending .cls-mat-a{color:var(--otr-green-text)}
+
+/* ---- ④ Rail: "Contenido del curso" + card del coach ---- */
+.cls-rail{position:sticky;top:calc(var(--topbar-h) + 22px);display:flex;flex-direction:column;gap:14px;min-width:0}
+.cls-toc{padding:0;overflow:hidden}
+.cls-toc-head{padding:18px 20px;border-bottom:1px solid var(--bg-sunken)}
+.cls-toc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.cls-toc-t{margin:0;font-size:15px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.cls-toc-pct{font-size:12px;font-weight:700;color:var(--otr-green-text)}
+.cls-toc-cap{margin-top:8px;font-size:12px;font-weight:500;color:var(--ink-400)}
+.cls-toc-list{max-height:520px;overflow-y:auto}
+.cls-toc-foot{padding:14px 20px;border-top:1px solid var(--bg-sunken)}
+.cls-les{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:12px;width:100%;
+  padding:13px 20px;text-align:left;background:var(--surface);border:0;border-bottom:1px solid #F0F0EE;
+  font-family:inherit;cursor:pointer;transition:background .14s var(--ease)}
+.cls-les:last-child{border-bottom:0}
+.cls-les:hover:not(:disabled){background:var(--n-25)}
+.cls-les:disabled{cursor:default}
+.cls-les-dot{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex:none;
+  border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--border);color:var(--ink-400)}
+.cls-les-dot .ic{width:13px;height:13px}
+.cls-les-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cls-les-t{font-size:13.5px;font-weight:600;letter-spacing:-.015em;line-height:1.2;color:var(--text)}
+.cls-les-m{font-size:11px;font-weight:500;color:var(--ink-400)}
+.cls-les-s{font-size:11px;font-weight:700;color:var(--otr-green-text);flex:none}
+.cls-les.is-done .cls-les-dot{background:rgba(242,86,35,.1);border-color:transparent;color:var(--otr-green-lo)}
+.cls-les.is-done .cls-les-t{color:var(--n-600)}
+.cls-les.is-lock .cls-les-dot{background:var(--bg);border-color:var(--border)}
+.cls-les.is-lock .cls-les-t{color:var(--ink-400)}
+.cls-les.is-now{background:rgba(242,86,35,.06)}
+.cls-les.is-now:hover{background:rgba(242,86,35,.1)}
+.cls-les.is-now .cls-les-dot{background:var(--otr-green);border-color:transparent;color:var(--text-on-accent)}
+.cls-les.is-now .cls-les-t{font-weight:800;color:var(--text)}
+.cls-coach{display:flex;align-items:center;gap:12px;padding:15px 18px;border-radius:var(--r-lg);
+  background:var(--otr-black)}
+.cls-coach .avatar{width:42px;height:42px;font-size:15px}
+.cls-coach-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+/* Sobre negro, --ink-400 (#6B6B6B) daría 2,7:1: el label sube a --ink-300 (#B4B4B4, 7,3:1). */
+.cls-coach .lbl{color:var(--ink-300)}
+.cls-coach-n{font-size:15px;font-weight:700;letter-spacing:-.01em;color:#fff;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cls-coach-btn{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;flex:none;
+  border:0;border-radius:var(--r-md);background:rgba(255,255,255,.08);color:var(--n-100);cursor:pointer;
+  transition:background .15s var(--ease)}
+.cls-coach-btn:hover{background:rgba(255,255,255,.16)}
+.cls-coach-btn .ic{width:18px;height:18px}
+
+/* ---- Responsive: el rail baja bajo el contenido (mismo criterio que .dash-grid) ---- */
+@media (max-width:980px){
+  .cls-in{grid-template-columns:1fr}
+  .cls-rail{position:static}
+  .cls-toc-list{max-height:none}
+}
+@media (max-width:640px){
+  .cls-grid{grid-template-columns:1fr}
+  .cls-card{padding:18px}
+  .cls-hero{padding:20px 20px 22px}
+  .cls-hero-t{font-size:24px}
+  .cls-hero-meta{gap:12px}
+  .cls-hero-cta{align-items:stretch;flex-direction:column}
+  .cls-hero-cta .btn{width:100%}
+  .cls-about{padding:18px}
+  .cls-facts{grid-template-columns:1fr !important}
+  .cls-crumb-row{flex-wrap:wrap;gap:8px}
+}

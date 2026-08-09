@@ -189,9 +189,12 @@ describe("K-09 · los estados vacíos de scr-core.ts cuelgan en h2 del h1 de pan
     expect(saltos(html)).toEqual([]);
   });
 
+  // [RONDA2 · CLASES] El vacío "Contenido en camino" y el panel de notas viven ahora en
+  // el "adentro" de la clase ('course-detail'); el sub-tab de Cursos es el MENÚ de clases.
+  // El contrato que blinda K-09 (vacío en h2 colgando del h1, sin saltos) no cambia.
   it("curso sin módulos", () => {
     fixtureCursos({ coursesContent: [{ id: "PF-101", dbId: "c-1", code: "PF-101", name: "Public Forum I", coach: "Saúl Méndez", color: "#2CAA20", progress: 0, layout: "modules", modules: [] }] });
-    const html = Core.course.render({ role: "student" });
+    const html = Core.courseDetail.render({ role: "student" });
     expect(html).toContain(`<h2>${t("core.modsEmptyHeading")}</h2>`);
     expect(saltos(html)).toEqual([]);
   });
@@ -199,7 +202,7 @@ describe("K-09 · los estados vacíos de scr-core.ts cuelgan en h2 del h1 de pan
   it("pestaña de calificaciones sin notas", () => {
     fixtureCursos({ myGrades: { rows: [], avg: 0, submitted: 0, total: 0, best: 0 } });
     win.__courseTab = "grades";
-    const html = Core.course.render({ role: "student" });
+    const html = Core.courseDetail.render({ role: "student" });
     expect(html).toContain(`<h2>${t("core.gradesEmpty")}</h2>`);
     expect(saltos(html)).toEqual([]);
   });
