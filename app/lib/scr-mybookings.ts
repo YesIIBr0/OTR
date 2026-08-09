@@ -57,10 +57,13 @@ function countdown(iso) {
 // Cada estado necesita una variante DISTINTA del kit para leerse de un vistazo:
 // confirmada = naranja (lo que pasa pronto), pendiente = tinte, completada = info,
 // cancelada = contorno, disputada = negro (pide atención). Nada de pills.
+// [Isaac 2026-08-09] "Para completed - verde" + "demasiado naranja": el estado vigente
+// (CONFIRMADA) pasa a negro y el terminado a verde con su check — el naranja deja de
+// marcar estados. El check hace que C.chip resuelva solo la variante verde del kit.
 function statusBadge(status) {
-  if (status === "CONFIRMED") return C.chip(t("mb.statusConfirmed"), "accent");
+  if (status === "CONFIRMED") return C.chip(t("mb.statusConfirmed"), "black");
   if (status === "PENDING") return C.chip(t("mb.statusPending"), "tint");
-  if (status === "COMPLETED") return C.chip(t("mb.statusCompleted"), "info");
+  if (status === "COMPLETED") return C.chip(t("mb.statusCompleted"), "accent", { ic: "check" });
   if (status === "CANCELLED") return C.chip(t("mb.statusCancelled"), "outline");
   if (status === "DISPUTED") return C.chip(t("mb.statusDisputed"), "black");
   return status ? C.chip(esc(status), "outline") : "";
@@ -68,7 +71,7 @@ function statusBadge(status) {
 
 function escrowBadge(st) {
   if (st === "HELD") return C.chip(t("mb.escrowHeld"), "tint");
-  if (st === "RELEASED") return C.chip(t("mb.escrowReleased"), "info");
+  if (st === "RELEASED") return C.chip(t("mb.escrowReleased"), "tint", { ic: "check" });
   if (st === "REFUNDED") return C.chip(t("mb.escrowRefunded"), "outline");
   return "";
 }
