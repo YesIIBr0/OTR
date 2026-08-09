@@ -10,6 +10,7 @@
 // Además fija la INVARIANTE que evita destinos huérfanos: todo item de nav de todo rol
 // apunta a una ruta que existe, y toda ruta con nav tiene quien la ilumine.
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 (globalThis as any).window = (globalThis as any).window || {};
@@ -100,14 +101,80 @@ describe("N1 · Mis programas es una sección del menú 'Más'", () => {
       .toEqual(["teacher", "coachwork", "manage", "my-listings", "participants"]);
   });
 
-  it("si la ruta activa cayó en el excedente, sube a los links visibles (no se esconde dónde estás)", () => {
-    // [RONDA 3] 'explore' ("Buscar coaches") vive solo en "Más": fuera de los links de
-    // cabecera y fuera del desplegable "Progreso". (Antes se probaba con 'badges', que
-    // ahora tiene sitio propio en ese desplegable y por eso ya no se inyecta.)
+  it("si la ruta activa cayó en el excedente, la marca la lleva 'Más' — la barra NO crece", () => {
+    // [SONDEO 2026-08-09 · R4] Este test decía lo contrario ("sube a los links visibles"): esa
+    // era la inyección que Isaac reportó como defecto ("¿por qué se abre otra pestaña
+    // arriba?"). Sigue sin esconderse dónde estás — pero el que se ilumina es el CONTENEDOR.
     const html = shell("explore");
     const links = html.slice(html.indexOf('class="tn-links"'), html.indexOf("<details"));
-    expect(links).toContain('data-go="explore"');
-    expect(links).toContain('class="tn-link active"');
+    expect(links, "'Buscar coaches' abrió una pestaña nueva en la barra").not.toContain('data-go="explore"');
+    // el disparador de "Más" queda marcado (clase + aria-current), y dentro el ítem activo
+    expect(html).toContain('<details class="tn-more active" id="tn-more">');
+    expect(html).toMatch(/<summary aria-label="Más" aria-current="true"/);
+    expect(menuMas(html)).toMatch(/class="tn-mi active"[^>]*data-go="explore" aria-current="page"/);
+  });
+});
+
+/* ================= SONDEO 2026-08-09 · R4 · la barra no crece con NINGÚN destino =========
+   Isaac lo reportó primero con "find New" (#catalog, cerrado en R3 cambiando su nav a
+   'course' porque el catálogo SÍ es un sub-tab de Cursos). El sondeo encontró que seguía
+   pasando con "Buscar coaches" (#explore) y "Buscar clases" (#listings). Con esas dos NO se
+   podía repetir la receta de 'catalog': para el PADRE son secciones propias y legítimas —dos
+   de sus cuatro links— y `nav` es por RUTA, no por rol, así que repuntarlas habría dejado la
+   barra del padre sin nada activo. La respuesta va en el shell: el excedente marca su
+   contenedor. ======================================================================== */
+describe("R4 · entrar en un destino del excedente NO añade una pestaña a la barra", () => {
+  const links = (html: string) => html.slice(html.indexOf('class="tn-links"'), html.indexOf("<details"));
+  const dests = (html: string) => [...links(html).matchAll(/data-go="([^"]+)"/g)].map((m) => m[1]);
+
+  // La barra de cada rol: los mismos destinos SIEMPRE, se esté donde se esté.
+  const BARRA: Record<Role, string[]> = {
+    student: ["dashboard", "course", "events", "debate"],
+    teacher: ["teacher", "coachwork", "manage", "my-listings", "participants"],
+    parent:  ["parent", "explore", "listings", "membership"],
+    admin:   ["admin", "admin-users", "admin-metrics", "manage", "events"],
+  };
+
+  it("los 4 roles: 'explore', 'listings' y 'catalog' dejan la barra EXACTAMENTE igual", () => {
+    for (const role of ["student", "teacher", "parent", "admin"] as const) {
+      const base = BARRA[role];
+      for (const nav of [ROUTES.explore.nav, ROUTES.listings.nav, ROUTES.catalog.nav]) {
+        expect(dests(shell(nav, role)), `rol ${role} en '${nav}': la barra cambió`).toEqual(base);
+      }
+    }
+  });
+
+  it("el PADRE sí las tiene como sección propia: se marcan ELLAS, no 'Más'", () => {
+    // Prueba de que 'explore'/'listings' NO podían resolverse repuntando su `nav`.
+    for (const nav of ["explore", "listings"]) {
+      const html = shell(nav, "parent");
+      expect(links(html)).toMatch(new RegExp(`class="tn-link active"[^>]*data-go="${nav}"`));
+      expect(html).not.toContain('<details class="tn-more active"');
+    }
+  });
+
+  it("el ALUMNO las alcanza desde 'Más', que queda iluminado (no se esconde dónde estás)", () => {
+    for (const nav of ["explore", "listings"]) {
+      const html = shell(nav, "student");
+      expect(html, `alumno en '${nav}': 'Más' sin marcar`).toContain('<details class="tn-more active" id="tn-more">');
+      expect(menuMas(html)).toMatch(new RegExp(`class="tn-mi active"[^>]*data-go="${nav}" aria-current="page"`));
+    }
+  });
+
+  it("lo que ya tiene marca FIJA no ilumina además 'Más' (ni Mensajes ni el chip)", () => {
+    // 'messages' la marca el icono de la derecha; 'profile' lo marca el chip de usuario.
+    for (const [nav, role] of [["messages", "student"], ["profile", "teacher"]] as const) {
+      expect(shell(nav, role), `'${nav}' duplicó la marca en 'Más'`).not.toContain('<details class="tn-more active"');
+    }
+    expect(shell("messages", "student")).toMatch(/class="tn-icon active" id="tn-messages"/);
+    expect(shell("profile", "teacher")).toContain('class="tn-user active"');
+  });
+
+  it("el CSS le da al 'Más' activo el mismo lenguaje que al link activo, sin tocar 'Progreso'", () => {
+    const css = readFileSync(new URL("../app/styles/app.css", import.meta.url), "utf8");
+    expect(css).toContain("#tn-more.active > summary{background:var(--bg-sunken);color:var(--otr-black);font-weight:700}");
+    // por ID: el desplegable de grupo comparte la clase .tn-more y conserva SU marca
+    expect(css).toContain(".tn-more.tn-nav.active > summary{font-weight:700;color:var(--otr-black)}");
   });
 });
 
