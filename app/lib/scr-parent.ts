@@ -531,13 +531,24 @@ S.parentPortal = {
         btn.textContent = approve ? t("parent.approving") : t("parent.rejecting");
         try {
           await w.api(`/api/bookings/${encodeURIComponent(id)}`, { status: approve ? "CONFIRMED" : "CANCELLED" }, "PATCH");
-          // Actualización local sin re-fetch: quita el consentimiento de la lista.
+          // Actualización local inmediata: quita el consentimiento de la lista.
           const lists = [];
           if (DB.parent && Array.isArray(DB.parent.children)) lists.push(...DB.parent.children);
           if (Array.isArray(w.__parentFallback)) lists.push(...w.__parentFallback);
           lists.forEach((k) => {
             if (Array.isArray(k.pendingConsents)) k.pendingConsents = k.pendingConsents.filter((pc) => pc.bookingId !== id);
           });
+          // [SONDEO 2026-08-09 · M2] La mutación local solo QUITABA la solicitud: la reserva
+          // recién confirmada no entraba en `upcoming`, así que "Próximas sesiones" seguía en 0
+          // hasta un F5 aunque el backend hubiera guardado bien (200 + CONFIRMED). `upcoming` lo
+          // calcula el servidor (bookings CONFIRMED futuras, queries.ts §DB.parent), así que la
+          // única fuente honesta es releer app-data — mismo patrón que "Confirmar vínculo" de
+          // esta misma pantalla (conserva el rol del cliente, que llega en minúscula).
+          try {
+            const res = await fetch("/api/app-data");
+            if (res.ok) { const fresh = await res.json(); const role = DB.me?.role; Object.assign(DB, fresh); if (role) DB.me = { ...(fresh.me || {}), role }; }
+          } catch { /* silencioso: la mutación local de arriba ya dejó la pantalla coherente */ }
+          w.__parentFallback = null; // re-derivar desde DB.parent fresco
           w.toast?.(approve ? t("parent.toastApproved") : t("parent.toastRejected"), approve ? "ok" : "warn");
           repaint();
         } catch (e) {

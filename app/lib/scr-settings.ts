@@ -192,10 +192,16 @@ S.settings = {
             : t("settings.leaderboardDesc"),
           isMinor ? `<span class="faint" style="font-size:12px">${t("settings.notAvailable")}</span>` : lbToggle(me.leaderboardOptIn !== false))
       : "";
+    // [SONDEO 2026-08-09 · menor] "Perfil público → Mi trayectoria" es la página /p/<slug>
+    // del ALUMNO (su lifetime). Al ADMIN se le ofrecía igual, como "Gestionar membresía":
+    // conceptos de alumno sin filtrar. Se filtran por rol siguiendo el patrón que ya usaba
+    // el ítem de 2FA de esta misma lista (`role === "ADMIN" ? [...] : []`).
     const privacy = [
-      role === "PARENT"
-        ? row(IC.lock, t("settings.childPrivacyTitle"), t("settings.childPrivacyDesc"), `<button class="btn btn-outline btn--sm" data-go="parent">${t("settings.manage")}</button>`)
-        : row(IC.lock, t("settings.publicProfileTitle"), t("settings.publicProfileDesc"), `<button class="btn btn-outline btn--sm" data-go="lifetime">${t("settings.myJourney")} ${IC.arrowR}</button>`),
+      role === "ADMIN"
+        ? ""
+        : role === "PARENT"
+          ? row(IC.lock, t("settings.childPrivacyTitle"), t("settings.childPrivacyDesc"), `<button class="btn btn-outline btn--sm" data-go="parent">${t("settings.manage")}</button>`)
+          : row(IC.lock, t("settings.publicProfileTitle"), t("settings.publicProfileDesc"), `<button class="btn btn-outline btn--sm" data-go="lifetime">${t("settings.myJourney")} ${IC.arrowR}</button>`),
       leaderboardRow,
       row(IC.doc, t("settings.passwordTitle"), t("settings.passwordDesc"), `<button class="btn btn-outline btn--sm" data-action="change-pw">${t("settings.changePassword")}</button>`),
       // [R5] 2FA TOTP — solo para ADMIN (la llave de los datos de menores no puede ser solo
@@ -216,7 +222,9 @@ S.settings = {
     ${card(t("settings.cardAccount"), account, 0)}
     ${card(t("settings.cardLanguage"), row("", t("settings.languageTitle"), t("settings.languageDesc"), langCtrl), 1)}
     ${card(t("settings.cardNotifications"), notif, 2)}
-    ${card(t("settings.cardMembership"), row(IC.star, t("settings.planTitle"), t("settings.planDesc"), `<button class="btn btn-outline btn--sm" data-go="membership">${t("settings.manageMembership")} ${IC.arrowR}</button>`), 3)}
+    ${/* [SONDEO menor] La membresía (Free/Pro) es del alumno y de su familia; la cuenta del
+          equipo OTR no tiene plan que gestionar ni recibos que revisar. */""}
+    ${role === "ADMIN" ? "" : card(t("settings.cardMembership"), row(IC.star, t("settings.planTitle"), t("settings.planDesc"), `<button class="btn btn-outline btn--sm" data-go="membership">${t("settings.manageMembership")} ${IC.arrowR}</button>`), 3)}
     ${card(t("settings.cardPrivacy"), privacy, 4)}
 
     <div class="card card-pad fade-up" style="--d:5;border-color:color-mix(in srgb,var(--danger) 30%,transparent)">
