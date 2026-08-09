@@ -27,6 +27,10 @@ export const dict = {
     "profile.recentGains": "Subidas recientes",
     "profile.noActivityBody": "Aún sin actividad — completa lecciones, exámenes y debates para ver tus subidas aquí.",
 
+    // ── [GOAL F3 · A5] Salidas de "Progreso y niveles" ──
+    "profile.progressGoBadges": "Ver insignias",
+    "profile.progressGoDebate": "Debate Hub",
+
     // ── Insignias y certificados ──
     "profile.badgesTitle": "Insignias y certificados",
     "profile.achievements": "Logros",
@@ -38,6 +42,22 @@ export const dict = {
     "profile.collection": "Colección",
     "profile.yourBadges": "Tus insignias",
     "profile.earned": "Ganada",
+
+    // ── [GOAL-E4 #3 y #4] Caras MINIMAL de FAMILIA y ADMIN ──
+    "profile.roleFamily": "Familia",
+    "profile.roleAdmin": "Admin",
+    "profile.linkedChildren": "Hijos vinculados",
+    "profile.minorProtected": "Menor — protegido",
+    "profile.noChildrenHeading": "Aún no tienes hijos vinculados",
+    "profile.noChildrenBody": "Vincula a tu hijo/a desde el Portal de familia para seguir sus sesiones y aprobar sus reservas.",
+    "profile.quickLinks": "Accesos rápidos",
+    "profile.goParentPortal": "Portal de familia",
+    "profile.goMessages": "Mensajes",
+    "profile.adminConsoles": "Tus consolas",
+    "profile.adminConsolesHint": "El equipo OTR no tiene perfil de marketplace: administra la plataforma desde aquí.",
+    "profile.goModeration": "Moderación",
+    "profile.goUsers": "Usuarios",
+    "profile.goMetrics": "Métricas",
 
     // ── Perfil de coach (cara TEACHER) ──
     "profile.editProfile": "Editar perfil",
@@ -125,6 +145,10 @@ export const dict = {
     "profile.recentGains": "Recent gains",
     "profile.noActivityBody": "No activity yet — complete lessons, exams and debates to see your gains here.",
 
+    // ── [GOAL F3 · A5] Exits from "Progress and levels" ──
+    "profile.progressGoBadges": "View badges",
+    "profile.progressGoDebate": "Debate Hub",
+
     // ── Badges and certificates ──
     "profile.badgesTitle": "Badges and certificates",
     "profile.achievements": "Achievements",
@@ -136,6 +160,22 @@ export const dict = {
     "profile.collection": "Collection",
     "profile.yourBadges": "Your badges",
     "profile.earned": "Earned",
+
+    // ── [GOAL-E4 #3 y #4] MINIMAL FAMILY and ADMIN views ──
+    "profile.roleFamily": "Family",
+    "profile.roleAdmin": "Admin",
+    "profile.linkedChildren": "Linked children",
+    "profile.minorProtected": "Minor — protected",
+    "profile.noChildrenHeading": "No children linked yet",
+    "profile.noChildrenBody": "Link your child from the Family Portal to follow their sessions and approve their bookings.",
+    "profile.quickLinks": "Quick links",
+    "profile.goParentPortal": "Family Portal",
+    "profile.goMessages": "Messages",
+    "profile.adminConsoles": "Your consoles",
+    "profile.adminConsolesHint": "The OTR team has no marketplace profile: run the platform from here.",
+    "profile.goModeration": "Moderation",
+    "profile.goUsers": "Users",
+    "profile.goMetrics": "Metrics",
 
     // ── Coach profile (TEACHER view) ──
     "profile.editProfile": "Edit profile",

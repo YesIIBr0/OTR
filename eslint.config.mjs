@@ -18,6 +18,9 @@ export default tseslint.config(
       "prisma/migrations/**",
       "public/**",
       "site/**",
+      // Volcado local del export pre-Next (git-ignorado): 483 errores no-undef de
+      // archivos que ni se trackean ni se sirven — fuera del lint, como site/**.
+      "_incoming/**",
       "**/*.config.*",
       "next-env.d.ts",
       // Prototipo estático pre-Next.js (raíz del repo): superado por app/ (Next.js App

@@ -48,7 +48,9 @@ function listingFields(prefill) {
     },
     { name: "title", label: t("lst.fieldTitle"), type: "text", req: true, value: p.title || "" },
     { name: "description", label: t("lst.fieldDesc"), type: "text", value: p.description || "" },
-    // Tarifa en RD$ (el payload la convierte a centavos).
+    // [GOAL S3] Tarifa en la MISMA moneda que imprime money() ("$") — la card de arriba y
+    // coachwork/Disponibilidad ya la muestran así. El payload la convierte a centavos: solo
+    // cambia la etiqueta (lst.fieldPrice), ni el dato ni el cálculo.
     { name: "price", label: t("lst.fieldPrice"), type: "text", req: true, value: p.priceCentsHour != null ? String(p.priceCentsHour / 100) : "" },
     {
       type: "select", name: "modality", label: t("lst.fieldModality"), value: p.modality || "online",

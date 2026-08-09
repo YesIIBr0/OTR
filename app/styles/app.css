@@ -123,6 +123,11 @@ svg.ic{width:18px;height:18px;flex:none}
 .tn-mi .ic{width:17px;height:17px;flex:none;opacity:.75}
 .tn-mi .lbl{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .tn-mi .tn-count{margin-left:auto}
+/* [A11Y · GOAL 2026-08 · K-11] "Salir" pasó de <a href="#"> a <button> (es una acción, no un
+   destino). El aspecto lo da .tn-mi —selector de CLASE, no de elemento—, así que aquí solo se
+   neutralizan los estilos de user-agent del botón: borde, fondo, ancho de shrink-to-fit y
+   centrado del texto. Resultado: idéntico a sus vecinos enlace. */
+button.tn-mi{width:100%;border:0;background:transparent;appearance:none;-webkit-appearance:none;text-align:left}
 /* Lo que ya se ve como link horizontal no se repite dentro del menú (solo en escritorio). */
 @media (min-width:1025px){
   .tn-menu .tn-dup{display:none}
@@ -242,8 +247,11 @@ svg.ic{width:18px;height:18px;flex:none}
 .label{font-size:12.5px;font-weight:600;color:var(--text)}
 .label .req{color:var(--danger)}
 .hint{font-size:12px;color:var(--text-3)}
+/* [K-03] El contorno del control usa --border-field (3,41:1 sobre blanco) y no
+   --border-strong (1,39:1): el fondo del input es el MISMO blanco de la página, así que el
+   borde es el único límite visual y le aplica el 3:1 de WCAG 1.4.11. Cálculo en tokens.css. */
 .input,.select,.textarea{
-  width:100%;height:var(--ctrl-h);padding:0 13px;border:1px solid var(--border-strong);border-radius:var(--r-md);
+  width:100%;height:var(--ctrl-h);padding:0 13px;border:1px solid var(--border-field);border-radius:var(--r-md);
   background:var(--otr-white);color:var(--text);font-size:13.5px;font-family:inherit;transition:border-color .15s,box-shadow .15s;
 }
 .textarea{height:auto;min-height:84px;padding:10px 12px;resize:vertical;line-height:1.5}
@@ -504,6 +512,14 @@ table.tbl{width:100%;border-collapse:collapse;font-size:13px}
   .btn-navy:hover,
   .btn-navy:active{transform:none}
   .btn-primary::after{display:none}
+  /* [CIERRE · O4] El bloque solo neutralizaba primary y navy, pero el `scale(.97)` al
+     pulsar lo declara `.btn:active` (línea 238) para TODOS los botones — el CTA naranja
+     (.btn-accent) incluido, que es el que más se toca. Se apaga en la raíz: `.btn:active`
+     cubre accent, ghost, soft, quiet, outline y danger de una vez. Y `.tile.click:hover`
+     levantaba la tarjeta 2px en cada pasada del ratón por el grid de coaches, que era el
+     otro movimiento que la preferencia del sistema no paraba. */
+  .btn:active{transform:none}
+  .tile.click:hover{transform:none}
 }
 
 /* ============================================================

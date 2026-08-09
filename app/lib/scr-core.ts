@@ -191,7 +191,10 @@ function activeItemsFlat() {
       const bookings = (Array.isArray(DB.myBookings) ? DB.myBookings : [])
         .filter((b) => b && b.upcoming && (b.status === 'CONFIRMED' || b.status === 'PENDING'))
         .sort((a, b) => (Date.parse(a.slotAtIso) || 0) - (Date.parse(b.slotAtIso) || 0));
-      const bookingTitle = (b) => b.packageName || t('core.dashSessionWith').replace('{coach}', b.coachName || 'Coach OTR');
+      /* [GOAL A4 · F2] El título es la CLASE (b.title, que arma queries.ts con el tema real
+         del coach); el paquete ("Single") es metadato comercial, no título. b.packageName
+         queda solo como respaldo para un payload viejo sin title. */
+      const bookingTitle = (b) => b.title || b.packageName || t('core.dashSessionWith').replace('{coach}', b.coachName || 'Coach OTR');
 
       /* ---- ② HERO "TU PRÓXIMA CLASE" ---- */
       const nextB = bookings[0] || null;
@@ -216,6 +219,9 @@ function activeItemsFlat() {
               <div class="dh-meta">
                 <span class="row vcenter" style="gap:7px">${IC.clock} ${esc(nextB.slotLabel || '')}</span>
                 ${nextB.durationMin ? `<span class="dh-sep"></span><span>${nextB.durationMin} min</span>` : ''}
+                ${/* [GOAL A4 · F2] El paquete ("Single") no desaparece: baja de título a metadato,
+                     igual que ya lo pintan Mis Reservas y la Sala. Viene esc() de queries.ts. */''}
+                ${nextB.packageName ? `<span class="dh-sep"></span><span>${nextB.packageName}</span>` : ''}
               </div>
             </div>
             <div class="dh-side">
@@ -549,7 +555,9 @@ function activeItemsFlat() {
     if (!rows.length) {
       return `<div class="empty" style="padding:30px 20px">
         <div class="ill">${IC.chart}</div>
-        <h4>${t("core.gradesEmpty")}</h4>
+        ${/* [GOAL F3 · K-09] h2: cuelga directo del <h1> del curso. El estilo del vacío
+              lo da .empty (clase), no el tag — ver screens.css §FIXES GOAL F3. */''}
+        <h2>${t("core.gradesEmpty")}</h2>
         <p>${t("core.gradesEmptyBody")}</p>
       </div>`;
     }
@@ -588,7 +596,7 @@ function activeItemsFlat() {
       if (!c) {
         // Sin cursos activos: empuja al catálogo cambiando de sub-tab (no a la ruta vieja).
         return `<div class="page-head"><div><h1 class="page-title">${t("core.courseEmptyTitle")}</h1><div class="page-sub">${t("core.courseEmptySub")}</div></div></div>
-        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("core.courseEnrollHeading")}</h4><p>${t("core.courseEnrollBody")}</p><button class="btn btn-primary btn-sm" data-courses-tab="catalog">${t("core.exploreCatalog")}</button></div></div>`;
+        <div class="card"><div class="empty"><div class="ill">${IC.book}</div><h2>${t("core.courseEnrollHeading")}</h2><p>${t("core.courseEnrollBody")}</p><button class="btn btn-primary btn-sm" data-courses-tab="catalog">${t("core.exploreCatalog")}</button></div></div>`;
       }
       // Metadatos extra (estudiantes/lecciones) solo viven en DB.courses; los unimos por code.
       const meta = (DB.courses || []).find((x: any) => x.code === c.code) || {};
@@ -622,7 +630,7 @@ function activeItemsFlat() {
           <div class="mi-meta">${it.grade?C.badge(esc(it.grade),'ok'):''}${it.due?`<span style="color:var(--warn)">${esc(it.due)}</span>`:''}${it.dur?`<span>${esc(it.dur)}</span>`:''}${it.locked?IC.lock:''}</div>
         </div>`;
       const secIc = (m: any, mi: number) => `<span class="mh-ic ${m.done?'done':m.locked?'lock':''}" style="width:24px;height:24px;font-size:12px;flex:none">${m.done?IC.check:m.locked?IC.lock:`<b>${mi+1}</b>`}</span>`;
-      const emptyMods = `<div class="card"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>${t("core.modsEmptyHeading")}</h4><p>${t("core.modsEmptyBody")}</p></div></div>`;
+      const emptyMods = `<div class="card"><div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h2>${t("core.modsEmptyHeading")}</h2><p>${t("core.modsEmptyBody")}</p></div></div>`;
       let modules;
       if (!cMods.length) {
         modules = emptyMods;
@@ -862,7 +870,7 @@ function activeItemsFlat() {
               <td class="muted" style="text-transform:capitalize">${({video:t("core.typeVideo"),lesson:t("core.typeLesson"),quiz:t("core.typeQuiz"),assign:t("core.typeAssign"),mic:t("core.typeMic")})[it.type]||esc(it.type)}</td>
               <td class="center">${it.done?C.badge(t("core.statHecho"),'ok',{dot:1}):it.locked?C.badge(t("core.statBloqueado"),'',{dot:1}):C.badge(t("core.statPendiente"),'warn',{dot:1})}</td>
               <td class="num">${it.grade?esc(it.grade):'—'}</td>
-            </tr>`).join('') : `<tr><td colspan="5"><div class="empty" style="padding:32px"><div class="ill">${IC.grid}</div><h4>${t("core.indexEmptyHeading")}</h4><p>${t("core.indexEmptyBody")}</p></div></td></tr>`}
+            </tr>`).join('') : `<tr><td colspan="5"><div class="empty" style="padding:32px"><div class="ill">${IC.grid}</div><h2>${t("core.indexEmptyHeading")}</h2><p>${t("core.indexEmptyBody")}</p></div></td></tr>`}
           </tbody>
         </table>
       </div>`;
@@ -889,7 +897,7 @@ function activeItemsFlat() {
       if (hasL) {
         if (L.contentHtml) body = `<div class="prose">${L.contentHtml}</div>`;
         else if (embed) body = `<p class="faint" style="font-size:13px;margin-top:4px">${t("core.lessonNoNotes")}</p>`;
-        else body = `<div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h4>${t("core.lessonPrepHeading")}</h4><p>${t("core.lessonPrepBody")}</p></div>`;
+        else body = `<div class="empty" style="padding:32px"><div class="ill">${IC.book}</div><h2>${t("core.lessonPrepHeading")}</h2><p>${t("core.lessonPrepBody")}</p></div>`;
       } else {
         body = `<div class="prose">${defaultProse}</div>`;
       }

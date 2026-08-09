@@ -82,9 +82,17 @@ function slotDate(iso) {
 }
 
 /* ---------------- filas ---------------- */
+/* [GOAL E5 · doble-escape] CONTRATO DE ESCAPE: queries.ts (l. 1467-1494) escapa UNA vez el
+   texto de usuario de este payload — coachName, coachInitials, packageName — así que aquí se
+   renderiza CRUDO. Re-escaparlo dejaba a un coach «Ana O'Neil» como «Ana O&#39;Neil» y a un
+   pack «Intensivo & Torneo» como «Intensivo &amp; Torneo». slotLabel y priceLabel son
+   etiquetas NUESTRAS ("lun 16 jun · 4:00 PM", "$45"), no texto de usuario.
+   EXCEPCIÓN deliberada: `data-coach-name` conserva su esc() extra — ese valor sale por
+   getAttribute() (que decodifica UNA vez) y entra a innerHTML como título del modal de
+   reseña, así que ahí el esc() de más es la capa que corta la inyección. */
 function upcomingRow(b) {
   const cd = b.status === "CONFIRMED" || b.status === "PENDING" ? countdown(b.slotAtIso) : "";
-  const meta = [b.slotLabel, b.packageName, b.priceLabel].filter(Boolean).map(esc).join(" · ");
+  const meta = [b.slotLabel, b.packageName, b.priceLabel].filter(Boolean).join(" · ");
   // Sala on-platform: solo CONFIRMED con videoUrl ofrece el botón de unirse.
   const canJoin = b.status === "CONFIRMED" && b.videoUrl;
   const join = canJoin
@@ -99,13 +107,13 @@ function upcomingRow(b) {
   const dt = slotDate(b.slotAtIso);
   const lead = dt
     ? C.dateBox(dt.d, dt.m, !!cd && cd.includes(t("core.countdownMin")))
-    : `<div class="date-box">${C.avatar(esc(b.coachInitials || "C"), { size: "sm", bg: "var(--otr-navy)" })}</div>`;
+    : `<div class="date-box">${C.avatar(b.coachInitials || "C", { size: "sm", bg: "var(--otr-navy)" })}</div>`;
 
   return `
   <div class="evrow">
     ${lead}
     <div class="ev-main">
-      <div class="ev-title" style="font-size:15px;margin:0">${esc(b.coachName || t("mb.coachFallback"))}</div>
+      <div class="ev-title" style="font-size:15px;margin:0">${b.coachName || t("mb.coachFallback")}</div>
       <div class="ev-meta" style="margin-top:5px;gap:10px">
         <span>${meta || t("mb.coachingSession")}</span>
         ${cd ? `<span class="row vcenter" style="gap:5px"><span style="display:inline-flex;width:13px;height:13px">${IC.clock}</span>${esc(cd)}</span>` : ""}
@@ -120,12 +128,12 @@ function upcomingRow(b) {
 }
 
 function historyRow(b) {
-  const meta = [b.slotLabel, b.packageName, b.priceLabel].filter(Boolean).map(esc).join(" · ");
+  const meta = [b.slotLabel, b.packageName, b.priceLabel].filter(Boolean).join(" · ");
   return `
   <div class="row vcenter wrap" style="gap:12px;padding:13px 0;border-bottom:1px solid var(--border)">
-    ${C.avatar(esc(b.coachInitials || "C"), { size: "sm" })}
+    ${C.avatar(b.coachInitials || "C", { size: "sm" })}
     <div style="flex:1;min-width:200px">
-      <b style="font-size:13.5px">${esc(b.coachName || t("mb.coachFallback"))}</b>
+      <b style="font-size:13.5px">${b.coachName || t("mb.coachFallback")}</b>
       <div class="faint" style="font-size:12px;margin-top:2px">${meta || t("mb.coachingSession")}</div>
     </div>
     ${statusBadge(b.status)}
@@ -154,9 +162,12 @@ export function renderBookings() {
   );
 
   // Cabecera de SECCIÓN (ya no de pantalla): el <h1> y el eyebrow los pone Cursos.
+  // [GOAL F3 · K-09] Y por eso el tag es h2, no el h3 por defecto de secTitle: colgaba
+  // del <h1> del curso saltándose un nivel. El diseño lo dan las clases (.sec-title
+  // viste igual h2/h3/h4), así que el tag cambia sin mover un píxel.
   const head = `
   <div class="fade-up" style="margin:28px 0 12px">
-    ${C.secTitle(t("mb.title"), { attrs: 'style="margin-bottom:4px"' })}
+    ${C.secTitle(t("mb.title"), { tag: 'h2', attrs: 'style="margin-bottom:4px"' })}
     <div class="faint" style="font-size:12.5px">${t("mb.subtitle")}</div>
   </div>`;
 
@@ -164,7 +175,7 @@ export function renderBookings() {
     return `${head}
     <div class="card fade-up" style="--d:1"><div class="empty">
       <div class="ill">${IC.calendar}</div>
-      <h4>${t("mb.emptyHeading")}</h4>
+      <h3>${t("mb.emptyHeading")}</h3>
       <p>${t("mb.emptyBody")}</p>
       <button class="btn btn-accent" data-go="explore">${t("mb.emptyCta")}</button>
     </div></div>`;
@@ -172,7 +183,7 @@ export function renderBookings() {
 
   return `${head}
   <div class="card card-pad fade-up" style="--d:1">
-    ${C.secTitle(t("mb.upcomingTitle"), { sm: true, right: C.chip(String(upcoming.length), "black") })}
+    ${C.secTitle(t("mb.upcomingTitle"), { sm: true, tag: 'h3', right: C.chip(String(upcoming.length), "black") })}
     <p class="faint" style="font-size:12px;margin-top:4px">${t("mb.videoRoomNote")}</p>
     ${upcoming.length
       ? `<div style="margin-top:6px;--ev-bleed:22px">${upcoming.map(upcomingRow).join("")}</div>`
@@ -180,7 +191,7 @@ export function renderBookings() {
   </div>
 
   <div class="card card-pad fade-up" style="--d:2;margin-top:16px">
-    ${C.secTitle(t("mb.historyTitle"), { sm: true, right: C.chip(String(history.length), "outline") })}
+    ${C.secTitle(t("mb.historyTitle"), { sm: true, tag: 'h3', right: C.chip(String(history.length), "outline") })}
     ${history.length
       ? `<div style="margin-top:6px">${history.map(historyRow).join("")}</div>`
       : `<p class="muted" style="font-size:13px;margin-top:12px">${t("mb.historyEmpty")}</p>`}
@@ -250,7 +261,10 @@ export function mountBookings(root) {
         const coachId = btn.getAttribute("data-coach") || "";
         const coachName = btn.getAttribute("data-coach-name") || t("mb.reviewCoachFallback");
         if (!coachId || !w.otrFormModal) return;
-        w.otrFormModal(t("mb.reviewModalTitle").replace("{name}", coachName), [
+        // [CIERRE · O9] split/join y no replace: `coachName` es texto de usuario y
+        // String.replace interpreta $&, $', $` y $1 en el reemplazo (un coach llamado
+        // "A$&B" corrompería el título). Mismo criterio que el resto de la campaña.
+        w.otrFormModal(t("mb.reviewModalTitle").split("{name}").join(coachName), [
           { name: "rating", label: t("mb.reviewRatingLabel"), type: "select", value: "5", options: [
             { value: "5", label: t("mb.reviewRating5") },
             { value: "4", label: t("mb.reviewRating4") },

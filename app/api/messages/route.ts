@@ -1,6 +1,8 @@
 import { db } from "../../lib/db";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
+import { esc } from "../../lib/esc";
+import { conversationLabel } from "../../lib/queries";
 import { rateLimit } from "../../lib/rate-limit";
 import { filterContactInfo, isMinor } from "../../lib/safety";
 import { logActivitySafe } from "../../lib/activity";
@@ -27,31 +29,60 @@ export async function GET() {
   const visible = await db.conversation.findMany({
     where: { participants: { some: { userId: user.id } } },
     orderBy: { position: "asc" },
-    include: { participants: true, messages: { orderBy: { position: "desc" }, take: 200 } },
+    // [GOAL S4·rev] Mismo orden estable de participantes que getAppData (userId asc).
+    include: {
+      participants: { select: { userId: true }, orderBy: { userId: "asc" } },
+      messages: { orderBy: { position: "desc" }, take: 200 },
+    },
   });
+
+  // [GOAL S4/S5·rev] Este GET devolvía la etiqueta CRUDA de la fila (el coach se veía a sí
+  // mismo, igual que el bug del payload) y el texto SIN escapar, mientras la pantalla ya
+  // pinta crudo por contrato. Ahora comparte exactamente el contrato de getAppData:
+  // conversationLabel() decide cabecera/preview y esc() se aplica UNA sola vez aquí.
+  const otherIds = [...new Set(
+    visible.flatMap((c) => c.participants.map((p) => p.userId)).filter((id) => id !== user.id),
+  )];
+  const otherUsers = otherIds.length
+    ? await db.user.findMany({ where: { id: { in: otherIds } }, select: { id: true, name: true, initials: true } })
+    : [];
+  const counterparts = new Map(otherUsers.map((u) => [u.id, { name: u.name, initials: u.initials }]));
 
   // Mantiene el shape que espera la pantalla de mensajes (scr-community: ini/name/
   // when/last/unread/online/navy en la lista; me/body/when en las burbujas).
-  const conversations = visible.map((c) => ({
-    id: c.id,
-    ini: c.initials,
-    name: c.name,
-    last: c.lastLabel,
-    when: c.whenLabel,
-    unread: c.unread,
-    online: c.online,
-    navy: c.navy,
-    messages: [...c.messages].reverse().map((m) => ({
-      id: m.id,
-      // [CROSS-01] me se computa POR USUARIO: una burbuja es "mía" solo si la envié yo.
-      // Antes devolvía el `me` almacenado (siempre true para el creador) → el receptor
-      // veía los mensajes ajenos a la derecha como propios. Fallback legacy: filas sin
-      // senderId (anteriores a la migración) caen a su `me` guardado.
-      me: m.senderId ? m.senderId === user.id : m.me,
-      body: m.body,
-      when: m.timeLabel,
-    })),
-  }));
+  const conversations = visible.map((c) => {
+    const thread = [...c.messages].reverse();
+    const label = conversationLabel({
+      storedName: c.name,
+      storedInitials: c.initials,
+      storedLastLabel: c.lastLabel,
+      participantIds: c.participants.map((p) => p.userId),
+      meId: user.id,
+      meName: user.name,
+      counterparts,
+      lastMessageBody: thread.length ? thread[thread.length - 1].body : null,
+    });
+    return {
+      id: c.id,
+      ini: esc(label.initials),
+      name: esc(label.name),
+      last: esc(label.last),
+      when: c.whenLabel,
+      unread: c.unread,
+      online: c.online,
+      navy: c.navy,
+      messages: thread.map((m) => ({
+        id: m.id,
+        // [CROSS-01] me se computa POR USUARIO: una burbuja es "mía" solo si la envié yo.
+        // Antes devolvía el `me` almacenado (siempre true para el creador) → el receptor
+        // veía los mensajes ajenos a la derecha como propios. Fallback legacy: filas sin
+        // senderId (anteriores a la migración) caen a su `me` guardado.
+        me: m.senderId ? m.senderId === user.id : m.me,
+        body: esc(m.body),
+        when: m.timeLabel,
+      })),
+    };
+  });
 
   return ok({ conversations });
 }

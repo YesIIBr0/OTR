@@ -3,7 +3,10 @@ import { db } from "./db";
 import { esc } from "./esc";
 import { cached } from "./cache";
 import { safeUrl } from "./api";
-import { dateLabel, timeLabel } from "./consultations";
+// [GOAL A2 · F2] Los labels de fecha del payload ya NO se arman con tablas en español
+// fijo (consultations.ts / MONTHS_ES local): se delegan a los formateadores de i18n.ts,
+// que reciben el idioma de la request (cookie otr_lang → getAppData(email, lang)).
+import { fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull, fmtMemberSinceLabel, fmtPlanSinceLabel } from "./i18n";
 
 const ME_EMAIL = "analia.reyes@otr.do";
 
@@ -147,11 +150,94 @@ export function computeRosterMetrics(input: RosterMetricsInput): RosterMetrics {
   return { grade, att, eng, trend, risk, last, prog: Math.round(progressPct) };
 }
 
-// Etiqueta legible mes + año en español, tipo "jun 2026" (texto generado por nosotros).
-const MONTHS_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+/* ============================================================================
+   [GOAL S4/S5] Cabecera y preview de una conversación — función PURA (se testea
+   sin Prisma, igual que computeRosterMetrics).
+
+   Conversation.name/initials/lastLabel son etiquetas DESNORMALIZADAS escritas
+   desde UN solo lado del hilo. Dos consecuencias reales que arregla esto:
+
+   · S4 — el coach abría el hilo con su alumna y leía SU PROPIO nombre ("SM ·
+     Coach Saúl Méndez") en la cabecera y en la lista. Regla: si la etiqueta
+     guardada ya nombra a una contraparte, se respeta (hilos bien etiquetados y
+     canales tipo "Equipo OTR (anuncios)", que no nombran a nadie, se quedan
+     como están); si nombra al USUARIO ACTUAL, se sustituye por la contraparte.
+   · S5 — la lista previsualizaba "Gracias coach" en un hilo cuyo detalle estaba
+     vacío. Regla: el preview SALE del último mensaje real; lastLabel solo se usa
+     como fallback cuando la conversación aún no tiene mensajes.
+
+   Devuelve texto CRUDO (sin escapar): escapa el llamador, una sola vez. */
+export type ConversationLabelInput = {
+  storedName: string;
+  storedInitials: string;
+  storedLastLabel: string;
+  participantIds: string[];
+  meId: string | null;
+  /** nombre del usuario actual (para detectar el hilo etiquetado con uno mismo). */
+  meName: string | null;
+  /** id → {name, initials} de los participantes (los distintos del usuario actual). */
+  counterparts: Map<string, { name: string; initials: string }>;
+  /** body del ÚLTIMO mensaje real del hilo (null si el hilo está vacío). */
+  lastMessageBody: string | null;
+};
+
+/** Normaliza para comparar personas: sin tildes, sin mayúsculas, sin espacios de más. */
+const normName = (s?: string | null) => String(s ?? "")
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/\s+/g, " ").trim();
+
+/** Igualdad ESTRICTA de nombre (ya normalizado). */
+function sameNameExact(a?: string | null, b?: string | null): boolean {
+  const x = normName(a), y = normName(b);
+  return !!x && x === y;
+}
+
+/** Coincidencia LAXA por subcadena — existe SOLO para tolerar "Coach X" ≈ "X". */
+function sameNameLoose(a?: string | null, b?: string | null): boolean {
+  const x = normName(a), y = normName(b);
+  if (!x || !y) return false;
+  return x.includes(y) || y.includes(x);
+}
+
+export function conversationLabel(input: ConversationLabelInput): { name: string; initials: string; last: string } {
+  const { storedName, storedInitials, storedLastLabel, participantIds, meId, meName, counterparts, lastMessageBody } = input;
+
+  const others = participantIds
+    .filter((id) => id && id !== meId)
+    .map((id) => counterparts.get(id))
+    .filter(Boolean) as Array<{ name: string; initials: string }>;
+
+  /* Escalera de precedencia — el ORDEN importa. La comparación laxa por subcadena existe
+     solo para tolerar el prefijo de cortesía ("Coach Saúl Méndez" ≡ "Saúl Méndez"); si se
+     evalúa ANTES que la igualdad estricta se come el arreglo: con un alumno llamado
+     "Saúl Méndez Jr" el nombre del coach es subcadena del suyo, la etiqueta "Saúl Méndez"
+     pasaría por "ya nombra a la contraparte" y el coach volvería a verse a sí mismo.
+       1. la etiqueta es EXACTAMENTE mi nombre → contraparte (sin pasar por la laxa)
+       2. es exactamente la de una contraparte → se respeta
+       3. coincide de forma laxa con una contraparte → se respeta (hilo ya bien etiquetado)
+       4. coincide de forma laxa conmigo → contraparte ("Coach Saúl Méndez" siendo yo Saúl)
+       5. no nombra a nadie (canal "Equipo OTR (anuncios)") → se respeta */
+  const swap = others.length > 0 && (
+    sameNameExact(meName, storedName)
+    || (!others.some((o) => sameNameExact(o.name, storedName))
+      && !others.some((o) => sameNameLoose(o.name, storedName))
+      && sameNameLoose(meName, storedName))
+  );
+
+  // others[0] = primer participante del orden ESTABLE que entrega el llamador (userId asc).
+  const pick = swap ? others[0] : null;
+
+  return {
+    name: pick ? pick.name : storedName,
+    initials: pick ? pick.initials : storedInitials,
+    // El preview manda el mensaje real; lastLabel es solo el fallback del hilo vacío.
+    last: lastMessageBody != null && lastMessageBody !== "" ? lastMessageBody : storedLastLabel,
+  };
+}
+
 // [DASHBOARD] Nombre del mes para el periodo del ranking mensual. Tabla propia (no Intl):
 // el resto del archivo ya genera sus etiquetas así, sin depender del ICU del runtime.
+const MONTHS_ES_FULL = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const MONTHS_EN_FULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 function monthNameLabel(d: Date, wantEnglish: boolean): string {
   return (wantEnglish ? MONTHS_EN_FULL : MONTHS_ES_FULL)[d.getMonth()] || "";
@@ -184,40 +270,50 @@ async function optionalRows<T>(label: string, run: () => Promise<T[]>): Promise<
     return [];
   }
 }
-function monthYearLabel(d?: Date | null): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  return `${MONTHS_ES[date.getMonth()]} ${date.getFullYear()}`;
+// [GOAL A2 · F2] Los cuatro labels de fecha del payload reciben ahora el idioma de la
+// request y delegan en los formateadores de i18n.ts (ES: "jun 2026" / EN: "Jun 2026").
+// Antes eran tablas en español fijo → con otr_lang=en la UI salía en inglés y las fechas
+// en español. La forma del label en ES NO cambia (mismo output, byte a byte).
+function monthYearLabel(d?: Date | null, lang?: string): string {
+  return fmtMonthYear(d, lang);
 }
 
-// Etiqueta corta de día "12 jun" (journey/atribución del Lifetime Profile, PRD §8).
-function shortDateLabel(d?: Date | string | null): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  return `${date.getDate()} ${MONTHS_ES[date.getMonth()]}`;
+// Etiqueta corta de día "12 jun" / "Jun 12" (journey/atribución del Lifetime Profile, PRD §8).
+function shortDateLabel(d?: Date | string | null, lang?: string): string {
+  return fmtDayMonth(d, lang);
 }
 
-// Etiqueta de mes completo capitalizado "Junio 2026" (agrupa el journey, PRD §8).
-function monthFullLabel(d?: Date | string | null): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  const m = MONTHS_ES_FULL[date.getMonth()];
-  return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${date.getFullYear()}`;
+// Etiqueta de mes completo capitalizado "Junio 2026" / "June 2026" (agrupa el journey, PRD §8).
+function monthFullLabel(d?: Date | string | null, lang?: string): string {
+  return fmtMonthFull(d, lang);
 }
 
-// Etiqueta de fecha de evento futuro tipo "12 jun · 9:00 AM" (texto generado por
-// nosotros). Usada para el inicio de los torneos del Debate Hub.
-function eventDateLabel(d?: Date | null): string {
-  if (!d) return "";
-  const date = d instanceof Date ? d : new Date(d);
-  if (Number.isNaN(date.getTime())) return "";
-  // [FIX glitch "12:23 AM"] Usar las etiquetas con zona horaria FIJA (America/Santo_Domingo,
-  // vía consultations.ts) en vez de la hora del SERVIDOR (UTC): antes un torneo a medianoche
-  // local se renderizaba "12:23 AM" en un server UTC. Misma fuente TZ que las reservas.
-  return `${dateLabel(date)} · ${timeLabel(date)}`;
+// Etiqueta de fecha de evento futuro tipo "12 jun · 9:00 AM" / "Fri, Jun 12 · 9:00 AM".
+// Usada para el inicio de los torneos del Debate Hub.
+// [FIX glitch "12:23 AM"] La hora sale con zona horaria FIJA (America/Santo_Domingo) y no
+// con la del SERVIDOR (UTC): antes un torneo a medianoche local se renderizaba "12:23 AM"
+// en un server UTC. fmtDateTimeRD conserva ese offset fijo. Misma fuente TZ que las reservas.
+function eventDateLabel(d?: Date | null, lang?: string): string {
+  return fmtDateTimeRD(d, lang);
+}
+
+/* [GOAL A4 · F2] Título REAL de una clase 1:1 del marketplace.
+   Defecto: el dashboard titulaba la próxima clase "Single" — que es el nombre COMERCIAL
+   del paquete del coach (Single / 5-pack / 10-pack, CoachPackage.name), no la clase. El
+   alumno leía "Single" como si fuera el tema de su sesión.
+   Booking no tiene curso ni lección (es coaching 1:1, no una lección de un curso), así que
+   el título honesto sale del dato real que SÍ existe: la primera especialidad del
+   CoachProfile ("Public Forum, Lincoln-Douglas, Oratoria" → "Sesión de Public Forum") y,
+   si el coach no declaró especialidades, su nombre ("Sesión con Carla Jiménez"). El paquete
+   se queda donde siempre fue correcto: como METADATO (packageName, que scr-mybookings y
+   scr-room ya pintan como metadato). Pura ⇒ testeable sin DB (tests/i18n-dates.test.ts).
+   Devuelve texto CRUDO: el call-site aplica esc() una sola vez (contrato de escape). */
+export function bookingClassTitle(input: { specialty?: string | null; coachName?: string | null; lang?: string }): string {
+  const first = String(input.specialty ?? "").split(",")[0].trim();
+  const en = input.lang === "en";
+  if (first) return en ? `${first} session` : `Sesión de ${first}`;
+  const coach = String(input.coachName ?? "").trim() || (en ? "OTR Coach" : "Coach OTR");
+  return en ? `Session with ${coach}` : `Sesión con ${coach}`;
 }
 
 // Las 6 dimensiones del radar OTR, en el orden fijo del contrato.
@@ -310,7 +406,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     levels, meEnrollments, badges, notifications, events,
     threads, mainThread, convos, allCourses, allModules, taughtCourses,
     myStudentSkills, myCertificates, coachProfiles,
-    seasonPrizes, highlightRows,
+    seasonPrizes, highlightRows, adminCourseRows,
   ] = await Promise.all([
     // [GOAL G3] Global e idéntico para todos → micro-caché (ver lib/cache.ts).
     cached("levels", GLOBAL_TTL_MS, () => db.level.findMany({ orderBy: { position: "asc" } })),
@@ -344,7 +440,17 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
           // de cada conversación (orderBy position desc + take) y los reinvertimos a orden
           // cronológico en el mapping (~línea 1697). scr-community NO pagina el hilo y renderiza
           // el array completo → 60 cubre la ventana visible; los mensajes nuevos se anexan al final.
-          include: { messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true } } },
+          // [GOAL S4] Los participantes viajan con la conversación (solo el id: una fila por
+          // participante, sin join a User) para poder etiquetar el hilo con la CONTRAPARTE.
+          // Conversation.name/initials es una etiqueta DESNORMALIZADA escrita desde un solo
+          // lado: el coach veía su propio nombre en el hilo con su alumna.
+          // [GOAL S4·rev] `orderBy` explícito: sin él Prisma no garantiza el orden de los
+          // participantes y con 3+ en el hilo la etiqueta (others[0]) podía cambiar entre
+          // cargas. userId asc = orden estable y barato (hay @@index([userId])).
+          include: {
+            messages: { orderBy: { position: "desc" }, take: 60, select: { senderId: true, me: true, body: true, timeLabel: true } },
+            participants: { select: { userId: true }, orderBy: { userId: "asc" } },
+          },
         })
       : Promise.resolve([] as any[]),
     db.course.findMany({ where: { published: true }, orderBy: { position: "asc" }, select: { id: true, code: true, name: true, nameEn: true, color: true, coachName: true, priceCents: true, format: true, modality: true, summary: true, summaryEn: true, welcomeVideoKind: true, welcomeVideoSrc: true } }),
@@ -392,6 +498,21 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // decorativo ⇒ sin él la franja simplemente no se pinta (la vista ya lo contempla).
     optionalRows("highlight", () =>
       cached("highlights", GLOBAL_TTL_MS, () => db.highlight.findMany({ orderBy: { position: "asc" }, take: 12 }))),
+    // [GOAL-E4 #9] Catálogo COMPLETO (con dueño y conteos) para la pantalla "Cursos" del ADMIN.
+    // Ver el bloque `base.adminCourses` al final del archivo para el porqué del campo propio.
+    // [revisión · minor 6] Va DENTRO de este Promise.all, no en un await suelto después: así no
+    // añade un round-trip en serie. Para cualquier rol que no sea ADMIN resuelve [] sin consultar.
+    me?.role === "ADMIN"
+      ? db.course.findMany({
+          orderBy: { position: "asc" },
+          select: {
+            id: true, code: true, name: true, nameEn: true, color: true, published: true,
+            format: true, modality: true, coachName: true,
+            teacher: { select: { id: true, name: true } },
+            modules: { select: { _count: { select: { lessons: true } } } },
+          },
+        })
+      : Promise.resolve([] as any[]),
   ]);
 
   // [fix nivel] El rango (Novato 0-999 · JV 1000-2499 · Varsity 2500-4999 · Elite 5000+) se
@@ -449,7 +570,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // [P0 de-mock] El "curso principal" ya NO es el hardcoded PF-101:
   //   · estudiante → su PRIMER curso inscrito (coach/reseñas/programas REALES de ese curso)
   //   · profesor   → su PRIMER curso impartido (roster real para el dashboard)
-  const [studentMainCourse, taughtRoster] = await Promise.all([
+  // [GOAL S4] Nombre/iniciales de las CONTRAPARTES de mis conversaciones, en UNA sola
+  // consulta (los ids ya viajan con cada conversación). Sin esto no se puede etiquetar el
+  // hilo con el otro: Conversation.name está escrito desde un solo lado.
+  const convoOtherIds = [...new Set(
+    (convos as any[]).flatMap((c: any) => (c.participants ?? []).map((p: any) => p.userId))
+      .filter((id: string) => id && id !== me?.id),
+  )] as string[];
+  const [studentMainCourse, taughtRoster, convoOtherUsers] = await Promise.all([
     (!isTeacher && firstEnrolledCourseId)
       ? db.course.findUnique({
           where: { id: firstEnrolledCourseId },
@@ -462,7 +590,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     (isTeacher && firstTaughtCourseId)
       ? db.enrollment.findMany({ where: { courseId: firstTaughtCourseId }, include: { user: true }, orderBy: { user: { xp: "desc" } }, take: 200 })
       : Promise.resolve([] as any[]),
+    convoOtherIds.length
+      ? db.user.findMany({ where: { id: { in: convoOtherIds } }, select: { id: true, name: true, initials: true } })
+      : Promise.resolve([] as any[]),
   ]);
+  const convoCounterparts = new Map<string, { name: string; initials: string }>(
+    (convoOtherUsers as any[]).map((u: any) => [u.id, { name: u.name, initials: u.initials }]),
+  );
   // mainCourse efectivo (estudiante) + coach REAL de su curso (ya no PF-101/saul).
   const effMainCourse: any = isTeacher ? null : studentMainCourse;
   const studentCoach = !isTeacher ? (studentMainCourse?.teacher ?? null) : null;
@@ -982,7 +1116,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     id: c.id,
     title: esc(c.title),
     programName: esc(courseNameById.get(c.courseId) || ""),
-    issuedAt: monthYearLabel(c.issuedAt),
+    issuedAt: monthYearLabel(c.issuedAt, lang),
   }));
 
   // --- Arsenal APAGADO (PRD-estricto): no existe en el PDF (el motion library
@@ -1180,9 +1314,16 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         format: esc(t.format),
         region: esc(t.region || ""),
         modality: esc(t.modality),
-        startsLabel: t.startsAt ? eventDateLabel(t.startsAt) : "Por anunciar",
+        startsLabel: t.startsAt ? eventDateLabel(t.startsAt, lang) : (lang === "en" ? "To be announced" : "Por anunciar"),
         status: t.status,
-        entryLabel: t.entryCents > 0 ? `RD$${(t.entryCents / 100).toLocaleString("es-DO")}` : "Gratis",
+        // [GOAL E5 · moneda] "$" y no "RD$": es el símbolo ÚNICO que ya imprime money()
+        // (app/lib/money.ts) en marketplace, coachwork, listings y padres. El torneo era el
+        // último sitio que rotulaba una tercera moneda junto a precios en "$" de la misma
+        // pantalla. Solo cambia la PRESENTACIÓN: entryCents no se toca.
+        // [CIERRE · O5] "Gratis" estaba fijo en español: un alumno con la UI en inglés
+        // leía "Free entry" en la etiqueta de al lado y "Gratis" en el torneo. Se traduce
+        // con el mismo `lang` de la request que usa startsLabel dos líneas arriba.
+        entryLabel: t.entryCents > 0 ? `$${(t.entryCents / 100).toLocaleString("es-DO")}` : (lang === "en" ? "Free" : "Gratis"),
         registered: (t.registrations || []).length > 0,
         ...(isStaff
           ? {
@@ -1201,8 +1342,8 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     const v = (Number(cents) || 0) / 100;
     return `$${v.toLocaleString("en-US", Number.isInteger(v) ? undefined : { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
-  // Etiqueta de slot "lun 16 jun · 4:00 PM" (hora RD) — reutiliza consultations.ts.
-  const slotLabel = (d: Date | string): string => `${dateLabel(d as any)} · ${timeLabel(d as any)}`;
+  // Etiqueta de slot "lun 16 jun · 4:00 PM" / "Mon, Jun 16 · 4:00 PM" (hora RD fija).
+  const slotLabel = (d: Date | string): string => fmtDateTimeRD(d, lang);
   // Lista separada por comas → array escapado (specialties, languages).
   const splitList = (s?: string | null): string[] =>
     String(s ?? "").split(",").map((x) => x.trim()).filter(Boolean).map((x) => esc(x));
@@ -1212,6 +1353,10 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // Mapa packageId -> paquete (para resolver el nombre/precio en bookings).
   const packageById = new Map<string, any>();
   coachProfiles.forEach((p: any) => (p.packages || []).forEach((pk: any) => packageById.set(pk.id, pk)));
+  // [GOAL A4 · F2] Mapa coachId (User) -> especialidades declaradas, para titular la clase
+  // con el tema REAL en vez del nombre del paquete ("Single"). Ver bookingClassTitle.
+  const specialtiesByCoachId = new Map<string, string>();
+  coachProfiles.forEach((p: any) => specialtiesByCoachId.set(p.userId, String(p.specialties || "")));
 
   const marketplace = {
     // Quien mira: 'minor' activa el candado de consentimiento parental en el UI
@@ -1347,6 +1492,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     coachId: b.coachId,
     coachName: coachNameOf(b.coachId),
     coachInitials: coachIniOf(b.coachId),
+    // [GOAL A4 · F2] Título de la clase (tema real). `packageName` sigue viajando, pero
+    // como METADATO comercial — nunca más como título de la próxima clase del dashboard.
+    title: esc(bookingClassTitle({
+      specialty: specialtiesByCoachId.get(b.coachId),
+      coachName: coachUserById.get(b.coachId)?.name,
+      lang,
+    })),
     packageName: b.packageId ? esc(packageById.get(b.packageId)?.name || "") : "",
     slotLabel: slotLabel(b.slotAt),
     slotAtIso: new Date(b.slotAt).toISOString(),
@@ -1594,9 +1746,9 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // "Miembro desde …": User no tiene createdAt en el schema → primer
   // ActivityEvent del usuario, o "2026" si aún no tiene historia.
   const firstEventAt = activityAsc[0]?.createdAt ?? null;
-  const memberSinceLabel = firstEventAt
-    ? `Miembro desde ${MONTHS_ES_FULL[new Date(firstEventAt).getMonth()]} ${new Date(firstEventAt).getFullYear()}`
-    : "Miembro desde 2026";
+  // [GOAL A2 · F2] También con idioma: era la última etiqueta de fecha que quedaba en
+  // español fijo (MONTHS_ES_FULL a pelo) y salía "Miembro desde agosto 2026" con la UI en EN.
+  const memberSinceLabel = fmtMemberSinceLabel(firstEventAt, lang);
 
   // Atribución del Skill Graph (PRD §8.2, sin cajas negras):
   //  1) FUENTE PRIMARIA — meta.skillBumps escrito por el server cuando un evento
@@ -1643,7 +1795,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
         return text.includes(needle) || (TYPE_TO_SKILLS[a.type] || []).includes(skillName);
       })
       .slice(0, 8)
-      .map((a) => ({ title: esc(a.title), whenLabel: shortDateLabel(a.createdAt) }));
+      .map((a) => ({ title: esc(a.title), whenLabel: shortDateLabel(a.createdAt, lang) }));
   };
   // Sin StudentSkill → las 6 dimensiones canónicas en 0 (el perfil nunca va vacío).
   const skillGraphBase = (myStudentSkills || []).length
@@ -1680,7 +1832,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     .slice()
     .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime())
     .map((r) => ({
-      label: shortDateLabel(r.recordedAt),
+      label: shortDateLabel(r.recordedAt, lang),
       ratingAfter: Math.round(r.rating.ratingAfter),
       tierAfter: r.rating.tierAfter,
     }));
@@ -1695,14 +1847,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // Credenciales verificables (certificados emitidos).
   const lifetimeCredentials = (myCertificates || []).map((c: any) => ({
     title: esc(c.title),
-    issuedLabel: monthYearLabel(c.issuedAt),
+    issuedLabel: monthYearLabel(c.issuedAt, lang),
   }));
 
   // Journey: la historia cronológica vertical (hasta 60 eventos, asc) — el
   // screenshot que un estudiante comparte y que enorgullece a los padres.
   const journey = activityAsc.slice(0, 60).map((a: any) => ({
-    whenLabel: shortDateLabel(a.createdAt),
-    monthLabel: monthFullLabel(a.createdAt),
+    whenLabel: shortDateLabel(a.createdAt, lang),
+    monthLabel: monthFullLabel(a.createdAt, lang),
     title: esc(a.title),
     detail: esc(a.detail || ""),
     type: a.type,
@@ -1743,10 +1895,12 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   // upgrade solo cambia User.membership). free | pro | elite ("Próximamente").
   const membership = {
     tier: me?.membership || "free",
-    sinceLabel: me?.membershipSince
-      ? `Desde ${MONTHS_ES_FULL[new Date(me.membershipSince).getMonth()]} ${new Date(me.membershipSince).getFullYear()}`
-      : null,
-    prices: { proMonthly: "US$9", proAnnual: "US$79" },
+    // [GOAL A2 · F2] Con idioma (antes "Desde agosto 2026" fijo, aun con la UI en inglés).
+    sinceLabel: me?.membershipSince ? fmtPlanSinceLabel(me.membershipSince, lang) : null,
+    // [GOAL E5 · moneda] "$9"/"$79" y no "US$9"/"US$79": el símbolo unificado de money()
+    // (app/lib/money.ts). La membresía era la tercera moneda de la app — convivía con los
+    // "$45/hora" del marketplace en la misma sesión. Solo presentación.
+    prices: { proMonthly: "$9", proAnnual: "$79" },
   };
 
   const base: any = {
@@ -1869,13 +2023,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     highlights: (highlightRows || []).map((h: any) => ({
       id: h.id,
       title: h.title,
-      dateLabel: h.date ? shortDateLabel(h.date) : "",
+      dateLabel: h.date ? shortDateLabel(h.date, lang) : "",
       category: h.category,
       imageUrl: h.imageUrl || "",
     })),
     // [auditoría] La etiqueta de fecha se DERIVA de startsAt (viva, como los torneos); whenLabel
     // es solo fallback para eventos legados sin startsAt. Así "Hoy/Mañana" no queda congelado.
-    events: events.map((e) => ({ t: e.title, c: e.course, when: (e as any).startsAt ? eventDateLabel((e as any).startsAt) : e.whenLabel, tone: e.tone })),
+    events: events.map((e) => ({ t: e.title, c: e.course, when: (e as any).startsAt ? eventDateLabel((e as any).startsAt, lang) : e.whenLabel, tone: e.tone })),
     // PRD §4: DB.activity = timeline del Progress Profile (ActivityEvent del usuario,
     // los últimos 15 de la consulta compartida con journey). esc() en texto de usuario.
     activity: (activityEvents || []).slice(0, 15).map((a) => ({
@@ -1893,13 +2047,29 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     // consistente con CROSS-01) para que la pantalla pueda CAMBIAR de chat y enviar al hilo
     // correcto. Antes solo se exponía el resumen + DB.chat (la 1ª conversación), por eso el
     // thread mostraba siempre lo mismo y el envío iba al primer hilo.
-    messages: convos.map((c) => ({
-      id: c.id, ini: esc(c.initials), name: esc(c.name), last: esc(c.lastLabel), when: c.whenLabel,
-      unread: c.unread, online: c.online, navy: c.navy,
+    messages: convos.map((c) => {
       // [F3.3] Los mensajes vienen desc (los 60 más recientes) desde la query → se reinvierten
       // aquí a orden cronológico ascendente (viejo→nuevo), que es como el hilo se renderiza.
-      messages: (c.messages ?? []).slice().reverse().map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
-    })),
+      const thread = (c.messages ?? []).slice().reverse();
+      // [GOAL S4/S5] La etiqueta del hilo (contraparte, no uno mismo) y el preview (último
+      // mensaje REAL, no un lastLabel inventado) se deciden en conversationLabel() — pura y
+      // testeada. Aquí solo se escapa UNA vez, como manda el contrato de escape.
+      const label = conversationLabel({
+        storedName: c.name,
+        storedInitials: c.initials,
+        storedLastLabel: c.lastLabel,
+        participantIds: ((c as any).participants ?? []).map((p: any) => p.userId),
+        meId: me?.id ?? null,
+        meName: me?.name ?? null,
+        counterparts: convoCounterparts,
+        lastMessageBody: thread.length ? thread[thread.length - 1].body : null,
+      });
+      return {
+        id: c.id, ini: esc(label.initials), name: esc(label.name), last: esc(label.last), when: c.whenLabel,
+        unread: c.unread, online: c.online, navy: c.navy,
+        messages: thread.map((m) => ({ me: m.senderId ? m.senderId === me?.id : m.me, body: esc(m.body), when: m.timeLabel })),
+      };
+    }),
     // VENTA POR CURSO APAGADA (PRD §13.1): los cursos son valor de la membresía —
     // price 0 → la UI muestra "Gratis"/Inscribirme y /api/checkout inscribe directo.
     catalog: allCourses.map((c) => ({ id: c.id, code: c.code, name: esc(pickLang(c.name, c.nameEn)), coach: esc(c.coachName), color: c.color, price: 0, enrolled: enrolledIds.has(c.id),
@@ -2039,6 +2209,37 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       modules: c.modules.map((m: any) => ({ id: m.id, title: esc(m.title), hidden: !!m.hidden, lessons: m.lessons.map((l: any) => ({ id: l.id, title: esc(l.title), type: l.type, dur: l.dur, due: l.due, hidden: !!l.hidden, dueAt: l.dueAt ? l.dueAt.toISOString() : null, submitKinds: l.submitKinds ?? null, maxPoints: l.maxPoints ?? null, videoKind: l.videoKind, videoSrc: l.videoSrc, contentHtml: l.contentHtml, releaseAfterId: l.releaseAfterId || null })) })),
     }));
     base.reviewsReceived = reviewsReceived;
+  }
+
+  // --- [GOAL-E4 #9] Rama SOLO-ADMIN: catálogo completo para la pantalla "Cursos" ---------
+  // El ítem "Cursos" del nav de admin (shell.ts:123) reusa la pantalla `manage` del profesor,
+  // que lee DB.teacherCourses = los cursos DE LOS QUE EL USUARIO ES DUEÑO. El admin no
+  // imparte ninguno, así que veía "Mis cursos · Sin cursos todavía" mientras su PROPIA
+  // pantalla de Métricas reportaba 5 cursos publicados.
+  // Se sirve un campo PROPIO (`adminCourses`) en vez de rellenar `teacherCourses`: ese lo
+  // consumen también el constructor de cursos y el perfil de coach, y meterle cursos ajenos
+  // abriría mutaciones sobre contenido de otro dueño que aquí no se piden.
+  // Alcance: LISTAR con su dueño (incluidos los borradores, que es lo que un admin necesita
+  // ver) y REASIGNARLO — el endpoint existe: PATCH /api/courses/[id] acepta `teacherId` solo
+  // para ADMIN, valida el destino contra OWNER_ROLES, mueve el snapshot `coachName` y deja
+  // rastro `course.reassign` en la auditoría (app/api/courses/[id]/route.ts:69-86, F6.3). Por
+  // eso viaja también `ownerId`: es el valor que el selector de la tarjeta preselecciona.
+  // La query vive en el Promise.all de arriba y solo consulta para ADMIN.
+  if (me?.role === "ADMIN") {
+    base.adminCourses = (adminCourseRows as any[]).map((c: any) => ({
+      id: c.id,
+      code: c.code,
+      name: esc(pickLang(c.name, c.nameEn)),
+      color: c.color,
+      published: c.published,
+      format: esc(c.format || ""),
+      modality: esc(c.modality || ""),
+      // Dueño real (relación) con caída al denormalizado `coachName` de la fila.
+      ownerId: c.teacher?.id || "",
+      ownerName: esc(c.teacher?.name || c.coachName || ""),
+      moduleCount: c.modules.length,
+      lessonCount: c.modules.reduce((n: number, m: any) => n + (m._count?.lessons || 0), 0),
+    }));
   }
 
   return base;

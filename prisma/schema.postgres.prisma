@@ -136,6 +136,7 @@ model Course {
   reviews      Review[]
 
   @@index([teacherId])
+  @@index([published, position]) // [GOAL E1] catálogo publicado (queries.ts:350): where published + orderBy position, hoy scan+sort
 }
 
 model Review {
@@ -217,6 +218,7 @@ model Module {
   lessons  Lesson[]
 
   @@index([courseId])
+  @@index([courseId, position]) // [GOAL E1] módulos de los cursos inscritos (queries.ts:534): where courseId IN + orderBy courseId,position
 }
 
 model Lesson {
@@ -249,6 +251,7 @@ model Lesson {
   releaseGates   Lesson[] @relation("LessonRelease")
 
   @@index([moduleId])
+  @@index([moduleId, position]) // [GOAL E1] lecciones por módulo (queries.ts:534 include lessons orderBy position, y :355)
 }
 
 // --- Examen creado por el profesor (reemplaza el quiz hardcodeado) ---
@@ -367,6 +370,7 @@ model Notification {
   position Int     @default(0)
 
   @@index([userId])
+  @@index([userId, unread, position]) // [GOAL E1] feed del aula (queries.ts:324-327): where userId + orderBy unread desc, position asc
 }
 
 model QuizAttempt {
@@ -381,6 +385,7 @@ model QuizAttempt {
 
   @@index([userId])
   @@index([userId, lessonTitle]) // mejor intento por lección (anti-farm) en cada envío
+  @@index([userId, createdAt]) // [GOAL E1] historial de intentos (queries.ts:514): where userId + orderBy createdAt desc take 200
 }
 
 model EventItem {
@@ -490,6 +495,7 @@ model ChatMessage {
   position       Int          @default(0)
 
   @@index([conversationId])
+  @@index([conversationId, position]) // [GOAL E1] take-per-parent de 60 msgs (queries.ts:347): orderBy position desc por conversación
 }
 
 model Submission {
@@ -588,6 +594,7 @@ model ActivityEvent {
 
   @@index([userId, createdAt])
   @@index([type])
+  @@index([createdAt]) // [GOAL E1] ranking XP del mes (queries.ts:690): groupBy con where createdAt en rango SIN userId -> [userId, createdAt] no aplica
 }
 
 // --- Guardianship: vínculo parent ↔ student (consentimiento + visibilidad) ---
@@ -803,6 +810,7 @@ model Tournament {
   rounds        TournamentRound[]
 
   @@index([status])
+  @@index([status, startsAt]) // [GOAL E1] torneos UPCOMING|LIVE (queries.ts:593): where status IN + orderBy startsAt asc
 }
 
 model TournamentRegistration {

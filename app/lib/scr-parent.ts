@@ -371,7 +371,10 @@ function membershipCard(kids) {
     return `
     <div class="row between vcenter" style="gap:10px">
       <span style="font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k.name)}</span>
-      <select class="select" data-threshold-child="${esc(k.id)}" aria-label="${t("parent.thresholdAriaFor").replace("{name}", esc(k.name))}" style="flex:none;width:auto;font-size:12.5px;padding:5px 26px 5px 10px">${opts}</select>
+      ${/* [GOAL-E4 revisión · minor 4] split+join, no replace: el 2º argumento de String.replace
+            interpreta `$&`, "$`", `$'` y `$1`, así que un nombre con `&` (que esc() convierte en
+            `&amp;`) corrompía el nombre accesible. Mismo bug que había en scr-admin-users.ts. */''}
+      <select class="select" data-threshold-child="${esc(k.id)}" aria-label="${t("parent.thresholdAriaFor").split("{name}").join(esc(k.name))}" style="flex:none;width:auto;font-size:12.5px;padding:5px 26px 5px 10px">${opts}</select>
     </div>`;
   }).join("");
   return `

@@ -2,6 +2,9 @@
 import { useEffect, useRef } from "react";
 import { renderShell } from "../lib/shell";
 import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
+// [ROUTER-HASH] Mapeo puro ruta↔URL (tests/router-hash.test.ts). La URL manda: sin esto
+// no había deep-link, ni Atrás/Adelante, ni F5 estable en /aula.
+import { parseHash, routeToHash, resolveHashRoute, defaultRouteForRole, isRouteAllowed, isInPageAnchor, routeNeedsContext, contextFallbackRoute } from "../lib/router";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
@@ -52,7 +55,8 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       } catch { /* defensivo: nunca bloquea la navegación */ }
     }
 
-    const ROLE_HOME: any = { admin: "admin", teacher: "teacher", parent: "parent", student: "dashboard" };
+    // El home de cada rol vive en lib/router (defaultRouteForRole) para que la lógica de
+    // hash y la del guard de rol no se puedan desincronizar.
 
     // [A11Y] El SPA inyecta innerHTML sin recargar el documento → teclado y lector de pantalla
     // no detectan el cambio de pantalla. Región aria-live persistente para anunciar la ruta.
@@ -70,18 +74,48 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // El idioma activo (cookie otr_lang) debe reflejarse en <html lang> para el lector de pantalla.
     try { const m = document.cookie.match(/(?:^|;\s*)otr_lang=([^;]+)/); document.documentElement.lang = m && m[1] === "en" ? "en" : "es"; } catch {}
 
-    async function renderApp(r: string, opts?: { keepScroll?: boolean }) {
+    // [ROUTER-CTX] Sello de contexto: go() lo pone con la ruta a la que navega, porque quien
+    // llama acaba de fijar la global de esa pantalla (window.__lesson = X; go('lesson')). Un
+    // render disparado por el HISTORIAL o por el arranque no lo trae → ese contexto no es suyo.
+    let ctxSeal: string | null = null;
+    let mounted = false; // true tras el primer render: a partir de ahí ya hay historial propio
+
+    async function renderApp(r: string, opts?: { keepScroll?: boolean; fromHash?: boolean }) {
       let def = (ROUTES as any)[r];
       if (!def) return;
+      const keep = !!(opts && opts.keepScroll);
+      const fromHash = !!(opts && opts.fromHash);
+      const prevRoute = currentRoute;
+      // [ROUTER-CTX] Pantalla con contexto (lección, ficha de clase, certificado, sala) abierta
+      // desde Atrás/Adelante, F5 o un hash a mano: la global lleva el ítem de OTRA visita (o
+      // ninguno) y se pintaría algo que el usuario no pidió. Se cae al padre de la sección.
+      if (fromHash && routeNeedsContext(r) && ctxSeal !== r) {
+        r = contextFallbackRoute(r, state.role);
+        def = ROUTES[r];
+        if (!def) return;
+      }
+      if (!keep) ctxSeal = null; // el sello vale para UN render, el inmediatamente siguiente
       // Guard de rol en el cliente: si la ruta exige un rol distinto al actual, redirige al
       // home del rol (el backend ya rechaza los datos, pero esto evita pintar UI ajena).
       // def.role puede ser un string (un rol) o una lista (varios roles autorizados).
+      let redirected = false;
       if (def.role) {
         const allowed = Array.isArray(def.role) ? def.role : [def.role];
-        if (!allowed.includes(state.role)) { r = ROLE_HOME[state.role] || "dashboard"; def = (ROUTES as any)[r]; if (!def) return; }
+        if (!allowed.includes(state.role)) { r = defaultRouteForRole(state.role); def = (ROUTES as any)[r]; if (!def) return; redirected = true; }
       }
-      const keep = !!(opts && opts.keepScroll);
+      // [ROUTER-HASH] Entrada fantasma: si la corrección nos devuelve a la pantalla que YA
+      // estaba pintada, la entrada que acaba de crear el hash inválido es un duplicado (dos
+      // entradas con la misma URL → el primer Atrás no hace nada). history.back() la retira y
+      // no hay nada que repintar. Solo en runtime: en el arranque no hay entrada propia.
+      if (redirected && fromHash && mounted && r === prevRoute) { try { history.back(); return; } catch { /* sin History API: sigue por replaceState */ } }
       currentRoute = r; // se fija ANTES del await para el guard "la última navegación gana"
+      // [ROUTER-HASH] La URL refleja SIEMPRE la pantalla que de verdad se pinta: también
+      // cuando el guard de rol o el fallback de contexto redirigieron, y cuando un handler
+      // llamó a renderApp() directo. replaceState no dispara 'hashchange' ni añade entrada al
+      // historial → no hay doble render ni basura en el botón Atrás.
+      if (!keep && parseHash(window.location.hash)?.route !== r) {
+        try { history.replaceState(null, "", window.location.pathname + window.location.search + routeToHash(r)); } catch { /* navegadores sin History API: la nav sigue funcionando */ }
+      }
       // [UI-CURSOS U4] Publica la ruta viva: los paneles EMBEBIDOS (p.ej. las reservas dentro
       // de Cursos) necesitan repintar "donde estoy" tras una mutación, no saltar a una
       // pantalla propia — que puede no existir.
@@ -132,7 +166,44 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       // del rol → navegación instantánea sin inflar el bundle inicial.
       prefetchForRole(state.role);
     }
-    (window as any).go = (r: string) => { void renderApp(r); };
+    // [ROUTER-HASH] go() ya NO pinta: escribe la URL. El repintado lo dispara el listener de
+    // 'hashchange' de más abajo, así el mismo camino sirve para un click, para Atrás/Adelante
+    // y para un hash escrito a mano — una sola fuente de verdad, sin doble render.
+    // Excepción: si el hash YA es esta ruta no habrá evento, así que se repinta directo. Hace
+    // falta para los saltos misma-ruta-otro-contexto (ficha de clase → otra ficha: cambia
+    // window.__listing y go('listing') tiene que repintar) y conserva el comportamiento previo.
+    function go(r: string) {
+      if (!ROUTES[r]) return;
+      // El contexto que el llamador acaba de fijar (window.__lesson = X; go('lesson')) es
+      // válido para ESTE render: se sella para que el render disparado por el hash lo acepte.
+      ctxSeal = r;
+      // Ruta que no es del rol: no merece entrada propia en el historial. Se pinta directo —
+      // renderApp redirige al home y corrige la URL con replaceState (semántica replace).
+      if (!isRouteAllowed(r, state.role)) { void renderApp(r); return; }
+      // Se escribe el hash destino COMPLETO: así un '#lesson/L-101' viejo no se queda mintiendo
+      // al saltar a otra lección de la misma ruta.
+      const h = routeToHash(r);
+      // ÚNICA rama sin evento: el hash ya es exactamente el destino → no habrá 'hashchange'
+      // que espere nadie, así que se repinta directo (salto misma-ruta-otro-contexto: otra
+      // ficha de clase, otro curso, refresco tras mutación).
+      if (window.location.hash === h) { void renderApp(r); return; }
+      window.location.hash = h; // el resto lo pinta el listener → una sola fuente de verdad
+    }
+    (window as any).go = go;
+    const onHashChange = () => {
+      const h = window.location.hash;
+      // Ancla IN-PAGE, no ruta: el skip-link (#content, primer tab-stop de toda pantalla) y el
+      // índice de lección (#s1/#s2/#s3). Es el navegador saltando dentro del documento: ni se
+      // repinta ni se corrige la URL. El redirect de un hash desconocido es cosa del arranque.
+      if (isInPageAnchor(h)) return;
+      const parsed = parseHash(h);
+      if (!parsed) return; // hash vacío ('' o '#'): tampoco es navegación
+      // Un hash que SÍ es ruta repinta SIEMPRE, aunque coincida con la ruta actual: eso ES el
+      // refresco tras mutación (crear un torneo → go('events')), que antes se perdía cuando el
+      // hash venía desincronizado por un ancla in-page.
+      void renderApp(parsed.route, { fromHash: true });
+    };
+    window.addEventListener("hashchange", onHashChange);
 
     let toastWrap: HTMLElement | null = null;
     function toast(msg: string, tone?: string, action?: { label?: string; onClick: () => void }) {
@@ -246,8 +317,16 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const lbl = `<label class="label" for="${fid}">${f.label}${reqMark}</label>`;
         const hint = `<p class="fm-fieldhint" id="${hintId}" role="alert" style="color:var(--danger);font-size:12px;margin:4px 0 0;display:none"></p>`;
         const wrap = (ctrl: string) => `<div class="field" style="margin-bottom:12px">${lbl}${ctrl}${hint}</div>`;
+        // [CIERRE · C1] `o.label` se pinta CRUDO a propósito: es el contrato de la casa
+        // (queries.ts escapa el texto de usuario UNA vez y los builders pintan crudo), y aquí
+        // llegan etiquetas ya escapadas desde DB (nombres de curso/sección/actividad de
+        // DB.manage y DB.teacherCourses) — escaparlas otra vez sacaría "Debate &amp;amp; Oratoria".
+        // Quien alimente este select con texto CRUDO de una API (p.ej. los coaches de
+        // /api/admin/users) escapa EN SU BORDE, como hacen openCourseStart() aquí abajo y
+        // el "Reasignar dueño" de scr-extra. `o.value` sí se escapa: va en un atributo y son
+        // siempre ids/enums (esc es no-op), así que cierra el hueco sin tocar ninguna capa.
         return f.type === "select"
-          ? wrap(`<select class="select" id="${fid}" data-f="${f.name}" aria-describedby="${hintId}"${req}>${(f.options || []).map((o: any) => `<option value="${o.value}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("")}</select>`)
+          ? wrap(`<select class="select" id="${fid}" data-f="${f.name}" aria-describedby="${hintId}"${req}>${(f.options || []).map((o: any) => `<option value="${esc(o.value)}" ${o.value === f.value ? "selected" : ""}>${o.label}</option>`).join("")}</select>`)
           : f.type === "richtext"
             ? wrap(`<div class="row" style="gap:4px;margin-bottom:6px;flex-wrap:wrap">${([["bold", "<b>B</b>", tr("aula.rtBold")], ["italic", "<i>I</i>", tr("aula.rtItalic")], ["formatBlock:h3", "H", tr("aula.rtHeading")], ["insertUnorderedList", `• ${tr("aula.rtList")}`, tr("aula.rtList")], ["createLink", '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11.5 6.5l1-1a4 4 0 0 1 6 6l-1 1"/><path d="M12.5 17.5l-1 1a4 4 0 0 1-6-6l1-1"/></svg>', tr("aula.rtLink")], ["removeFormat", "⨯", tr("aula.rtClearFormat")]] as any[]).map((c) => `<button type="button" class="btn btn-quiet btn-sm" data-rcmd="${c[0]}" title="${c[2]}">${c[1]}</button>`).join("")}</div><div class="input" id="${fid}" data-f="${f.name}" data-rich="1" contenteditable="true" aria-describedby="${hintId}"${req} style="min-height:140px;max-height:340px;overflow:auto;resize:vertical;line-height:1.6;padding:10px">${f.value || ""}</div>`)
             : f.type === "textarea"
@@ -459,7 +538,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         const coaches = await loadAdminCoaches();
         fields.push({ name: "teacherId", label: tr("aula.courseOwner"), type: "select", value: "", options: [
           { value: "", label: tr("aula.courseOwnerSelf") },
-          ...coaches.map((c) => ({ value: c.id, label: c.name })),
+          // [CIERRE · C1] `name` viene CRUDO de /api/admin/users (no pasa por queries.ts), y
+          // el <option> se pinta crudo: sin esc() un coach podía guardarse un nombre con
+          // markup y ejecutarlo en el navegador del ADMIN al abrir "Nuevo curso". Se escapa
+          // en el borde, exactamente como el "Reasignar dueño" de scr-extra (misma API).
+          ...coaches.map((c) => ({ value: c.id, label: esc(c.name) })),
         ] });
       }
       formModal(tpl ? tr("aula.newCourseTpl").replace("{name}", tpl.name) : tr("aula.newCourse"), fields, async (v) => {
@@ -473,7 +556,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         else toast(tr("aula.courseCreated"), "ok");
         await refresh();
         // Flujo Moodle: entrar directo al constructor del curso recién creado.
-        if (newId) { (window as any).__builderCourseId = newId; try { sessionStorage.setItem("otr_builder_course", newId); } catch {} renderApp("course-builder"); }
+        if (newId) { (window as any).__builderCourseId = newId; try { sessionStorage.setItem("otr_builder_course", newId); } catch {} go("course-builder"); }
       });
     }
     // Duplicar (clonar) una actividad o sección orquestando los POST existentes.
@@ -639,7 +722,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         // [LEARN-2] Entrar directo al curso recién inscrito (antes solo refrescaba el catálogo
         // y el alumno se quedaba ahí sin un siguiente paso claro). __course indexa por code.
         const enrolled = ((DB as any).coursesContent || []).find((c: any) => c.dbId === courseId || c.id === courseId);
-        if (enrolled) { (window as any).__course = enrolled.code; renderApp("course"); }
+        if (enrolled) { (window as any).__course = enrolled.code; go("course"); }
       } catch (e: any) { toast(e.message || tr("err.generic"), "danger"); }
     }
     // [LEARN-1] Reclamar el diploma al completar un programa al 100%. El endpoint ya existía
@@ -653,7 +736,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         (window as any).__cert = d?.certificate?.id || null;
         toast(tr("aula.certIssued"), "ok");
         await refresh();
-        renderApp("certificate");
+        go("certificate");
       } catch (e: any) { toast(e.message || tr("aula.programNotCompleted"), "danger"); }
     }
     // [COACH-05] Publicar / pasar a borrador un curso sin abrir el modal de Configuración.
@@ -933,6 +1016,21 @@ export default function Aula({ data, user }: { data: any; user: any }) {
 
     const onClick = (e: MouseEvent) => {
       const t = e.target as HTMLElement;
+      // [CIERRE · O12] Skip-link (shell.ts: <a href="#content">). El salto NATIVO reescribe
+      // el hash a '#content', que en esta SPA es la ÚNICA fuente de verdad de la ruta: la
+      // URL dejaba de decir dónde estabas y un F5 después de saltar al contenido tiraba al
+      // usuario a la home de su rol, perdiendo el deep-link (ficha de clase, curso, hilo).
+      // Se hace el salto a mano —foco en #content, que ya tiene tabindex="-1" justo para
+      // esto— y NO se toca la URL: así el hash de ruta se conserva sin carreras con el
+      // 'hashchange' del salto (restaurarlo después con replaceState compite con el evento
+      // que el propio salto encola). Efecto visible idéntico: el foco aterriza en el <main>.
+      const skip = t.closest("a.skip-link") as HTMLElement | null;
+      if (skip) {
+        e.preventDefault();
+        const main = document.getElementById("content");
+        if (main) main.focus();
+        return;
+      }
       if (t.closest("#create-menu")) { e.stopPropagation(); openCreateMenu(); return; }
 
       // [UI-NAV N2] Menú de cuenta del chip de usuario. Se cierra al elegir (el data-go
@@ -1076,7 +1174,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       if (dupEl) { e.preventDefault(); const [dk, di] = dupEl.getAttribute("data-duplicate")!.split(":"); duplicateEntity(dk, di); return; }
       // Constructor de curso estilo Moodle.
       const goBuilderEl = t.closest("[data-go-builder]") as HTMLElement | null;
-      if (goBuilderEl) { e.preventDefault(); const cid = goBuilderEl.getAttribute("data-go-builder")!; (window as any).__builderCourseId = cid; try { sessionStorage.setItem("otr_builder_course", cid); } catch {} renderApp("course-builder"); return; }
+      if (goBuilderEl) { e.preventDefault(); const cid = goBuilderEl.getAttribute("data-go-builder")!; (window as any).__builderCourseId = cid; try { sessionStorage.setItem("otr_builder_course", cid); } catch {} go("course-builder"); return; }
       const chooserEl = t.closest("[data-open-chooser]") as HTMLElement | null;
       if (chooserEl) { e.preventDefault(); openActivityChooser(chooserEl.getAttribute("data-open-chooser")!); return; }
       if (t.closest("[data-toggle-edit]")) { e.preventDefault(); const cur = (window as any).__editMode !== false; (window as any).__editMode = !cur; try { sessionStorage.setItem("otr_edit_mode", !cur ? "1" : "0"); } catch {} renderApp(currentRoute, { keepScroll: true }); return; }
@@ -1111,7 +1209,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const reviewEl = t.closest('[data-action="leave-review"]') as HTMLElement | null;
       if (reviewEl) { e.preventDefault(); leaveReview(reviewEl.getAttribute("data-course")!); return; }
       const goEl = t.closest("[data-go]") as HTMLElement | null;
-      if (goEl) { e.preventDefault(); renderApp(goEl.getAttribute("data-go")!); return; }
+      if (goEl) { e.preventDefault(); go(goEl.getAttribute("data-go")!); return; }
       const acc = t.closest("[data-acc]") as HTMLElement | null;
       if (acc) { const open = acc.closest(".module")?.classList.toggle("open"); acc.setAttribute("aria-expanded", open ? "true" : "false"); return; }
       const toastEl = t.closest("[data-toast]") as HTMLElement | null;
@@ -1122,7 +1220,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       const inp = e.target as HTMLElement;
       if (inp && inp.matches?.(".searchbox input") && e.key === "Enter") {
         (window as any).__q = (inp as HTMLInputElement).value;
-        renderApp("search");
+        go("search");
         return;
       }
       // [A11Y-01] Activa con Enter/Espacio los contenedores clicables marcados como
@@ -1161,7 +1259,10 @@ export default function Aula({ data, user }: { data: any; user: any }) {
         // Solo cierran con Escape los modales con affordance de cerrar ([data-x]);
         // los de progreso (sin botón) lo ignoran a propósito.
         const x = scrim.querySelector("[data-x]") as HTMLElement | null;
-        if (x) { e.preventDefault(); x.click(); }
+        // stopPropagation: close() quita el scrim SÍNCRONO, así que sin esto el mismo
+        // Escape seguiría burbujeando hasta onPopoverKey ya sin scrim en el DOM y
+        // cerraría también el popover abierto detrás del modal (revisión E3).
+        if (x) { e.preventDefault(); e.stopPropagation(); x.click(); }
       } else if (e.key === "Tab") {
         const f = mdlFocusables(scrim);
         if (!f.length) { e.preventDefault(); return; }
@@ -1184,7 +1285,49 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     mdlObserver.observe(document.body, { childList: true });
     document.addEventListener("keydown", onModalKey, true);
 
-    let startRoute = state.role === "admin" ? "admin" : state.role === "teacher" ? "teacher" : state.role === "parent" ? "parent" : "dashboard";
+    // [A11Y · GOAL 2026-08 · K-06] Escape descarta los POPOVERS del top-nav (menú "Más" y
+    // menú de cuenta) y devuelve el foco a su disparador. Antes solo se cerraban con un
+    // CLICK fuera: con teclado no había forma de descartarlos sin activar un ítem, y el
+    // aria-expanded del chip se quedaba en "true" con el panel flotando sobre el contenido.
+    // NO son diálogos: no se atrapa el foco ni se inerte el resto — solo el descarte que
+    // pide APG para un disclosure. Si hay un modal abierto, este handler se aparta: ese
+    // Escape es suyo (onModalKey, en fase de captura, ya lo atendió).
+    const onPopoverKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || document.querySelector(".modal-scrim")) return;
+      const focused = document.activeElement as HTMLElement | null;
+      // El foco solo se MUEVE si estaba dentro del popover (o en su propio disparador):
+      // un Escape tecleado en otra parte de la página no debe robárselo a nadie.
+      const restore = (trigger: HTMLElement | null, wasInside: boolean) => {
+        if (trigger && wasInside) { try { trigger.focus(); } catch { /* elemento ya fuera del DOM */ } }
+      };
+      let closed = false;
+
+      const more = document.querySelector(".tn-more[open]") as HTMLDetailsElement | null;
+      if (more) {
+        const summary = more.querySelector("summary") as HTMLElement | null;
+        const inside = !!focused && more.contains(focused);
+        more.open = false;
+        restore(summary, inside);
+        closed = true;
+      }
+
+      const userMenu = document.getElementById("sb-usermenu");
+      if (userMenu && !userMenu.hidden) {
+        const trigger = document.querySelector("[data-user-menu]") as HTMLElement | null;
+        const inside = !!focused && (userMenu.contains(focused) || !!trigger?.contains(focused));
+        userMenu.hidden = true;
+        trigger?.setAttribute("aria-expanded", "false");
+        restore(trigger, inside);
+        closed = true;
+      }
+
+      if (closed) e.preventDefault();
+    };
+    document.addEventListener("keydown", onPopoverKey);
+
+    // [ROUTER-HASH] Arranque: si la URL trae una ruta VÁLIDA PARA EL ROL, se abre esa
+    // (deep-link y F5 se quedan donde estabas); si no —o si es de otro rol— el home del rol.
+    let startRoute = resolveHashRoute(window.location.hash, state.role);
     // [ONBOARDING-1] Orden correcto del arranque: el placement del alumno nuevo (PRD §2.2
     // Journey A) DEBE ganar sobre el flag de onboarding del registro — antes `otr_onboard`
     // lo pisaba y el alumno nunca hacía su evaluación inicial (radar vacío para siempre).
@@ -1193,8 +1336,11 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     try { justRegistered = !!sessionStorage.getItem("otr_onboard"); sessionStorage.removeItem("otr_onboard"); } catch {}
     if (state.role === "student" && data?.me?.needsPlacement) startRoute = "placement";
     else if (justRegistered) startRoute = "onboarding";
-    renderApp(startRoute);
-    return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); };
+    // fromHash: el arranque tampoco trae contexto fresco → un F5 sobre #lesson cae a #course
+    // en vez de pintar la lección de otra visita. mounted se activa DESPUÉS: durante el primer
+    // render todavía no hay entrada de historial propia que retirar.
+    renderApp(startRoute, { fromHash: true }).finally(() => { mounted = true; });
+    return () => { root.removeEventListener("click", onClick); root.removeEventListener("keydown", onKey); window.removeEventListener("hashchange", onHashChange); mdlObserver.disconnect(); document.removeEventListener("keydown", onModalKey, true); document.removeEventListener("keydown", onPopoverKey); };
   }, []);
 
   return <div ref={ref} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: initialHtml }} />;

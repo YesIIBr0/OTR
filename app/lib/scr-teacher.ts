@@ -130,7 +130,11 @@ export const S = {};
                   <div class="ev-title">${esc(s.n)}</div>
                   <div class="ev-meta">${s.att!=null&&s.att<70?t("teacher.lowAttendance"):t("teacher.noSubmissions")} · ${esc(s.last)}</div>
                 </div>
-                <div class="ev-actions"><button class="btn btn-outline btn--sm" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>
+                ${/* [GOAL S1] Botón SOLO-ICONO: `title` NO es un nombre accesible fiable (VoiceOver/NVDA
+                     lo anuncian vacío). aria-label con el nombre del alumno, que además distingue los
+                     N botones idénticos de la lista. s.n ya viene escapado de queries.ts (contrato de
+                     escape: aquí se renderiza crudo). */""}
+                <div class="ev-actions"><button class="btn btn-outline btn--sm" data-go="messages" aria-label="${t("teacher.sendMessageTo").split("{name}").join(s.n)}" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>
               </div>`).join('')}
             ${atRisk.length?'':'<div class="empty"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.noAlertsTitle")+'</h4><p>'+t("teacher.noAlertsBody")+'</p></div>'}
           </div>
@@ -623,7 +627,9 @@ export const S = {};
         <td class="center"><div class="row vcenter" style="gap:6px;justify-content:flex-end">
           <button class="btn btn-outline btn-sm" data-adjudicate="${s.id}" data-name="${esc(s.n)}">${t("teacher.adjudicate")}</button>
           <button class="btn btn-outline btn-sm" data-action="eval-skills" data-user="${s.id}" data-name="${esc(s.n)}">${t("teacher.evaluate")}</button>
-          <button class="icon-btn" style="width:30px;height:30px" data-go="messages" title="${t("teacher.sendMessage")}">${IC.msg}</button>
+          ${/* [GOAL S1] Ídem que en el panel del profesor: solo-icono ⇒ aria-label obligatorio.
+               Sin él la tabla ofrece 8 botones que el lector de pantalla anuncia todos vacíos. */""}
+          <button class="icon-btn" style="width:30px;height:30px" data-go="messages" aria-label="${t("teacher.sendMessageTo").split("{name}").join(s.n)}" title="${t("teacher.sendMessage")}">${IC.msg}</button>
         </div></td>
       </tr>`;
 
@@ -790,26 +796,37 @@ export const S = {};
         ["Evidence/Research", t("teacher.critEvidence")], ["Crossfire", t("teacher.critCrossfire")],
       ];
       // El respiro entre campos lo pone .modal--v2 (18px), no un inline de 12px.
-      const fld = (label, html) => `<div class="field"><label class="label">${label}</label>${html}</div>`;
+      // [GOAL K-14] La <label> se ATA a su control (for=id, mismo patrón que formModal de
+      // Aula.tsx): sin `for` el lector de pantalla anuncia "edit text" sin decir de qué campo.
+      // `forId` vacío ⇒ el bloque no es un control único (la rúbrica son 5): en ese caso la
+      // label lleva id propio y el grupo la referencia con aria-labelledby.
+      const fld = (label, html, forId) => forId
+        ? `<div class="field"><label class="label" for="${forId}">${label}</label>${html}</div>`
+        : `<div class="field"><label class="label" id="bl-rubric-lbl">${label}</label>${html}</div>`;
       body.querySelectorAll("[data-adjudicate]").forEach((btn) =>
         btn.addEventListener("click", () => {
           const uid = btn.getAttribute("data-adjudicate");
           const name = btn.getAttribute("data-name") || t("teacher.studentFallbackName");
           // [MOCKUP V2 §7] La rúbrica pasa a rejilla de datos: un solo borde exterior y
           // divisores de 1px entre criterios (menos peso visual, más aire real entre campos).
-          const rubric = `<div class="adj-rubric">${CRIT.map(([k, es]) =>
-            `<div class="adj-crit"><span>${es}</span><input class="input bl-score" data-c="${k}" type="number" min="0" max="10" step="1" value="7"/></div>`).join("")}</div>`;
+          // [GOAL K-14] Cada criterio es su propio control con nombre: la fila pasa a <label>
+          // que ENVUELVE al input y además lo referencia por id. Antes eran 5 spin buttons
+          // anónimos ("spin button, 7" ×5). La fila sigue siendo .adj-crit > span + .input, así
+          // que el CSS del kit (rejilla, divisores, ancho 62px) no cambia ni un píxel.
+          const critId = (k) => "bl-score-" + String(k).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+          const rubric = `<div class="adj-rubric" role="group" aria-labelledby="bl-rubric-lbl">${CRIT.map(([k, es]) =>
+            `<label class="adj-crit" for="${critId(k)}"><span>${es}</span><input class="input bl-score" id="${critId(k)}" data-c="${k}" type="number" min="0" max="10" step="1" value="7"/></label>`).join("")}</div>`;
           // [RATING-1 §6.2] PF/Policy/Parli son 2v2: el coach puede nombrar al compañero
           // (otro de sus alumnos) para que SU rating también se mueva con el resultado.
           const partnerOpts = (DB.students || []).filter((s) => s.id !== uid)
             .map((s) => `<option value="${s.id}">${esc(s.n)}</option>`).join("");
           const bodyHtml =
-            fld(t("teacher.adjResultLabel"), `<select class="select" id="bl-result"><option value="WIN">${t("teacher.adjResultWin")}</option><option value="LOSS">${t("teacher.adjResultLoss")}</option></select>`) +
-            fld(t("teacher.adjFormatLabel"), `<select class="select" id="bl-format"><option value="PF">Public Forum</option><option value="LD">Lincoln-Douglas</option><option value="Policy">Policy</option><option value="Parli">${t("teacher.adjFormatParli")}</option></select>`) +
-            fld(t("teacher.adjOpponentLabel"), `<input class="input" id="bl-opp" placeholder="${t("teacher.adjOpponentPh")}"/>`) +
-            (partnerOpts ? fld(t("teacher.adjPartnerLabel"), `<select class="select" id="bl-partner"><option value="">${t("teacher.adjPartnerNone")}</option>${partnerOpts}</select>`) : "") +
+            fld(t("teacher.adjResultLabel"), `<select class="select" id="bl-result"><option value="WIN">${t("teacher.adjResultWin")}</option><option value="LOSS">${t("teacher.adjResultLoss")}</option></select>`, "bl-result") +
+            fld(t("teacher.adjFormatLabel"), `<select class="select" id="bl-format"><option value="PF">Public Forum</option><option value="LD">Lincoln-Douglas</option><option value="Policy">Policy</option><option value="Parli">${t("teacher.adjFormatParli")}</option></select>`, "bl-format") +
+            fld(t("teacher.adjOpponentLabel"), `<input class="input" id="bl-opp" placeholder="${t("teacher.adjOpponentPh")}"/>`, "bl-opp") +
+            (partnerOpts ? fld(t("teacher.adjPartnerLabel"), `<select class="select" id="bl-partner"><option value="">${t("teacher.adjPartnerNone")}</option>${partnerOpts}</select>`, "bl-partner") : "") +
             fld(t("teacher.adjRubricLabel"), rubric) +
-            fld(t("teacher.adjCommentsLabel"), `<textarea class="input" id="bl-comments" rows="3" placeholder="${t("teacher.adjCommentsPh")}" style="resize:vertical;min-height:72px"></textarea>`);
+            fld(t("teacher.adjCommentsLabel"), `<textarea class="input" id="bl-comments" rows="3" placeholder="${t("teacher.adjCommentsPh")}" style="resize:vertical;min-height:72px"></textarea>`, "bl-comments");
           const m = buildModal({ title: t("teacher.adjModalTitle").replace("{name}", name), bodyHtml, okLabel: t("teacher.adjPublishBtn") });
           m.okBtn.addEventListener("click", async () => {
             const result = m.body.querySelector("#bl-result").value;

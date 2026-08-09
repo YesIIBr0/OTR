@@ -45,9 +45,22 @@ const safeSrc = (u) => {
   const s = String(u || "").trim();
   return /^https?:\/\//i.test(s) || (s.startsWith("/") && !s.startsWith("//")) ? s : "";
 };
+/* [CIERRE · C2] Separador de credenciales: salto de línea o ';' — pero NUNCA el ';' que
+   CIERRA una entidad HTML. El texto llega escapado (queries.ts y, desde el cierre, también
+   /api/coaches/[id]), así que un coach de "St. Michael's" viaja como "St. Michael&#39;s" y
+   el `split(/\n|;/)` de antes lo partía en "St. Michael&#39" — la línea se leía rota en la
+   ficha. El lookbehind deja pasar &amp; &lt; &gt; &quot; &#39; y los numéricos. */
+const CRED_SEP = /\n|(?<!&(?:#\d{1,7}|#x[\da-f]{1,6}|[a-z]{2,8}));/i;
 const langBadges = (languages) =>
   String(languages || "ES").split(/[,·/]/).map((l) => l.trim()).filter(Boolean).slice(0, 3)
     .map((l) => `<span class="chip chip--outline">${esc(l.toUpperCase())}</span>`).join("");
+// [GOAL-E4 #1] `responseTime` guarda SOLO la magnitud ("~2 h"); la etiqueta la pone la vista
+// con t("mkt.respondsIn") para que traduzca a EN. Datos LEGACY (seed viejo y perfiles ya
+// guardados en producción) traen la frase completa "Responde en ~2 h" → se leía
+// "Responde en Responde en ~2 h", y en la UI en inglés "Responds in Responde en ~2 h".
+// Defensa: si el valor ya empieza por la etiqueta (ES o EN), se la quitamos antes de pintar.
+const RESPONDS_IN_LABEL_RE = /^\s*(responde\s+en|responds?\s+in|replies\s+in)\b[\s:·–—-]*/i;
+const respondsInValue = (v) => String(v || "").replace(RESPONDS_IN_LABEL_RE, "").trim();
 // Etiqueta relativa simple desde un ISO ("hoy", "hace 3 días", "hace 2 meses").
 const whenAgo = (iso) => {
   const ts = Date.parse(iso || "");
@@ -73,6 +86,13 @@ const normReview = (r) => ({
 });
 
 /* ---------------- normalización de datos (defensiva) ---------------- */
+/* [CIERRE · C2 · contrato de escape] TODO el texto de usuario que entra aquí llega ESCAPADO
+   UNA vez desde su borde: el listado por queries.ts (DB.marketplace) y el detalle por
+   GET /api/coaches/[id]. Como renderProfile mezcla `{...base, ...detail}` (el detalle PISA
+   al base), las dos fuentes tienen que escapar igual o el mismo campo saldría crudo tras
+   loadDetail() y doble antes. Consecuencia para el builder: pinta CRUDO. Las únicas esc()
+   que quedan son de transporte (valor dentro de un atributo, p.ej. data-coach-name, que
+   getAttribute vuelve a decodificar) o de URL. */
 function normCoach(c = {}) {
   const name = c.name || t("mkt.coachFallbackName");
   const packages = Array.isArray(c.packages) ? c.packages : [];
@@ -211,8 +231,8 @@ function coachPackages(c) {
 /* ---------------- tarjeta de coach (grid) ---------------- */
 function coachCard(c, i) {
   const avatar = c.photoUrl
-    ? `<span class="avatar lg" style="background:var(--otr-navy) url('${esc(c.photoUrl)}') center/cover no-repeat;color:transparent">${esc(c.initials)}</span>`
-    : C.avatar(esc(c.initials), { size: "lg", bg: "var(--otr-navy)" });
+    ? `<span class="avatar lg" style="background:var(--otr-navy) url('${esc(c.photoUrl)}') center/cover no-repeat;color:transparent">${c.initials}</span>`
+    : C.avatar(c.initials, { size: "lg", bg: "var(--otr-navy)" });
   return `
   <div class="tile click fade-up" data-coach="${esc(c.id)}" role="button" tabindex="0" aria-label="${t("mkt.viewProfileOf")} ${c.name}" style="display:flex;flex-direction:column;--d:${i}">
     <div class="row" style="gap:12px">
@@ -327,7 +347,7 @@ function heroBlock(c) {
   }
   return `
   <div class="mkt-hero">
-    ${C.avatar(esc(c.initials), { size: "lg", bg: "rgba(255,255,255,.14)" })}
+    ${C.avatar(c.initials, { size: "lg", bg: "rgba(255,255,255,.14)" })}
     <div>
       <p class="eyebrow" style="color:var(--otr-green)">${t("mkt.verifiedCoachEyebrow")}</p>
       <div class="brand-font" style="font-size:24px;font-weight:800;color:#fff;margin-top:2px">${c.name}</div>
@@ -394,7 +414,7 @@ function bookingCard(c, canBook, role) {
       : t("mkt.roleMsgCoach");
     return `
     <div class="card card-pad">
-      ${C.secTitle(t("mkt.bookingsLabel"), { sm: true })}
+      ${C.secTitle(t("mkt.bookingsLabel"), { sm: true, tag: "h2" })}
       <p class="muted" style="font-size:12.5px">${msg}</p>
     </div>`;
   }
@@ -433,7 +453,7 @@ function bookingCard(c, canBook, role) {
 
   return `
   <div class="card card-pad">
-    ${C.secTitle(t("mkt.bookSessionTitle"), { sm: true })}
+    ${C.secTitle(t("mkt.bookSessionTitle"), { sm: true, tag: "h2" })}
     ${isParent && kids.length ? `
     <p class="label" style="margin:14px 0 8px">${t("mkt.forChild")}</p>
     <select class="select" data-mk-child style="width:100%">
@@ -448,7 +468,7 @@ function bookingCard(c, canBook, role) {
         return `
         <button class="tile" data-mk-pkg="${esc(p.key)}" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;padding:11px 13px;${on ? "border-color:var(--otr-black);box-shadow:none" : ""}">
           <span style="flex:1;min-width:0">
-            <b style="font-size:13px;display:block">${esc(p.name)}</b>
+            <b style="font-size:13px;display:block">${p.name}</b>
             <span class="faint" style="font-size:11.5px">${p.sessions} ${p.sessions === 1 ? t("mkt.sessionUnitSingular") : t("mkt.sessionUnitPlural")} · 60 min</span>
           </span>
           ${p.discountPct > 0 ? C.chip(`-${p.discountPct}%`, "accent", { attrs: 'style="flex:none"' }) : ""}
@@ -473,7 +493,7 @@ function bookingCard(c, canBook, role) {
     ${pkg && sel.slotIso ? `
     <div class="divider"></div>
     <div class="stack" style="gap:6px;font-size:13px">
-      <div class="row between"><span class="muted">${t("mkt.summaryPackage")}</span><b>${esc(pkg.name)}</b></div>
+      <div class="row between"><span class="muted">${t("mkt.summaryPackage")}</span><b>${pkg.name}</b></div>
       <div class="row between"><span class="muted">${t("mkt.summaryFirstSession")}</span><b>${esc(sel.dayLabel || (day ? day.label : ""))} · ${esc(sel.slotLabel)}</b></div>
       <div class="row between"><span class="muted">${t("mkt.summaryTotal")}</span><b class="cc-pct" style="font-size:15px;font-weight:800">${money(pkg.priceCents)}</b></div>
     </div>
@@ -512,7 +532,11 @@ function renderProfile(state) {
       <div class="row between wrap" style="gap:12px;align-items:flex-start">
         <div style="min-width:0">
           <div class="row vcenter wrap" style="gap:8px">
-            <b class="brand-font" style="font-size:21px;font-weight:800;letter-spacing:-.025em">${c.name}</b>
+            ${/* [GOAL-E4 #2] El nombre del coach ES el título de esta pantalla: era un <b>, así que
+                  la ficha no tenía ningún h1/h2/h3 y un lector de pantalla no encontraba el título
+                  ni podía saltar por jerarquía. Pasa a <h1> conservando clase y estilo (se anula el
+                  margen del user-agent); las secciones de abajo pasan de h4 a h2 (sin saltos). */""}
+            <h1 class="brand-font" style="font-size:21px;font-weight:800;letter-spacing:-.025em;margin:0">${c.name}</h1>
             ${c.verified ? C.chip(t("mkt.verified"), "accent", { ic: "checkCircle" }) : ""}
             ${langBadges(c.languages)}
           </div>
@@ -522,7 +546,7 @@ function renderProfile(state) {
               ? `${stars(c.rating, 13)}<b>${c.rating.toFixed(1)}</b><span class="faint">${c.reviews} ${c.reviews === 1 ? t("mkt.reviewUnitSingular") : t("mkt.reviewUnitPlural")}</span>`
               : C.chip(t("mkt.newCoach"), "tint")}
             ${c.bookingCount ? `<span class="dot-sep"></span><span class="faint">${t("mkt.sessionsBooked").replace("{n}", String(c.bookingCount))}</span>` : ""}
-            ${c.responseTime ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${esc(c.responseTime)}</span>` : ""}
+            ${respondsInValue(c.responseTime) ? `<span class="dot-sep"></span><span class="faint">${t("mkt.respondsIn")} ${respondsInValue(c.responseTime)}</span>` : ""}
           </div>
         </div>
         ${c.fromCents > 0 ? `<div style="text-align:right;flex:none"><span class="faint" style="font-size:11.5px;display:block">${t("mkt.from")}</span><b class="cc-pct brand-font" style="font-size:22px;font-weight:800">${money(c.fromCents)}</b><span class="faint" style="font-size:11.5px;display:block">${t("mkt.perSession")}</span></div>` : ""}
@@ -534,27 +558,27 @@ function renderProfile(state) {
     <div class="stack" style="gap:16px">
       ${loading ? `<div class="card card-pad fade-up"><p class="muted" style="font-size:13px">${t("mkt.loadingProfile")}</p></div>` : ""}
       <div class="card card-pad fade-up" style="--d:1">
-        ${C.secTitle(`${t("mkt.aboutPrefix")} ${esc(c.name.split(" ")[0] || t("mkt.theCoach"))}`, { sm: true })}
-        <p class="muted" style="font-size:13.5px;line-height:1.6">${c.bio ? esc(c.bio) : t("mkt.noBio")}</p>
-        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true })}<div class="stack" style="gap:6px">${String(c.credentials).split(/\n|;/).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${esc(x)}</div>`).join("")}</div>` : ""}
-        ${specs.length ? `<div class="divider"></div>${C.secTitle(t("mkt.specialties"), { sm: true })}<div class="row wrap" style="gap:6px">${specs.map((s) => `<span class="chip chip--outline">${s}</span>`).join("")}</div>` : ""}
+        ${C.secTitle(`${t("mkt.aboutPrefix")} ${c.name.split(" ")[0] || t("mkt.theCoach")}`, { sm: true, tag: "h2" })}
+        <p class="muted" style="font-size:13.5px;line-height:1.6">${c.bio ? c.bio : t("mkt.noBio")}</p>
+        ${c.credentials ? `<div class="divider"></div>${C.secTitle(t("mkt.credentials"), { sm: true, tag: "h2" })}<div class="stack" style="gap:6px">${String(c.credentials).split(CRED_SEP).map((x) => x.trim()).filter(Boolean).map((x) => `<div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2)"><span style="display:inline-flex;width:14px;height:14px;flex:none;color:var(--otr-green);margin-top:1px">${IC.award}</span>${x}</div>`).join("")}</div>` : ""}
+        ${specs.length ? `<div class="divider"></div>${C.secTitle(t("mkt.specialties"), { sm: true, tag: "h2" })}<div class="row wrap" style="gap:6px">${specs.map((s) => `<span class="chip chip--outline">${s}</span>`).join("")}</div>` : ""}
       </div>
 
       <div class="card card-pad fade-up" style="--d:2">
-        ${C.secTitle(t("mkt.reviewsTitle"), { sm: true, right: C.chip(String(c.reviews), "black") })}
+        ${C.secTitle(t("mkt.reviewsTitle"), { sm: true, tag: "h2", right: C.chip(String(c.reviews), "black") })}
         <p class="faint" style="font-size:11.5px;margin-top:4px">${t("mkt.reviewsEligibility")}</p>
         ${reviews.length ? `<div class="stack" style="gap:0;margin-top:6px">${reviews.slice(0, 6).map((r) => `
           <div style="padding:12px 0;border-bottom:1px solid var(--border)">
             <div class="row vcenter" style="gap:9px">
-              ${C.avatar(esc(r.initials || ini(r.author || r.name)), { size: "sm", bg: "var(--otr-sky-lo)" })}
-              <b style="font-size:12.5px">${esc(r.author || r.name || t("mkt.studentFallback"))}</b>
+              ${C.avatar(r.initials || ini(r.author || r.name), { size: "sm", bg: "var(--otr-sky-lo)" })}
+              <b style="font-size:12.5px">${r.author || r.name || t("mkt.studentFallback")}</b>
               ${stars(Number(r.rating) || 0, 11)}
               ${r.verified ? C.chip(t("mkt.reviewVerified"), "tint") : ""}
-              <span class="faint" style="font-size:11.5px;margin-left:auto">${esc(r.when || "")}</span>
+              <span class="faint" style="font-size:11.5px;margin-left:auto">${r.when || ""}</span>
             </div>
-            ${r.body ? `<p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:7px">${esc(r.body)}</p>` : ""}
+            ${r.body ? `<p class="muted" style="font-size:12.5px;line-height:1.55;margin-top:7px">${r.body}</p>` : ""}
           </div>`).join("")}</div>`
-        : `<p class="muted" style="font-size:12.5px;margin-top:10px">${t("mkt.noReviewsPrefix")} ${esc(c.name.split(" ")[0] || t("mkt.thisCoach"))}.</p>`}
+        : `<p class="muted" style="font-size:12.5px;margin-top:10px">${t("mkt.noReviewsPrefix")} ${c.name.split(" ")[0] || t("mkt.thisCoach")}.</p>`}
       </div>
 
       <div class="alert info fade-up" style="--d:3"><span class="ai">${IC.lock}</span>
@@ -567,7 +591,7 @@ function renderProfile(state) {
 
     <div class="stack" style="gap:16px">
       <div class="fade-up" style="--d:1" id="mk-booking">${bookingCard(c, canBook, role)}</div>
-      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2">${C.secTitle(t("mkt.cancelPolicyTitle"), { sm: true })}<p class="muted" style="font-size:12.5px;line-height:1.55">${esc(c.cancelPolicy)}</p></div>` : ""}
+      ${c.cancelPolicy ? `<div class="card card-pad fade-up" style="--d:2">${C.secTitle(t("mkt.cancelPolicyTitle"), { sm: true, tag: "h2" })}<p class="muted" style="font-size:12.5px;line-height:1.55">${c.cancelPolicy}</p></div>` : ""}
     </div>
   </div>`;
 }

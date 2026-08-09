@@ -198,16 +198,21 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
     const allDup = g.items.every(it => inlineSet.has(it.r));
     const items = g.items.map(it => {
       const b = navBadge(it);
+      // [A11Y · K-07] Sin role="menuitem": son ENLACES de navegación, no comandos de menú
+      // (el patrón APG que ese rol promete —flechas, roving tabindex— no existe aquí).
+      // [A11Y · K-10] aria-current="page": el ítem activo lo señalaba solo con la clase.
       return `
-      <a class="tn-mi${it.r===activeNav?' active':''}${inlineSet.has(it.r)?' tn-dup':''}" role="menuitem" href="#${it.r}" data-go="${it.r}">
+      <a class="tn-mi${it.r===activeNav?' active':''}${inlineSet.has(it.r)?' tn-dup':''}" href="#${it.r}" data-go="${it.r}"${it.r===activeNav?' aria-current="page"':''}>
         ${IC[it.ic]}<span class="lbl">${L(it)}</span>${b?`<span class="tn-count">${b}</span>`:''}
       </a>`;
     }).join('');
     return `<div class="tn-mgroup${allDup?' tn-dup':''}">${label}</div>${items}`;
   }).join('');
 
+  // [A11Y · K-10] En móvil el tabbar ES la navegación (los links inline están display:none):
+  // sin aria-current no había forma de saber en qué sección estás con un lector de pantalla.
   const tabbar = (TABBAR[role]||TABBAR.student).map(it =>
-    `<a class="${it.r===activeNav?'active':''}" href="#${it.r}" data-go="${it.r}">${IC[it.ic]}<span>${L(it)}</span></a>`).join('');
+    `<a class="${it.r===activeNav?'active':''}" href="#${it.r}" data-go="${it.r}"${it.r===activeNav?' aria-current="page"':''}>${IC[it.ic]}<span>${L(it)}</span></a>`).join('');
 
   const u = DB.me;
   const avBg = role === 'teacher' ? 'var(--otr-navy)' : 'var(--otr-sky-lo)';
@@ -238,11 +243,15 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
               ${otrCrest({ id: "tn", attrs: 'class="crest"' })}
               <span class="tn-word">Aula</span>
             </a>
-            <nav class="tn-links" aria-label="${t('top.menu', lang)}">${linksHtml}</nav>
-            ${/* Desplegable "Más": <details> nativo — sin JS nuevo (la SPA solo delega data-*). */""}
+            <nav class="tn-links" aria-label="${t('top.navPrimary', lang)}">${linksHtml}</nav>
+            ${/* Desplegable "Más": <details> nativo — sin JS nuevo (la SPA solo delega data-*).
+                 [A11Y · K-08] El aria-label ES el texto visible (una sola fuente, t('top.more')):
+                 antes decía "Menú" y pisaba el "Más" de pantalla (WCAG 2.5.3 Label in Name).
+                 Se conserva el aria-label porque en móvil el .lbl va a display:none y el
+                 disparador se quedaría sin nombre. [A11Y · K-07] El panel no es role="menu". */""}
             <details class="tn-more${overflow===0?' tn-more--dup':''}">
-              <summary aria-label="${t('top.menu', lang)}">${IC.menu}<span class="lbl">${lang==='en'?'More':'Más'}</span><span class="chev">${IC.chevD}</span></summary>
-              <div class="tn-menu" role="menu">${moreHtml}</div>
+              <summary aria-label="${t('top.more', lang)}">${IC.menu}<span class="lbl">${t('top.more', lang)}</span><span class="chev">${IC.chevD}</span></summary>
+              <div class="tn-menu">${moreHtml}</div>
             </details>
           </div>
 
@@ -254,8 +263,11 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
             <div class="tn-userwrap">
               ${/* [UI-NAV N2] El chip se ilumina cuando estás en cualquier destino de su menú:
                    sin esto esas rutas quedarían huérfanas (sin nada activo ni vuelta visible). */""}
+              ${/* [A11Y · K-07] Sin aria-haspopup="menu": lo que abre es una región de enlaces,
+                   no un menú de comandos APG. aria-expanded + aria-controls (patrón disclosure)
+                   la describen entera, y Escape la cierra devolviendo el foco (Aula.tsx, K-06). */""}
               <button type="button" class="tn-user${['profile','membership','settings'].includes(activeNav) ? ' active' : ''}"
-                      data-user-menu aria-expanded="false" aria-controls="sb-usermenu" aria-haspopup="menu">
+                      data-user-menu aria-expanded="false" aria-controls="sb-usermenu">
                 <span class="avatar tn-av" style="background:${avBg}">${u.initials}</span>
                 <span class="tn-umeta">
                   <span class="tn-uname">${u.name}</span>
@@ -265,16 +277,19 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
               ${/* [UI-NAV N2] Menú de cuenta: Perfil, Membresía (solo alumno — el coach cobra, no
                    se suscribe), Ajustes y Salir. Mismos data-* que antes: el delegador de
                    Aula.tsx lo abre/cierra por id (#sb-usermenu) sin cambios. */""}
-              <div class="tn-usermenu" id="sb-usermenu" role="menu" hidden>
-                <a class="tn-mi" role="menuitem" href="#profile" data-go="profile">${IC.user}<span class="lbl">${t('nav.profile', lang)}</span></a>
-                ${role === 'student' ? `<a class="tn-mi" role="menuitem" href="#membership" data-go="membership">${IC.star}<span class="lbl">${t('nav.membership', lang)}</span></a>` : ''}
-                <a class="tn-mi" role="menuitem" href="#settings" data-go="settings">${IC.settings}<span class="lbl">${t('nav.settings', lang)}</span></a>
+              <div class="tn-usermenu" id="sb-usermenu" hidden>
+                <a class="tn-mi" href="#profile" data-go="profile">${IC.user}<span class="lbl">${t('nav.profile', lang)}</span></a>
+                ${role === 'student' ? `<a class="tn-mi" href="#membership" data-go="membership">${IC.star}<span class="lbl">${t('nav.membership', lang)}</span></a>` : ''}
+                <a class="tn-mi" href="#settings" data-go="settings">${IC.settings}<span class="lbl">${t('nav.settings', lang)}</span></a>
                 ${/* El selector de idioma vivía en el topbar borrado; sin él no habría forma de
                      cambiar a EN. Usa window.otrSetLang (inline, sin delegación). */""}
                 <div class="tn-lang" role="group" aria-label="${t('top.lang', lang)}">
                   ${['es','en'].map(lg => `<button type="button" class="${lg===lang?'on':''}" data-lang="${lg}" onclick="window.otrSetLang&&window.otrSetLang('${lg}')">${lg.toUpperCase()}</button>`).join('')}
                 </div>
-                <a class="tn-mi" role="menuitem" href="#" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></a>
+                ${/* [A11Y · K-11] Cerrar sesión es una ACCIÓN, no un destino: <button>, no
+                     <a href="#">. Con el JS caído el enlace dejaba al usuario en '#' creyendo
+                     que había salido. Mismo data-action → el delegador de Aula.tsx no cambia. */""}
+                <button type="button" class="tn-mi" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></button>
               </div>
             </div>
           </div>
@@ -283,7 +298,8 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
 
       <main class="content" id="content" tabindex="-1" aria-label="${lang==='en'?'Main content':'Contenido principal'}"><div class="page rise">${content}</div></main>
 
-      <nav class="tabbar mobile-only">${tabbar}</nav>
+      ${/* [A11Y · K-10] El landmark de navegación móvil llevaba 0 nombre. */""}
+      <nav class="tabbar mobile-only" aria-label="${t('top.navMobile', lang)}">${tabbar}</nav>
     </div>
   </div>`;
 }

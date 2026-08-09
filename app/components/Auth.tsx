@@ -393,7 +393,11 @@ export default function Auth() {
     T.submitReset;
 
   return (
-    <div className="login">
+    /* [K-04] El login no tenía NINGÚN landmark (header/nav/main/footer/aside = 0), así que
+       un lector de pantalla no podía saltar al contenido principal — el <main id="content">
+       vive en el shell del Aula (shell.ts), que aquí no se monta. `.login` ya trae su
+       display:grid, y <main> es block-level igual que el <div>: el layout no se mueve. */
+    <main className="login">
       <div className="login-brand">
         <div className="lb-top">
           {/* Escudo OTR del brand book (login, panel oscuro) — markup canónico en lib/icons (otrCrest) */}
@@ -570,7 +574,10 @@ export default function Auth() {
             {mode !== "reset" && (
               <div className="field" style={{ marginBottom: 14 }}>
                 <label className="label" htmlFor="auth-email">{T.emailLabel}{mode === "register" && <span className="faint" style={{ fontWeight: 500 }}>{" "}{T.reqTag}</span>}</label>
-                <input id="auth-email" className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={T.emailPh} required aria-required="true" />
+                {/* [K-05] WCAG 2.1 · 1.3.5 Identify Input Purpose (AA). Sin esto tampoco
+                    autorrellena el gestor de contraseñas, que es la vía de acceso de mucha
+                    gente con discapacidad motriz. */}
+                <input id="auth-email" className="input" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={T.emailPh} required aria-required="true" />
               </div>
             )}
 
@@ -578,7 +585,9 @@ export default function Auth() {
             {(mode === "login" || mode === "register") && (
               <div className="field" style={{ marginBottom: 14 }}>
                 <label className="label" htmlFor="auth-password">{T.passwordLabel}{mode === "register" && <span className="faint" style={{ fontWeight: 500 }}>{" "}{T.reqTag}</span>}</label>
-                <input id="auth-password" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required aria-required="true" />
+                {/* [K-05] En registro el propósito es `new-password` (el gestor propone una
+                    contraseña nueva en vez de ofrecer la guardada); en login, la actual. */}
+                <input id="auth-password" className="input" type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required aria-required="true" />
               </div>
             )}
 
@@ -591,15 +600,19 @@ export default function Auth() {
             )}
 
             {/* Restablecer: nueva contraseña + confirmación */}
+            {/* [GOAL E5] autoComplete="new-password" en AMBOS campos: sin él el gestor de
+                contraseñas ofrece autocompletar con la contraseña VIEJA (la que el usuario
+                está restableciendo, normalmente porque la perdió) y no propone ni guarda la
+                nueva. Es el mismo valor que ya usa el campo password del modo registro. */}
             {mode === "reset" && (
               <>
                 <div className="field" style={{ marginBottom: 14 }}>
                   <label className="label" htmlFor="auth-new-password">{T.newPwdLabel}</label>
-                  <input id="auth-new-password" className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={T.newPwdPh} required aria-required="true" aria-invalid={error ? true : undefined} />
+                  <input id="auth-new-password" className="input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={T.newPwdPh} required aria-required="true" aria-invalid={error ? true : undefined} />
                 </div>
                 <div className="field" style={{ marginBottom: 14 }}>
                   <label className="label" htmlFor="auth-confirm-password">{T.confirmPwdLabel}</label>
-                  <input id="auth-confirm-password" className="input" type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder={T.confirmPwdPh} required aria-required="true" aria-invalid={error ? true : undefined} />
+                  <input id="auth-confirm-password" className="input" type="password" autoComplete="new-password" value={password2} onChange={(e) => setPassword2(e.target.value)} placeholder={T.confirmPwdPh} required aria-required="true" aria-invalid={error ? true : undefined} />
                 </div>
               </>
             )}
@@ -642,7 +655,7 @@ export default function Auth() {
 
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

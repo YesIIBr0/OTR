@@ -85,8 +85,14 @@ const DICT: LangDict = {
     "top.search": "Buscar cursos, tareas, personas…",
     "top.create": "+ Crear",
     "top.notifications": "Notificaciones",
-    "top.menu": "Menú",
     "top.lang": "Idioma",
+    // [A11Y · GOAL 2026-08 · K-08/K-10] Nombres del chrome de navegación. 'top.menu'
+    // ("Menú") nombraba A LA VEZ el <nav> de links y el disparador "Más" —dos landmarks
+    // con el mismo nombre, y un aria-label que PISABA el texto visible "Más" (2.5.3 Label
+    // in Name). Ahora cada uno tiene el suyo, y el de "Más" ES el texto visible.
+    "top.more": "Más",
+    "top.navPrimary": "Navegación principal",
+    "top.navMobile": "Navegación móvil",
 
     // roles (footer del sidebar)
     "role.student": "Estudiante",
@@ -417,8 +423,11 @@ const DICT: LangDict = {
     "top.search": "Search courses, assignments, people…",
     "top.create": "+ Create",
     "top.notifications": "Notifications",
-    "top.menu": "Menu",
     "top.lang": "Language",
+    // [A11Y · GOAL 2026-08 · K-08/K-10] ver el bloque ES.
+    "top.more": "More",
+    "top.navPrimary": "Primary navigation",
+    "top.navMobile": "Mobile navigation",
 
     // roles (sidebar footer)
     "role.student": "Student",
@@ -774,6 +783,162 @@ export function tierLabel(tier: unknown, lang?: string): string {
   const key = "debate.tier." + raw.toLowerCase();
   const out = t(key, lang);
   return out === key ? raw : out;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   [GOAL A2 · F2] FORMATEADORES DE FECHA CON IDIOMA — bloque propio, no tocar arriba.
+
+   Defecto: con `otr_lang=en` la UI salía en inglés pero las FECHAS en español
+   ("mar 11 ago · 4:00 PM", "sáb 15 ago"). Causa raíz: las etiquetas las genera el
+   SERVIDOR (queries.ts → /api/app-data) con tablas de días/meses cableadas a
+   español (MONTHS_ES en queries.ts, DIAS/MESES en consultations.ts) y sin recibir
+   nunca el idioma de la request. Traducir en el cliente no aplica: cuando el label
+   llega ya es un string.
+
+   Estas funciones son PURAS y viven aquí (no en queries.ts) porque el idioma es
+   asunto de i18n y así el cliente puede reutilizarlas. Tablas propias en vez de
+   Intl/ICU: misma decisión que el resto del repo (mismo output en cualquier runtime,
+   con o sin ICU completo). Zona horaria: America/Santo_Domingo FIJA (UTC-4, sin DST)
+   en fmtDateTimeRD — es la que ya usaba consultations.ts, para que un servidor UTC
+   no corra la hora de una reserva.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+const RD_OFFSET_H = -4; // America/Santo_Domingo, UTC-4 fijo (sin horario de verano)
+
+const DATE_DAYS_SHORT: Record<Lang, string[]> = {
+  es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+};
+const DATE_MONTHS_SHORT: Record<Lang, string[]> = {
+  es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
+const DATE_MONTHS_FULL: Record<Lang, string[]> = {
+  es: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+  en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+};
+
+/** Idioma válido para formatear; cualquier cosa rara cae al default del producto ('es'). */
+function dateLangOf(lang?: string | null): Lang {
+  return lang && isLang(lang) ? lang : DEFAULT_LANG;
+}
+
+/** Normaliza a Date; null/undefined/fecha inválida → null (el caller devuelve ""). */
+function toDate(d?: Date | string | number | null): Date | null {
+  if (d === null || d === undefined || d === "") return null;
+  const date = d instanceof Date ? d : new Date(d);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/** "4:00 PM" / "9:30 PM" — idéntico en ES y EN (formato 12 h, el que usa el producto). */
+function clock12(hour24: number, minute: number): string {
+  const ampm = hour24 >= 12 ? "PM" : "AM";
+  const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
+  return `${h}:${String(minute).padStart(2, "0")} ${ampm}`;
+}
+
+/**
+ * Fecha + hora de una sesión/torneo en hora RD, en el idioma pedido.
+ *   es → "mar 11 ago · 4:00 PM"      en → "Tue, 11 Aug · 4:00 PM"
+ * Reemplaza al par `dateLabel · timeLabel` de consultations.ts (español fijo).
+ *
+ * [orden día-antes-de-mes también en EN, a propósito] Dos pantallas RECUPERAN el día y el
+ * mes de esta etiqueta YA formateada, con la misma regex /(\d{1,2})\s+([^\s·,]{3,})/:
+ * scr-core.ts (cajita de fecha de los torneos del dashboard) y scr-events.ts (la de
+ * Eventos). Con el orden estadounidense ("Aug 11") esa regex no engancha y las cajitas
+ * salen VACÍAS — visto en la verificación con clics. Manteniendo la MISMA estructura en
+ * ambos idiomas (semana, día, mes) el parseo existente sigue valiendo sin tocar esas
+ * pantallas, y "11 Aug" es inequívoco en inglés.
+ */
+export function fmtDateTimeRD(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  const l = dateLangOf(lang);
+  // Desplazamos el instante y leemos en UTC ⇒ equivale a la hora local de RD.
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  const day = DATE_DAYS_SHORT[l][rd.getUTCDay()];
+  const mon = DATE_MONTHS_SHORT[l][rd.getUTCMonth()];
+  const time = clock12(rd.getUTCHours(), rd.getUTCMinutes());
+  const datePart = l === "en" ? `${day}, ${rd.getUTCDate()} ${mon}` : `${day} ${rd.getUTCDate()} ${mon}`;
+  return `${datePart} · ${time}`;
+}
+
+/** Día + mes corto: es → "11 ago" · en → "11 Aug" (mismo orden que fmtDateTimeRD). */
+export function fmtDayMonth(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  return `${date.getDate()} ${DATE_MONTHS_SHORT[dateLangOf(lang)][date.getMonth()]}`;
+}
+
+/* ── [GOAL E5] Fechas ABSOLUTAS con año, para la consola de moderación ────────────────────
+   La consola de admin formateaba con `toLocaleDateString("es", …)` / `toLocaleString("es", …)`
+   —locale FIJO— así que con la cookie en inglés se leía "Reported by … · 8 ago 2026". Estas
+   dos las reemplazan respetando el idioma, con las MISMAS tablas de meses que el resto del
+   módulo (mismo output en cualquier runtime, con o sin ICU). Orden día-mes-año en ambos
+   idiomas, igual que fmtDateTimeRD y por la misma razón documentada allí. */
+
+/** Día + mes corto + año: es → "8 ago 2026" · en → "8 Aug 2026". Hora LOCAL del navegador,
+ *  como el `toLocaleDateString` al que sustituye (es un timestamp, no una franja reservada). */
+export function fmtDayMonthYear(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  return `${date.getDate()} ${DATE_MONTHS_SHORT[dateLangOf(lang)][date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/** Día + mes + año + hora de una franja reservada, en hora RD: es → "8 ago 2026 · 4:00 PM"
+ *  · en → "8 Aug 2026 · 4:00 PM". Como fmtDateTimeRD pero conservando el año (la cola de
+ *  moderación puede mirar una reserva de hace meses) y sin el día de la semana. */
+export function fmtDayMonthYearTimeRD(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  const l = dateLangOf(lang);
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  const mon = DATE_MONTHS_SHORT[l][rd.getUTCMonth()];
+  return `${rd.getUTCDate()} ${mon} ${rd.getUTCFullYear()} · ${clock12(rd.getUTCHours(), rd.getUTCMinutes())}`;
+}
+
+/** Mes corto + año: es → "ago 2026" · en → "Aug 2026". */
+export function fmtMonthYear(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  return `${DATE_MONTHS_SHORT[dateLangOf(lang)][date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/** Mes completo capitalizado + año: es → "Agosto 2026" · en → "August 2026". */
+export function fmtMonthFull(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  const m = DATE_MONTHS_FULL[dateLangOf(lang)][date.getMonth()];
+  return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${date.getFullYear()}`;
+}
+
+/** Mes completo + año TAL COMO SE LEE DENTRO DE UNA FRASE: es → "agosto 2026" (minúscula,
+ *  como manda el español) · en → "August 2026" (en inglés el mes va siempre en mayúscula). */
+export function fmtMonthNameYear(d?: Date | string | number | null, lang?: string | null): string {
+  const date = toDate(d);
+  if (!date) return "";
+  return `${DATE_MONTHS_FULL[dateLangOf(lang)][date.getMonth()]} ${date.getFullYear()}`;
+}
+
+/* Prefijos de las dos etiquetas de antigüedad del payload. Viven aquí —y no como llaves de
+   t()— porque las genera el SERVIDOR (queries.ts) y allí el diccionario de pantalla todavía
+   no está registrado: registerDict() lo llama cada scr-*.ts al cargar SU chunk en el cliente,
+   así que t("…") devolvería la clave cruda en el server. */
+const MEMBER_SINCE_PREFIX: Record<Lang, string> = { es: "Miembro desde", en: "Member since" };
+const PLAN_SINCE_PREFIX: Record<Lang, string> = { es: "Desde", en: "Since" };
+
+/** "Miembro desde agosto 2026" / "Member since August 2026" (identidad del Lifetime Profile).
+ *  Sin fecha conserva el respaldo histórico del payload: "Miembro desde 2026". */
+export function fmtMemberSinceLabel(d?: Date | string | number | null, lang?: string | null): string {
+  const p = MEMBER_SINCE_PREFIX[dateLangOf(lang)];
+  const my = fmtMonthNameYear(d, lang);
+  return my ? `${p} ${my}` : `${p} 2026`;
+}
+
+/** "Desde agosto 2026" / "Since August 2026" (antigüedad del plan, PRD §13). */
+export function fmtPlanSinceLabel(d?: Date | string | number | null, lang?: string | null): string {
+  const my = fmtMonthNameYear(d, lang);
+  return my ? `${PLAN_SINCE_PREFIX[dateLangOf(lang)]} ${my}` : "";
 }
 
 /* Exponemos setLang en window para que el toggle ES/EN del topbar (renderizado

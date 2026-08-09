@@ -1130,7 +1130,10 @@ async function main() {
       specialties: "Public Forum, Lincoln-Douglas, Oratoria",
       languages: "es,en",
       hourlyCents: 4500, // $45/h
-      responseTime: "Responde en ~2 h",
+      // [GOAL-E4 #1] SOLO la magnitud: la etiqueta ("Responde en" / "Responds in") la pone la
+      // vista con t("mkt.respondsIn"), y así traduce. Guardar la frase entera producía
+      // "Responde en Responde en ~2 h" (y español dentro de la UI en inglés).
+      responseTime: "~2 h",
       cancelPolicy: "Cancelación gratis hasta 24 h antes de la sesión; después se retiene el 50%.",
       ratingAvg: 4.9,
       reviewCount: 12,
@@ -1184,7 +1187,7 @@ async function main() {
       specialties: "Lincoln-Douglas, Policy",
       languages: "es,en",
       hourlyCents: 4000, // $40/h
-      responseTime: "Responde en ~4 h",
+      responseTime: "~4 h", // [GOAL-E4 #1] idem: solo la magnitud (ver cp-saul).
       cancelPolicy: "Cancelación gratis hasta 12 h antes de la sesión; después no hay reembolso.",
       ratingAvg: 4.7,
       reviewCount: 8,
@@ -1211,6 +1214,14 @@ async function main() {
     return x;
   };
 
+  // [GOAL-E4 #6] `priceCents` en TODAS las reservas demo. El KPI "GMV (escrow simulado)" de
+  // Métricas agrega Booking.priceCents (CONFIRMED+COMPLETED, api/admin/metrics/route.ts:85);
+  // el seed solo creaba el Escrow.amountCents y dejaba priceCents en su default 0, así que el
+  // panel mostraba $0 mientras su PROPIO CSV (que usa escrow.amountCents ?? priceCents) imprimía
+  // los montos. El flujo real de reserva sí fija priceCents (api/bookings/route.ts:209): esto
+  // alinea el seed con producción. Con 4500 + 4500 + 4000 el GMV pasa a $130 (la PENDING no
+  // entra en el agregado, pero también lleva su precio para no mentirle al CSV).
+
   // 1) COMPLETED: Analía × Saúl hace 9 días — escrow LIBERADO al coach
   //    (menos take rate 18%) + notas de sesión con rúbrica.
   await db.booking.create({
@@ -1221,6 +1232,7 @@ async function main() {
       packageId: "pkg-saul-1",
       slotAt: atHourRD(daysAgoDate(9), 16), // 4:00 PM RD
       durationMin: 60,
+      priceCents: 4500,
       status: "COMPLETED",
       escrow: {
         create: {
@@ -1253,6 +1265,7 @@ async function main() {
       packageId: "pkg-saul-1",
       slotAt: atHourRD(inDays(3), 16), // 4:00 PM RD
       durationMin: 60,
+      priceCents: 4500,
       status: "CONFIRMED",
       videoUrl: "/aula?room=bk-ar-saul-2",
       escrow: {
@@ -1270,6 +1283,7 @@ async function main() {
       packageId: "pkg-carla-1",
       slotAt: atHourRD(daysAgoDate(5), 17), // 5:00 PM RD
       durationMin: 60,
+      priceCents: 4000,
       status: "COMPLETED",
       escrow: {
         create: {
@@ -1302,6 +1316,7 @@ async function main() {
       packageId: "pkg-saul-1",
       slotAt: atHourRD(inDays(2), 17), // 5:00 PM RD
       durationMin: 60,
+      priceCents: 4500,
       status: "PENDING",
       consentBy: "u-rosa",
       escrow: {
@@ -1539,14 +1554,19 @@ async function main() {
   // Harvard JV a 33 días, Florida Blue Key a 25, New Horizons (final) a 12.
   // St. Michael's NO tiene fecha en ninguna fuente del repo → date null (la vista
   // degrada sin fecha; preferimos hueco a fecha inventada).
-  // Imagen: solo existe /img/hero-speaking.jpg → va en UNA; el resto imageUrl "" y
-  // la card degrada a fondo negro. No se inventan rutas de imágenes inexistentes.
+  // Imagen: la marca solo nos ha dado UNA foto (/img/hero-speaking.jpg). Decisión de
+  // Wilser (2026-08-08): dejar las cuatro con foto MOCK —la misma— para que la franja
+  // se vea llena mientras Isaac manda las suyas. Cada tarjeta la encuadra distinto
+  // (`--hl-pos`, ver screens.css) para que no canten como repetidas.
+  // SUSTITUIR por las fotos reales en cuanto lleguen; la vista ya degrada a card negra
+  // si `imageUrl` viene vacío.
+  const MOCK_FOTO = "/img/hero-speaking.jpg";
   await db.highlight.createMany({
     data: [
-      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: "/img/hero-speaking.jpg", position: 0 },
-      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: "", position: 1 },
-      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: "", position: 2 },
-      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: "", position: 3 },
+      { title: "Harvard Forensics & Debate — Junior Varsity Champions", date: daysAgoDate(33), category: "Final", imageUrl: MOCK_FOTO, position: 0 },
+      { title: "Florida Blue Key — Octofinales Varsity y Best Speakers", date: daysAgoDate(25), category: "Torneo", imageUrl: MOCK_FOTO, position: 1 },
+      { title: "New Horizons — Varsity Champions", date: daysAgoDate(12), category: "Final", imageUrl: MOCK_FOTO, position: 2 },
+      { title: "St. Michael's Tournament — Co-Campeones", date: null, category: "Equipo", imageUrl: MOCK_FOTO, position: 3 },
     ],
   });
 
@@ -1638,13 +1658,23 @@ async function main() {
       { id: "cv-5", initials: "DF", name: "Diego Fermín", lastLabel: "Gracias coach", whenLabel: "hace 2h", unread: 0, online: false, navy: false, position: 4 },
     ],
   });
+  // [GOAL S5] El hilo de Diego se sembraba VACÍO mientras la lista previsualizaba "Gracias
+  // coach": preview y detalle no podían coincidir porque no había mensajes que mostrar. Ahora
+  // la conversación trae su intercambio real y el preview SALE de ese último mensaje
+  // (app/lib/queries.ts → conversationLabel), no de un lastLabel escrito a mano.
+  // [GOAL S4] Además todos los mensajes llevan senderId: `me` (legacy, por fila) estaba escrito
+  // desde el lado de Analía, así que el coach veía los mensajes de su alumna como propios.
   await db.chatMessage.createMany({
     data: [
-      { conversationId: "cv-1", me: false, body: "¡Hola Analía! Vi tu diagnóstico de 1 minuto.", timeLabel: "10:02", position: 0 },
-      { conversationId: "cv-1", me: false, body: "Tu claim quedó clarísimo en los primeros 10 segundos 👏", timeLabel: "10:02", position: 1 },
-      { conversationId: "cv-1", me: true, body: "¡Gracias coach! Sentí que el cierre me quedó flojo.", timeLabel: "10:05", position: 2 },
-      { conversationId: "cv-1", me: false, body: "Un poco. Cierra siempre con el impacto, no con un resumen. Vuelve a grabar el último tramo y me lo mandas.", timeLabel: "10:06", position: 3 },
-      { conversationId: "cv-1", me: true, body: "Hecho. Lo subo hoy mismo 💪", timeLabel: "10:08", position: 4 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "¡Hola Analía! Vi tu diagnóstico de 1 minuto.", timeLabel: "10:02", position: 0 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Tu claim quedó clarísimo en los primeros 10 segundos 👏", timeLabel: "10:02", position: 1 },
+      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "¡Gracias coach! Sentí que el cierre me quedó flojo.", timeLabel: "10:05", position: 2 },
+      { conversationId: "cv-1", senderId: "u-saul", me: false, body: "Un poco. Cierra siempre con el impacto, no con un resumen. Vuelve a grabar el último tramo y me lo mandas.", timeLabel: "10:06", position: 3 },
+      { conversationId: "cv-1", senderId: "u-ar", me: true, body: "Hecho. Lo subo hoy mismo 💪", timeLabel: "10:08", position: 4 },
+      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Diego, buen trabajo en la ronda de ayer: el segundo contention quedó sólido.", timeLabel: "16:40", position: 0 },
+      { conversationId: "cv-5", senderId: "u-saul", me: false, body: "Para el sábado practica el crossfire: respuestas de 15 segundos, sin leer.", timeLabel: "16:41", position: 1 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Perfecto, lo practico esta semana con el cronómetro.", timeLabel: "17:02", position: 2 },
+      { conversationId: "cv-5", senderId: "u-df", me: false, body: "Gracias coach", timeLabel: "17:02", position: 3 },
     ],
   });
 

@@ -5,6 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>OTR Debating Academy — Domina la sala</title>
 <meta name="description" content="Academia #1 del circuito de debate dominicano. Convertimos estudiantes en líderes que hablan con autoridad, claridad y dominio." />
+<!-- Tarjeta social. "/" es HTML estático (rewrite de next.config.mjs), así que no hereda
+     el metadata de app/layout.tsx: las etiquetas van aquí, con URLs absolutas porque los
+     scrapers de WhatsApp/Slack/X no resuelven rutas relativas. Misma imagen: /og.png. -->
+<link rel="canonical" href="https://otr-academy.com/" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="es_DO" />
+<meta property="og:site_name" content="OTR Debating Academy" />
+<meta property="og:title" content="OTR Debating Academy — Domina la sala" />
+<meta property="og:description" content="Academia #1 del circuito de debate dominicano. Convertimos estudiantes en líderes que hablan con autoridad, claridad y dominio." />
+<meta property="og:url" content="https://otr-academy.com/" />
+<meta property="og:image" content="https://otr-academy.com/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Escudo de OTR Debating Academy sobre fondo negro con el lema «Convierte la presión en confianza.»" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="OTR Debating Academy — Domina la sala" />
+<meta name="twitter:description" content="Academia #1 del circuito de debate dominicano. Convertimos estudiantes en líderes que hablan con autoridad, claridad y dominio." />
+<meta name="twitter:image" content="https://otr-academy.com/og.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -364,6 +382,10 @@ body:not([data-route="home"]) .navback{display:inline-flex}
 }
 @media (max-width:720px){
   .nav-links nav,.nav-cta{display:none}
+  /* el lockup "OTR · Debating Academy" no cabe junto al toggle ES/EN + Acceder y
+     partía en 3 líneas: en móvil queda la marca corta, como el escudo. */
+  .brand{font-size:17px;white-space:nowrap}
+  .brand > span > span{display:none}
   h1.h1{font-size:clamp(54px,16vw,90px)}
   .stats{grid-template-columns:1fr}
   .stat:nth-child(odd){border-right:0}
@@ -418,7 +440,7 @@ body:not([data-route="home"]) .navback{display:inline-flex}
       <button data-lang="es" class="on">ES</button>
       <button data-lang="en">EN</button>
     </div>
-    <a href="/aula" class="lk nav-access" style="font-weight:600;letter-spacing:.01em">Acceder</a>
+    <a href="/aula" class="lk nav-access" style="font-weight:600;letter-spacing:.01em" data-i18n="nav_access">Acceder</a>
     <a href="#cta" class="btn btn-primary nav-cta"><span class="lbl" data-i18n="cta_short">Reserva tu consulta</span></a>
   </div>
 </header>
@@ -481,7 +503,7 @@ body:not([data-route="home"]) .navback{display:inline-flex}
   <div class="wrap">
     <div class="pain-copy reveal">
       <p class="eyebrow" data-i18n="pain_eyebrow">El obstáculo número uno</p>
-      <h2 style="margin-top:22px">El miedo a hablar en público es la <span class="strike" data-i18n="pain_strike">barrera #1</span>.<br/><span data-i18n="pain_h2b">Nosotros lo convertimos en tu mayor ventaja.</span></h2>
+      <h2 style="margin-top:22px"><span data-i18n="pain_h2a">El miedo a hablar en público es la</span> <span class="strike" data-i18n="pain_strike">barrera #1</span>.<br/><span data-i18n="pain_h2b">Nosotros lo convertimos en tu mayor ventaja.</span></h2>
       <p class="lead" data-i18n="pain_p1">El nudo en la garganta, las manos que tiemblan, la mente en blanco. No es falta de talento: es falta de método. Y el método se entrena.</p>
       <p data-i18n="pain_p2">En OTR no escondemos el miedo — lo usamos como combustible. En semanas, ese mismo estudiante toma el micrófono y la sala se queda en silencio para escucharlo.</p>
     </div>

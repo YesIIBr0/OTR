@@ -165,7 +165,10 @@ S.settings = {
       ${C.avatar(esc(me.initials || "?"), { size: "lg", bg: "var(--otr-navy)" })}
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:16px;letter-spacing:var(--track-tight)">${esc(me.name || "")}</div>
-        <div class="faint" style="font-size:13px">${esc(me.email || "")}</div>
+        ${/* [GOAL-E4 #11] A 390 el correo se salía de su caja (118 px en un hueco de 99) y
+              quedaba TAPADO por "Editar perfil": se leía "rosa.fermin@otr.d". Elipsis + title
+              con el correo completo (el min-width:0 del contenedor ya permite encoger). */""}
+        <div class="faint" style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(me.email || "")}">${esc(me.email || "")}</div>
         <div style="margin-top:7px">${C.chip(roleLabel, role === "TEACHER" || role === "ADMIN" ? "black" : "outline")}</div>
       </div>
       <button class="btn btn-outline btn--sm" data-go="profile" style="flex:none">${IC.user} ${t("settings.editProfile")}</button>

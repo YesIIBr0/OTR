@@ -47,6 +47,10 @@ export const dict = {
     "teacher.lowAttendance": "Asistencia baja",
     "teacher.noSubmissions": "Sin entregas",
     "teacher.sendMessage": "Enviar mensaje",
+    // [GOAL S1] Nombre accesible de los botones SOLO-ICONO de las filas de alumno:
+    // `title` no es nombre accesible fiable → aria-label con el nombre del alumno,
+    // que además distingue los N botones idénticos de la tabla para un lector de pantalla.
+    "teacher.sendMessageTo": "Enviar mensaje a {name}",
     "teacher.noAlertsTitle": "Sin alertas",
     "teacher.noAlertsBody": "Todo el grupo va al día.",
 
@@ -269,6 +273,7 @@ export const dict = {
     "teacher.lowAttendance": "Low attendance",
     "teacher.noSubmissions": "No submissions",
     "teacher.sendMessage": "Send message",
+    "teacher.sendMessageTo": "Message {name}",
     "teacher.noAlertsTitle": "No alerts",
     "teacher.noAlertsBody": "The whole group is on track.",
 

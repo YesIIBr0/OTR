@@ -20,6 +20,11 @@ export const dict = {
     "au.searchBtn": "Buscar",
     "au.exportCsv": "Exportar CSV",
     "au.erase": "Borrar datos",
+    // [GOAL-E4 #5] Nombre ACCESIBLE de las acciones destructivas: incluye a la persona
+    // (el texto visible sigue siendo corto porque la fila ya la nombra).
+    "au.eraseAria": "Borrar datos de {name}",
+    "au.suspendAria": "Suspender a {name}",
+    "au.reactivateAria": "Reactivar a {name}",
     "au.eraseArm": "¿Seguro? Es irreversible — toca otra vez",
     "au.erasing": "Borrando…",
     "au.erased": "Datos personales suprimidos",
@@ -87,6 +92,10 @@ export const dict = {
     "au.searchBtn": "Search",
     "au.exportCsv": "Export CSV",
     "au.erase": "Erase data",
+    // [GOAL-E4 #5] ACCESSIBLE name of the destructive actions: names the person.
+    "au.eraseAria": "Erase {name}'s data",
+    "au.suspendAria": "Suspend {name}",
+    "au.reactivateAria": "Reactivate {name}",
     "au.eraseArm": "Sure? This is irreversible — tap again",
     "au.erasing": "Erasing…",
     "au.erased": "Personal data erased",

@@ -12,7 +12,7 @@ import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
 import { money } from "./money";
-import { t, registerDict } from "./i18n";
+import { t, getLang, fmtDayMonthYear, fmtDayMonthYearTimeRD, registerDict } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): admin.*. Ver app/lib/i18n.ts.
 import { dict as d_admin } from "./i18n-keys/admin";
 registerDict(d_admin);
@@ -47,14 +47,13 @@ const TARGET_LABEL = () => ({
 const ini = (name) =>
   (String(name || "?").split(" ").map((w) => w[0]).join("") || "?").slice(0, 2).toUpperCase();
 
+// [GOAL E5 · i18n] Con el idioma ACTIVO, no con el locale "es" fijo que traía: con la cookie
+// en inglés la cola de moderación mostraba "Reported by … · 8 ago 2026". getLang() es la misma
+// fuente que ya usan scr-core/scr-debate/scr-admin-metrics en el cliente.
 function fmtDate(v) {
   const d = new Date(v);
   if (isNaN(d.getTime())) return "";
-  try {
-    return d.toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" });
-  } catch {
-    return d.toISOString().slice(0, 10);
-  }
+  return fmtDayMonthYear(d, getLang()) || d.toISOString().slice(0, 10);
 }
 
 // [MOCKUP 2026-08] Chips del kit (r3, versalitas 10/800): abierto = naranja sólido (lo que
@@ -68,14 +67,14 @@ function statusBadge(status) {
 }
 
 // [F2.3] Fecha + hora del slot de una reserva (la sesión sí necesita la hora, no solo el día).
+// [GOAL E5 · i18n] Ídem: idioma activo en vez del locale "es" fijo. Y en hora RD (UTC-4), que
+// es la zona en la que se agenda TODA franja del producto (fmtDateTimeRD, consultations.ts):
+// antes se leía en la zona del navegador, así que un admin fuera de RD veía otra hora que el
+// coach y el alumno para la misma reserva.
 function fmtSlot(v) {
   const d = new Date(v);
   if (isNaN(d.getTime())) return "";
-  try {
-    return d.toLocaleString("es", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return d.toISOString().slice(0, 16).replace("T", " ");
-  }
+  return fmtDayMonthYearTimeRD(d, getLang()) || d.toISOString().slice(0, 16).replace("T", " ");
 }
 
 // [F2.3] Etiqueta legible del estado de la reserva (el enum crudo en inglés es jarring en la UI).
@@ -375,10 +374,29 @@ S.adminConsole = {
     const open = reports.filter((r) => String(r.status || "").toUpperCase() === "OPEN").length;
 
     // Barra de pestañas: Reportes (cola de moderación) | Auditoría (rastro F2.2).
+    // [GOAL-E4 #8] Eran tres `<button class="tab">` sueltos: sin role="tablist"/role="tab" y
+    // sin aria-selected. Un lector de pantalla oía tres botones cualesquiera y no podía saber
+    // cuál estaba activo — el estado vivía SOLO en el color. Aquí se añaden EXCLUSIVAMENTE
+    // atributos: el handler de clicks (delegación por data-mod-tab, en mount) no se toca.
+    //
+    // A propósito NO se implementa tabindex rotatorio: sin manejo de flechas, poner
+    // tabindex="-1" en las inactivas las dejaría inalcanzables con Tab (peor que ahora).
+    //
+    // [revisión · Important-3] Tampoco se pone `aria-controls`: esta pantalla renderiza SOLO
+    // el panel de la pestaña activa (repinta entera al conmutar), así que dos de los tres
+    // aria-controls apuntarían SIEMPRE a ids inexistentes — axe lo marca como
+    // `aria-valid-attr-value`. La alternativa (pintar los tres paneles con `hidden`) obligaría
+    // a construir el cuerpo de Auditoría y Clases aunque su estado aún no se haya cargado
+    // on-demand. `aria-controls` es OPCIONAL en el patrón de pestañas de la APG: el vínculo
+    // inverso sí queda, vía el `aria-labelledby` del panel.
+    const panelId = (k) => `mod-panel-${k}`;
+    const tabId = (k) => `mod-tab-${k}`;
     const tabsHtml = `
-    <div class="tabs fade-up" style="--d:1" id="mod-tabs">
-      ${TABS().map((tb) => `<button class="tab ${tb.k === tab ? "active" : ""}" data-mod-tab="${tb.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[tb.ic] || ""}</span>${tb.l}</span></button>`).join("")}
+    <div class="tabs fade-up" role="tablist" style="--d:1" id="mod-tabs">
+      ${TABS().map((tb) => `<button class="tab ${tb.k === tab ? "active" : ""}" role="tab" id="${tabId(tb.k)}" aria-selected="${tb.k === tab ? "true" : "false"}" data-mod-tab="${tb.k}"><span class="row vcenter" style="gap:6px"><span style="display:inline-flex;width:15px;height:15px">${IC[tb.ic] || ""}</span>${tb.l}</span></button>`).join("")}
     </div>`;
+    // Envoltorio del panel activo (el único que existe en el DOM en cada momento).
+    const panel = (k, inner) => `<div id="${panelId(k)}" role="tabpanel" aria-labelledby="${tabId(k)}" tabindex="0">${inner}</div>`;
 
     // [MOCKUP 2026-08] Cabecera del kit: eyebrow versalitas + h1 de 40px + línea inferior.
     const head = `
@@ -395,23 +413,23 @@ S.adminConsole = {
       const more = (a.total || 0) > entries.length
         ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="audit-more">${t("admin.loadMore")} · ${entries.length} ${t("admin.ofConnector")} ${a.total}</button></div>`
         : "";
-      return `${head}${tabsHtml}<div class="sec-title sec-title--sm"><h3>${t("admin.tabAudit")}</h3></div><div class="fade-up" style="--d:2" id="audit-body">${auditBody()}${more}</div>`;
+      return `${head}${tabsHtml}${panel("audit", `<div class="sec-title sec-title--sm"><h3>${t("admin.tabAudit")}</h3></div><div class="fade-up" style="--d:2" id="audit-body">${auditBody()}${more}</div>`)}`;
     }
 
     // [F-MKT M2-UI] Pestaña Clases: cola de vetting del marketplace abierto.
     if (tab === "lst") {
-      return `${head}${tabsHtml}<div class="sec-title sec-title--sm"><h3>${t("admin.tabListings")}</h3></div><div class="fade-up" style="--d:2" id="lst-queue">${lstQueueBody()}</div>`;
+      return `${head}${tabsHtml}${panel("lst", `<div class="sec-title sec-title--sm"><h3>${t("admin.tabListings")}</h3></div><div class="fade-up" style="--d:2" id="lst-queue">${lstQueueBody()}</div>`)}`;
     }
 
     // Pestaña Reportes (comportamiento original).
-    return `${head}${tabsHtml}
+    return `${head}${tabsHtml}${panel("reports", `
     <div class="grid g-2 fade-up" style="--d:2;margin-bottom:18px">
       <div class="tile">${C.kpi(t("admin.kpiOpen"), String(open), { ic: "flag" })}</div>
       <div class="tile">${C.kpi(t("admin.kpiQueue"), String(st.total || reports.length), { ic: "doc" })}</div>
     </div>
 
     <div class="sec-title sec-title--sm"><h3>${t("admin.tabReports")}</h3></div>
-    <div class="fade-up" style="--d:3" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="mod-more">${t("admin.loadMore")} · ${reports.length} ${t("admin.ofConnector")} ${st.total}</button></div>` : ""}</div>`;
+    <div class="fade-up" style="--d:3" id="mod-body">${viewBody()}${(st.total || 0) > reports.length ? `<div class="row" style="justify-content:center;margin-top:16px"><button class="btn btn-outline btn--sm" id="mod-more">${t("admin.loadMore")} · ${reports.length} ${t("admin.ofConnector")} ${st.total}</button></div>` : ""}</div>`)}`;
   },
 
   mount(root, state) {

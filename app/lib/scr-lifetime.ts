@@ -12,7 +12,7 @@
        journey:[{ whenLabel, monthLabel, title, detail, type }],
        publicProfile:{ enabled, slug, url, canToggle, minorNote }
      }
-     DB.membership = { tier, sinceLabel, prices:{ proMonthly:'US$9', proAnnual:'US$79' } }
+     DB.membership = { tier, sinceLabel, prices:{ proMonthly:'$9', proAnnual:'$79' } }
 
    Patrón de la casa: render(state)->string + mount(root,state) opcional; IC.* iconos,
    esc() en todo texto de usuario, negro #171717 + naranja #F25623, claro, fade-up, sin emojis.
@@ -81,9 +81,12 @@ function getMembership() {
   return {
     tier: String(m.tier || "free").toLowerCase(),
     sinceLabel: m.sinceLabel || "",
+    // [GOAL E5 · moneda] Respaldos en "$", el símbolo único de money() (app/lib/money.ts).
+    // Antes eran "US$9"/"US$79" y convertían la membresía en una TERCERA moneda frente a los
+    // "$45/hora" del marketplace. Solo presentación — el payload manda (queries.ts).
     prices: {
-      proMonthly: prices.proMonthly || "US$9",
-      proAnnual: prices.proAnnual || "US$79",
+      proMonthly: prices.proMonthly || "$9",
+      proAnnual: prices.proAnnual || "$79",
     },
   };
 }
@@ -520,7 +523,7 @@ function tierCards(m) {
   const freeCard = `
   <div class="tile mem-card fade-up" style="--d:1">
     ${C.secTitle(t("lifetime.memFreeTitle"), { sm: true, right: C.chip("Free", "outline") })}
-    <div class="row vcenter" style="gap:6px;margin-top:4px"><span class="mem-price tnum">US$0</span><span class="faint" style="font-size:12px">${t("lifetime.memForever")}</span></div>
+    <div class="row vcenter" style="gap:6px;margin-top:4px"><span class="mem-price tnum">$0</span><span class="faint" style="font-size:12px">${t("lifetime.memForever")}</span></div>
     <ul class="stack" style="list-style:none;margin:12px 0 16px;padding:0">
       ${featureLi(t("lifetime.memFreeFeat1"))}
       ${featureLi(t("lifetime.memFreeFeat2"))}
@@ -619,7 +622,14 @@ S.membership = {
           const resp = await (window as any).api("/api/membership", { tier: target });
           DB.membership = DB.membership || {};
           DB.membership.tier = target;
-          if (resp && resp.membership) DB.membership = { ...DB.membership, ...resp.membership };
+          // [CIERRE · O6] /api/membership responde PLANO — { ok, tier, sinceLabel } — no
+          // `{ membership: {...} }`. La rama vieja (`resp.membership`) no entraba nunca, así
+          // que `sinceLabel` se quedaba con el valor viejo del payload ("Desde junio 2026"
+          // tras bajar a Free, o vacío tras subir a Pro) hasta que el alumno hacía F5.
+          // Se consumen los campos que la ruta devuelve de verdad; el `tier` local sigue de
+          // respaldo optimista por si el body llegara incompleto.
+          if (resp && typeof resp.tier === "string") DB.membership.tier = resp.tier;
+          if (resp && "sinceLabel" in resp) DB.membership.sinceLabel = resp.sinceLabel;
           (window as any).toast?.(target === "pro" ? t("lifetime.memToastWelcomePro") : t("lifetime.memToastSwitchedFree"), "ok");
           repaint();
         } catch (err) {

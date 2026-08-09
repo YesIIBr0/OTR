@@ -59,7 +59,15 @@
 .chip--accent{background:var(--otr-green);color:var(--text-on-accent)}
 .chip--outline{background:transparent;border:1px solid var(--border-strong);color:var(--n-600)}
 .chip--tint{background:rgba(242,86,35,.045);color:var(--otr-green-text)}
-.chip--info{background:#E7EBEE;color:#3F5566}
+/* [GOAL-E4 #10] Este chip llevaba un fondo y un texto azul-pizarra FRÍOS hardcodeados en hex
+   (resto de la paleta anterior), ajenos a la "paleta ESTRICTA" que declara tokens.css: negro
+   + naranja como ÚNICO acento sobre neutros cálidos. Pasa a los tokens neutros que ya
+   existen, conservando la MISMA claridad de fondo (solo se le quita el tinte azul) para no
+   cambiar el peso visual del chip. Contraste: n-600 sobre n-150 = 6,84:1 — WCAG AA para
+   texto pequeño pide 4,5:1, y el par frío anterior daba 6,48:1, así que no se pierde nada.
+   Único uso: el chip de rol "Profesor/Coach" de admin-users. El guardián
+   tests/brand-palette.test.ts ahora falla ante cualquier hex con azul > rojo. */
+.chip--info{background:var(--n-150);color:var(--n-600)}
 /* [A11Y] El media query de móvil de app.css estira .chip a min-height:44px; estos
    chips son etiquetas (no controles táctiles), así que conservan su altura. */
 @media (max-width:640px){
@@ -294,7 +302,7 @@
 .lesson-outline{position:sticky;top:18px;font-size:13px}
 .lesson-outline .ol-t{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
 .lesson-outline a{display:block;padding:6px 10px;border-left:2px solid var(--border);color:var(--text-2);margin-left:1px}
-.lesson-outline a.active{border-left-color:var(--otr-sky);color:var(--action-hover);font-weight:600}
+.lesson-outline a.active{border-left-color:var(--otr-sky);color:var(--otr-green-text);font-weight:600}
 .lesson-nav{display:flex;justify-content:space-between;gap:12px;margin-top:30px;padding-top:18px;border-top:1px solid var(--border)}
 
 /* ---------------- RECORDER (assignment) ---------------- */
@@ -315,7 +323,7 @@
 .rec-mini{width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;display:flex;align-items:center;justify-content:center}
 .rec-mini .ic{width:20px;height:20px}
 .dropzone{border:2px dashed var(--border-strong);border-radius:var(--r-lg);padding:26px;text-align:center;color:var(--text-2);background:var(--n-25)}
-.dropzone .ill{width:48px;height:48px;border-radius:var(--r-md);background:rgba(242,86,35,.1);color:var(--otr-green);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.dropzone .ill{width:48px;height:48px;border-radius:var(--r-md);background:rgba(242,86,35,.1);color:var(--otr-green-text);display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
 .rubric-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
 .rubric-row:last-child{border-bottom:0}
 
@@ -338,7 +346,14 @@
 .q-dots{display:flex;gap:5px;flex-wrap:wrap}
 .q-dot{width:26px;height:26px;border-radius:var(--r-sm);border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text-2)}
 .q-dot.done{background:var(--otr-navy);color:#fff;border-color:var(--otr-navy)}
-.q-dot.cur{border-color:var(--otr-sky);color:var(--action-hover);box-shadow:var(--ring)}
+/* [CIERRE · O2] El punto ACTUAL del examen no puede llevar `box-shadow:var(--ring)` EN
+   REPOSO: ese anillo es el indicador de foco de la casa (app.css:19), así que el punto
+   actual y el punto con foco de teclado se veían IDÉNTICOS (imposible saber dónde estás
+   navegando con Tab) y sus 3px extra se comían el gap:5px de .q-dots. El "actual" pasa a
+   marcarse con lo que le es propio: borde naranja de 2px + tinte naranja + texto en
+   --otr-green-text (#9E3211 sobre #FDE7DE = 6,06:1, AA de sobra). Sin `box-shadow` aquí,
+   `:focus-visible` vuelve a poner SU anillo encima y los dos estados se distinguen. */
+.q-dot.cur{border:2px solid var(--action);background:var(--action-soft);color:var(--otr-green-text);font-weight:700}
 
 /* score result */
 /* [MOCKUP · Task 5] El resultado del examen es el héroe de la pantalla: card
@@ -385,7 +400,9 @@
 .gb .stick{position:sticky;left:0;background:#fff;text-align:left;z-index:1;box-shadow:1px 0 0 var(--border)}
 .gb thead .stick{z-index:3}
 .gb .gcell{font-weight:600;font-variant-numeric:tabular-nums}
-.gcell.hi{color:var(--ok)} .gcell.mid{color:var(--warn)} .gcell.lo{color:var(--danger)} .gcell.none{color:var(--n-300)}
+/* [A11Y · GOAL 2026-08] .none era --n-300 (#BDBDBD): 1,88:1, ilegible. Es el guion de
+   "sin nota", que sigue siendo información. Pasa al gris de metadatos, que cumple AA. */
+.gcell.hi{color:var(--ok)} .gcell.mid{color:var(--warn)} .gcell.lo{color:var(--danger)} .gcell.none{color:var(--ink-400)}
 
 /* ---------------- LEVELS / PROGRESS ---------------- */
 .level-track{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:8px 0 6px}
@@ -617,7 +634,11 @@
 /* --- fila del listado --- */
 .lst-row{display:flex;align-items:stretch;overflow:hidden;cursor:pointer;transition:box-shadow .18s var(--ease),border-color .18s var(--ease)}
 .lst-row:hover{box-shadow:var(--sh-2);border-color:var(--border-strong)}
-.lst-row:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* [CIERRE · O2] UN solo anillo. `outline:2px var(--focus)` + el `box-shadow:var(--ring)`
+   global de app.css:19 (que esta regla no apagaba) dibujaban DOS anillos naranjas
+   concéntricos. Se deja el de la casa (box-shadow), declarado aquí para ganarle también
+   a `.lst-row:hover` — misma especificidad, pero esta regla va después. */
+.lst-row:focus-visible{box-shadow:var(--ring)}
 .lst-row-body{flex:1;min-width:0;padding:16px 18px;display:flex;flex-direction:column;gap:7px}
 .lst-row-title{font-size:16.5px;font-weight:750;line-height:1.3;letter-spacing:var(--track-tight)}
 .lst-row-desc{font-size:13px;line-height:1.55;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -642,7 +663,8 @@
 .lst-prose{font-size:14px;line-height:1.65;color:var(--text-2);margin:0}
 .lst-offer{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px;cursor:pointer;transition:box-shadow .18s var(--ease),border-color .18s var(--ease)}
 .lst-offer:hover{box-shadow:var(--sh-2);border-color:var(--border-strong)}
-.lst-offer:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* [CIERRE · O2] Mismo doble anillo que .lst-row — se deja solo el de la casa. */
+.lst-offer:focus-visible{box-shadow:var(--ring)}
 /* La barra de compra sigue al alumno mientras lee reseñas: la decisión no se pierde arriba. */
 .lst-aside{position:sticky;top:16px}
 @media (max-width:980px){ .lst-aside{position:static} }
@@ -1035,8 +1057,14 @@
    texto del recorte. Sin .hl-img la card queda negra plana (degradación). */
 .hl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .hl{position:relative;aspect-ratio:5/4;border-radius:var(--r-md);overflow:hidden;background:var(--otr-black);cursor:pointer}
-.hl .hl-img{position:absolute;inset:0;background-position:center;background-size:cover;background-repeat:no-repeat;
+.hl .hl-img{position:absolute;inset:0;background-position:var(--hl-pos,center);background-size:cover;background-repeat:no-repeat;
   transition:transform .45s cubic-bezier(.16,1,.3,1)}
+/* Mientras la marca solo nos da UNA foto, las cuatro tarjetas la comparten (mock, ver
+   prisma/seed.ts). Cada una la encuadra distinto para que no canten como repetidas;
+   con fotos propias esto deja de aplicar solo (cada card traería la suya). */
+.hl-grid > .hl:nth-child(2) .hl-img{--hl-pos:22% 32%}
+.hl-grid > .hl:nth-child(3) .hl-img{--hl-pos:78% 28%}
+.hl-grid > .hl:nth-child(4) .hl-img{--hl-pos:45% 68%}
 .hl:hover .hl-img{transform:scale(1.045)}
 /* Degradado de protección VERTICAL: el texto de abajo se lee sobre cualquier foto. */
 .hl::after{content:"";position:absolute;inset:0;
@@ -1243,3 +1271,144 @@
   .modal--v2 .modal-foot{padding:14px 18px 16px}
 }
 /* === FIN ADJUDICACIÓN v2 ================================================== */
+
+/* === FIXES GOAL F3 ======================================================== */
+/* A3 · El nombre de la insignia con UNA sola palabra larga ("Semifinalista") no
+   tenía dónde partir: se quedaba en una sola línea, medía 75px dentro de una caja
+   de 57px y el overflow:hidden de .bt-n la cortaba a media palabra ("Semifinalis"),
+   sin ellipsis que avisara. Se mantiene el criterio ya tomado para los nombres de
+   insignia —DOS líneas, no ellipsis— dándole al navegador dónde cortar:
+   hyphens:auto parte con guion ("Semifi-/nalista") y overflow-wrap:break-word es
+   el respaldo si no hay diccionario de guionado. El -webkit-line-clamp:2 sigue
+   mandando, así que el tile no crece de alto (68px medidos antes y después). */
+/* [CIERRE · O10] `-webkit-hyphens` es obligatorio en Safari/iOS: sin él, `hyphens:auto`
+   no hace NADA en el navegador del iPhone y el fix de F3 no llegaba a la mitad del
+   público del Aula. Va primero, y el estándar después (el que ganan los navegadores
+   modernos). Autoprefixer no interviene en este proyecto: el CSS se sirve tal cual. */
+.badge-tile .bt-n{-webkit-hyphens:auto;hyphens:auto;overflow-wrap:break-word}
+/* === FIN FIXES GOAL F3 ==================================================== */
+
+/* === FIXES GOAL F3 · K-09 (escalera de encabezados) ======================= */
+/* Los estados vacíos colgaban un <h4> directo del <h1> de la pantalla (h1→h4).
+   Ahora el tag respeta la escalera (h2 bajo el h1 de pantalla, h3 bajo una
+   sección h2) y el aspecto lo sigue dando .empty, que hasta hoy solo vestía el
+   h4 (app.css: .empty h4{font-size:16px;color:var(--text);margin-bottom:6px}).
+   Esta regla replica ese mismo aspecto para h2/h3: mismo tamaño, mismo color y
+   mismo margen — con el reset global *{margin:0} no queda ninguna diferencia
+   heredada del navegador. */
+.empty h2,.empty h3{font-size:16px;color:var(--text);margin-bottom:6px}
+/* === FIN FIXES GOAL F3 · K-09 ============================================= */
+
+/* ==========================================================================
+   A11Y · GOAL 2026-08 (auditoría de teclado — docs/review/GOAL_2026-08_teclado.md)
+   Va al FINAL de screens.css a propósito: las reglas que corrige están en este
+   mismo archivo con la MISMA especificidad, así que la única forma de ganarlas
+   sin inflar selectores es el orden de origen. (responsive.css carga después,
+   pero no declara ninguna regla rival — auditado.)
+   ========================================================================== */
+
+/* --- K-01 · Devolver el anillo de foco a los botones que lo apagaban ---------
+   `:focus-visible{box-shadow:var(--ring)}` (app.css:19, especificidad 0,1,0) quedaba
+   pisado por `.btn.btn-primary`/`.btn.btn-accent`/`.rec-btn.recording` (0,2,0), que
+   declaran `box-shadow:none` para matar la elevación del mockup. Resultado medido en
+   "Entrar al aula": outline "3px none" + box-shadow "none" = CERO indicador de foco
+   (WCAG 2.4.7). Aquí se restaura SOLO en :focus-visible; el reposo sigue plano. */
+.btn.btn-primary:focus-visible,
+.btn.btn-accent:focus-visible,
+.rec-btn.recording:focus-visible{box-shadow:var(--ring)}
+/* Hover + foco a la vez: el acento conserva su glow y suma el anillo (el primario no
+   tiene sombra en hover, así que le basta el anillo). */
+.btn.btn-accent:hover:focus-visible{box-shadow:var(--sh-glow),var(--ring)}
+.btn.btn-primary:hover:focus-visible{box-shadow:var(--ring)}
+
+/* --- K-01 (bis · GOAL E5) · el .rec-btn EN REPOSO tampoco tenía anillo -------
+   K-01 solo cubrió `.rec-btn.recording`, que declara `box-shadow:none`. Pero el botón
+   en reposo (screens.css:311) declara `box-shadow:var(--sh-glow)` con la MISMA
+   especificidad (0,1,0) que el `:focus-visible{box-shadow:var(--ring)}` de app.css:19,
+   y gana por orden de origen — screens.css carga después. Así que el control principal
+   de la entrega se recorría con Tab sin NINGÚN indicador visible (WCAG 2.4.7). Se
+   resuelve como el acento en el bloque de arriba: glow del mockup + anillo en el mismo
+   box-shadow. `.rec-btn.recording:focus-visible` (0,3,0) sigue ganando a esta (0,2,0)
+   mientras graba, que es lo correcto: ahí no hay glow que conservar. */
+.rec-btn:focus-visible{box-shadow:var(--sh-glow),var(--ring)}
+
+/* --- K-12 · prefers-reduced-motion: las cuatro animaciones que se escapaban ---
+   El bloque de app.css:493-507 no las alcanza (viven en screens.css, que va después).
+   La grave es `.lb-wave i`: el ecualizador del login se escala en bucle INFINITO y la
+   preferencia del sistema no lo paraba (roce con WCAG 2.2.2). */
+@media (prefers-reduced-motion:reduce){
+  /* `animation:none` quita el bucle; `animation-play-state:paused` DESPUÉS del
+     shorthand (que lo resetea a `running`) deja también el estado observable en
+     "paused" — es la señal que mide la auditoría con getComputedStyle. */
+  .lb-wave i{animation:none;animation-play-state:paused}
+  /* [GOAL E5] `.typing i` (screens.css:492) era la ÚLTIMA animación infinita que
+     quedaba fuera: los tres puntos de "escribiendo…" del chat saltaban en bucle
+     aunque el sistema pidiera menos movimiento. Mismo par shorthand+play-state. */
+  .typing i{animation:none;animation-play-state:paused}
+  .tn-more > summary .chev,
+  .module-head .chev,
+  .rate-star svg{transition:none}
+}
+
+/* K-09 (Debate Hub y Niveles a h2/h3): cambio puramente semántico en los builders;
+   el aspecto del estado vacío lo cubre ya la regla `.empty h2,.empty h3` del bloque
+   FIXES GOAL F3 de arriba — no se duplica aquí. */
+
+/* === [GOAL-E4] Sección de la campaña GOAL 2026-08 (agente E4) ============= */
+
+/* #7 · Fila de exportaciones de Métricas de negocio (scr-admin-metrics.ts).
+   El .row del kit es `display:flex` SIN wrap: con `justify-content:flex-end` los dos
+   botones (465 px juntos) no cabían en los 360 px útiles de un viewport de 390 y el
+   primero se salía por la IZQUIERDA (left:-90px), ilegible y sin scroll que lo rescatara.
+   Con wrap caen uno debajo del otro, y a ≤640 ocupan el ancho completo (mismo patrón que
+   `.lf-card .btn.btn-block` de este archivo: los .btn nacen inline-flex y al estirarse
+   necesitan centrar su contenido). */
+.am-exports{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+@media (max-width:640px){
+  .am-exports{justify-content:stretch}
+  .am-exports > .btn{flex:1 1 100%;justify-content:center}
+}
+
+/* [revisión · minor 5] El vacío de "Cursos" del admin usa h2; su pinta la cubre la regla
+   `.empty h2,.empty h3` del bloque FIXES GOAL F3 · K-09 de arriba — no se duplica aquí. */
+
+/* ==========================================================================
+   A11Y · CIERRE GOAL 2026-08 (última revisión de rama)
+   Mismo criterio que el bloque A11Y de arriba: va al FINAL para ganar por orden
+   de origen a las reglas rivales de este mismo archivo y de app.css.
+   ========================================================================== */
+
+/* --- C3 · Contraste del texto secundario sobre CARD NEGRA ---------------------
+   --ink-400 (#6B6B6B) se eligió para superficies CLARAS (5,33:1 sobre blanco).
+   Sobre la card negra del kit (--otr-black #171717) ese mismo gris mide 3,36:1 y
+   FALLA el 4,5:1 de WCAG 1.4.3 en seis piezas de texto real: la versalita "NIVEL"
+   del anillo (dashboard y perfil), el delta ±XX del historial del Debate Hub, el
+   nº de puesto y el tier de cada fila del leaderboard, y el puesto + la versalita
+   de la card de ranking del dashboard.
+   Cálculo (WCAG 2.1, luminancia relativa):
+     #171717 → L = 0,00857   |   #6B6B6B → L = 0,15326   |   #8C8C8C → L = 0,26228
+     (0,15326+0,05)/(0,00857+0,05) = 3,47… medido 3,36 con el gris efectivo → FALLA
+     (0,26228+0,05)/(0,00857+0,05) = 5,33:1 → PASA AA con margen (el viejo #808080
+     daba 4,54, justo en el filo; #8C8C8C ya existe como --n-400 del brand book).
+   Se escopa a .card--dark para no aclarar estos mismos componentes cuando viven
+   sobre fondo claro (.ring--light sigue con --ink-400, 5,33:1 sobre blanco). */
+.card--dark .ring .ring-cap,
+.card--dark .form-d,
+.card--dark .lbrow .lb-r,
+.card--dark .lbrow .lb-t,
+.card--dark.dash-lb .dlb-meta,
+.card--dark.dash-lb .lb-pos{color:var(--n-400)}
+
+/* --- O3 · K-01 en las CARDS/TILES clicables ----------------------------------
+   El `:focus-visible{box-shadow:var(--ring)}` global (app.css:19, especificidad
+   0,1,0) quedaba pisado por `.card` (app.css:269) y `.tile` (app.css:274), que
+   declaran su propio `box-shadow` con la misma especificidad y MÁS TARDE. Efecto
+   medido: el grid de coaches (scr-marketplace, role="button"), las filas de debate
+   (scr-debate) y las cards de programa del perfil (scr-profile) se recorrían con
+   Tab sin NINGÚN indicador de foco (WCAG 2.4.7). Se restaura combinando su sombra
+   con el anillo, igual que se hizo con .btn-accent y .rec-btn. Las variantes con
+   :hover existen porque `.tile.click:hover` (0,3,0) y `.lift:hover` ganarían si no. */
+.tile:focus-visible{box-shadow:var(--sh-1),var(--ring)}
+.tile.click:hover:focus-visible{box-shadow:var(--sh-2),var(--ring)}
+.card[role]:focus-visible{box-shadow:var(--sh-1),var(--ring)}
+.card[role].lift:hover:focus-visible{box-shadow:var(--sh-3),var(--ring)}

@@ -20,17 +20,21 @@ export const S = {};
     }</span>`;
   };
   // Tarjeta de una reseña individual.
+  // [CIERRE · O7] author/ini/body YA vienen esc() de queries.ts (reviewsReceived y el perfil
+  // público del coach) → aquí se pintan CRUDOS, que es el contrato de la casa. Con el esc()
+  // de más, una reseña que citaba "St. Michael's" se leía "St. Michael&#39;s". `when` no es
+  // texto de usuario: lo compone queries con whenLabel().
   const reviewCard = (rv, opts = {}) => `
     <div class="card card-pad" style="padding:15px 16px;background:var(--surface-2)">
       <div class="row vcenter between" style="gap:10px">
         <div class="row vcenter" style="gap:11px;min-width:0">
-          ${C.avatar(esc(rv.ini), { size: 'sm', bg: 'var(--otr-black)' })}
-          <div style="min-width:0"><div style="font-weight:700;font-size:13.5px;line-height:1.2">${esc(rv.author)}</div>
+          ${C.avatar(rv.ini, { size: 'sm', bg: 'var(--otr-black)' })}
+          <div style="min-width:0"><div style="font-weight:700;font-size:13.5px;line-height:1.2">${rv.author}</div>
           <div class="faint" style="font-size:11.5px;margin-top:2px">${esc(rv.when)}${opts.showProgram && rv.programName ? ` · ${rv.programName}` : ''}</div></div>
         </div>
         ${starsRO(rv.rating)}
       </div>
-      ${rv.body ? `<p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:11px;white-space:pre-wrap">${esc(rv.body)}</p>` : ''}
+      ${rv.body ? `<p class="muted" style="font-size:13.5px;line-height:1.55;margin-top:11px;white-space:pre-wrap">${rv.body}</p>` : ''}
     </div>`;
   // Tarjeta de un programa (course) — usada en perfiles de coach.
   const programCard = (p) => `
@@ -104,17 +108,21 @@ export const S = {};
 
       <div class="split fade-up rail-320" style="--d:2">
         <div class="card card-pad">
-          ${C.secTitle(nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel"), { sm: true, right: `<span class="muted tnum" style="font-size:13px">${xp.toLocaleString(getLang() === 'en' ? 'en' : 'es')} / ${xpNext.toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span>` })}
+          ${/* [K-09] Niveles medía h1 → h4 → h4 → h3 (salto h1→h4 y además un h3 DESPUÉS de
+                un h4). Las tres secciones de la pantalla son hermanas de primer nivel: h2.
+                `.sec-title--sm > h2` ya está tipado igual que h3/h4 (screens.css:40). */""}
+          ${C.secTitle(nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel"), { sm: true, tag: 'h2', right: `<span class="muted tnum" style="font-size:13px">${xp.toLocaleString(getLang() === 'en' ? 'en' : 'es')} / ${xpNext.toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span>` })}
           <div style="margin:4px 0 7px">${C.bar(pct,{cls:'thick navy'})}</div>
           <div class="row between vcenter" style="font-size:12px;color:var(--text-2)">${C.chip(esc(curName), 'tint')}<span class="tnum">${nextLevel ? toNext.toLocaleString(getLang() === 'en' ? 'en' : 'es') + ' ' + t("profile.xpToReach") + ' ' + esc(nextLevel.name) : t("profile.maxLevelReached")}</span></div>
 
           <div class="divider"></div>
-          ${C.secTitle(t("profile.competencies"), { sm: true, right: hasSkills ? C.chip(`${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} ${t("profile.avg")}`, 'accent') : '' })}
+          ${C.secTitle(t("profile.competencies"), { sm: true, tag: 'h2', right: hasSkills ? C.chip(`${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} ${t("profile.avg")}`, 'accent') : '' })}
           ${hasSkills
             ? `<div style="margin-top:6px">
             ${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${t(SKILL_LABEL[c[0]] || c[0])}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
           </div>`
-            : `<div class="empty" style="padding:26px;margin-top:8px"><div class="ill">${IC.award}</div><h4>${t("profile.noEvalHeading")}</h4><p>${t("profile.noEvalBody")}</p></div>`}
+            /* [K-09] Vacío colgando de la sección h2 "Competencias" → h3 (antes h4). */
+            : `<div class="empty" style="padding:26px;margin-top:8px"><div class="ill">${IC.award}</div><h3>${t("profile.noEvalHeading")}</h3><p>${t("profile.noEvalBody")}</p></div>`}
         </div>
 
         <div class="stack" style="gap:16px">
@@ -127,7 +135,8 @@ export const S = {};
             </div>
           </div>
           <div class="card">
-            <div class="card-head"><div class="sec-title sec-title--sm"><h3>${t("profile.recentGains")}</h3></div></div>
+            ${/* [K-09] Tercera sección hermana → h2 (antes h3, y venía DESPUÉS de dos h4). */""}
+            <div class="card-head"><div class="sec-title sec-title--sm"><h2>${t("profile.recentGains")}</h2></div></div>
             <div class="card-body" style="padding:8px 16px 12px">
               ${recent.length ? recent.map(ev=>`
                 <div class="agenda-item"><span class="when-dot" style="background:var(--otr-green)"></span>
@@ -136,6 +145,14 @@ export const S = {};
             </div>
           </div>
         </div>
+      </div>
+      ${/* [GOAL F3 · A5] La pantalla era 100% lectura: ni un control, ninguna salida.
+            Dos destinos naturales del progreso —las insignias que el XP desbloquea y
+            el Debate Hub donde se gana— con el kit (btn-outline sm) y la navegación
+            in-app de siempre (go('<ruta>')). Rutas reales de ROUTES: badges y debate. */''}
+      <div class="row wrap fade-up progress-exits" style="--d:3;gap:10px;margin-top:20px">
+        ${C.btn(t("profile.progressGoBadges"), 'outline', { size: 'sm', icRight: 'arrowR', attrs: `onclick="go('badges')"` })}
+        ${C.btn(t("profile.progressGoDebate"), 'outline', { size: 'sm', icRight: 'arrowR', attrs: `onclick="go('debate')"` })}
       </div>`;
     }
   };
@@ -180,12 +197,24 @@ export const S = {};
     }
   };
 
-  /* ---------------- PERFIL (SEGMENTADO POR ROL) ---------------- */
+  /* ---------------- PERFIL (SEGMENTADO POR ROL) ----------------
+     [GOAL-E4 #3 y #4] Antes esto era un BINARIO (isTeacher = teacher||admin) con dos caras:
+     la de coach y la de alumno. Con cuatro roles reales eso mentía en los dos extremos:
+       · PARENT caía en renderStudentSelf() → a una madre se le pintaba el rango "OTR Initiate",
+         "Nivel 1", "1000 XP para el siguiente nivel", la racha, "Insignias destacadas" y
+         "Mis programas → Explorar programas". Gamificación de alumno para quien no es alumno.
+       · ADMIN caía en renderCoachSelf() → al equipo OTR se le atribuía un perfil VENDIBLE de
+         marketplace: chip "Coach", "Perfil de marketplace", "0.0 Rating · 0 Reseñas" y
+         "Cómo trabajo". El admin no se vende en el marketplace.
+     Ahora cada rol tiene su cara. Las dos nuevas son MINIMAL a propósito: identidad + lo que
+     ya existe en el payload (hijos vinculados / consolas del nav). No se inventa ninguna
+     feature nueva ni se promete un dato que no esté en DB. */
   S.profile = {
     render(state) {
       const role = String((state && state.role) || (DB.me && DB.me.role) || 'student').toLowerCase();
-      const isTeacher = role === 'teacher' || role === 'admin';
-      return isTeacher ? renderCoachSelf() : renderStudentSelf();
+      if (role === 'admin') return renderAdminSelf();
+      if (role === 'parent') return renderParentSelf();
+      return role === 'teacher' ? renderCoachSelf() : renderStudentSelf();
     }
   };
 
@@ -210,18 +239,19 @@ export const S = {};
     return `
     <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
       <div class="profile-head">
-        ${C.avatar(esc(ini), { size: 'xl', bg: 'var(--otr-navy)' })}
+        ${/* [CIERRE · O7] cp.* y me.* llegan esc() de queries.ts → crudo aquí (contrato). */''}
+        ${C.avatar(ini, { size: 'xl', bg: 'var(--otr-navy)' })}
         <div style="flex:1;min-width:200px">
           <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
-            <h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${esc(name)}</h1>${C.chip('Coach', 'black')}
+            <h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${name}</h1>${C.chip('Coach', 'black')}
           </div>
-          ${headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${esc(headline)}</div>` : ''}
+          ${headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${headline}</div>` : ''}
           <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
             <span class="row vcenter" style="gap:6px">${starsRO(rating)}<b class="tnum" style="font-size:13.5px">${Number(rating).toFixed(1)}</b></span>
             <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</span>
-            ${location ? `<span class="faint" style="font-size:12.5px">· ${esc(location)}</span>` : ''}
+            ${location ? `<span class="faint" style="font-size:12.5px">· ${location}</span>` : ''}
           </div>
-          ${bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(bio)}</p>` : ''}
+          ${bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${bio}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
             ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-coach"' })}
             ${C.btn(t("profile.marketplaceProfile"), 'outline', { size: 'sm', ic: 'sliders', attrs: 'data-action="edit-coach-market"' })}
@@ -239,7 +269,7 @@ export const S = {};
       <div class="stack" style="gap:18px">
         <div class="card card-pad">
           ${C.secTitle(t("profile.howIWork"), { sm: true })}
-          <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${teachingStyle ? esc(teachingStyle) : t("profile.noMethodologySelf")}</p>
+          <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${teachingStyle ? teachingStyle : t("profile.noMethodologySelf")}</p>
         </div>
 
         <div class="card card-pad">
@@ -286,12 +316,13 @@ export const S = {};
     return `
     <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
       <div class="profile-head">
-        ${C.avatar(esc(me.initials), { size: 'xl', bg: 'var(--otr-sky-lo)' })}
+        ${/* [CIERRE · O7] me.* llega esc() de queries.ts (salvo `email`) → crudo aquí. */''}
+        ${C.avatar(me.initials, { size: 'xl', bg: 'var(--otr-sky-lo)' })}
         <div style="flex:1;min-width:200px">
           <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${me.name}</h1>${C.chip(esc(me.level || 'OTR Initiate'), 'black', { ic: 'levels' })}</div>
           ${me.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${me.headline}</div>` : ''}
-          <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${esc(me.location)}` : ''}</div>
-          ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(me.bio)}</p>` : ''}
+          <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${me.location}` : ''}</div>
+          ${me.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${me.bio}</p>` : ''}
           <div class="row" style="gap:8px;margin-top:12px">
             ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-profile"' })}
           </div>
@@ -351,6 +382,97 @@ export const S = {};
     </div>`;
   }
 
+  /* --- Cabecera de identidad compartida por las caras MINIMAL (familia y admin) ---
+     Avatar + nombre + chip de rol + correo + "Editar perfil". Sin KPIs, sin rango, sin XP:
+     ninguno de los dos roles tiene progreso de alumno que mostrar.
+     [revisión · minor 7] Contrato de escape: queries.ts escapa UNA vez y el builder pinta
+     crudo. `initials`, `name` y `location` YA vienen escapados (queries.ts:1753/1756) → van
+     crudos; `email` NO se escapa allí → es el único que lleva esc() aquí. (Las caras de alumno
+     y de coach sí re-escapan: está reportado aparte, es previo a este trabajo.) */
+  function identityHead(roleChip) {
+    const me = DB.me || {};
+    return `
+    <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
+      <div class="profile-head">
+        ${C.avatar(me.initials || '', { size: 'xl', bg: 'var(--otr-navy)' })}
+        <div style="flex:1;min-width:200px">
+          <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${me.name}</h1>${roleChip}</div>
+          <div class="muted" style="font-size:13px;margin-top:4px">${esc(me.email)}${me.location ? ` · ${me.location}` : ''}</div>
+          <div class="row" style="gap:8px;margin-top:12px">
+            ${C.btn(t("profile.editProfile"), 'accent', { size: 'sm', ic: 'pencil', attrs: 'data-action="edit-profile"' })}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* --- [GOAL-E4 #3] Perfil de FAMILIA (cara PARENT) ---
+     Identidad + los hijos ya vinculados (DB.parent.children, el MISMO dato que pinta el
+     Portal de familia — no se consulta nada nuevo) + los dos destinos donde el padre hace
+     algo: el portal (reservas, aprobaciones y gasto) y los mensajes con los coaches.
+     Explícitamente FUERA: rango, XP, racha, insignias y "Mis programas". */
+  function renderParentSelf() {
+    const kids = (DB.parent && Array.isArray(DB.parent.children)) ? DB.parent.children : [];
+    const kidRow = (k) => `
+      <div class="card card-pad" style="padding:12px 14px;background:var(--surface-2)">
+        <div class="row vcenter between" style="gap:10px;flex-wrap:wrap">
+          <div class="row vcenter" style="gap:11px;min-width:0">
+            ${/* Mismo contrato: children[].initials/name ya vienen escapados de queries.ts;
+                  `level` lo compone levelNameForXp() sin escapar, así que ese sí lleva esc(). */''}
+            ${C.avatar(k.initials || '', { size: 'sm', bg: 'var(--otr-black)' })}
+            <div style="min-width:0">
+              <div style="font-weight:700;font-size:14px;line-height:1.2">${k.name}</div>
+              ${k.level ? `<div class="faint" style="font-size:12px;margin-top:2px">${esc(k.level)}</div>` : ''}
+            </div>
+          </div>
+          ${k.ageBand === 'minor' ? C.chip(t("profile.minorProtected"), 'black', { ic: 'lock' }) : ''}
+        </div>
+      </div>`;
+
+    return `
+    ${identityHead(C.chip(t("profile.roleFamily"), 'outline'))}
+
+    <div class="split fade-up rail-320" style="--d:1">
+      <div class="stack" style="gap:18px">
+        <div class="card card-pad">
+          ${C.secTitle(t("profile.linkedChildren"), { sm: true, right: C.btn(t("profile.goParentPortal"), 'outline', { size: 'sm', icRight: 'chevR', attrs: 'data-go="parent"' }) })}
+          ${kids.length
+            ? `<div class="stack" style="gap:12px;margin-top:14px">${kids.map(kidRow).join('')}</div>`
+            : `<div class="empty" style="padding:24px"><div class="ill">${IC.users}</div><h4>${t("profile.noChildrenHeading")}</h4><p>${t("profile.noChildrenBody")}</p>${C.btn(t("profile.goParentPortal"), 'accent', { size: 'sm', attrs: 'data-go="parent"' })}</div>`}
+        </div>
+      </div>
+
+      <div class="stack" style="gap:16px">
+        <div class="card card-pad">
+          ${C.secTitle(t("profile.quickLinks"), { sm: true })}
+          <div class="stack" style="gap:8px;margin-top:12px">
+            ${C.btn(t("profile.goParentPortal"), 'outline', { size: 'sm', block: true, ic: 'users', icRight: 'chevR', attrs: 'data-go="parent"' })}
+            ${C.btn(t("profile.goMessages"), 'outline', { size: 'sm', block: true, ic: 'msg', icRight: 'chevR', attrs: 'data-go="messages"' })}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  /* --- [GOAL-E4 #4] Perfil de ADMIN ---
+     Identidad + chip "Admin" + atajos a SUS consolas (las mismas rutas que ya tiene en el
+     nav: moderación, usuarios y métricas). Explícitamente FUERA: "Perfil de marketplace",
+     rating, reseñas y "Cómo trabajo" — el admin no es un coach que se vende. */
+  function renderAdminSelf() {
+    return `
+    ${identityHead(C.chip(t("profile.roleAdmin"), 'black', { ic: 'shield' }))}
+
+    <div class="card card-pad fade-up" style="--d:1">
+      ${C.secTitle(t("profile.adminConsoles"), { sm: true })}
+      <p class="faint" style="font-size:12.5px;margin-top:4px">${t("profile.adminConsolesHint")}</p>
+      <div class="row wrap" style="gap:8px;margin-top:14px">
+        ${C.btn(t("profile.goModeration"), 'outline', { size: 'sm', ic: 'flag', icRight: 'chevR', attrs: 'data-go="admin"' })}
+        ${C.btn(t("profile.goUsers"), 'outline', { size: 'sm', ic: 'users', icRight: 'chevR', attrs: 'data-go="admin-users"' })}
+        ${C.btn(t("profile.goMetrics"), 'outline', { size: 'sm', ic: 'chart', icRight: 'chevR', attrs: 'data-go="admin-metrics"' })}
+      </div>
+    </div>`;
+  }
+
   /* ---------------- PERFIL PÚBLICO DE UN COACH (cara STUDENT) ---------------- */
   S.coach = {
     render() {
@@ -369,7 +491,8 @@ export const S = {};
       return `
       <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
         <div class="profile-head">
-          ${C.avatar(esc(cp.initials), { size: 'xl', bg: 'var(--otr-navy)' })}
+          ${/* [CIERRE · O7] cp.* llega esc() de queries.ts → crudo aquí (contrato). */''}
+          ${C.avatar(cp.initials, { size: 'xl', bg: 'var(--otr-navy)' })}
           <div style="flex:1;min-width:200px">
             <div class="row vcenter" style="gap:10px;flex-wrap:wrap">
               <h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${cp.name}</h1>${C.chip('Coach', 'black')}
@@ -378,9 +501,9 @@ export const S = {};
             <div class="row vcenter" style="gap:8px;margin-top:6px;flex-wrap:wrap">
               <span class="row vcenter" style="gap:6px">${starsRO(rating)}<b class="tnum" style="font-size:13.5px">${Number(rating).toFixed(1)}</b></span>
               <span class="faint" style="font-size:12.5px">· ${reviewCount} ${reviewCount === 1 ? t("profile.reviewSingular") : t("profile.reviewPlural")}</span>
-              ${cp.location ? `<span class="faint" style="font-size:12.5px">· ${esc(cp.location)}</span>` : ''}
+              ${cp.location ? `<span class="faint" style="font-size:12.5px">· ${cp.location}</span>` : ''}
             </div>
-            ${cp.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${esc(cp.bio)}</p>` : ''}
+            ${cp.bio ? `<p class="muted" style="font-size:13.5px;line-height:1.5;margin-top:10px;max-width:60ch;white-space:pre-wrap">${cp.bio}</p>` : ''}
           </div>
         </div>
       </div>
@@ -389,7 +512,7 @@ export const S = {};
         <div class="stack" style="gap:18px">
           <div class="card card-pad">
             ${C.secTitle(t("profile.howTheyWork"), { sm: true })}
-            <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${cp.teachingStyle ? esc(cp.teachingStyle) : t("profile.noMethodologyCoach")}</p>
+            <p class="muted" style="font-size:13.5px;line-height:1.55;white-space:pre-wrap">${cp.teachingStyle ? cp.teachingStyle : t("profile.noMethodologyCoach")}</p>
           </div>
 
           <div class="card card-pad">
