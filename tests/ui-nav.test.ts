@@ -21,11 +21,22 @@ win.toast = () => {};
 import { DB } from "../app/lib/data";
 import { renderShell, type Role } from "../app/lib/shell";
 import { ROUTES } from "../app/lib/screens";
+import { t } from "../app/lib/i18n";
 
 Object.assign(DB, {
   me: { name: "Analía Reyes", initials: "AR", role: "student", level: "OTR Competitor" },
   messages: [], notifications: [],
 });
+
+/** Renderiza con la cookie de idioma puesta (getLang lee document.cookie). */
+function withLang<T>(lang: string, fn: () => T): T {
+  const prev = (globalThis as any).document;
+  (globalThis as any).document = { cookie: `otr_lang=${lang}` };
+  try { return fn(); } finally {
+    if (prev === undefined) delete (globalThis as any).document;
+    else (globalThis as any).document = prev;
+  }
+}
 
 const shell = (activeNav = "course", role: Role = "student") =>
   renderShell(activeNav, ["Cursos"], "<div></div>", role);
@@ -35,8 +46,14 @@ function navRoutes(html: string): string[] {
   return [...html.matchAll(/data-go="([^"]+)"/g)].map((m) => m[1]);
 }
 
-/** El bloque del menú "Más" (lleva TODOS los ítems del rol, agrupados). */
-const menuMas = (html: string) => html.slice(html.indexOf('class="tn-menu"'), html.indexOf("</details>"));
+/** El bloque del menú "Más" (lleva TODOS los ítems del rol, agrupados).
+    [RONDA 3] La barra tiene DOS <details class="tn-more"> —el desplegable de grupo
+    "Progreso" y "Más"—, así que el corte se ancla al id del segundo en vez de a la primera
+    aparición de `class="tn-menu"` / `</details>`, que ahora son las del desplegable. */
+const menuMas = (html: string) => {
+  const i = html.indexOf('id="tn-more"');
+  return html.slice(i, html.indexOf("</details>", i));
+};
 
 /* ================= N1 · los mismos ítems, ahora en la top-nav ================= */
 describe("N1 · Mis programas es una sección del menú 'Más'", () => {
@@ -71,9 +88,11 @@ describe("N1 · Mis programas es una sección del menú 'Más'", () => {
     // El orden del NAV es de sidebar (agrupado); en la barra no hay cabeceras de grupo, así
     // que "Activos" (que solo se entendía bajo "Mis programas") no puede ser un link suelto.
     const links = (html: string) => html.slice(html.indexOf('class="tn-links"'), html.indexOf("<details"));
+    // [RONDA 3] 'progress' ya no es un link suelto: ocupa el 5º hueco como DESPLEGABLE
+    // ("Progreso" → Rangos · Logros), que se comprueba en su propio bloque más abajo.
     const alumno = links(shell("dashboard"));
     expect([...alumno.matchAll(/data-go="([^"]+)"/g)].map((m) => m[1]))
-      .toEqual(["dashboard", "course", "events", "debate", "progress"]);
+      .toEqual(["dashboard", "course", "events", "debate"]);
     expect(alumno).toContain("Cursos");        // etiqueta autónoma…
     expect(alumno).not.toContain("Activos");   // …en vez de la del sidebar
     // El coach ve su trabajo diario, no "Buscar coaches" (que es del alumno/padre).
@@ -82,25 +101,156 @@ describe("N1 · Mis programas es una sección del menú 'Más'", () => {
   });
 
   it("si la ruta activa cayó en el excedente, sube a los links visibles (no se esconde dónde estás)", () => {
-    // 'badges' es el último ítem del alumno: fuera de los 5 links de cabecera.
-    const html = shell("badges");
+    // [RONDA 3] 'explore' ("Buscar coaches") vive solo en "Más": fuera de los links de
+    // cabecera y fuera del desplegable "Progreso". (Antes se probaba con 'badges', que
+    // ahora tiene sitio propio en ese desplegable y por eso ya no se inyecta.)
+    const html = shell("explore");
     const links = html.slice(html.indexOf('class="tn-links"'), html.indexOf("<details"));
-    expect(links).toContain('data-go="badges"');
+    expect(links).toContain('data-go="explore"');
     expect(links).toContain('class="tn-link active"');
   });
 });
 
-describe("N1 · Progreso es una sección del menú 'Más'", () => {
-  it("agrupa trayectoria, niveles, asignaciones y logros", () => {
+/* ================= RONDA 3 · reorganización de la barra (feedback de Isaac) =========
+   1 · "agrega al menú arriba «progress» y que sea un dropdown que dentro tenga «Levels
+        - reemplazando por → Ranks» y también tenga «Achievements». borra esos dos"
+   2 · "Reemplaza el icono de notificaciones y haz eso Messages"
+   3 · del menú "Más": fuera "Journey"/"Trayectoria" y "Assignments"/"Asignaciones"
+   4 · BUG "en «find New» ¿por qué se abre otra pestaña arriba? Debería ser en el mismo" */
+
+/** El desplegable de grupo de la barra (el PRIMER <details class="tn-more">, sin id). */
+const dropProgreso = (html: string) => {
+  const i = html.indexOf('<details class="tn-more tn-nav');
+  return i < 0 ? "" : html.slice(i, html.indexOf("</details>", i));
+};
+
+describe("R3-1 · 'Progreso' es un DESPLEGABLE de la barra con Rangos + Logros", () => {
+  it("el disparador existe, se llama Progreso/Progress y es un <details> como 'Más'", () => {
+    const es = dropProgreso(shell());
+    expect(es, "falta el desplegable de grupo en la barra").not.toBe("");
+    expect(es).toContain('<summary aria-label="Progreso">');
+    expect(es).toContain('<span class="tn-lbl">Progreso</span>');
+    // Comparte la clase .tn-more a propósito: el Escape de Aula.tsx selecciona por ella.
+    expect(es).toContain('class="tn-more tn-nav');
+  });
+
+  it("dentro están SUS DOS destinos y solo esos: Rangos y Logros", () => {
+    const d = dropProgreso(shell());
+    expect(d).toContain('data-go="progress"');
+    expect(d).toContain('data-go="badges"');
+    expect(d).toContain("Rangos");
+    expect(d).toContain("Logros");
+    expect([...d.matchAll(/data-go="([^"]+)"/g)].map((m) => m[1])).toEqual(["progress", "badges"]);
+  });
+
+  it("«Levels» pasó a «Ranks»: misma ruta 'progress', nombre nuevo en ES y EN", () => {
+    expect(t("nav.progress", "es")).toBe("Rangos");
+    expect(t("nav.progress", "en")).toBe("Ranks");
+    const en = withLang("en", () => dropProgreso(shell()));
+    expect(en).toContain('<span class="tn-lbl">Progress</span>');
+    expect(en).toContain("Ranks");
+    expect(en).toContain("Achievements");
+  });
+
+  it("estando en una de sus pantallas el disparador se marca activo (y el enlace, aria-current)", () => {
+    for (const r of ["progress", "badges"]) {
+      const d = dropProgreso(shell(r));
+      expect(d, `${r} ilumina el disparador`).toContain('class="tn-more tn-nav active"');
+      expect(d).toContain('aria-current="true"');
+      expect(d).toMatch(new RegExp(`class="tn-mi active"[^>]*data-go="${r}" aria-current="page"`));
+    }
+    expect(dropProgreso(shell("dashboard"))).not.toContain("tn-nav active");
+  });
+
+  it("'Niveles/Levels' ya NO es un link suelto de la barra", () => {
+    const links = (html: string) => html.slice(html.indexOf('class="tn-links"'), html.indexOf("<details"));
+    expect(links(shell("dashboard"))).not.toContain('data-go="progress"');
+    expect(links(shell("dashboard"))).not.toContain("Niveles");
+  });
+});
+
+describe("R3-2 · el tile de la derecha es MENSAJES, no la campana", () => {
+  it("es un enlace a #messages con nombre accesible bilingüe", () => {
+    const html = shell();
+    expect(html).toContain('id="tn-messages"');
+    expect(html).toMatch(/<a class="tn-icon[^"]*" id="tn-messages" href="#messages" data-go="messages" aria-label="Mensajes"/);
+    expect(withLang("en", () => shell())).toContain('aria-label="Messages"');
+    // ya no hay un <button id="bell"> en el bloque derecho
+    expect(html.slice(html.indexOf('class="tn-right"'))).not.toContain('id="bell"');
+  });
+
+  it("el contador es el de MENSAJES sin leer, con el dato real (y calla si no hay)", () => {
+    expect(shell()).not.toContain("bell-count");               // DB.messages = []
+    (DB as any).messages = [{ unread: 3 }, { unread: 2 }, { unread: 0 }];
+    expect(shell()).toContain('<span class="bell-count">5</span>');
+    (DB as any).messages = [];
+  });
+
+  it("estando en Mensajes el activo lo marca el ICONO, y la ruta no se inyecta como link", () => {
+    const html = shell("messages");
+    expect(html).toMatch(/class="tn-icon active" id="tn-messages"[^>]*aria-current="page"/);
+    const links = html.slice(html.indexOf('class="tn-links"'), html.indexOf("<details"));
+    expect(links, "'Mensajes' duplicado: icono + link").not.toContain('data-go="messages"');
+  });
+
+  it("las notificaciones NO quedan huérfanas: su disparador se muda al menú 'Más'", () => {
+    (DB as any).notifications = [{ unread: true }, { unread: true }, { unread: false }];
+    const menu = menuMas(shell());
+    // mismo id → mismo handler de Aula.tsx; es un <button> porque abre un panel, no navega
+    expect(menu).toMatch(/<button type="button" class="tn-mi" id="bell"/);
+    expect(menu).toContain("Notificaciones");
+    expect(menu).toContain('<span class="tn-count">2</span>');
+    (DB as any).notifications = [];
+  });
+});
+
+describe("R3-3 · 'Journey' y 'Assignments' salen del nav", () => {
+  it("ni en la barra, ni en 'Más', ni en el desplegable, en ningún rol", () => {
+    for (const role of ["student", "teacher", "parent", "admin"] as const) {
+      const html = shell("dashboard", role);
+      const barra = html.slice(html.indexOf('class="tn-links"'), html.indexOf('class="tn-right"'));
+      expect(barra, `rol ${role}: sigue 'lifetime'`).not.toContain('data-go="lifetime"');
+      expect(barra, `rol ${role}: sigue 'grades'`).not.toContain('data-go="grades"');
+    }
+  });
+
+  it("el grupo 'Progreso' de 'Más' queda con Rangos y Logros (respaldo móvil)", () => {
     const menu = menuMas(shell());
     const grupo = menu.slice(menu.indexOf("Progreso"));
-    for (const r of ["lifetime", "progress", "grades", "badges"]) {
-      expect(grupo, `"${r}" dentro de Progreso`).toContain(`data-go="${r}"`);
-    }
-    expect(grupo).toContain("Trayectoria");
-    expect(grupo).toContain("Niveles");
-    expect(grupo).toContain("Asignaciones");
+    expect(grupo).toContain('data-go="progress"');
+    expect(grupo).toContain('data-go="badges"');
+    expect(grupo).toContain("Rangos");
     expect(grupo).toContain("Logros");
+    expect(grupo).not.toContain("Trayectoria");
+    expect(grupo).not.toContain("Asignaciones");
+  });
+
+  it("el tabbar móvil tampoco deja 'Trayectoria' suelta (sería el mapa partido en dos)", () => {
+    const tb = shell("dashboard").slice(shell("dashboard").indexOf('class="tabbar'));
+    expect(tb).not.toContain('data-go="lifetime"');
+    expect(tb).toContain('data-go="progress"');
+  });
+
+  it("'Más' conserva el resto: Cursos, Buscar nuevos, Buscar clases, coaches y Mensajes", () => {
+    const menu = menuMas(shell());
+    for (const r of ["dashboard", "events", "course", "catalog", "explore", "listings", "debate", "messages"]) {
+      expect(menu, `"${r}" sigue en Más`).toContain(`data-go="${r}"`);
+    }
+  });
+});
+
+describe("R3-4 · el catálogo es un SUB-TAB de Cursos: no añade entrada al nav", () => {
+  it("la ruta 'catalog' ilumina 'Cursos' (nav:'course'), no un destino propio", () => {
+    expect(ROUTES.catalog.nav).toBe("course");
+  });
+
+  it("estando en el catálogo la barra pinta los MISMOS 4 links, con Cursos activo", () => {
+    const links = (html: string) => html.slice(html.indexOf('class="tn-links"'), html.indexOf("<details"));
+    const enCatalogo = links(shell(ROUTES.catalog.nav));
+    expect([...enCatalogo.matchAll(/data-go="([^"]+)"/g)].map((m) => m[1]))
+      .toEqual(["dashboard", "course", "events", "debate"]);
+    expect(enCatalogo).not.toContain("Buscar nuevos");
+    expect(enCatalogo).toMatch(/class="tn-link active"[^>]*data-go="course"/);
   });
 });
 

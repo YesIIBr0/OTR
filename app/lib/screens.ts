@@ -130,7 +130,13 @@ export const ROUTES: Record<string, RouteDef> = {
   // [EPIC-2] 'catalog' ya no es un item de nav propio: enruta a la sección "Cursos"
   // unificada (nav:'course') forzando el sub-tab Catálogo. El screen S.catalog crudo
   // sigue existiendo (reusado dentro de S.course); aquí usamos el wrapper coursesCatalog.
-  catalog:        { screen:'coursesCatalog', nav:'catalog',    crumbs:['Cursos','Buscar nuevos'] },
+  // [RONDA 3 · BUG de Isaac: "en «find New» ¿por qué se abre otra pestaña arriba?"] El
+  // comentario de arriba decía nav:'course' pero el código declaraba nav:'catalog'. Como
+  // 'catalog' SÍ es un ítem del NAV del alumno (vive en "Más"), el shell trataba la ruta
+  // activa como un destino propio y la SUBÍA a la barra: aparecía un "Buscar nuevos" nuevo
+  // al lado de "Cursos". El catálogo es un SUB-TAB dentro de Cursos, no una sección: con
+  // nav:'course' la barra sigue marcando "Cursos" y no crece.
+  catalog:        { screen:'coursesCatalog', nav:'course',     crumbs:['Cursos','Buscar nuevos'] },
   // Crumbs genéricos (Moodle multi-curso): el nombre real del curso/lección se
   // muestra en el hero de cada pantalla, no se hardcodea aquí.
   // [EPIC-2] La ruta raíz 'course' entra por "Mis cursos" (wrapper coursesMine);
@@ -146,7 +152,8 @@ export const ROUTES: Record<string, RouteDef> = {
   quiz:           { screen:'quiz',         nav:'course',       crumbs:['Cursos','Examen'] },
   'quiz-results': { screen:'quizResults',  nav:'course',       crumbs:['Cursos','Resultados'] },
   player:         { screen:'player',       nav:'player',       crumbs:['Cursos','Lección'] },
-  progress:       { screen:'progress',     nav:'progress',     crumbs:['Centro de progreso','Niveles'] },
+  // [RONDA 3 · Isaac] "Levels → Ranks": misma pantalla, nombre nuevo (nav.progress).
+  progress:       { screen:'progress',     nav:'progress',     crumbs:['Progreso','Rangos'] },
   badges:         { screen:'badges',       nav:'badges',       crumbs:['Centro de progreso','Logros'] },
   // RE-REGISTRADA: el alumno necesita ver sus notas + el feedback del coach (S.grades).
   grades:         { screen:'grades',       nav:'grades',       crumbs:['Progreso','Asignaciones'] },

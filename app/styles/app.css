@@ -132,7 +132,38 @@ button.tn-mi{width:100%;border:0;background:transparent;appearance:none;-webkit-
 /* Lo que ya se ve como link horizontal no se repite dentro del menú (solo en escritorio). */
 @media (min-width:1025px){
   .tn-menu .tn-dup{display:none}
-  .tn-more--dup{display:none}
+}
+
+/* === RONDA3 · NAV (Isaac) ===================================================
+   1) Desplegable de GRUPO en la barra ("Progreso" → Rangos · Logros). Reusa el
+      <details class="tn-more"> —para que el Escape de Aula.tsx lo cierre igual— pero su
+      disparador se viste de LINK horizontal (14/500 --ink-400 · activo 14/700 negro),
+      no de píldora como "Más": está en la fila de links y tiene que leerse como uno.
+   2) Separador del bloque de Notificaciones dentro del menú "Más" (la campana perdió su
+      sitio fijo a la derecha; su acceso vive ahora al final de ese menú).            */
+/* El gap de .tn-left es 38px (bloque↔bloque) pero el de .tn-links es 26 (link↔link): el
+   desplegable es UN LINK MÁS, así que recupera esos 12px para caer en el ritmo de la fila.
+   Vive fuera del <nav> porque .tn-links lleva overflow:hidden y recortaría su panel. */
+.tn-more.tn-nav{margin-left:-12px}
+.tn-more.tn-nav > summary{padding:0;border-radius:0;gap:5px;
+  font-size:14px;font-weight:500;letter-spacing:-.01em;color:var(--ink-400)}
+.tn-more.tn-nav > summary:hover,.tn-more.tn-nav[open] > summary{background:transparent;color:var(--otr-black)}
+.tn-more.tn-nav.active > summary{font-weight:700;color:var(--otr-black)}
+.tn-more.tn-nav > summary .tn-lbl{white-space:nowrap}
+.tn-more.tn-nav > summary .chev{width:12px;height:12px}
+.tn-menu--nav{width:214px}
+.tn-msep{height:1px;margin:6px 3px;background:var(--border)}
+/* 3) El tile de la derecha dejó de ser <button id="bell"> y pasó a ser <a> a Mensajes: hay
+      que apagarle el subrayado global de los enlaces y darle marca de activo (es lo único
+      que señala "estás en Mensajes": la ruta ya no se inyecta como link en la barra). */
+a.tn-icon:hover{text-decoration:none}
+.tn-icon.active{background:var(--otr-black);color:#fff}
+.tn-icon.active:hover{background:var(--otr-black);color:#fff}
+/* Por debajo de 1025px los links horizontales desaparecen (responsive.css) y el menú "Más"
+   ES la navegación: el desplegable de grupo se va con ellos y sus dos destinos se leen en
+   "Más", donde .tn-dup deja de ocultarlos. */
+@media (max-width:1024px){
+  .tn-more.tn-nav{display:none}
 }
 
 /* ---------- Bloque derecho: XP · campana · chip de usuario ---------- */

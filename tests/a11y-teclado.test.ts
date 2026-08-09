@@ -314,8 +314,13 @@ function shellDB() {
 const shell = (activeNav = "course", role: Role = "student") =>
   renderShell(activeNav, ["Cursos"], "<div></div>", role);
 
-/** Bloque del menú "Más" (desde .tn-menu hasta el cierre del <details>). */
-const menuMas = (html: string) => html.slice(html.indexOf('class="tn-menu"'), html.indexOf("</details>"));
+/** Bloque del menú "Más" (desde su <details id="tn-more"> hasta el cierre).
+    [RONDA 3] Anclado al id porque ahora hay DOS <details class="tn-more"> en la barra:
+    el desplegable de grupo "Progreso" (que va primero) y "Más". */
+const menuMas = (html: string) => {
+  const i = html.indexOf('id="tn-more"');
+  return html.slice(i, html.indexOf("</details>", i));
+};
 /** Bloque del menú de cuenta del chip de usuario. */
 const menuUser = (html: string) => html.slice(html.indexOf('id="sb-usermenu"'), html.indexOf("</header>"));
 /** Bloque del tabbar móvil. */

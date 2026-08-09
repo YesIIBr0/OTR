@@ -59,10 +59,16 @@ const NAV: Record<Role, NavGroup[]> = {
     ]},
     // [UI-NAV N2] Membresía no es grupo propio: vive en el menú del chip de usuario, junto
     // a Perfil, Ajustes y Salir.
+    // [RONDA 3 · Isaac] El grupo se queda con SUS DOS destinos y nada más: "Rangos" (la
+    // pantalla que se llamaba "Niveles"/"Levels" — mismo `r:'progress'`, solo cambia el
+    // nombre) y "Logros". Isaac tachó en rojo "Journey"/"Trayectoria" (r:'lifetime') y
+    // "Assignments"/"Asignaciones" (r:'grades'): salen del nav. Las RUTAS siguen vivas en
+    // screens.ts —'lifetime' se alcanza desde Ajustes → "Mi trayectoria"— pero ya no
+    // ocupan un destino de la barra. Estos dos ítems se pintan en el desplegable
+    // "Progreso" de la barra (TOPNAV_GROUP) y quedan aquí como respaldo del menú "Más"
+    // por debajo de 1025px, donde los links inline desaparecen.
     { gk:'group.progress', group:'Progreso', key:'progress', items:[
-      { r:'lifetime', ic:'award', k:'nav.lifetime', l:'Trayectoria' },
-      { r:'progress', ic:'levels', k:'nav.progress', l:'Niveles' },
-      { r:'grades', ic:'doc', k:'nav.grades', l:'Asignaciones' },
+      { r:'progress', ic:'levels', k:'nav.progress', l:'Rangos' },
       { r:'badges', ic:'medal', k:'nav.badges', l:'Logros' },
     ]},
   ],
@@ -131,7 +137,10 @@ const NAV: Record<Role, NavGroup[]> = {
 };
 
 const TABBAR: Record<Role, NavItem[]> = {
-  student: [ {r:'dashboard',ic:'home',k:'nav.dashboard',l:'Inicio'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'course',ic:'book',k:'nav.course',l:'Aprender'},{r:'lifetime',ic:'award',k:'nav.lifetime',l:'Trayectoria'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
+  // [RONDA 3 · Isaac] "Trayectoria" (r:'lifetime') salió del nav de escritorio: dejarla como
+  // pestaña móvil habría partido el mapa en dos. Su hueco lo toma "Rangos" (r:'progress'),
+  // el destino de progreso que Isaac sí quiere ver.
+  student: [ {r:'dashboard',ic:'home',k:'nav.dashboard',l:'Inicio'},{r:'debate',ic:'mic',k:'nav.debate',l:'Debate'},{r:'course',ic:'book',k:'nav.course',l:'Aprender'},{r:'progress',ic:'levels',k:'nav.progress',l:'Rangos'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   teacher: [ {r:'teacher',ic:'grid',k:'nav.workspace',l:'Panel'},{r:'coachwork',ic:'calendar',k:'nav.coachwork',l:'Reservas'},{r:'participants',ic:'users',k:'nav.participants',l:'Alumnos'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   parent: [ {r:'parent',ic:'users',k:'nav.parent',l:'Familia'},{r:'explore',ic:'search',k:'nav.explore',l:'Coaches'},{r:'messages',ic:'msg',k:'nav.messages',l:'Mensajes'},{r:'profile',ic:'user',k:'nav.profile',l:'Perfil'} ],
   // [NAV-06] Admin necesita su propio tabbar en móvil; sin él caía al de estudiante
@@ -146,10 +155,21 @@ const TABBAR: Record<Role, NavItem[]> = {
 // los que se leen solos, sin el grupo encima. Una ruta que no esté aquí no se pierde: vive
 // en "Más" y, si es la activa, sube sola a la barra.
 const TOPNAV_INLINE: Record<Role, string[]> = {
-  student: ['dashboard', 'course', 'events', 'debate', 'progress'],
+  // [RONDA 3 · Isaac] 'progress' deja de ser un link suelto: sus dos destinos viven en el
+  // desplegable "Progreso" (TOPNAV_GROUP), que ocupa el 5º hueco de la barra.
+  student: ['dashboard', 'course', 'events', 'debate'],
   teacher: ['teacher', 'coachwork', 'manage', 'my-listings', 'participants'],
-  parent:  ['parent', 'explore', 'listings', 'messages', 'membership'],
+  // [RONDA 3 · Isaac] 'messages' sale de los links del padre: el icono FIJO del bloque
+  // derecho (antes campana) ya lleva a Mensajes; tenerlo dos veces era ruido.
+  parent:  ['parent', 'explore', 'listings', 'membership'],
   admin:   ['admin', 'admin-users', 'admin-metrics', 'manage', 'events'],
+};
+// [RONDA 3 · pedido de Isaac] "agrega al menú arriba «progress» y que sea un dropdown que
+// dentro tenga «Ranks» y «Achievements»". Un GRUPO del NAV puede pintarse en la barra como
+// UN desplegable en vez de N links sueltos: mismo <details> accesible que "Más" (Escape y
+// foco los atiende el mismo listener de Aula.tsx, que selecciona por .tn-more).
+const TOPNAV_GROUP: Partial<Record<Role, { gk: string; items: string[] }>> = {
+  student: { gk: 'group.progress', items: ['progress', 'badges'] },
 };
 // Etiqueta del LINK HORIZONTAL cuando la del sidebar no se lee fuera de su grupo:
 // "Activos" tenía sentido bajo la cabecera "Mis programas"; suelto en la barra, no.
@@ -170,16 +190,22 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
     return it.badge || '';
   };
 
-  // --- Reparto de ítems: inline vs. menú "Más" -------------------------------------
-  // Si la ruta activa no estaba entre los 5 elegidos se AÑADE a los links visibles: la
-  // barra nunca esconde DÓNDE ESTÁS.
+  // --- Reparto de ítems: inline vs. desplegable de grupo vs. menú "Más" --------------
   const flat: NavItem[] = nav.flatMap(g => g.items);
   const wanted = TOPNAV_INLINE[role] || TOPNAV_INLINE.student;
   const inline: NavItem[] = wanted.map(r => flat.find(it => it.r === r)).filter((it): it is NavItem => !!it);
+  // [RONDA 3] El grupo desplegable ("Progreso") también OCUPA sitio en la barra: sus rutas
+  // cuentan como visibles, así que no se duplican en "Más" (en escritorio) ni se re-inyectan.
+  const groupDef = TOPNAV_GROUP[role];
+  const groupItems: NavItem[] = groupDef ? groupDef.items.map(r => flat.find(it => it.r === r)).filter((it): it is NavItem => !!it) : [];
+  const groupActive = groupItems.some(it => it.r === activeNav);
+  // Si la ruta activa no estaba entre las elegidas se AÑADE a los links visibles: la barra
+  // nunca esconde DÓNDE ESTÁS. Excepción: 'messages' ya tiene sitio FIJO a la derecha
+  // (el icono que sustituyó a la campana) — inyectarla otra vez era exactamente la queja de
+  // Isaac ("¿por qué se abre otra pestaña arriba?"), así que la marca la lleva el icono.
   const activeItem = flat.find(it => it.r === activeNav);
-  if (activeItem && !inline.includes(activeItem)) inline.push(activeItem);
-  const inlineSet = new Set(inline.map(it => it.r));
-  const overflow = flat.filter(it => !inlineSet.has(it.r)).length;
+  if (activeItem && !inline.includes(activeItem) && !groupActive && activeItem.r !== 'messages') inline.push(activeItem);
+  const inlineSet = new Set([...inline, ...groupItems].map(it => it.r));
 
   const linksHtml = inline.map(it => {
     const b = navBadge(it);
@@ -189,6 +215,23 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
         <span class="tn-lbl">${label}</span>${/^\d+$/.test(b)?`<span class="tn-count">${b}</span>`:''}
       </a>`;
   }).join('');
+
+  // Desplegable de grupo en la barra (hoy: "Progreso" del alumno). Mismo <details> que
+  // "Más" —por eso comparte la clase .tn-more: el Escape de Aula.tsx lo cierra y devuelve el
+  // foco al <summary>— con el aspecto de un link horizontal. [A11Y] El disparador declara
+  // aria-current="true" cuando estás en una de sus pantallas (no "page": el summary no ES la
+  // página, solo la contiene), y el enlace de dentro lleva el aria-current="page".
+  const groupHtml = groupDef && groupItems.length ? `
+            <details class="tn-more tn-nav${groupActive?' active':''}">
+              <summary aria-label="${t(groupDef.gk, lang)}"${groupActive?' aria-current="true"':''}><span class="tn-lbl">${t(groupDef.gk, lang)}</span><span class="chev">${IC.chevD}</span></summary>
+              <div class="tn-menu tn-menu--nav">${groupItems.map(it => {
+                const b = navBadge(it);
+                return `
+                <a class="tn-mi${it.r===activeNav?' active':''}" href="#${it.r}" data-go="${it.r}"${it.r===activeNav?' aria-current="page"':''}>
+                  ${IC[it.ic]}<span class="lbl">${L(it)}</span>${/^\d+$/.test(b)?`<span class="tn-count">${b}</span>`:''}
+                </a>`;
+              }).join('')}</div>
+            </details>` : '';
 
   // Menú "Más": TODOS los ítems del rol, con la cabecera de su grupo. Los que ya se ven
   // como link horizontal se marcan .tn-dup y el CSS los esconde en escritorio; por debajo
@@ -230,6 +273,15 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
     ? `<span class="tn-xp" title="${xp.toLocaleString(lang==='en'?'en':'es')} XP">${IC.zap}<b class="tnum">${xp.toLocaleString(lang==='en'?'en':'es')}</b><span class="u">XP</span></span>`
     : '';
   const unreadNotifs = (DB.notifications || []).filter(n => n.unread).length;
+  // [RONDA 3 · Isaac] "Reemplaza el icono de notificaciones y haz eso Messages". La campana
+  // pierde su sitio fijo, pero sus avisos NO pueden quedar huérfanos: el disparador se muda
+  // al final del menú "Más", con el MISMO id="bell" (el delegador de Aula.tsx lo abre por id,
+  // sin cambios) y el mismo contador de no leídos. Es un <button>: abre un panel, no navega.
+  const notifsHtml = `
+        <div class="tn-msep" aria-hidden="true"></div>
+        <button type="button" class="tn-mi" id="bell">
+          ${IC.bell}<span class="lbl">${t('top.notifications', lang)}</span>${unreadNotifs>0?`<span class="tn-count">${unreadNotifs}</span>`:''}
+        </button>`;
 
   return `
   <div class="app">
@@ -247,21 +299,35 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
               ${otrCrest({ id: "tn", attrs: 'class="crest"' })}
             </a>
             <nav class="tn-links" aria-label="${t('top.navPrimary', lang)}">${linksHtml}</nav>
+            ${/* [RONDA 3] Desplegable de GRUPO ("Progreso" → Rangos · Logros). Va fuera del
+                 <nav> de links para no meter un <details> dentro de la lista de enlaces, y
+                 ANTES de "Más" porque ocupa el hueco del 5º link. */""}
+            ${groupHtml}
             ${/* Desplegable "Más": <details> nativo — sin JS nuevo (la SPA solo delega data-*).
                  [A11Y · K-08] El aria-label ES el texto visible (una sola fuente, t('top.more')):
                  antes decía "Menú" y pisaba el "Más" de pantalla (WCAG 2.5.3 Label in Name).
                  Se conserva el aria-label porque en móvil el .lbl va a display:none y el
-                 disparador se quedaría sin nombre. [A11Y · K-07] El panel no es role="menu". */""}
-            <details class="tn-more${overflow===0?' tn-more--dup':''}">
+                 disparador se quedaría sin nombre. [A11Y · K-07] El panel no es role="menu".
+                 [RONDA 3] Lleva id para poder ubicarlo sin ambigüedad ahora que hay DOS
+                 <details class="tn-more"> en la barra, y ya nunca se esconde: además de la
+                 navegación excedente guarda el acceso a Notificaciones. */""}
+            <details class="tn-more" id="tn-more">
               <summary aria-label="${t('top.more', lang)}">${IC.menu}<span class="lbl">${t('top.more', lang)}</span><span class="chev">${IC.chevD}</span></summary>
-              <div class="tn-menu">${moreHtml}</div>
+              <div class="tn-menu">${moreHtml}${notifsHtml}</div>
             </details>
           </div>
 
           <div class="tn-right">
             ${xpPill}
             ${role==='teacher'?`<button type="button" class="btn btn-primary btn-sm tn-create" id="create-menu">${t('top.create', lang)}</button>`:''}
-            <button type="button" class="tn-icon" id="bell" aria-label="${t('top.notifications', lang)}">${IC.bell}${unreadNotifs>0?`<span class="bell-count">${unreadNotifs}</span>`:''}</button>
+            ${/* [RONDA 3 · Isaac] "Reemplaza el icono de notificaciones y haz eso Messages".
+                 Ya no es un botón que abre un panel: es un ENLACE a la pantalla 'messages'
+                 (mismo data-go que el resto del nav). El contador es el de MENSAJES sin leer
+                 —el mismo `unreadMsgs` que ya usaba el ítem "Mensajes" del menú, dato real del
+                 payload— y desaparece si no hay ninguno: no se inventa un número. Estando en
+                 Mensajes el icono ES el marcador activo (por eso la ruta no se re-inyecta como
+                 link, ver arriba). */""}
+            <a class="tn-icon${activeNav==='messages'?' active':''}" id="tn-messages" href="#messages" data-go="messages" aria-label="${t('nav.messages', lang)}"${activeNav==='messages'?' aria-current="page"':''}>${IC.msg}${unreadMsgs>0?`<span class="bell-count">${unreadMsgs}</span>`:''}</a>
             <span class="tn-sep" aria-hidden="true"></span>
             <div class="tn-userwrap">
               ${/* [UI-NAV N2] El chip se ilumina cuando estás en cualquier destino de su menú:
