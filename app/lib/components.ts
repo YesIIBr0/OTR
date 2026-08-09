@@ -86,9 +86,12 @@ export const C = {
     const cls = opts.cls ? `bar ${opts.cls}` : 'bar';
     return `<div class="${cls}"><i style="width:${Math.max(0, Math.min(100, pct))}%"></i></div>`;
   },
+  // [ISAAC 2026-08-09] Anillo de PROGRESO → verde. Vive sobre superficies claras con la
+  // pista en --n-100, así que el trazo va en --success-strong (4,70:1 contra la pista;
+  // el verde vivo daría 2,67:1 y el aro se difuminaría contra el gris).
   ring(pct: number, size: number = 72, opts: RingOpts = {}) {
     const r = (size - 8) / 2, c = 2 * Math.PI * r, off = c * (1 - pct / 100);
-    const color = opts.color || 'var(--otr-sky-lo)';
+    const color = opts.color || 'var(--success-strong)';
     return `<span class="ring-wrap" style="width:${size}px;height:${size}px">
       ${/* [K-13] Decorativo: el dato ya lo dice en texto el .ring-label de abajo. Sin
             aria-hidden algunos lectores lo anuncian como gráfico vacío — era el único de
@@ -142,9 +145,25 @@ export const C = {
   },
 
   /** Chip/badge rectangular del mockup (versalitas 10/800, radio 3px).
-   *  variant: 'black' | 'accent' | 'outline' | 'tint' | 'info'. */
+   *  variant: 'black' | 'accent' | 'outline' | 'tint' | 'info' | 'done' | 'done-soft'.
+   *
+   *  [ISAAC · 2026-08-09] «Para completed - verde». Un chip que lleva el icono CHECK
+   *  es, por definición, un estado hecho/confirmado ("Completado", "Inscrito",
+   *  "Registrado", "Calificada", "Publicado", "Verificado"): se reencamina al par
+   *  verde conservando su PESO original, para que el rediseño cambie el tono y no la
+   *  jerarquía de la pantalla —
+   *    accent (sólido naranja) → done      (sólido verde, letra negra, 5,83:1)
+   *    tint   (tinte naranja)  → done-soft (tinte verde, letra --ok, 4,70:1)
+   *  Los ~20 sitios que lo piden viven en scr-*.ts y no necesitan tocarse: el color
+   *  del sistema se decide aquí, en el kit. Las demás variantes no se tocan — el
+   *  naranja sigue siendo el acento de "EN VIVO / TORNEO / HOY", y un chip en tinte
+   *  SIN check (p. ej. "PENDIENTE" o "MEJOR 60%") no es un completado. */
   chip(text: string, variant: string = 'outline', opts: ChipOpts = {}) {
-    const v = variant ? (variant.startsWith('chip--') ? variant : `chip--${variant}`) : '';
+    const done = opts.ic === 'check' || opts.ic === 'checkCircle';
+    const resolved = done && variant === 'accent' ? 'done'
+      : done && variant === 'tint' ? 'done-soft'
+      : variant;
+    const v = resolved ? (resolved.startsWith('chip--') ? resolved : `chip--${resolved}`) : '';
     const ic = opts.ic && IC[opts.ic] ? IC[opts.ic] : '';
     const attrs = opts.attrs ? ` ${opts.attrs}` : '';
     return `<span class="chip ${v}${opts.cls ? ` ${opts.cls}` : ''}"${attrs}>${ic}${text}</span>`;

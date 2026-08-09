@@ -107,12 +107,36 @@ const COOL_ALLOWED: Array<{ hex: string; file: string; why: string }> = [
     file: "app/styles/tokens.css",
     why:
       "[PEDIDO DE ISAAC · 2026-08-09] Verde de VICTORIA (--win) de la tarjeta de rating del " +
-      "Debate Hub. Textual del cliente sobre esa card: «Las W - verde», «Las L - así negro». " +
-      "Aquí el color no decora: SIGNIFICA el resultado de la ronda, así que la regla del " +
-      "acento único cede ante la semántica del cliente. Vive SOLO en tokens.css (lo amarra " +
-      "el test «los colores semánticos de Isaac no se escapan de tokens.css» de este mismo " +
-      "archivo); las pantallas lo consumen por var(--win), nunca por hex. " +
-      "Contraste MEDIDO (WCAG 2.1): letra negra #171717 encima → 5,83:1 (AA, ≥4,5).",
+      "Debate Hub y RAÍZ de la escala --success. Textual del cliente sobre esa card: «Las W " +
+      "- verde», «Las L - así negro»; y sobre el sistema entero: «Para completed - verde. " +
+      "Para progress bar - verde». Aquí el color no decora: SIGNIFICA el resultado de la " +
+      "ronda y el avance/completado. Vive SOLO en tokens.css (lo amarra el test «los colores " +
+      "semánticos de Isaac no se escapan de tokens.css» de este mismo archivo); las pantallas " +
+      "lo consumen por var(--win)/var(--success), nunca por hex. " +
+      "Contraste MEDIDO (WCAG 2.1): letra negra #171717 encima → 5,83:1 (AA, ≥4,5); " +
+      "letra blanca daría 3,07:1, por eso sobre verde el texto es SIEMPRE negro.",
+  },
+  {
+    hex: "#1A7A38",
+    file: "app/styles/tokens.css",
+    why:
+      "[PEDIDO DE ISAAC · 2026-08-09] --success-strong: el MISMO verde #2FA84F oscurecido " +
+      "hasta cumplir AA como color de TEXTO sobre claro (es al verde lo que --otr-green-text " +
+      "#9E3211 es al naranja). Lo consumen el % de progreso, --ok (éxito/completado), el " +
+      "trazo del anillo claro y la punta de las barras. No es un tercer verde: es el paso " +
+      "oscuro de la escala de --win. Contraste MEDIDO (WCAG 2.1, L=0,14426): sobre blanco " +
+      "5,41:1 · sobre el greige #F1F1EF 4,78:1 · sobre --success-soft 4,70:1 · con letra " +
+      "blanca encima 5,41:1 · contra la pista de barra #EFEFEF 4,70:1 (WCAG 1.4.11 pide 3:1).",
+  },
+  {
+    hex: "#E3F3E7",
+    file: "app/styles/tokens.css",
+    why:
+      "[PEDIDO DE ISAAC · 2026-08-09] --success-soft: tinte del mismo verde (≈12% de " +
+      "#2FA84F sobre blanco) para los FONDOS de completado — chip suave «COMPLETADO», tile " +
+      "del check de lección/módulo hecho, paso hecho de la escalera de niveles. Releva a " +
+      "--ok-soft #EFEFEF sin cambiar el peso visual, solo el tono. Contraste MEDIDO " +
+      "(L=0,86201): con --success-strong encima 4,70:1 (AA) · con #171717 encima 15,57:1.",
   },
   {
     hex: "#E8EDF3",
@@ -219,26 +243,46 @@ describe("paleta de marca (Brand Book V1.0)", () => {
 });
 
 /* ============================================================================
-   [PEDIDO DE ISAAC · 2026-08-09] La puerta semántica del Debate Hub, y SOLO esa.
+   [PEDIDO DE ISAAC · 2026-08-09] Los colores SEMÁNTICOS del sistema, y SOLO esos.
 
-   El cliente pidió, sobre la tarjeta oscura de rating: victoria en verde, derrota en
-   negro, tier Gold en dorado y Platinum en platino. Son los tres únicos colores del
-   producto que no son negro/gris/naranja, y entran como TOKENS con significado —
-   no como decoración suelta. Este bloque es el contrato de esa excepción:
+   El sistema de color del producto es, por decisión del cliente:
+     · NEGRO + BLANCO + grises  → dominantes (canvas, cards, y el CTA de acción:
+       «Reemplaza más por negro con blanco… Unirse a una llamada y todo eso negro
+       con blanco»);
+     · VERDE (escala de --win)  → semántica de avance y de hecho: «Para completed -
+       verde. Para progress bar - verde»;
+     · NARANJA #F25623          → acento PUNTUAL (barra de 3px de los títulos de
+       sección, canto de los héroes, chips de EN VIVO/TORNEO/HOY, avisos), nunca
+       superficies grandes ni todos los botones;
+     · ORO/PLATINO              → el metal del tier del Debate Hub.
 
-     1) cada token está declarado, con su valor exacto, en app/styles/tokens.css;
+   Este bloque es el contrato de los colores que NO son negro/gris/naranja. Cada uno:
+     1) está declarado, con su valor exacto, en app/styles/tokens.css;
      2) su hex NO aparece en ningún otro archivo del producto (quien quiera el color
         lo consume por var(--…): así la excepción no se convierte en una barra libre
         de hexes por las pantallas);
      3) queda anotado el contraste MEDIDO que justifica cada valor (WCAG 2.1).
 
-   La derrota NO necesita token: es el negro de marca (--otr-black #171717).
+   Ni el negro ni el blanco necesitan token nuevo (--otr-black #171717 / #FFFFFF), y
+   la derrota del Debate Hub se pinta con ese mismo negro de marca.
    ========================================================================== */
 const ISAAC_TOKENS: Array<{ name: string; hex: string; contraste: string }> = [
   {
     name: "--win",
     hex: "#2FA84F",
-    contraste: "letra negra #171717 encima → 5,83:1 (AA)",
+    contraste: "letra negra #171717 encima → 5,83:1 (AA) · letra blanca 3,07:1 (por eso el texto sobre verde es negro)",
+  },
+  {
+    name: "--success-strong",
+    hex: "#1A7A38",
+    contraste:
+      "sobre blanco 5,41:1 · sobre el greige #F1F1EF 4,78:1 · sobre --success-soft 4,70:1 · " +
+      "con letra blanca encima 5,41:1 · contra la pista de barra #EFEFEF 4,70:1 (1.4.11 pide 3:1)",
+  },
+  {
+    name: "--success-soft",
+    hex: "#E3F3E7",
+    contraste: "con --success-strong encima 4,70:1 (AA) · con #171717 encima 15,57:1",
   },
   {
     name: "--tier-gold",
@@ -252,12 +296,21 @@ const ISAAC_TOKENS: Array<{ name: string; hex: string; contraste: string }> = [
   },
 ];
 
-describe("excepción semántica del Debate Hub (pedido de Isaac, 2026-08-09)", () => {
-  it("los tres tokens están declarados en tokens.css con el valor medido", () => {
+describe("colores semánticos del sistema (pedido de Isaac, 2026-08-09)", () => {
+  it("cada token está declarado en tokens.css con el valor medido", () => {
     const tokensCss = readFileSync(path.join(ROOT, "app/styles/tokens.css"), "utf8");
     for (const { name, hex } of ISAAC_TOKENS) {
       expect(tokensCss).toContain(`${name}:${hex}`);
     }
+  });
+
+  it("--success cuelga de --win: un solo verde raíz, no dos", () => {
+    // La escala verde NO puede introducir un cuarto hex por la puerta de atrás: --success
+    // ES --win. Si alguien lo redeclara con su propio valor, este test lo caza.
+    const tokensCss = readFileSync(path.join(ROOT, "app/styles/tokens.css"), "utf8");
+    expect(tokensCss).toContain("--success:var(--win)");
+    expect(tokensCss).toContain("--ok:var(--success-strong)");
+    expect(tokensCss).toContain("--ok-soft:var(--success-soft)");
   });
 
   it("los colores semánticos de Isaac no se escapan de tokens.css", () => {

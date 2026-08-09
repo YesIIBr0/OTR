@@ -9,7 +9,11 @@ import { t, getLang, registerDict } from "./i18n";
 import { dict as d_teacher } from "./i18n-keys/teacher";
 registerDict(d_teacher);
 export const S = {};
-  const spark = (vals,color='var(--otr-sky)') => `<div class="spark">${vals.map(v=>`<i style="height:${v}%;background:${color}"></i>`).join('')}</div>`;
+  // [ISAAC 2026-08-09] El color iba INLINE y pisaba `.spark i{background:var(--n-600)}`
+  // del kit (screens.css): el roster pintaba ~96 barritas naranjas y era la pantalla más
+  // naranja del producto. Vuelve al gris del kit; --danger se conserva porque ahí el color
+  // SÍ significa algo (alumno en riesgo). Única línea tocada de este archivo.
+  const spark = (vals,color='var(--n-600)') => `<div class="spark">${vals.map(v=>`<i style="height:${v}%;background:${color}"></i>`).join('')}</div>`;
 
   /* ============================================================
      Helpers comunes del panel del profesor (gestión real)
@@ -108,7 +112,7 @@ export const S = {};
                   <td class="num tnum">${s.att==null?'—':`${s.att}%`}</td>
                   ${/* [auditoría] "—" (sin ActivityEvent aún) no es una clase eng-Alto/Medio/Bajo válida en CSS → se mapea a eng-none */""}
                   <td><span class="eng-pill eng-${s.eng==='—'?'none':s.eng}">${esc(s.eng)}</span></td>
-                  <td class="center">${spark(s.trend==='up'?[40,55,50,68,72,80,88]:s.trend==='down'?[80,70,64,55,48,40,34]:[60,62,58,64,60,62,60], s.risk?'var(--danger)':'var(--otr-sky)')}</td>
+                  <td class="center">${spark(s.trend==='up'?[40,55,50,68,72,80,88]:s.trend==='down'?[80,70,64,55,48,40,34]:[60,62,58,64,60,62,60], s.risk?'var(--danger)':'var(--n-600)')}</td>
                   <td class="num faint" style="font-size:12px">${esc(s.last)}</td>
                 </tr>`).join('')}
               </tbody>

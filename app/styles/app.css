@@ -257,15 +257,21 @@ a.tn-icon:hover{text-decoration:none}
   transition:background .15s var(--ease),border-color .15s,color .15s,box-shadow .15s,transform .05s;}
 .btn:active{transform:translateY(1px)}
 .btn .ic{width:16px;height:16px}
-/* BRAND BOOK V1.0: botón primario NEGRO (autoridad/prestigio, contraste 21:1).
-   El naranja de marca vive en el CTA estrella, acentos, links y foco (btn-accent). */
+/* BRAND BOOK V1.0: botón primario NEGRO (autoridad/prestigio).
+   #FFFFFF sobre #171717 = 17,9:1 (AAA de sobra); en :hover pasa a #000 = 21:1. */
 .btn-primary{background:var(--otr-black);color:var(--otr-cream);box-shadow:0 1px 2px rgba(23,23,23,.25)}
 .btn-primary:hover{background:#000;text-decoration:none}
 .btn-navy{background:var(--otr-black);color:var(--otr-cream)}
 .btn-navy:hover{background:#000;text-decoration:none}
-/* CTA estrella naranja (confirmar/continuar) — UNA sola pieza en naranja por vista. */
-.btn-accent{background:var(--otr-green);color:#fff;box-shadow:0 1px 2px rgba(200,64,26,.3)}
-.btn-accent:hover{background:var(--otr-green-lo);text-decoration:none}
+/* [ISAAC 2026-08-09] El CTA de acción ("Continuar", "Únete a la sesión",
+   "Inscribirme", "Empezar"…) ERA naranja con texto negro y pasa a NEGRO con texto
+   BLANCO: «Unirse a una llamada y todo eso negro con blanco». La CLASE no cambia
+   de nombre —la escriben ~200 sitios de las pantallas— solo cambia lo que pinta,
+   así que el rediseño entra por el kit y no pantalla por pantalla.
+   Contraste: #FFFFFF sobre #171717 = 17,9:1 · sobre #000 (hover) = 21:1.
+   (La geometría y el estado sobre superficie oscura los completa screens.css.) */
+.btn-accent{background:var(--otr-black);color:#fff;box-shadow:0 1px 2px rgba(23,23,23,.25)}
+.btn-accent:hover{background:#000;text-decoration:none}
 .btn-ghost{background:var(--otr-white);border-color:var(--border-strong);color:var(--text)}
 .btn-ghost:hover{background:var(--bg-sunken);text-decoration:none}
 .btn-soft{background:var(--action-soft);color:var(--otr-green-text)}
@@ -303,7 +309,9 @@ a.tn-icon:hover{text-decoration:none}
 .input-group .input{padding-left:36px}
 .select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236B6B6B' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px}
 .check{display:inline-flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer}
-.check input{width:17px;height:17px;accent-color:var(--action)}
+/* [ISAAC 2026-08-09] La casilla marcada era naranja; el control de formulario es
+   negro con el check en blanco, como el resto de los controles del kit. */
+.check input{width:17px;height:17px;accent-color:var(--otr-black)}
 
 /* Cards & surfaces */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-1)}
@@ -382,7 +390,14 @@ a.tn-icon:hover{text-decoration:none}
 .aud-toggle button.on{background:var(--otr-navy);color:#fff}
 
 /* Avatars */
-.avatar{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;background:var(--otr-sky-lo);overflow:hidden;border:1px solid rgba(23,23,23,.06)}
+/* [ISAAC 2026-08-09 · "reemplaza más por negro con blanco"] El avatar de iniciales
+   era un disco NARANJA (--otr-sky-lo): en el roster del coach, el leaderboard o la
+   bandeja de mensajes eso son 8-12 piezas de acento por pantalla, que es de donde
+   viene buena parte del "demasiado naranja". Pasa a gris de tinta con la inicial en
+   blanco (#FFFFFF sobre #4D4D4D = 8,45:1, AAA para texto pequeño) y se lee igual
+   sobre el canvas claro y sobre las cards negras (2,12:1 de separación de disco,
+   por encima del 3:1 no hace falta: el dato es la inicial, no el círculo). */
+.avatar{width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;background:var(--n-600);overflow:hidden;border:1px solid rgba(23,23,23,.06)}
 .avatar.sm{width:26px;height:26px;font-size:11px}
 .avatar.lg{width:56px;height:56px;font-size:20px}
 .avatar.xl{width:84px;height:84px;font-size:30px}
@@ -392,13 +407,17 @@ a.tn-icon:hover{text-decoration:none}
 
 /* Progress */
 .bar{height:8px;border-radius:var(--r-pill);background:var(--n-100);overflow:hidden}
-/* [BRAND V1.0 · moderación del acento] El progreso se pinta en NEGRO/gris: una pantalla
-   muestra muchas barras a la vez (competencias, cursos, XP) y en naranja saturarían la
-   vista. El naranja queda para la variante .bar.navy (destacar UNA barra por pantalla). */
-.bar > i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--n-700),var(--otr-black))}
+/* [ISAAC 2026-08-09] «Para progress bar - verde». TODA barra de progreso de la casa
+   (competencias, cursos, XP, camino de nivel) se pinta con la escala --success.
+   El degradado va de VIVO a OSCURO en el sentido de avance, a propósito: el borde
+   derecho —el único que hay que distinguir de la pista vacía— queda en
+   --success-strong, que mide 4,70:1 contra la pista #EFEFEF (WCAG 1.4.11 pide 3:1;
+   el verde vivo solo daría 2,67:1 y el límite se difuminaría).
+   .bar.navy deja de ser la excepción naranja: ya no hay dos colores de progreso. */
+.bar > i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--success),var(--success-strong))}
 .bar.thin{height:6px}
 .bar.thick{height:12px}
-.bar.navy > i{background:linear-gradient(90deg,var(--otr-sky-lo),var(--otr-sky))}
+.bar.navy > i{background:linear-gradient(90deg,var(--success),var(--success-strong))}
 .ring-wrap{position:relative;display:inline-flex}
 .ring-wrap .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 
