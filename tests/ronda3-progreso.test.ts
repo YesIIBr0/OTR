@@ -9,6 +9,8 @@
 // Este test fija ESO: que los dos bloques no vuelvan por un refactor, que lo conservado siga
 // en pie, y que la cabecera de las pantallas de este builder ya no lleve eyebrow.
 import { describe, it, expect, beforeEach } from "vitest";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 /* Stub de `window` ANTES de importar las pantallas (mismo patrón que screens.test.ts). */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -115,5 +117,21 @@ describe("RONDA 3 · sin eyebrow en las cabeceras de scr-profile.ts", () => {
     const html = Profile.badges.render();
     expect(html).not.toContain("ph-eyebrow");
     expect(html).toContain(`<h1 class="ph-title">${t("profile.badgesTitle")}</h1>`);
+  });
+});
+
+/* [Isaac 2026-08-09] Guardián del pedido "borra esos eyebrows igual en las otras páginas":
+   ningún builder puede volver a emitir un eyebrow de CABECERA. Las etiquetas de dato dentro
+   de tarjetas (.dh-eyebrow "TU PRÓXIMA CLASE", .eyebrow del certificado…) NO son eyebrows y
+   quedan fuera del guardián a propósito. */
+describe("Isaac · sin eyebrows de cabecera", () => {
+  it("ningún scr-*.ts emite ph-eyebrow y su regla CSS no revive", () => {
+    const dir = join(process.cwd(), "app/lib");
+    const culpables = readdirSync(dir)
+      .filter((f) => f.startsWith("scr-") && f.endsWith(".ts"))
+      .filter((f) => readFileSync(join(dir, f), "utf8").includes("ph-eyebrow"));
+    expect(culpables, `estos builders volvieron a poner eyebrow: ${culpables.join(", ")}`).toEqual([]);
+    const css = readFileSync(join(process.cwd(), "app/styles/screens.css"), "utf8");
+    expect(css).not.toContain("ph-eyebrow");
   });
 });

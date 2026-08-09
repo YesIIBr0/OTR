@@ -181,7 +181,9 @@
    .page-head (flex, space-between) ya existe en app.css; aquí van el eyebrow, el
    h1 de 40px y el modificador --rule (línea inferior + respiración del mockup). */
 .page-head--rule{align-items:flex-end;gap:24px;padding-bottom:20px;margin-bottom:26px;border-bottom:1px solid var(--border)}
-.page-head .ph-eyebrow{display:block;margin-bottom:9px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--otr-green-text)}
+/* [Isaac 2026-08-09] El eyebrow de cabecera ("TU FORMACIÓN", "TEMPORADA"…) se retiró de
+   TODAS las pantallas por pedido del cliente; su regla queda fuera para que no reviva sola.
+   Las etiquetas de dato DENTRO de tarjetas (.dh-eyebrow, .eyebrow) no son eyebrows y siguen. */
 .page-head .ph-title{margin:6px 0 0;font-size:40px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--text)}
 @media (max-width:640px){ .page-head .ph-title{font-size:30px} }
 /* === FIN KIT MOCKUP 2026-08 =============================================== */
@@ -1137,7 +1139,6 @@
 .dash-hero .dh-title{margin:0 0 16px;font-size:31px;line-height:1.04;max-width:16ch}
 /* Cabecera medida en el mockup: 70px de alto (eyebrow 9px sobre el título, regla a 16). */
 .page-head--rule{padding-bottom:16px;margin-bottom:24px}
-.page-head .ph-eyebrow{margin-bottom:7px}
 @media (max-width:640px){
   .dash-hero .dh-title{font-size:25px;max-width:none}
 }
