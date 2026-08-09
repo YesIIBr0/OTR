@@ -13,16 +13,10 @@ export const dict = {
     // con otro nombre. Es la MISMA pantalla, solo se renombra.
     "profile.progressTitle": "Rangos",
     "profile.progressSub": "Tu camino de Novato a Elite en el sistema OTR",
-    "profile.yourProgress": "Nivel y XP",
-    "profile.pathTo": "Camino a",
-    "profile.maxLevel": "Nivel máximo",
-    "profile.xpToReach": "XP para",
-    "profile.maxLevelReached": "¡Nivel máximo alcanzado!",
+    // [RONDA 3 · Isaac] Se fueron con sus bloques: pathTo/maxLevel/xpToReach/maxLevelReached
+    // (barra "Camino a <rango>"), competencies/avg/noEvalHeading/noEvalBody (las 6 barras de
+    // habilidad, que viven en "Mi trayectoria") y yourProgress (el eyebrow de la cabecera).
     "profile.radarOtr": "Radar OTR",
-    "profile.competencies": "Competencias",
-    "profile.avg": "prom.",
-    "profile.noEvalHeading": "Aún sin evaluación",
-    "profile.noEvalBody": "Tu coach evaluará tus 6 habilidades: Confianza, Estructura, Evidencia, Refutación, Cross-ex y Delivery.",
     "profile.streak": "Racha",
     "profile.streakDays": "{n} días",
     "profile.badgesProgress": "{got} de {total} insignias",
@@ -36,7 +30,6 @@ export const dict = {
 
     // ── Insignias y certificados ──
     "profile.badgesTitle": "Insignias y certificados",
-    "profile.achievements": "Logros",
     "profile.yourCertificates": "Tus certificados",
     "profile.officialCert": "Certificado oficial OTR",
     "profile.viewCertificate": "Ver certificado",
@@ -131,16 +124,7 @@ export const dict = {
     // ── Ranks ──
     "profile.progressTitle": "Ranks",
     "profile.progressSub": "Your path from Novice to Elite in the OTR system",
-    "profile.yourProgress": "Level & XP",
-    "profile.pathTo": "Path to",
-    "profile.maxLevel": "Max level",
-    "profile.xpToReach": "XP to reach",
-    "profile.maxLevelReached": "Max level reached!",
     "profile.radarOtr": "OTR Radar",
-    "profile.competencies": "Competencies",
-    "profile.avg": "avg.",
-    "profile.noEvalHeading": "No evaluation yet",
-    "profile.noEvalBody": "Your coach will assess your 6 skills: Confidence, Structure, Evidence, Rebuttal, Cross-ex and Delivery.",
     "profile.streak": "Streak",
     "profile.streakDays": "{n} days",
     "profile.badgesProgress": "{got} of {total} badges",
@@ -154,7 +138,6 @@ export const dict = {
 
     // ── Badges and certificates ──
     "profile.badgesTitle": "Badges and certificates",
-    "profile.achievements": "Achievements",
     "profile.yourCertificates": "Your certificates",
     "profile.officialCert": "Official OTR certificate",
     "profile.viewCertificate": "View certificate",
