@@ -10,15 +10,10 @@ registerDict(d_profile);
 export const S = {};
 
   /* ---------------- helpers de reseñas ---------------- */
-  // Fila de estrellas SOLO de lectura (rating 0-5). Rellenas hasta `rating`.
-  const starsRO = (rating) => {
-    const r = Math.round(Number(rating) || 0);
-    return `<span class="stars-ro" style="display:inline-flex;gap:2px;color:var(--otr-green)">${
-      Array.from({ length: 5 }, (_, i) =>
-        `<span style="display:inline-flex;${i < r ? '' : 'opacity:.25'}">${IC.star}</span>`
-      ).join('')
-    }</span>`;
-  };
+  // [M3] Estrellas de rating SOLO de lectura: delega en el helper ÚNICO de la casa (C.stars,
+  // components.ts) para que el perfil y el marketplace pinten estrellas RELLENAS y proporcionales
+  // idénticas. Antes usaba IC.star en trazo fino → un 5.0 se veía casi vacío frente al marketplace.
+  const starsRO = (rating) => C.stars(rating, { size: 14 });
   // Tarjeta de una reseña individual.
   // [CIERRE · O7] author/ini/body YA vienen esc() de queries.ts (reviewsReceived y el perfil
   // público del coach) → aquí se pintan CRUDOS, que es el contrato de la casa. Con el esc()
