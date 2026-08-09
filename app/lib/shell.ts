@@ -277,9 +277,12 @@ export function renderShell(activeNav: string, _crumbs: string[], content: strin
   // pierde su sitio fijo, pero sus avisos NO pueden quedar huérfanos: el disparador se muda
   // al final del menú "Más", con el MISMO id="bell" (el delegador de Aula.tsx lo abre por id,
   // sin cambios) y el mismo contador de no leídos. Es un <button>: abre un panel, no navega.
+  // [A11Y · K-06b] Lleva aria-expanded como el chip de usuario — es un disclosure. Sin
+  // aria-controls: su panel se crea al vuelo (Aula.tsx) y apuntar a un id que casi siempre
+  // falta miente más que callar. El estado lo sincroniza toggleNotif en toda vía de cierre.
   const notifsHtml = `
         <div class="tn-msep" aria-hidden="true"></div>
-        <button type="button" class="tn-mi" id="bell">
+        <button type="button" class="tn-mi" id="bell" aria-expanded="false">
           ${IC.bell}<span class="lbl">${t('top.notifications', lang)}</span>${unreadNotifs>0?`<span class="tn-count">${unreadNotifs}</span>`:''}
         </button>`;
 
