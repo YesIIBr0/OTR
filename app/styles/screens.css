@@ -1560,3 +1560,80 @@
   .cls-facts{grid-template-columns:1fr !important}
   .cls-crumb-row{flex-wrap:wrap;gap:8px}
 }
+
+/* === RONDA3 · HIGHLIGHTS (Isaac) =========================================
+   Vista LARGA de "Lo mejor de la temporada" (scr-highlights.ts): un logro por
+   fila, foto grande a la izquierda con el degradado de protección de marca, y la
+   fila entera enlazando a su publicación de Instagram.
+   Petición literal del cliente: «un view largo de solo 1 por fila para que se vea
+   mejor» + «cada publicación de esa a un post de IG». El grid de 4 del dashboard
+   (.hl / .hl-grid, arriba) NO se toca: es la vista previa.
+   ========================================================================== */
+.hlv-back{margin-bottom:12px}
+.hlv-head-acts{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.hlv-list{display:flex;flex-direction:column;gap:14px}
+
+/* La fila es una card negra: la foto ocupa su mitad y el texto respira sobre el
+   negro de marca (misma familia que .card--dark del kit). */
+.hlv-row{position:relative;border-radius:var(--r-md);overflow:hidden;background:var(--otr-black)}
+.hlv-link{display:grid;grid-template-columns:minmax(0,44%) minmax(0,1fr);align-items:stretch;
+  min-height:212px;color:inherit;text-decoration:none}
+a.hlv-link:hover{text-decoration:none}
+.hlv-link--off{cursor:default}
+
+/* La foto se pinta en el ::before (hereda el background-image del estilo inline) para poder
+   ESCALARLA en hover sin arrastrar el texto ni desbordar la celda vecina — mismo motivo por
+   el que .hl separa .hl-img de .hl en el dashboard. */
+.hlv-media{position:relative;overflow:hidden;min-width:0;background-size:cover;background-position:center;
+  background-repeat:no-repeat;background-color:#101010;display:flex;align-items:center;justify-content:center}
+.hlv-media::before{content:"";position:absolute;inset:0;background-image:inherit;background-size:cover;
+  background-position:center;background-repeat:no-repeat;transition:transform .45s cubic-bezier(.16,1,.3,1)}
+a.hlv-link:hover .hlv-media::before{transform:scale(1.05)}
+/* Degradado de protección: la foto se funde HACIA el bloque de texto (a la derecha en
+   escritorio; hacia abajo cuando la fila se apila). */
+.hlv-media::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(to right,rgba(23,23,23,.28),rgba(23,23,23,.06) 45%,rgba(23,23,23,.85))}
+/* Sin foto: tarjeta negra con el trofeo apagado (degrada, no deja hueco roto). */
+.hlv-media--empty .ic{position:relative;z-index:1;width:34px;height:34px;color:#3A3A3A}
+.hlv-media--empty::before{display:none}
+
+.hlv-body{display:flex;flex-direction:column;justify-content:center;gap:13px;padding:26px 30px;min-width:0}
+.hlv-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.chip.hlv-tag{font-size:10px;letter-spacing:.08em;padding:4px 9px}
+.hlv-date{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-300)}
+.hlv-date .ic{width:14px;height:14px;flex:none;color:var(--otr-green)}
+/* Título GRANDE: es lo que el cliente pidió que "se viera mejor". overflow-wrap evita que un
+   nombre de torneo larguísimo saque scroll horizontal en móvil. */
+.hlv-t{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.12;color:#fff;overflow-wrap:anywhere}
+.hlv-cta{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;
+  color:var(--otr-green)}            /* 5.2:1 sobre #171717 → AA */
+.hlv-cta .ic{width:15px;height:15px;flex:none;transition:transform .18s var(--ease)}
+a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
+.hlv-cta--off{color:var(--ink-300);font-weight:600}  /* 8.6:1 sobre #171717 */
+
+/* Barra de gestión (solo coach/admin): franja clara bajo la card, FUERA del ancla. */
+.hlv-admin{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;
+  padding:10px 14px;background:var(--surface);border-top:1px solid var(--border)}
+.hlv-admin .hlv-del{color:var(--danger)}
+.hlv-admin .hlv-del .ic{width:13px;height:13px}
+
+@media (max-width:860px){
+  .hlv-link{grid-template-columns:1fr;min-height:0}
+  .hlv-media{min-height:190px}
+  .hlv-media::after{background:linear-gradient(to top,rgba(23,23,23,.9),rgba(23,23,23,.12) 68%,rgba(23,23,23,.28))}
+  .hlv-body{padding:20px}
+  .hlv-t{font-size:21px}
+}
+@media (max-width:420px){
+  .hlv-media{min-height:158px}
+  .hlv-body{padding:17px 16px;gap:11px}
+  .hlv-t{font-size:19px}
+  .hlv-admin{justify-content:stretch}
+  .hlv-admin .btn{flex:1}
+}
+@media (prefers-reduced-motion:reduce){
+  .hlv-media::before,.hlv-cta .ic{transition:none}
+  a.hlv-link:hover .hlv-media::before{transform:none}
+  a.hlv-link:hover .hlv-cta .ic{transform:none}
+}
+/* === FIN RONDA3 · HIGHLIGHTS ============================================== */

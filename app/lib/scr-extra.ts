@@ -9,7 +9,23 @@ import { t, registerDict, getLang, fmtDayMonth } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): extra.* — los prefijos err.*/apierr.* que antes vivían aquí son CHROME (i18n-keys/chrome.ts). Ver app/lib/i18n.ts.
 import { dict as d_extra } from "./i18n-keys/extra";
 registerDict(d_extra);
+// [RONDA3 · HIGHLIGHTS] "Mis cursos" es la pantalla de GESTIÓN que ya tienen coach y admin, así
+// que de ella cuelga el acceso a "Lo mejor de la temporada" (cuya gestión vive en la propia
+// pantalla pública, junto a lo que ve el alumno — precedente de los torneos en scr-events).
+// El diccionario se registra aquí porque el botón se pinta ANTES de que cargue ese chunk.
+import { dict as d_hl } from "./i18n-keys/hl";
+registerDict(d_hl);
 import { videoEmbedHtml } from "./video";
+
+/* [RONDA3 · HIGHLIGHTS] Acciones de la cabecera de "Mis cursos": el acceso a la gestión de
+   logros de la temporada + el alta de curso que ya estaba. Compartido por las dos caras de
+   la pantalla (profesor y admin) para que el acceso no dependa del rol. */
+function manageHeadActions() {
+  return `<div class="row vcenter" style="gap:8px;flex-wrap:wrap">
+    ${C.btn(t("hl.manageBtn"), "outline", { ic: "trophy", attrs: 'data-go="highlights"' })}
+    ${C.btn(t("extra.newCourse"), "accent", { ic: "plus", attrs: 'data-action="new-course"' })}
+  </div>`;
+}
 
 /* ---- Helpers de autoría reutilizados por "Mis cursos" y el constructor de curso ---- */
 // Fecha de entrega legible (de un ISO) → es "15 nov" · en "15 Nov".
@@ -269,7 +285,7 @@ function renderAdminCourses() {
   const courses = DB.adminCourses || [];
   const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowAdmin")}</span><h1 class="ph-title">${t("extra.allCoursesTitle")}</h1>
     <div class="page-sub" style="margin-top:8px">${t("extra.allCoursesSub")}</div></div>
-    ${C.btn(t("extra.newCourse"), "accent", { ic: "plus", attrs: 'data-action="new-course"' })}</div>`;
+    ${manageHeadActions()}</div>`;
   if (!courses.length) {
     // [revisión · minor 5] h2, no h4: el único encabezado por encima es el h1 de la cabecera,
     // así que un h4 dejaría dos niveles vacíos en medio (mismo precedente que F3).
@@ -373,7 +389,7 @@ export const S = {
       const courses = DB.teacherCourses || [];
       const head = `<div class="page-head page-head--rule"><div><span class="ph-eyebrow">${t("extra.eyebrowTeacher")}</span><h1 class="ph-title">${t("extra.myCoursesTitle")}</h1>
         <div class="page-sub" style="margin-top:8px">${t("extra.myCoursesSub")}</div></div>
-        ${C.btn(t("extra.newCourse"), "accent", { ic: "plus", attrs: 'data-action="new-course"' })}</div>`;
+        ${manageHeadActions()}</div>`;
       if (!courses.length) {
         return head + `<div class="card"><div class="empty"><div class="ill">${IC.book}</div><h4>${t("extra.myCoursesEmptyHeading")}</h4><p>${t("extra.myCoursesEmptyBody")}</p>${C.btn(t("extra.newCourse"), "accent", { size: "sm", ic: "plus", attrs: 'data-action="new-course"' })}</div></div>`;
       }
