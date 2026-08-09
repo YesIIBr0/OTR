@@ -43,6 +43,9 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   settings:    () => import("./scr-settings"),
   events:      () => import("./scr-events"),
   room:        () => import("./scr-room"),
+  // [RONDA3 · HIGHLIGHTS] Destino de "Ver todos" del dashboard: la vista larga de
+  // "Lo mejor de la temporada" (1 logro por fila) + su gestión para coach/admin.
+  highlights:  () => import("./scr-highlights"),
 };
 
 // Nombre de pantalla → módulo que la exporta. Best-effort: ensureScreen tiene fallback
@@ -59,6 +62,7 @@ const SCREEN_MODULE: Record<string, string> = {
   lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
   adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp',
   placement:'placement', settings:'settings', events:'events', room:'room',
+  highlights:'highlights',
 };
 
 // Cache de runtime: se va llenando con la S de cada módulo cargado. Laxo por la misma
@@ -208,6 +212,11 @@ export const ROUTES: Record<string, RouteDef> = {
   settings:       { screen:'settings',     nav:'settings',     crumbs:['Cuenta','Ajustes'] },
   // Eventos (PRD §3.1 📅 Events): seminarios, sesiones en vivo y torneos → scr-events.ts.
   events:         { screen:'events',       nav:'events',       crumbs:['Eventos'] },
+  // [RONDA3 · HIGHLIGHTS] "Lo mejor de la temporada" completo (1 logro por fila) → scr-highlights.ts.
+  // Destino de "Ver todos" del dashboard, que hasta ahora caía en Eventos (defecto reportado
+  // por el cliente). Es una sub-vista de Inicio → nav:'dashboard' (mismo criterio que
+  // 'onboarding'/'placement'); sin `role` porque el alumno la LEE y el staff además la gestiona.
+  highlights:     { screen:'highlights',   nav:'dashboard',    crumbs:['Inicio','Lo mejor de la temporada'] },
   // Consola de moderación (PRD §3.3 admin console mínima, §7.4 reportes) → scr-admin.ts.
   admin:          { screen:'adminConsole', nav:'admin',        crumbs:['Administración','Moderación'], role:'admin' },
   // Admin → Gestión de usuarios (PRD §3.3): roles, verificación de coach, suspensión → scr-admin-users.ts.
