@@ -146,10 +146,11 @@ button.tn-mi{width:100%;border:0;background:transparent;appearance:none;-webkit-
 .tn-icon:hover{background:var(--border);color:var(--otr-black)}
 .tn-icon .ic{width:17px;height:17px}
 /* "Crear" del coach: a la altura del bloque derecho (34px como la pill y la campana); el
-   .btn-sm heredado mide 30 y quedaba corto. Selector de 2 clases a propósito: .btn-sm se
-   declara MÁS ABAJO en este mismo archivo. En móvil sigue mandando el mínimo táctil de
-   44px (regla de a11y sobre min-height) — height no lo pisa. */
-.tn-right .tn-create{height:34px;padding:0 13px;font-size:13px}
+   .btn-sm heredado mide 30 y quedaba corto. Selector de 3 clases a propósito: el
+   `.btn.btn-sm{height:40px}` del kit (screens.css, carga después con 0,2,0) ganaba y
+   "+ Crear" medía 40 en una fila cuyo ritmo es 34 (pill XP, campana, avatar) — visto en
+   la revisión R1. En móvil sigue mandando el mínimo táctil de 44px (min-height). */
+.tn-right .btn.tn-create{height:34px;padding:0 13px;font-size:13px}
 .tn-sep{width:1px;height:24px;background:var(--border);flex:none}
 .tn-userwrap{position:relative}
 .tn-user{display:flex;align-items:center;gap:9px;padding:3px 6px 3px 3px;border:0;border-radius:var(--r-md);background:transparent;
