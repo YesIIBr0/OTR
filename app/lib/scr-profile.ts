@@ -62,25 +62,16 @@ export const S = {};
       const curName = (DB.me && DB.me.level) || (levels[0] && levels[0].name) || 'OTR Initiate';
       let curIndex = levels.findIndex((l) => (l.name || '').toLowerCase() === String(curName).toLowerCase());
       if (curIndex < 0) curIndex = 0;
-      const nextLevel = levels[curIndex + 1] || null;
       const xp = Number(DB.xp) || 0;
-      const xpStart = Number(DB.xpLevelStart) || 0;
-      const xpNext = Number(DB.xpNext) || xpStart;
-      const toNext = Math.max(0, xpNext - xp);
-      const pct = xpNext > xpStart ? Math.round(((xp - xpStart) / (xpNext - xpStart)) * 100) : 100;
       const streak = Number(DB.me && DB.me.streak) || 0;
       const recent = (DB.activity || []).slice(0, 4); // eventos REALES (DB.activity ya viene escapado)
-      // Las 6 dimensiones del radar OTR, en orden fijo. Se leen de DB.skills (del estudiante).
-      const SKILL_DIMS = ['Confianza','Estructura','Evidencia','Refutación','Cross-ex','Delivery'];
-      // Etiqueta visible según idioma; el key canónico (dato del Skill Graph) no se traduce.
-      const SKILL_LABEL = { 'Confianza': 'aula.skillConfidence', 'Estructura': 'aula.skillStructure', 'Evidencia': 'aula.skillEvidence', 'Refutación': 'aula.skillRebuttal', 'Cross-ex': 'aula.skillCrossex', 'Delivery': 'aula.skillDelivery' };
-      const skillMap = {};
-      (DB.skills || []).forEach((s) => { skillMap[s.skill] = Math.max(0, Math.min(100, Number(s.score) || 0)); });
-      const hasSkills = (DB.skills || []).length > 0;
-      const comps = SKILL_DIMS.map((name) => [name, skillMap[name] != null ? skillMap[name] : 0]);
+      // [RONDA 3 · Isaac] La pantalla la manda la ESCALERA de rangos. Fuera "Camino a <siguiente
+      // rango>" (barra de XP: el mismo dato ya está en el stat-group y en la escalera) y fuera
+      // "Competencias" (las 6 barras de habilidad: viven en "Mi trayectoria", con radar e
+      // histórico por evento). El dato `DB.skills` NO se toca en el backend.
       return `
       <div class="page-head page-head--rule fade-up" style="--d:0">
-      <div><span class="ph-eyebrow">${t("profile.yourProgress")}</span><h1 class="ph-title">${t("profile.progressTitle")}</h1>
+      <div><h1 class="ph-title">${t("profile.progressTitle")}</h1>
       <div class="page-sub" style="margin-top:8px">${t("profile.progressSub")}</div></div>
       <div class="stat-group">
         ${C.statInline(xp.toLocaleString(getLang() === 'en' ? 'en' : 'es'), 'XP')}
@@ -101,43 +92,30 @@ export const S = {};
         </div>
       </div>
 
-      <div class="split fade-up rail-320" style="--d:2">
-        <div class="card card-pad">
-          ${/* [K-09] Niveles medía h1 → h4 → h4 → h3 (salto h1→h4 y además un h3 DESPUÉS de
-                un h4). Las tres secciones de la pantalla son hermanas de primer nivel: h2.
-                `.sec-title--sm > h2` ya está tipado igual que h3/h4 (screens.css:40). */""}
-          ${C.secTitle(nextLevel ? t("profile.pathTo") + ' ' + esc(nextLevel.name) : t("profile.maxLevel"), { sm: true, tag: 'h2', right: `<span class="muted tnum" style="font-size:13px">${xp.toLocaleString(getLang() === 'en' ? 'en' : 'es')} / ${xpNext.toLocaleString(getLang() === 'en' ? 'en' : 'es')} XP</span>` })}
-          <div style="margin:4px 0 7px">${C.bar(pct,{cls:'thick navy'})}</div>
-          <div class="row between vcenter" style="font-size:12px;color:var(--text-2)">${C.chip(esc(curName), 'tint')}<span class="tnum">${nextLevel ? toNext.toLocaleString(getLang() === 'en' ? 'en' : 'es') + ' ' + t("profile.xpToReach") + ' ' + esc(nextLevel.name) : t("profile.maxLevelReached")}</span></div>
-
-          <div class="divider"></div>
-          ${C.secTitle(t("profile.competencies"), { sm: true, tag: 'h2', right: hasSkills ? C.chip(`${Math.round(comps.reduce((a,c)=>a+c[1],0)/comps.length)} ${t("profile.avg")}`, 'accent') : '' })}
-          ${hasSkills
-            ? `<div style="margin-top:6px">
-            ${comps.map(c=>`<div class="comp-row"><span class="cr-name">${c[1]>=85?`<span style="display:inline-flex;width:13px;height:13px;color:var(--ok);vertical-align:-2px">${IC.star}</span> `:''}${t(SKILL_LABEL[c[0]] || c[0])}</span><span class="cr-bar">${C.bar(c[1],{cls:'navy'})}</span><span class="cr-score" style="color:${c[1]>=85?'var(--ok)':c[1]>=75?'var(--text)':'var(--warn)'}">${c[1]}</span></div>`).join('')}
-          </div>`
-            /* [K-09] Vacío colgando de la sección h2 "Competencias" → h3 (antes h4). */
-            : `<div class="empty" style="padding:26px;margin-top:8px"><div class="ill">${IC.award}</div><h3>${t("profile.noEvalHeading")}</h3><p>${t("profile.noEvalBody")}</p></div>`}
+      ${/* [RONDA 3 · Isaac] Con los dos bloques de barras fuera, lo que queda es el contenido
+            PRINCIPAL de la zona, no un rail de sobras: "Subidas recientes" (lista, necesita
+            ancho) toma la columna grande y "Racha" el rail. El rail sube a 360 porque los 14
+            cuadros de la racha miden 275px y en 320 (–44 de .card-pad) el catorceavo caía a
+            una segunda línea, solo. `.split.rail-360` ya existe en el kit (screens.css). */''}
+      <div class="split fade-up rail-360" style="--d:2">
+        <div class="card">
+          ${/* [K-09] Niveles medía h1 → h4 → h4 → h3. Esta sección es hermana de primer
+                nivel del h1 de pantalla: h2. */""}
+          <div class="card-head"><div class="sec-title sec-title--sm"><h2>${t("profile.recentGains")}</h2></div></div>
+          <div class="card-body" style="padding:8px 20px 14px">
+            ${recent.length ? recent.map(ev=>`
+              <div class="agenda-item"><span class="when-dot" style="background:var(--otr-green)"></span>
+              <div><div class="ai-t">${ev.title || ''}</div>${ev.xp ? `<div class="ai-c sky">+${ev.xp} XP</div>` : (ev.detail ? `<div class="ai-c sky">${ev.detail}</div>` : '')}</div><span class="ai-w">${ev.when || ''}</span></div>`).join('')
+              : `<div class="empty" style="padding:22px"><p class="muted" style="font-size:13px;text-align:center">${t("profile.noActivityBody")}</p></div>`}
+          </div>
         </div>
 
-        <div class="stack" style="gap:16px">
-          <div class="card card-pad" style="text-align:center">
-            <span class="lbl" style="margin-bottom:10px">${t("profile.streak")}</span>
-            <div class="row vcenter" style="gap:8px;justify-content:center"><span style="display:inline-flex;width:20px;height:20px;color:var(--otr-green)">${IC.flame}</span><b class="tnum" style="font-size:21px;font-weight:800;letter-spacing:-.02em">${t("profile.streakDays").replace("{n}", streak)}</b></div>
-            <div style="margin-top:10px;font-size:12.5px" class="muted">${t("profile.dontBreakIt")}</div>
-            <div class="row wrap" style="gap:5px;margin-top:14px;justify-content:center">
-              ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:var(--r-sm);background:${i<Math.min(streak,14)?'var(--otr-green)':'var(--n-150)'}"></span>`).join('')}
-            </div>
-          </div>
-          <div class="card">
-            ${/* [K-09] Tercera sección hermana → h2 (antes h3, y venía DESPUÉS de dos h4). */""}
-            <div class="card-head"><div class="sec-title sec-title--sm"><h2>${t("profile.recentGains")}</h2></div></div>
-            <div class="card-body" style="padding:8px 16px 12px">
-              ${recent.length ? recent.map(ev=>`
-                <div class="agenda-item"><span class="when-dot" style="background:var(--otr-green)"></span>
-                <div><div class="ai-t">${ev.title || ''}</div>${ev.xp ? `<div class="ai-c sky">+${ev.xp} XP</div>` : (ev.detail ? `<div class="ai-c sky">${ev.detail}</div>` : '')}</div><span class="ai-w">${ev.when || ''}</span></div>`).join('')
-                : `<div class="empty" style="padding:22px"><p class="muted" style="font-size:13px;text-align:center">${t("profile.noActivityBody")}</p></div>`}
-            </div>
+        <div class="card card-pad" style="text-align:center">
+          <span class="lbl" style="margin-bottom:10px">${t("profile.streak")}</span>
+          <div class="row vcenter" style="gap:8px;justify-content:center"><span style="display:inline-flex;width:20px;height:20px;color:var(--otr-green)">${IC.flame}</span><b class="tnum" style="font-size:21px;font-weight:800;letter-spacing:-.02em">${t("profile.streakDays").replace("{n}", streak)}</b></div>
+          <div style="margin-top:10px;font-size:12.5px" class="muted">${t("profile.dontBreakIt")}</div>
+          <div class="row wrap" style="gap:5px;margin-top:14px;justify-content:center">
+            ${Array.from({length:14},(_,i)=>`<span style="width:15px;height:15px;border-radius:var(--r-sm);background:${i<Math.min(streak,14)?'var(--otr-green)':'var(--n-150)'}"></span>`).join('')}
           </div>
         </div>
       </div>
@@ -159,7 +137,7 @@ export const S = {};
       const certs = DB.certificates || [];
       return `
       <div class="page-head page-head--rule fade-up" style="--d:0">
-      <div><span class="ph-eyebrow">${t("profile.achievements")}</span><h1 class="ph-title">${t("profile.badgesTitle")}</h1>
+      <div><h1 class="ph-title">${t("profile.badgesTitle")}</h1>
       <div class="page-sub" style="margin-top:8px">${t("profile.badgesProgress").replace("{got}", got).replace("{total}", DB.badges.length)}</div></div>
       <div class="stat-group">${C.statInline(got, t("profile.yourBadges"), { accent: true })}${C.statInline(certs.length, t("profile.yourCertificates"))}</div></div>
 
