@@ -42,17 +42,22 @@ function currentPrefs() {
   return out;
 }
 
-// Switch on/off premium (verde de marca al activar). role=switch + aria-checked accesible.
+// Switch on/off. role=switch + aria-checked accesible.
+/* [ISAAC · 2026-08-09 · R2] Switch ACTIVADO: era naranja de marca (#F25623 / #C8401A),
+   4 bloques sólidos por pantalla de Ajustes. Pasa al NEGRO, que ya es el "encendido" del
+   sistema (.chip.active y .role-switch button.on usan --otr-navy). MEDIDO (WCAG 1.4.11,
+   pide 3:1): la perilla blanca sobre #171717 da 17,93:1 y la pista negra contra la card
+   blanca 17,93:1; el naranja anterior se quedaba en 3,43:1 en las dos — mejora medida. */
 function toggle(key, on) {
   return `<button type="button" role="switch" aria-checked="${on}" data-notif="${key}" aria-label="${t("settings.toggleAria")}"
-    style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-green)" : "var(--n-200)"}">
+    style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-black)" : "var(--n-200)"}">
     <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(23,23,23,.25)"></span></button>`;
 }
 
 // [GAMIFICATION-1 §9] Switch para el opt-in de la clasificación pública (persiste en backend).
 function lbToggle(on) {
   return `<button type="button" role="switch" aria-checked="${on}" data-leaderboard="1" aria-label="${t("settings.leaderboardAria")}"
-    style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-green)" : "var(--n-200)"}">
+    style="width:44px;height:25px;border-radius:100px;border:0;cursor:pointer;position:relative;flex:none;transition:background .2s var(--ease);background:${on ? "var(--otr-black)" : "var(--n-200)"}">
     <span style="position:absolute;top:3px;left:${on ? "22px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;transition:left .2s var(--ease);box-shadow:0 1px 2px rgba(23,23,23,.25)"></span></button>`;
 }
 
@@ -87,7 +92,7 @@ function guardianRequestsBlock(requests) {
     <div class="stack" style="gap:0;margin-top:6px">
       ${requests.map((r, i) => `
       <div class="lrow fade-up" style="padding:12px 0;gap:12px;border-bottom:1px solid var(--border);--d:${i}">
-        ${C.avatar(esc(r.parentInitials || "?"), { size: "sm", bg: "var(--otr-sky-lo)" })}
+        ${C.avatar(esc(r.parentInitials || "?"), { size: "sm", bg: "var(--n-600)" })}
         <div style="flex:1;min-width:0">
           <b style="font-size:13.5px">${t("settings.guardianRequestLine").replace("{name}", esc(r.parentName || t("settings.guardianFallback")))}</b>
           <div class="faint" style="font-size:12px;margin-top:2px">${esc(r.parentEmail || "")}</div>

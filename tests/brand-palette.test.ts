@@ -254,7 +254,9 @@ describe("paleta de marca (Brand Book V1.0)", () => {
      · NARANJA #F25623          → acento PUNTUAL (barra de 3px de los títulos de
        sección, canto de los héroes, chips de EN VIVO/TORNEO/HOY, avisos), nunca
        superficies grandes ni todos los botones;
-     · ORO/PLATINO              → el metal del tier del Debate Hub.
+     · ORO/PLATINO/BRONCE       → el metal del tier del Debate Hub y, desde la ronda 2
+       de color (2026-08-09), el del PODIO del leaderboard: «Quitemos todos esos acentos
+       naranja intenso con otros colores. Incluso la barra de #1 en el leaderboard».
 
    Este bloque es el contrato de los colores que NO son negro/gris/naranja. Cada uno:
      1) está declarado, con su valor exacto, en app/styles/tokens.css;
@@ -293,6 +295,24 @@ const ISAAC_TOKENS: Array<{ name: string; hex: string; contraste: string }> = [
     name: "--tier-platinum",
     hex: "#D6D5D1",
     contraste: "letra negra encima → 12,21:1 · como texto sobre la card #171717 → 12,21:1",
+  },
+  {
+    // [PEDIDO DE ISAAC · 2026-08-09 · RONDA 2 DE COLOR] Textual, señalando el dashboard:
+    // «Quitemos todos esos acentos naranja intenso con otros colores. Incluso la barra de #1
+    // en el leaderboard». El podio pasó a los METALES que YA existían (--tier-gold el 1º,
+    // --tier-platinum el 2º) y este token es el único que hacía falta para cerrar la familia
+    // con el 3º. NO abre la puerta a hexes arbitrarios: como los otros dos metales vive SOLO
+    // en tokens.css (lo amarra el test «los colores semánticos de Isaac no se escapan de
+    // tokens.css», más abajo en este mismo archivo) y las pantallas lo consumen por
+    // var(--tier-bronze). Mismo eje cálido y desaturado que sus hermanos —croma 89 frente a
+    // los 207 del naranja de marca #F25623—, por eso NO se lee como naranja.
+    name: "--tier-bronze",
+    hex: "#C69C6D",
+    contraste:
+      "sobre --ink-700 #2E2E2E (tile del podio) 5,42:1 AA · sobre la card #171717 7,15:1 AA · " +
+      "con icono/letra negra encima 7,15:1 AA. Sobre blanco da 2,51:1: es color de RELLENO " +
+      "sobre superficie oscura o con tinta negra encima, nunca texto sobre claro (misma regla " +
+      "que --tier-gold, 2,10:1 sobre blanco)",
   },
 ];
 

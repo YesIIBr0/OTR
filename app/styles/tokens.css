@@ -16,6 +16,23 @@
         títulos de sección, el canto de los héroes, un dato destacado, los chips
         de "EN VIVO/TORNEO/HOY" y los estados de aviso. Nunca en superficies
         grandes ni en cada botón.
+
+   [ISAAC · 2026-08-09 · RONDA 2 DE COLOR] Segunda pasada sobre lo mismo. Textual:
+   «Quitemos todos esos acentos naranja intenso con otros colores. Incluso la barra
+   de #1 en el leaderboard». La ronda anterior movió BOTONES y PROGRESO; lo que
+   quedaba —y es lo que molesta— eran las SUPERFICIES en naranja saturado. Reglas
+   que se añaden a las de arriba:
+     5) el PODIO se pinta con METALES, no con el acento: oro (--tier-gold) el 1º,
+        platino (--tier-platinum) el 2º y bronce (--tier-bronze) el 3º. La jerarquía
+        del 1º la da el TAMAÑO y la corona, no un color chillón;
+     6) los LOGROS con forma de metal (medalla de insignia, sello del certificado)
+        también van al oro/bronce: es lo que la pieza representa;
+     7) chips de premio, chips de categoría de highlights, la fila propia del
+        leaderboard, los iconos de cabecera, los avatares y el halo de las cards
+        negras van a NEGRO/BLANCO/GRISES del sistema;
+     8) sigue en naranja, y solo eso: la barra de 3px de los títulos, el canto de
+        3px de los héroes, los chips de EN VIVO/TORNEO/HOY (decisión de la ronda 1),
+        el texto pequeño de acento y el botón de GRABAR (ahí el color ES la función).
    Deltas del mockup (spec docs/superpowers/specs/2026-08-07-dashboard-mockup-spec.md):
    · Canvas GREIGE cálido #F1F1EF (antes blanco puro) con bordes cálidos
      #E4E3DF / #DCDBD6 y superficies #EDEDEA / #FBFBFA.
@@ -167,6 +184,21 @@
   --win:#2FA84F;
   --tier-gold:#D4AF37;
   --tier-platinum:#D6D5D1;
+  /* [ISAAC · 2026-08-09 · RONDA 2 DE COLOR] Textual del cliente, señalando el dashboard:
+     «Quitemos todos esos acentos naranja intenso con otros colores. Incluso la barra de #1
+     en el leaderboard». El podio dejó de pintarse con el naranja de marca y pasó a los
+     METALES que el Debate Hub ya tenía (--tier-gold / --tier-platinum): oro el 1º, platino
+     el 2º. Faltaba el 3º, y este es el token que cierra la familia — NO es una paleta nueva:
+     es el mismo eje cálido y desaturado de los otros dos metales (croma 89 frente a los 207
+     del naranja #F25623, por eso NO se lee como naranja).
+     Contraste MEDIDO (WCAG 2.1, luminancia relativa L=0,36887):
+       · sobre --ink-700 #2E2E2E (tile del podio) ...... 5,42:1  AA  (nº de puesto y cinta de 3px)
+       · sobre la card negra #171717 .................. 7,15:1  AA
+       · con letra/icono negro #171717 encima ......... 7,15:1  AA  (borde de la medalla)
+     Sobre blanco da 2,51:1: por eso NUNCA se usa como texto sobre claro — solo como
+     RELLENO (disco de medalla, cinta del podio) sobre superficies oscuras o con tinta negra
+     encima, igual que --tier-gold (2,10:1 sobre blanco) y --tier-platinum. */
+  --tier-bronze:#C69C6D;
 
   /* ---- Niveles (competencias): gris claro → negro → naranja (elite) ---- */
   --lvl-novato:#BDBDBD;
