@@ -376,9 +376,11 @@ function journeyCard(lt) {
 function publicProfileCard(lt) {
   const pp = lt.publicProfile;
   const absUrl = pp.url || (pp.slug ? `/p/${pp.slug}` : "");
+  /* [ISAAC · 2026-08-09 · R2] Mismo switch, mismo cambio: encendido en NEGRO en vez de
+     naranja oscuro #C8401A. Perilla blanca sobre #171717 = 17,93:1 (1.4.11 pide 3:1). */
   const toggle = `
     <button id="pp-switch" role="switch" aria-checked="${pp.enabled ? "true" : "false"}" aria-label="${t("lifetime.publicProfileAria")}"
-      style="flex:none;width:46px;height:26px;padding:0;border-radius:999px;border:1px solid var(--border-strong);background:${pp.enabled ? "var(--otr-sky-lo)" : "var(--n-150)"};position:relative;cursor:pointer;transition:background .18s">
+      style="flex:none;width:46px;height:26px;padding:0;border-radius:999px;border:1px solid var(--border-strong);background:${pp.enabled ? "var(--otr-black)" : "var(--n-150)"};position:relative;cursor:pointer;transition:background .18s">
       <span style="position:absolute;top:2.5px;left:${pp.enabled ? "23px" : "3px"};width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(23,23,23,.28);transition:left .18s"></span>
     </button>`;
   return `

@@ -668,8 +668,10 @@ function viewLeaderboard(staff) {
     return `<div class="card fade-up"><div class="empty"><div class="ill">${IC.trophy}</div><h4>${t("debate.lbEmptyTitle")}</h4><p>${t("debate.lbEmptyBody")}</p></div></div>`;
   }
   // [auditoría] name/initials ya vienen esc() de queries (leaderboardRowsOut) → crudo, sin doble-escape.
+  /* [ISAAC · 2026-08-09 · R2] Igual que el podio del dashboard: cada tile lleva la clase de
+     su puesto para pintarse con su metal (oro / platino / bronce) en vez del naranja. */
   const podTile = (r, place) => `
-    <div class="pod${place === 1 ? " pod--1" : ""}">
+    <div class="pod pod--${place}">
       ${place === 1 ? `<span class="pod-c">${IC.trophy}</span>` : ""}
       <div class="pod-r tnum">${r.rank}</div>
       <div class="pod-n">${r.name || ""}${r.you ? ` · ${t("debate.youBadge")}` : ""}</div>
@@ -717,7 +719,9 @@ function viewLeaderboard(staff) {
         ${/* El h1 de la página ya dice "Leaderboard": la cabecera de la card lleva el
               criterio del ranking (el "Faltan 24 días · Premios" del mockup), no un título repetido. */""}
         <div class="sec-row sec-row--end">
-          <div class="sec-title sec-title--on-dark"><h3 class="row vcenter" style="gap:8px"><span style="display:inline-flex;width:19px;height:19px;color:var(--otr-green)">${IC.trophy}</span>${t("debate.lbEyebrow")}</h3></div>
+          ${/* [ISAAC · 2026-08-09 · R2] Trofeo de la cabecera: de naranja al ORO del podio que
+                encabeza (--tier-gold sobre la card negra #171717 → 8,53:1). */""}
+          <div class="sec-title sec-title--on-dark"><h3 class="row vcenter" style="gap:8px"><span style="display:inline-flex;width:19px;height:19px;color:var(--tier-gold)">${IC.trophy}</span>${t("debate.lbEyebrow")}</h3></div>
           <span class="lbl">${t("debate.lbSub")}</span>
         </div>
         <div class="${hasPodium && listHtml ? "lb-grid" : ""}">
