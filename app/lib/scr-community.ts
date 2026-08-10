@@ -64,7 +64,7 @@ export const S = {};
          excepción: etiqueta nuestra sin escapar en el payload. */
       const post = (p)=>`
         <div class="post ${p.op?'op':''}">
-          ${C.avatar(p.ini,{size:'lg', bg:p.role==='Coach'?'var(--otr-navy)':'var(--otr-sky-lo)'})}
+          ${C.avatar(p.ini,{size:'lg', bg:p.role==='Coach'?'var(--otr-navy)':'var(--n-600)'})}
           <div class="post-body">
             <div class="post-head"><b>${p.author}</b>${p.role==='Coach'?C.badge(t("comm.thread.coachBadge"),'navy'):''}${p.op?C.badge(t("comm.thread.authorBadge"),'sky'):''}<span class="faint" style="font-size:12px">${esc(p.when)}</span></div>
             <p>${p.body}</p>
@@ -123,7 +123,7 @@ export const S = {};
          se escapa aquí. */
       const convo = list.map((m,i)=>`
         <div class="convo ${i===active?'active':''}" data-convo="${i}" role="button" tabindex="0" style="cursor:pointer">
-          <div class="avatar" style="background:${m.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${m.ini}${m.online?'<span class="online-dot"></span>':''}</div>
+          <div class="avatar" style="background:${m.navy?'var(--otr-navy)':'var(--n-600)'};position:relative">${m.ini}${m.online?'<span class="online-dot"></span>':''}</div>
           <div class="convo-main"><div class="convo-top"><b>${m.name}</b><span class="faint" style="font-size:11.5px">${esc(m.when)}</span></div>
           <div class="convo-last">${m.last}</div></div>
           ${m.unread?`<span class="unread-pill">${m.unread}</span>`:''}
@@ -146,7 +146,7 @@ export const S = {};
         <section class="msg-thread">
           ${head ? `
           <div class="mt-head">
-            <div class="avatar" style="background:${head.navy?'var(--otr-navy)':'var(--otr-sky-lo)'};position:relative">${head.ini}${head.online?'<span class="online-dot"></span>':''}</div>
+            <div class="avatar" style="background:${head.navy?'var(--otr-navy)':'var(--n-600)'};position:relative">${head.ini}${head.online?'<span class="online-dot"></span>':''}</div>
             <div><b>${head.name}</b>${head.online?`<div class="faint" style="font-size:12px">${t("comm.msg.online")}</div>`:''}</div>
             <button class="btn btn-quiet btn-sm" id="mt-report" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px"><span style="display:flex;width:14px;height:14px">${IC.flag}</span>${t("comm.msg.report")}</button>
           </div>

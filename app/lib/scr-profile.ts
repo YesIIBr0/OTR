@@ -148,7 +148,12 @@ export const S = {};
           <div class="cert">
             <div class="seal">${IC.award}</div>
             <div style="flex:1;min-width:0">
-              <div style="margin-bottom:7px">${C.chip(t("profile.officialCert"), 'accent', { ic: 'award' })}</div>
+              ${/* [ISAAC · 2026-08-09 · R2] "CERTIFICADO OFICIAL OTR" era un chip naranja
+                    SÓLIDO pegado al sello, que también era naranja. El sello se va al metal
+                    (oro→bronce, en screens.css) y el chip al NEGRO con texto blanco (17,93:1):
+                    una credencial no es un estado en vivo ni un progreso — su registro es el
+                    negro con blanco que el cliente viene pidiendo para todo lo demás. */''}
+              <div style="margin-bottom:7px">${C.chip(t("profile.officialCert"), 'black', { ic: 'award' })}</div>
               <h3 style="font-size:17px;font-weight:800;letter-spacing:-.025em;line-height:1.2">${esc(ct.title)}</h3>
               <p class="muted" style="font-size:13px;margin-top:4px">${ct.programName}${ct.issuedAt ? ` · ${esc(ct.issuedAt)}` : ''}</p>
             </div>
@@ -161,7 +166,12 @@ export const S = {};
       <div class="badge-grid fade-up" style="--d:3">
         ${DB.badges.map(b=>`
           <div class="badge-card ${b.got?'':'locked'}">
-            ${b.got?`<span style="position:absolute;top:12px;right:12px">${C.chip(t("profile.earned"), 'accent')}</span>`:`<span style="position:absolute;top:12px;right:12px;color:var(--n-300)">${IC.lock}</span>`}
+            ${/* [ISAAC · 2026-08-09 · R2] "GANADA" era un chip naranja sólido. Una insignia
+                  ganada es un HECHO/COMPLETADO, y la regla del cliente de la ronda anterior
+                  para eso ya existe: «Para completed - verde». Se pide la variante `done`
+                  del kit (verde --success con letra NEGRA, 5,83:1) en vez de inventar un
+                  color: el mismo chip que "Completado" en cursos. */''}
+            ${b.got?`<span style="position:absolute;top:12px;right:12px">${C.chip(t("profile.earned"), 'done')}</span>`:`<span style="position:absolute;top:12px;right:12px;color:var(--n-300)">${IC.lock}</span>`}
             <div class="badge-medal ${b.got?'gold':'lock'}">${IC[b.ic]}</div>
             <div class="bn">${esc(b.n)}</div>
             <div class="bd">${esc(b.d)}</div>
@@ -290,7 +300,7 @@ export const S = {};
     <div class="card card-pad fade-up" style="--d:0;margin-bottom:18px">
       <div class="profile-head">
         ${/* [CIERRE · O7] me.* llega esc() de queries.ts (salvo `email`) → crudo aquí. */''}
-        ${C.avatar(me.initials, { size: 'xl', bg: 'var(--otr-sky-lo)' })}
+        ${C.avatar(me.initials, { size: 'xl', bg: 'var(--n-600)' })}
         <div style="flex:1;min-width:200px">
           <div class="row vcenter" style="gap:10px;flex-wrap:wrap"><h1 style="font-size:30px;font-weight:800;letter-spacing:-.03em;margin:0">${me.name}</h1>${C.chip(esc(me.level || 'OTR Initiate'), 'black', { ic: 'levels' })}</div>
           ${me.headline ? `<div class="sky" style="font-size:13.5px;font-weight:600;margin-top:3px">${me.headline}</div>` : ''}

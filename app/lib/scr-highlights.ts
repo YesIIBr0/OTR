@@ -82,7 +82,12 @@ function hlRow(h, i, staff) {
     <span class="hlv-media${img ? "" : " hlv-media--empty"}"${img ? ` style="background-image:url('${img}')"` : ""}>${img ? "" : IC.trophy}</span>
     <span class="hlv-body">
       <span class="hlv-top">
-        ${h.category ? C.chip(catLabel(h.category), "accent", { cls: "hlv-tag" }) : ""}
+        ${/* [ISAAC · 2026-08-09 · R2] Mismo chip de categoría que en el dashboard: de naranja
+              sólido al par dominante del sistema puesto del revés — BLANCO con texto negro
+              (chip--paper, 17,93:1). Aquí el negro NO servía: la fila ES una card #171717 y
+              un chip negro encima desaparecería. Las dos pantallas que pintan highlights
+              cambian juntas para que no quede una con el color viejo. */""}
+        ${h.category ? C.chip(catLabel(h.category), "paper", { cls: "hlv-tag" }) : ""}
         ${h.dateLabel ? `<span class="hlv-date">${IC.calendar}${esc(h.dateLabel)}</span>` : ""}
       </span>
       <span class="hlv-t">${esc(h.title || "")}</span>

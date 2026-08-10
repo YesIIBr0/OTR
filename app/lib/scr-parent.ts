@@ -138,7 +138,7 @@ function pendingLinksBlock(pending) {
     <div class="stack" style="gap:0;margin-top:6px">
       ${pending.map((pl, i) => `
       <div class="lrow fade-up" style="padding:12px 0;gap:12px;border-bottom:1px solid var(--border);--d:${i}">
-        ${C.avatar(esc(pl.initials || "?"), { size: "sm", bg: "var(--otr-sky-lo)" })}
+        ${C.avatar(esc(pl.initials || "?"), { size: "sm", bg: "var(--n-600)" })}
         <div style="flex:1;min-width:0">
           <b style="font-size:13.5px">${esc(pl.name || t("parent.studentFallback"))}</b>
           <div class="faint" style="font-size:12px;margin-top:2px">${esc(pl.email || "")}${pl.ageBand === "minor" ? ` · ${t("parent.protectedMinor")}` : ""}</div>

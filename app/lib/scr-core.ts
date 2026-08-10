@@ -436,8 +436,11 @@ function activeItemsFlat() {
       /* r.name YA viene esc() de queries.ts (contrato de escape) → crudo. r.prize es
          texto de CATÁLOGO (SeasonPrize), que queries.ts no escapa —igual que badges/
          events—, así que se escapa aquí. La cajita solo se pinta con premio real. */
+      /* [ISAAC · 2026-08-09 · R2] El tile lleva SIEMPRE la clase de su puesto (--1/--2/--3):
+         el podio se pinta con el metal que le toca (oro/platino/bronce) en vez de con el
+         naranja de marca en el 1º y dos grises indistinguibles en el 2º y el 3º. */
       const podiumTile = (r, place) => `
-        <div class="lb-tile${place === 1 ? ' lb-tile--1' : ''}${r.you ? ' lb-tile--me' : ''}">
+        <div class="lb-tile lb-tile--${place}${r.you ? ' lb-tile--me' : ''}">
           ${place === 1 ? `<span class="lb-crown">${IC.crown}</span>` : ''}
           <div class="lb-place tnum">${r.rank}</div>
           <div class="lb-tname">${r.name || ''}${r.you ? ` · ${t('core.youSuffix')}` : ''}</div>
@@ -488,7 +491,13 @@ function activeItemsFlat() {
             const post = hlPostUrl(h.instagramUrl);
             const inner = `
               ${img ? `<span class="hl-img" style="background-image:url('${img}')"></span>` : ''}
-              ${h.category ? C.chip(esc(h.category), 'accent', { cls: 'hl-tag' }) : ''}
+              ${/* [ISAAC · 2026-08-09 · R2] El chip de categoría (FINAL/TORNEO/EQUIPO) era
+                    naranja SÓLIDO sobre la foto. Pasa a BLANCO con texto negro (chip--paper,
+                    17,93:1): es el par dominante del sistema invertido, recorta contra
+                    cualquier foto —todas las de highlights son oscuras— y usa la MISMA
+                    variante que la lista larga, donde el negro sería invisible sobre la card
+                    #171717. No es un chip de estado en vivo, así que no se queda en naranja. */''}
+              ${h.category ? C.chip(esc(h.category), 'paper', { cls: 'hl-tag' }) : ''}
               <div class="hl-txt"><div class="hl-t">${esc(h.title || '')}</div><div class="hl-d">${esc(h.dateLabel || '')}</div></div>`;
             return post
               ? `<a class="hl hl--ig" href="${post}" target="_blank" rel="noopener noreferrer">${inner}</a>`

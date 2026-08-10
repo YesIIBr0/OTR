@@ -49,15 +49,23 @@
 /* ---- Chips (rectangulares 3px, versalitas 10/800; CERO pills) ----
    Cada variante trae la base completa: así el .chip de app.css (pill 28px) queda
    intacto para las pantallas que aún no han pasado por el rediseño. */
-.chip--black,.chip--accent,.chip--outline,.chip--tint,.chip--info,
+.chip--black,.chip--paper,.chip--accent,.chip--outline,.chip--tint,.chip--info,
 .chip--done,.chip--done-soft{
   display:inline-flex;align-items:center;gap:5px;height:auto;min-height:0;padding:3px 8px;
   border:0;border-radius:var(--r-xs);font-size:10px;font-weight:800;letter-spacing:.07em;
   line-height:1.4;text-transform:uppercase;white-space:nowrap;
 }
-.chip--black .ic,.chip--accent .ic,.chip--outline .ic,.chip--tint .ic,.chip--info .ic,
+.chip--black .ic,.chip--paper .ic,.chip--accent .ic,.chip--outline .ic,.chip--tint .ic,.chip--info .ic,
 .chip--done .ic,.chip--done-soft .ic{width:12px;height:12px}
 .chip--black{background:var(--otr-black);color:#fff}
+/* [ISAAC · 2026-08-09 · R2] El chip INVERSO: blanco con texto negro, para las superficies
+   OSCURAS donde .chip--black desaparecería (se pinta sobre una foto o sobre la card negra
+   #171717 — literalmente su mismo color). Es el mismo par dominante del sistema puesto del
+   revés, no un color nuevo. Lo usan las categorías de "Lo mejor de la temporada" en las DOS
+   pantallas que las pintan (dashboard sobre foto, lista sobre card negra).
+   Contraste MEDIDO: #171717 sobre #FFFFFF → 17,93:1 (AA de sobra) y el propio chip recorta
+   17,93:1 contra la card negra, así que su silueta se lee sobre cualquier foto. */
+.chip--paper{background:var(--otr-white);color:var(--otr-black)}
 .chip--accent{background:var(--otr-green);color:var(--text-on-accent)}
 .chip--outline{background:transparent;border:1px solid var(--border-strong);color:var(--n-600)}
 .chip--tint{background:rgba(242,86,35,.045);color:var(--otr-green-text)}
@@ -82,7 +90,7 @@
 /* [A11Y] El media query de móvil de app.css estira .chip a min-height:44px; estos
    chips son etiquetas (no controles táctiles), así que conservan su altura. */
 @media (max-width:640px){
-  .chip--black,.chip--accent,.chip--outline,.chip--tint,.chip--info,
+  .chip--black,.chip--paper,.chip--accent,.chip--outline,.chip--tint,.chip--info,
   .chip--done,.chip--done-soft{min-height:0}
 }
 
@@ -134,8 +142,14 @@
 .card--dark .k-label,.card--dark .muted{color:rgba(255,255,255,.55)}
 .card--dark .stat-inline .si-n{color:#fff}
 .card--dark .stat-inline .si-l{color:rgba(255,255,255,.55)}
-/* Halo naranja decorativo (esquina superior derecha) para héroes/leaderboard */
-.card--dark.card--glow::before{content:"";position:absolute;top:-60px;right:-30px;width:220px;height:220px;background:radial-gradient(circle,rgba(242,86,35,.18),transparent 68%);pointer-events:none}
+/* Halo decorativo (esquina superior derecha) para héroes/leaderboard.
+   [ISAAC · 2026-08-09 · R2] Era un halo NARANJA (.18) que teñía de naranja media card negra
+   —incluidas las filas 4-8 del leaderboard— y que, con el podio ya en oro, dejaba la sección
+   sucia de dos cálidos peleados. Pasa a un halo NEUTRO de luz: mantiene la profundidad
+   (que es su función) sin meter color. MEDIDO: rgba(255,255,255,.07) compone #272727 sobre
+   #171717; el texto blanco que cae encima sigue en 14,94:1 y el secundario --ink-300 en
+   7,20:1 (antes 13,4:1 y 6,5:1 sobre el halo naranja: no empeora nada). */
+.card--dark.card--glow::before{content:"";position:absolute;top:-60px;right:-30px;width:220px;height:220px;background:radial-gradient(circle,rgba(255,255,255,.07),transparent 68%);pointer-events:none}
 
 /* ---- Date box (60px, SIN caja) ----
    [MOCKUP V2 · deltas §5] El v2 quita la caja gris: solo texto centrado en una columna
@@ -455,16 +469,26 @@
 .badge-card{text-align:center;padding:22px 16px;border:1px solid var(--border);border-radius:var(--r-lg);background:#fff;box-shadow:var(--sh-1);position:relative}
 .badge-card.locked{opacity:.62;filter:saturate(.4)}
 .badge-medal{width:72px;height:72px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;color:#fff;position:relative}
-/* Medalla ganada = LOGRO → naranja (.sky queda como alias legacy); bloqueada = gris */
-.badge-medal.gold,.badge-medal.sky{background:radial-gradient(circle at 35% 30%,var(--otr-gold),var(--otr-gold-lo))}
+/* Medalla ganada = LOGRO (.sky queda como alias legacy); bloqueada = gris.
+   [ISAAC · 2026-08-09 · R2] Era un disco de 72px con degradado NARANJA (#F25623→#C8401A):
+   4 de esos por pantalla eran la mancha de color de "Insignias" y del perfil. Una medalla es
+   un METAL: pasa al mismo par que el podio, oro en el centro → bronce en el borde. Y el
+   ICONO deja de ser blanco (3,43:1 sobre el naranja, al filo del mínimo gráfico) y pasa a
+   NEGRO: 8,53:1 sobre --tier-gold y 7,15:1 sobre --tier-bronze — mejora medida, no estética.
+   El disco en sí es DECORATIVO (2,10-2,51:1 contra la card blanca): lo que identifica la
+   insignia es el icono de dentro y el nombre de debajo. Mismo criterio que .badge-medal.lock,
+   que ya vivía en 1,10:1 contra la card. */
+.badge-medal.gold,.badge-medal.sky{background:radial-gradient(circle at 35% 30%,var(--tier-gold),var(--tier-bronze));color:var(--text-on-accent)}
 .badge-medal.navy{background:radial-gradient(circle at 35% 30%,#262626,var(--otr-navy))}
 .badge-medal.lock{background:var(--n-150);color:var(--n-400)}
 .badge-medal .ic{width:32px;height:32px}
 .badge-card .bn{font-weight:700;font-size:14px}
 .badge-card .bd{font-size:12px;color:var(--text-2);margin-top:4px}
 .cert{display:flex;gap:18px;align-items:center;border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;background:linear-gradient(120deg,var(--otr-offwhite),#fff)}
-/* Sello de certificado = LOGRO → naranja */
-.cert .seal{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--otr-gold),var(--otr-gold-lo));color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+/* Sello de certificado = LOGRO. [ISAAC · 2026-08-09 · R2] Mismo caso que la medalla: el
+   disco naranja de 64px pasa al metal oro→bronce y el icono a NEGRO (8,53:1 sobre el oro,
+   7,15:1 sobre el bronce; antes blanco sobre naranja = 3,43:1). */
+.cert .seal{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--tier-gold),var(--tier-bronze));color:var(--text-on-accent);display:flex;align-items:center;justify-content:center;flex:none}
 
 /* ---------------- PROFILE ---------------- */
 .profile-head{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
@@ -871,12 +895,22 @@
 .pod .pod-x{margin-top:3px;font-size:11px;font-weight:700;color:var(--ink-300);font-variant-numeric:tabular-nums}
 .pod .pod-t{margin-top:11px;padding:6px 7px;border-radius:var(--r-sm);background:rgba(255,255,255,.05);
   font-size:10.5px;font-weight:600;line-height:1.25;color:var(--n-200)}
-/* 1º puesto: degradado 165° del mockup, todo el texto en NEGRO sobre naranja. */
-.pod--1{background:linear-gradient(165deg,var(--otr-green),var(--accent-dark));padding-bottom:15px}
+/* [ISAAC · 2026-08-09 · R2] MISMO cambio que el podio del dashboard, en el podio GEMELO del
+   Debate Hub (26.868 px² de naranja): el 1º pasa del degradado naranja al ORO relleno y el
+   2º/3º reciben cinta de 3px + número en platino/bronce. Es el mismo pedido («…incluso la
+   barra de #1 en el leaderboard») aplicado a las dos pantallas que lo pintan, para que no
+   quede una versión vieja escondida detrás de una pestaña.
+   Contraste MEDIDO: el negro de marca sobre --tier-gold 8,53:1 · --tier-platinum sobre
+   --ink-700 9,25:1 · --tier-bronze sobre --ink-700 5,42:1. Cinta compensada con padding-top. */
+.pod--1{background:var(--tier-gold);padding-bottom:15px}
+.pod--2{border-top:3px solid var(--tier-platinum);padding-top:14px}
+.pod--2 .pod-r{color:var(--tier-platinum)}
+.pod--3{border-top:3px solid var(--tier-bronze);padding-top:14px}
+.pod--3 .pod-r{color:var(--tier-bronze)}
 .pod--1 .pod-r{font-size:26px;color:var(--text-on-accent)}
 .pod--1 .pod-n{font-size:16px;font-weight:800;letter-spacing:-.01em;color:var(--text-on-accent)}
 .pod--1 .pod-x{font-size:12px;font-weight:800;color:var(--text-on-accent)}
-.pod--1 .pod-t{background:rgba(0,0,0,.18);font-size:11px;font-weight:700;color:var(--text-on-accent)}
+.pod--1 .pod-t{background:var(--otr-black);font-size:11px;font-weight:700;color:#fff}
 .pod .pod-c{display:inline-flex;width:22px;height:22px;margin-bottom:8px;color:var(--text-on-accent)}
 .lbrow{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;
   padding:11px 12px;border-radius:var(--r-sm);border-left:2px solid transparent;
@@ -890,9 +924,13 @@
 .lbrow .lb-t{display:block;margin-top:1px;font-size:10px;font-weight:700;letter-spacing:.07em;
   text-transform:uppercase;color:var(--ink-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lbrow .lb-x{font-size:12.5px;font-weight:700;color:var(--ink-300);white-space:nowrap;font-variant-numeric:tabular-nums}
-/* Fila propia: tinte naranja .12 + barra izquierda de 2px (spec §3.5). */
-.lbrow--you{background:rgba(242,86,35,.12);border-left-color:var(--otr-green)}
-.lbrow--you .lb-r,.lbrow--you .lb-x{color:var(--otr-green)}
+/* Fila propia: tinte + barra izquierda de 2px (spec §3.5).
+   [ISAAC · 2026-08-09 · R2] El tinte y la barra eran naranjas; pasan a blanco, igual que la
+   fila gemela del dashboard. MEDIDO: rgba(255,255,255,.10) compone #2E2E2E sobre la card
+   #171717 y el texto blanco encima da 13,58:1; la barra blanca mide 17,93:1 contra la card
+   (WCAG 1.4.11 pide 3:1). Quien identifica la fila es la barra + el peso 800, no el tinte. */
+.lbrow--you{background:rgba(255,255,255,.10);border-left-color:var(--otr-white)}
+.lbrow--you .lb-r,.lbrow--you .lb-x{color:#fff}
 .lbrow--you .lb-n{color:#fff;font-weight:800}
 
 /* ---- Eventos: la card de lista ya NO lleva padding (mockup v2 §7): las filas
@@ -1060,7 +1098,9 @@
 .dash-lb .dlb-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:20px}
 .dash-lb .dlb-head .sec-title{margin-bottom:0;min-width:0}
 .dash-lb .dlb-head h3{display:flex;align-items:center;gap:9px}
-.dash-lb .dlb-head h3 .ic{width:19px;height:19px;color:var(--otr-green)}
+/* [ISAAC · 2026-08-09 · R2] El trofeo de la cabecera era naranja: pasa al ORO del podio que
+   encabeza (mismo metal, misma sección). --tier-gold sobre la card negra #171717 → 8,53:1. */
+.dash-lb .dlb-head h3 .ic{width:19px;height:19px;color:var(--tier-gold)}
 .dash-lb .dlb-meta{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400);flex:none}
 .dash-lb .dlb-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.92fr);gap:26px;align-items:start}
 /* Cohorte de 3 o menos: sin lista que poner al lado, el podio ocupa la card entera. */
@@ -1074,16 +1114,40 @@
    del puesto TRAE premio — sin premio no hay caja vacía. */
 .dash-lb .lb-prize{margin-top:11px;padding:6px 7px;border-radius:var(--r-sm);background:rgba(255,255,255,.05);
   font-size:10.5px;font-weight:600;line-height:1.25;color:var(--n-150)}
-.dash-lb .lb-tile--1{background:linear-gradient(165deg,var(--otr-green),var(--accent-dark));padding-bottom:15px}
+/* ---- PODIO EN METALES [ISAAC · 2026-08-09 · R2] ----------------------------------
+   Antes: el 1º era un bloque con el degradado 165° naranja→#CC3F13 (28.521 px² — la
+   mancha de color más grande del dashboard) y el 2º/3º dos tiles grises sin distinción.
+   Textual del cliente: «Quitemos todos esos acentos naranja intenso con otros colores.
+   Incluso la barra de #1 en el leaderboard».
+   Ahora: el metal del puesto. Oro RELLENO el 1º (mantiene el peso del bloque, cambia el
+   tono) y cinta de 3px + número en metal para el 2º y el 3º, que siguen sobre --ink-700
+   para que el oro NO pierda la jerarquía (el platino es MÁS claro que el oro: relleno,
+   el 2º se comería al 1º). El 1º sigue siendo el más alto y el único con corona.
+   Contraste MEDIDO (WCAG 2.1):
+     · el negro de marca sobre --tier-gold ....... 8,53:1  AA  (nº, nombre, XP, corona)
+     · --tier-platinum sobre --ink-700 ........... 9,25:1  AA  (nº del 2º y su cinta)
+     · --tier-bronze  sobre --ink-700 ............ 5,42:1  AA  (nº del 3º y su cinta)
+   (los hexes viven SOLO en tokens.css; el guardián tests/brand-palette.test.ts falla si
+    alguno se escapa a una pantalla, aunque sea dentro de un comentario como este)
+   La cinta se compensa con padding-top (17px → 14px) para que el tile NO crezca 3px. */
+.dash-lb .lb-tile--1{background:var(--tier-gold);padding-bottom:15px}
+.dash-lb .lb-tile--2{border-top:3px solid var(--tier-platinum);padding-top:14px}
+.dash-lb .lb-tile--2 .lb-place{color:var(--tier-platinum)}
+.dash-lb .lb-tile--3{border-top:3px solid var(--tier-bronze);padding-top:14px}
+.dash-lb .lb-tile--3 .lb-place{color:var(--tier-bronze)}
 .dash-lb .lb-tile--1 .lb-crown{display:block;color:var(--text-on-accent);margin-bottom:8px}
 .dash-lb .lb-tile--1 .lb-crown .ic{width:22px;height:22px}
 .dash-lb .lb-tile--1 .lb-place{font-size:26px;color:var(--text-on-accent)}
 .dash-lb .lb-tile--1 .lb-tname{font-size:16px;font-weight:800;letter-spacing:-.01em;color:var(--text-on-accent)}
 .dash-lb .lb-tile--1 .lb-txp{font-size:12px;font-weight:800;color:var(--text-on-accent)}
-/* Sobre el gradiente naranja el premio va en NEGRO (regla de marca: nunca blanco). */
-.dash-lb .lb-tile--1 .lb-prize{padding:7px;background:rgba(0,0,0,.18);font-size:11px;font-weight:700;color:var(--text-on-accent)}
-/* La posición propia también se marca cuando cae en el podio (no solo en la lista). */
-.dash-lb .lb-tile--me{box-shadow:inset 0 0 0 2px var(--otr-green)}
+/* [ISAAC · R2] El chip del premio era el mismo naranja un punto más oscuro (rgba(0,0,0,.18)
+   sobre el degradado). Pasa al par dominante del sistema —NEGRO con texto BLANCO, 17,93:1—,
+   que además es lo que el cliente viene pidiendo para todo lo que no es progreso. */
+.dash-lb .lb-tile--1 .lb-prize{padding:7px;background:var(--otr-black);font-size:11px;font-weight:700;color:#fff}
+/* La posición propia también se marca cuando cae en el podio (no solo en la lista).
+   [ISAAC · R2] El anillo era naranja; en blanco mide 13,58:1 contra el tile --ink-700
+   (WCAG 1.4.11 pide 3:1) y no compite con el metal del puesto. */
+.dash-lb .lb-tile--me{box-shadow:inset 0 0 0 2px var(--otr-white)}
 .dash-lb .lb-tile--1.lb-tile--me{box-shadow:inset 0 0 0 2px var(--otr-black)}
 .dash-lb .lb-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:12px;align-items:center;
   padding:11px 12px;border-radius:var(--r-sm);border-left:2px solid transparent;border-bottom:1px solid rgba(255,255,255,.05)}
@@ -1092,8 +1156,16 @@
 .dash-lb .lb-name{font-size:13.5px;font-weight:600;letter-spacing:-.01em;color:var(--n-100);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dash-lb .lb-xp{font-size:12.5px;font-weight:700;color:var(--ink-300);white-space:nowrap}
-.dash-lb .lb-row--me{background:rgba(242,86,35,.12);border-left-color:var(--otr-green)}
-.dash-lb .lb-row--me .lb-pos,.dash-lb .lb-row--me .lb-xp{color:var(--otr-green)}
+/* [ISAAC · 2026-08-09 · R2] La fila propia («Analía Reyes · tú») era tinte naranja + barra
+   naranja + los XP en naranja: 14.640 px² de color. El «eres tú» ahora se consigue con
+   CONTRASTE y PESO, no con el acento — que es exactamente lo que pide el cliente.
+   Contraste MEDIDO: el tinte rgba(255,255,255,.10) compone #2E2E2E sobre la card #171717;
+   encima, blanco puro da 13,58:1 (las demás filas van en --n-100/--ink-300 a peso 600),
+   y la barra de 2px en blanco mide 17,93:1 contra la card — muy por encima del 3:1 que
+   WCAG 1.4.11 pide a un indicador de estado. El tinte por sí solo (1,32:1 contra la card)
+   NO es el que identifica la fila: la identifican la barra y el peso, igual que antes. */
+.dash-lb .lb-row--me{background:rgba(255,255,255,.10);border-left-color:var(--otr-white)}
+.dash-lb .lb-row--me .lb-pos,.dash-lb .lb-row--me .lb-xp{color:#fff}
 .dash-lb .lb-row--me .lb-name{color:#fff;font-weight:800}
 @media (max-width:860px){
   .dash-lb{padding:20px}

@@ -586,7 +586,7 @@ function renderProfile(state) {
         ${reviews.length ? `<div class="stack" style="gap:0;margin-top:6px">${reviews.slice(0, 6).map((r) => `
           <div style="padding:12px 0;border-bottom:1px solid var(--border)">
             <div class="row vcenter" style="gap:9px">
-              ${C.avatar(r.initials || ini(r.author || r.name), { size: "sm", bg: "var(--otr-sky-lo)" })}
+              ${C.avatar(r.initials || ini(r.author || r.name), { size: "sm", bg: "var(--n-600)" })}
               <b style="font-size:12.5px">${r.author || r.name || t("mkt.studentFallback")}</b>
               ${C.stars(Number(r.rating) || 0, { size: 11 })}
               ${r.verified ? C.chip(t("mkt.reviewVerified"), "tint") : ""}
