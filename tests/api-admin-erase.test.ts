@@ -4,6 +4,10 @@
 // telemetría/tokens/uploads (filas + unlink de archivos best-effort), snapshots de nombre
 // (Submission/QuizAttempt) anonimizados, tutelas REVOKED — y lo que se CONSERVA por diseño:
 // el AuditLog del cumplimiento. Guardas anti-abuso: ni a ti mismo ni a otro ADMIN.
+// [A4] Añadido el bloque de ADMISIÓN: Admission (teléfono, escuela, fecha de nacimiento y
+// TODO el bloque del tutor → null), AdmissionConsent (rastro sí, identidad no),
+// ConsultationBooking (la llamada de descubrimiento trae su propia copia de PII) y el
+// ARCHIVO del vídeo DPP de un menor.
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeDb, jsonReq } from "./helpers/route-harness";
 
@@ -22,6 +26,7 @@ const db = box.db;
 
 const ADMIN = { id: "admin-1", name: "Root", role: "ADMIN" };
 const TARGET_ID = "student-9";
+const TARGET_EMAIL = "ana.ruiz@otr.do";
 
 async function erase(userId?: string) {
   const res = await POST(jsonReq("/api/admin/erase", userId === undefined ? {} : { userId }));
@@ -34,8 +39,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   box.user = ADMIN;
   box.unlink = vi.fn().mockResolvedValue(undefined);
-  db.fn("user.findUnique").mockResolvedValue({ id: TARGET_ID, name: "Ana Ruiz", role: "STUDENT" });
+  db.fn("user.findUnique").mockResolvedValue({ id: TARGET_ID, name: "Ana Ruiz", role: "STUDENT", email: TARGET_EMAIL });
   db.fn("upload.findMany").mockResolvedValue([]);
+  db.fn("admission.findUnique").mockResolvedValue(null);
   db.fn("user.update").mockResolvedValue({ id: TARGET_ID });
   db.fn("activityEvent.deleteMany").mockResolvedValue({ count: 3 });
   db.fn("passwordReset.deleteMany").mockResolvedValue({ count: 1 });
@@ -43,6 +49,10 @@ beforeEach(() => {
   db.fn("submission.updateMany").mockResolvedValue({ count: 2 });
   db.fn("quizAttempt.updateMany").mockResolvedValue({ count: 2 });
   db.fn("guardianship.updateMany").mockResolvedValue({ count: 1 });
+  db.fn("admission.updateMany").mockResolvedValue({ count: 1 });
+  db.fn("admissionConsent.updateMany").mockResolvedValue({ count: 2 });
+  db.fn("consultationBooking.updateMany").mockResolvedValue({ count: 1 });
+  db.fn("upload.findFirst").mockResolvedValue(null);
   db.fn("auditLog.create").mockResolvedValue({ id: "a1" });
 });
 
@@ -132,5 +142,120 @@ describe("POST /api/admin/erase — el erasure completo", () => {
     expect(arg.action).toBe("user.erase");
     expect(arg.targetId).toBe(TARGET_ID);
     expect(arg.actorId).toBe(ADMIN.id);
+  });
+});
+
+// --- [A4] Bloque de ADMISIÓN --------------------------------------------------------------
+// Lo que la supresión prometía y no cumplía: el formulario de admisión guarda el TELÉFONO del
+// alumno, su ESCUELA, su fecha de nacimiento completa y la CÉDULA/PASAPORTE del tutor.
+describe("POST /api/admin/erase — Admission: no queda NI UN dato personal", () => {
+  // Toda columna de Admission que contenga un dato personal. Si el modelo crece, este array
+  // es el que hay que crecer: el test es la lista de lo que la ley obliga a borrar.
+  const PII_ADMISION = [
+    "birthDate", "phone", "school", "gradeLevel",
+    "guardianName", "guardianDocument", "guardianRelation", "guardianPhone",
+    "guardianEmail", "guardianSignature", "guardianSignedAt",
+    "program", "priorExperience", "preferredDays",
+    "dppVideoUrl",
+  ];
+
+  it("pone a null TODO el bloque personal (alumno + tutor + vídeo) en una sola pasada", async () => {
+    const { status } = await erase(TARGET_ID);
+    expect(status).toBe(200);
+    const arg = db.fn("admission.updateMany").mock.calls[0][0];
+    expect(arg.where).toEqual({ studentId: TARGET_ID });
+    for (const k of PII_ADMISION) expect(arg.data[k]).toBeNull();
+  });
+
+  it("CONSERVA el progreso (los 4 timestamps y el status): registro académico, no dato personal", async () => {
+    await erase(TARGET_ID);
+    const data = db.fn("admission.updateMany").mock.calls[0][0].data;
+    for (const k of ["status", "completedAt", "formCompletedAt", "callCompletedAt", "communityCompletedAt", "videoCompletedAt"]) {
+      expect(data).not.toHaveProperty(k);
+    }
+  });
+
+  it("va DENTRO de la transacción (o se anonimiza todo, o nada queda a medias)", async () => {
+    await erase(TARGET_ID);
+    // El harness resuelve $transaction([...]) con Promise.all: las promesas ya se invocaron
+    // ANTES del unlink de disco. Basta comprobar que la llamada ocurrió junto a las demás.
+    expect(db.fn("admission.updateMany")).toHaveBeenCalledOnce();
+    expect(db.fn("admissionConsent.updateMany")).toHaveBeenCalledOnce();
+  });
+});
+
+describe("POST /api/admin/erase — AdmissionConsent: el rastro sobrevive, la identidad no", () => {
+  it("anonimiza al firmante (nombre → 'Usuario eliminado', acceptedByUserId → null)", async () => {
+    await erase(TARGET_ID);
+    expect(db.fn("admissionConsent.updateMany")).toHaveBeenCalledWith({
+      where: { studentId: TARGET_ID },
+      data: { acceptedByName: "Usuario eliminado", acceptedByUserId: null },
+    });
+  });
+
+  it("NO borra la fila: kind/version/createdAt/text son la prueba de que hubo consentimiento", async () => {
+    await erase(TARGET_ID);
+    expect(db.fn("admissionConsent.deleteMany")).not.toHaveBeenCalled();
+    const data = db.fn("admissionConsent.updateMany").mock.calls[0][0].data;
+    for (const k of ["kind", "version", "text", "createdAt"]) expect(data).not.toHaveProperty(k);
+  });
+});
+
+describe("POST /api/admin/erase — ConsultationBooking (llamada de descubrimiento)", () => {
+  it("anonimiza las reservas del alumno por userId Y por su correo (reservó antes de tener cuenta)", async () => {
+    await erase(TARGET_ID);
+    expect(db.fn("consultationBooking.updateMany")).toHaveBeenCalledWith({
+      where: { OR: [{ userId: TARGET_ID }, { email: TARGET_EMAIL }] },
+      data: { name: "Usuario eliminado", email: `erased-${TARGET_ID}@otr.invalid`, phone: null, goal: null },
+    });
+  });
+
+  it("conserva la fila (slot/estado): el hueco de la agenda es un registro, no un dato personal", async () => {
+    await erase(TARGET_ID);
+    expect(db.fn("consultationBooking.deleteMany")).not.toHaveBeenCalled();
+    const data = db.fn("consultationBooking.updateMany").mock.calls[0][0].data;
+    for (const k of ["slotAt", "status", "durationMin"]) expect(data).not.toHaveProperty(k);
+  });
+});
+
+describe("POST /api/admin/erase — el ARCHIVO del vídeo DPP (material de un MENOR)", () => {
+  it("borra el archivo del disco aunque su fila Upload ya no exista (huérfano)", async () => {
+    db.fn("admission.findUnique").mockResolvedValue({ dppVideoUrl: "/uploads/dpp-menor.mp4" });
+    db.fn("upload.findFirst").mockResolvedValue(null); // sin fila que lo respalde
+    const { json } = await erase(TARGET_ID);
+    expect(String(box.unlink.mock.calls[0][0])).toContain("dpp-menor.mp4");
+    expect(json.files).toBe(1);
+    expect(json.filesDeleted).toBe(1);
+  });
+
+  it("no lo cuenta dos veces si ya venía en los uploads del propio alumno", async () => {
+    db.fn("upload.findMany").mockResolvedValue([{ filename: "dpp-menor.mp4" }]);
+    db.fn("admission.findUnique").mockResolvedValue({ dppVideoUrl: "/uploads/dpp-menor.mp4" });
+    const { json } = await erase(TARGET_ID);
+    expect(box.unlink).toHaveBeenCalledTimes(1);
+    expect(json.files).toBe(1);
+  });
+
+  it("NO borra el archivo si su fila Upload es de OTRO usuario (no es suyo)", async () => {
+    db.fn("admission.findUnique").mockResolvedValue({ dppVideoUrl: "/uploads/de-otro.mp4" });
+    db.fn("upload.findFirst").mockResolvedValue({ userId: "otro-alumno" });
+    const { json } = await erase(TARGET_ID);
+    expect(box.unlink).not.toHaveBeenCalled();
+    expect(json.files).toBe(0);
+  });
+
+  it("una URL con traversal o externa NO llega al unlink (defensa en profundidad)", async () => {
+    for (const url of ["/uploads/../../etc/passwd", "https://evil.example/x.mp4", "/uploads/sub/dir/x.mp4", "/uploads/"]) {
+      db.reset();
+      box.unlink = vi.fn().mockResolvedValue(undefined);
+      db.fn("user.findUnique").mockResolvedValue({ id: TARGET_ID, name: "Ana Ruiz", role: "STUDENT", email: TARGET_EMAIL });
+      db.fn("upload.findMany").mockResolvedValue([]);
+      db.fn("admission.findUnique").mockResolvedValue({ dppVideoUrl: url });
+      db.fn("upload.findFirst").mockResolvedValue(null);
+      const { status, json } = await erase(TARGET_ID);
+      expect(status).toBe(200);
+      expect(box.unlink, `no debió tocar disco por: ${url}`).not.toHaveBeenCalled();
+      expect(json.files).toBe(0);
+    }
   });
 });

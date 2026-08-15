@@ -1,5 +1,8 @@
 // /api/consultations
-//  POST  → público (rate-limited): reserva una consulta de estrategia gratuita (30 min).
+//  POST  → reserva una consulta de estrategia gratuita (30 min), rate-limited.
+//          · CON SESIÓN [A4]: PERMITIDO. Es el paso 2 del flujo de admisión ("Llamada de
+//            Descubrimiento"), que se agenda desde dentro de la aplicación.
+//          · ANÓNIMO: sigue APAGADO (410) — ver CONSULTA_ENABLED abajo.
 //  GET   → solo ADMIN: próximas reservas ordenadas por slotAt asc.
 //          (Los leads traen PII de visitantes — PRD Trust & Safety: nunca expuestos
 //          a cuentas TEACHER, que son auto-registrables.)
@@ -13,15 +16,35 @@ import { isValidSlot, dateLabel, timeLabel, DURATION_MIN } from "../../lib/consu
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-// APAGADO (PRD-estricto): el flujo /consulta no está en el PDF. El GET de ADMIN
-// sigue activo para leer los leads históricos. Reactivar: CONSULTA_ENABLED = true.
+// Bandera del funnel PÚBLICO ANÓNIMO (commit 408bfd4, 10 jun 2026 — "apagados PDF-estricto"):
+// la captación de leads desde /consulta no está en el PDF (§18.5: el top-of-funnel vive fuera
+// de la plataforma). NO se apagó por spam ni por abuso: fue una decisión de ALCANCE, y la
+// página /consulta sigue redirigiendo a "/" con su propia bandera. Por eso sigue en false.
+// [A4] Lo que esa decisión NUNCA cubrió es el alumno YA REGISTRADO agendando su llamada de
+// descubrimiento dentro del producto: ahí no hay captación pública, hay una sesión con
+// identidad verificada. Ese camino se abre abajo; el anónimo se queda exactamente igual.
 const CONSULTA_ENABLED = false;
 
+const RL_MAX = 5;
+const RL_WINDOW_MS = 10 * 60 * 1000;
+
 export async function POST(req: Request) {
-  if (!CONSULTA_ENABLED) return bad("Las consultas están desactivadas en esta fase", 410);
-  // Anti-spam público: 5 reservas / 10 min por IP.
-  const ip = clientIp(req);
-  const rl = rateLimit(`consult:${ip}`, 5, 10 * 60 * 1000);
+  // getSessionUser() lee cookies() — nunca debe tumbar la ruta.
+  let user: Awaited<ReturnType<typeof getSessionUser>>;
+  try {
+    user = await getSessionUser();
+  } catch {
+    user = null;
+  }
+
+  // Anónimo → sigue 410, y corta ANTES del rate-limit y de tocar la DB (idéntico a antes).
+  if (!user && !CONSULTA_ENABLED) return bad("Las consultas están desactivadas en esta fase", 410);
+
+  // Anti-spam: por USUARIO cuando hay sesión (identidad real, y una IP compartida —un colegio—
+  // no bloquea a toda la clase); por IP en el camino público. Mismos 5 / 10 min.
+  const rl = user
+    ? rateLimit(`consult:u:${user.id}`, RL_MAX, RL_WINDOW_MS)
+    : rateLimit(`consult:${clientIp(req)}`, RL_MAX, RL_WINDOW_MS);
   if (!rl.ok) return bad(`Demasiadas solicitudes. Intenta en ${rl.retryAfter}s.`, 429);
 
   const body = await readJson<{
@@ -34,8 +57,12 @@ export async function POST(req: Request) {
     slotAt?: string;
   }>(req);
 
-  const name = clean(body.name, 120);
-  const email = clean(body.email, 160).toLowerCase();
+  // [A4] IDENTIDAD: con sesión sale de la SESIÓN, nunca del body. Aceptarla del cliente
+  // dejaría (a) suplantar a un tercero en la lista de leads que lee el ADMIN y (b) usar el
+  // correo de confirmación como relay hacia una dirección arbitraria. Misma doctrina que
+  // /api/admission, que tampoco acepta `email`.
+  const name = user ? clean(user.name, 120) : clean(body.name, 120);
+  const email = user ? clean(user.email, 160).toLowerCase() : clean(body.email, 160).toLowerCase();
   const phone = clean(body.phone, 40) || null;
   const goal = clean(body.goal, 2000) || null;
   const level = clean(body.level, 40) || null;
@@ -55,14 +82,9 @@ export async function POST(req: Request) {
   });
   if (conflict) return bad("Ese horario ya fue reservado", 409);
 
-  // userId si hay sesión iniciada (best-effort, no obligatorio).
-  let userId: string | null = null;
-  try {
-    const user = await getSessionUser();
-    if (user) userId = user.id;
-  } catch {
-    userId = null;
-  }
+  // La reserva queda atada a la cuenta cuando la hay (el paso 2 de la admisión la busca por
+  // userId o por correo); en el camino público queda null, como siempre.
+  const userId = user?.id ?? null;
 
   let booking;
   try {

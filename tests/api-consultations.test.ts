@@ -1,24 +1,32 @@
 // [BE-TEST · F5.3] Integración de /api/consultations (+ /availability).
-// FIJA EL COMPORTAMIENTO ACTUAL: el flujo público de reserva está APAGADO por bandera
-// (CONSULTA_ENABLED=false, PRD-estricto) → POST responde SIEMPRE 410 y corta ANTES de tocar la
-// DB o el rate-limit. Por eso NO se pueden ejercitar "reserva válida / doble-reserva" contra el
-// route real (ver reporte). Sí protegemos:
-//   POST — 410 (desactivado), sin efectos.
+// FIJA EL CONTRATO:
+//   POST ANÓNIMO — sigue 410 (bandera CONSULTA_ENABLED=false, decisión PRD-estricta del
+//     10 jun 2026: el funnel público /consulta no está en el PDF). Corta ANTES de tocar la
+//     DB y el rate-limit. Esto NO se ha abierto y el test lo custodia.
+//   POST CON SESIÓN [A4] — permitido: es el paso 2 del flujo de admisión ("Llamada de
+//     Descubrimiento"), que se agenda desde la app. La identidad (nombre y correo) sale de la
+//     SESIÓN, nunca del body: si no, cualquiera se suplantaría en la lista de leads del admin
+//     y usaría el correo de confirmación como relay a una dirección arbitraria.
 //   GET  — solo ADMIN lee los leads (traen PII de visitantes; TEACHER es auto-registrable → 403).
 //   /availability GET — público: día cerrado / fecha inválida → sin slots; día abierto resta las
 //     reservas activas del slot.
-// Mockea Prisma + sesión.
+// Mockea Prisma + sesión + correo.
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeDb, jsonReq } from "./helpers/route-harness";
 import { computeSlotsForDate } from "../app/lib/consultations";
 
 // Caja hoisteada (los factory de vi.mock se elevan sobre los imports; solo pueden tocar
 // `vi` y vars de vi.hoisted). El Proxy reenvía perezosamente a box.db.db.
-const box = vi.hoisted(() => ({ db: null as any, user: null as any }));
+const box = vi.hoisted(() => ({ db: null as any, user: null as any, mail: null as any }));
 vi.mock("../app/lib/db", () => ({
   db: new Proxy({}, { get: (_t, p: string) => (p === "then" ? undefined : box.db.db[p]) }),
 }));
 vi.mock("../app/lib/auth", () => ({ setSession: vi.fn(), getSessionUser: () => box.user, clearSession: vi.fn() }));
+vi.mock("../app/lib/mail", () => ({
+  sendMail: (...a: unknown[]) => box.mail(...a),
+  emailShell: (t: string, b: string) => `<html>${t}${b}</html>`,
+  emailButton: vi.fn(),
+}));
 
 import { POST, GET } from "../app/api/consultations/route";
 import { GET as AVAIL_GET } from "../app/api/consultations/availability/route";
@@ -56,14 +64,30 @@ async function availability(date: string) {
   return { status: res.status, json: await res.json() };
 }
 
+// El rate-limit vive en un mapa de módulo compartido por TODO el archivo: cada test usa un
+// id de usuario distinto para no contaminarse con las cuentas de los demás.
+let seq = 0;
+function student(over: Record<string, unknown> = {}) {
+  seq++;
+  return { id: `stu-${seq}`, name: "Analía Reyes", email: `analia${seq}@otr.do`, role: "STUDENT", ...over };
+}
+
+async function reservar(body: Record<string, unknown>) {
+  const res = await POST(jsonReq("/api/consultations", body));
+  return { status: res.status, json: await res.json().catch(() => ({})) };
+}
+
 beforeEach(() => {
   db.reset();
   vi.clearAllMocks();
   box.user = null;
+  box.mail = vi.fn().mockResolvedValue(undefined);
+  db.fn("consultationBooking.findFirst").mockResolvedValue(null);
+  db.fn("consultationBooking.create").mockResolvedValue({ id: "cb-1" });
 });
 
-describe("POST /api/consultations — flujo público APAGADO (bandera PRD-estricta)", () => {
-  it("devuelve 410 y no toca la DB (corta antes del rate-limit y de crear la reserva)", async () => {
+describe("POST /api/consultations — el funnel PÚBLICO ANÓNIMO sigue APAGADO", () => {
+  it("sin sesión → 410 y no toca la DB (corta antes del rate-limit y de crear la reserva)", async () => {
     const res = await POST(
       jsonReq("/api/consultations", { name: "Lead Uno", email: "lead@x.com", slotAt: firstOpenDate().slots[0].iso }),
     );
@@ -72,6 +96,84 @@ describe("POST /api/consultations — flujo público APAGADO (bandera PRD-estric
     expect(json.ok).toBe(false);
     expect(db.fn("consultationBooking.findFirst")).not.toHaveBeenCalled();
     expect(db.fn("consultationBooking.create")).not.toHaveBeenCalled();
+    expect(box.mail).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/consultations — CON SESIÓN: paso 2 del flujo de admisión [A4]", () => {
+  it("un alumno autenticado crea su reserva (200) con la identidad de la SESIÓN", async () => {
+    const u = student();
+    box.user = u;
+    const iso = firstOpenDate().slots[0].iso;
+    const { status, json } = await reservar({ slotAt: iso, goal: "Quiero competir en PF" });
+
+    expect(status).toBe(200);
+    expect(json.booking.id).toBe("cb-1");
+    const data = db.fn("consultationBooking.create").mock.calls[0][0].data;
+    expect(data.name).toBe(u.name);
+    expect(data.email).toBe(u.email);
+    expect(data.userId).toBe(u.id);
+    expect(data.goal).toBe("Quiero competir en PF");
+    expect(data.status).toBe("CONFIRMED");
+    expect(data.slotAt).toEqual(new Date(iso));
+  });
+
+  it("IGNORA name/email del body: ni suplantación en la lista de leads ni relay del correo", async () => {
+    const u = student();
+    box.user = u;
+    const { status } = await reservar({
+      slotAt: firstOpenDate().slots[0].iso,
+      name: "Admin OTR",
+      email: "victima@banco.com",
+    });
+    expect(status).toBe(200);
+    const data = db.fn("consultationBooking.create").mock.calls[0][0].data;
+    expect(data.name).toBe(u.name);
+    expect(data.email).toBe(u.email);
+    // El correo de confirmación va SIEMPRE a la dirección de la sesión.
+    expect(box.mail.mock.calls[0][0].to).toBe(u.email);
+  });
+
+  it("slot inválido → 400 sin crear nada", async () => {
+    box.user = student();
+    const { status } = await reservar({ slotAt: "2020-01-01T05:00:00Z" });
+    expect(status).toBe(400);
+    expect(db.fn("consultationBooking.create")).not.toHaveBeenCalled();
+  });
+
+  it("slot ya reservado por otro → 409 sin crear nada", async () => {
+    box.user = student();
+    db.fn("consultationBooking.findFirst").mockResolvedValue({ id: "cb-ocupada" });
+    const { status } = await reservar({ slotAt: firstOpenDate().slots[0].iso });
+    expect(status).toBe(409);
+    expect(db.fn("consultationBooking.create")).not.toHaveBeenCalled();
+  });
+
+  it("rate-limit POR USUARIO (5/10 min): la 6.ª intentona → 429", async () => {
+    const u = student();
+    box.user = u;
+    const slots = firstOpenDate().slots;
+    for (let i = 0; i < 5; i++) {
+      expect((await reservar({ slotAt: slots[i % slots.length].iso })).status).toBe(200);
+    }
+    const { status } = await reservar({ slotAt: slots[0].iso });
+    expect(status).toBe(429);
+    expect(db.fn("consultationBooking.create")).toHaveBeenCalledTimes(5);
+  });
+
+  it("el rate-limit de un alumno NO afecta a otro (la clave es el usuario, no la IP)", async () => {
+    const slots = firstOpenDate().slots;
+    box.user = student();
+    for (let i = 0; i < 5; i++) await reservar({ slotAt: slots[0].iso });
+    expect((await reservar({ slotAt: slots[0].iso })).status).toBe(429);
+    box.user = student(); // otro alumno, misma "IP"
+    expect((await reservar({ slotAt: slots[0].iso })).status).toBe(200);
+  });
+
+  it("un PARENT autenticado también puede agendar (la bandera cerraba el ANÓNIMO, no la sesión)", async () => {
+    box.user = student({ role: "PARENT", name: "Rosa Fermín" });
+    const { status } = await reservar({ slotAt: firstOpenDate().slots[0].iso });
+    expect(status).toBe(200);
   });
 });
 
