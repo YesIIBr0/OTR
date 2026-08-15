@@ -41,6 +41,17 @@ const nextConfig = {
   // el paso de lint real ya aprobó — desactivado para no duplicar el gate con reglas
   // distintas a las nuestras.
   eslint: { ignoreDuringBuilds: true },
+  // [A5] Techo REAL del cuerpo de una petición. No es cosmético: este proyecto tiene
+  // `middleware.ts` (matcher /api/:path*) y, para poder pasárselo al middleware, Next CLONA
+  // el cuerpo de toda escritura a /api. Al pasarse de este límite corta las DOS ramas del
+  // tee —incluida la que se le reinyecta al route handler—, así que el multipart llega
+  // partido, `req.formData()` revienta y /api/uploads respondía "Esperaba multipart/form-data".
+  // Con el DEFAULT de Next (10 MB) el MAX_UPLOAD_BYTES de 25 MB era INALCANZABLE: medido,
+  // 9 MB pasaba y 10 MB fallaba. Se sube a 26 MB = los 25 MB del archivo + 1 MB de holgura
+  // para el sobre del multipart (boundaries, cabeceras de parte y el campo `kind`).
+  // Sincronizado con MAX_BODY_BYTES (app/lib/uploads.ts): tests/uploads-body-limit.test.ts
+  // se pone rojo si alguien deshace esto, o sube el tope de archivo sin subir éste.
+  experimental: { middlewareClientMaxBodySize: 26 * 1024 * 1024 },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -2067,3 +2067,242 @@ a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
 .dbt-staff .dbt-staff-lead{max-width:52ch}
 .dbt-staff .stat-group{gap:26px}
 /* === FIN RONDA3 · DEBATE TIERS ============================================= */
+
+/* === ADMISIÓN (Isaac) ======================================================
+   Flujo de admisión de 4 pasos (app/lib/scr-admission.ts). Kit actual: negro y
+   blanco dominantes, VERDE (--success/--success-strong) para completado y
+   progreso, naranja fuera de las superficies. Todo el color de estado se toma de
+   tokens.css — aquí no se escribe ni un hex de marca.
+
+   Contraste medido (WCAG 2.1) de lo que se introduce. La escala verde se cita por
+   TOKEN y no por hex: el guardián de paleta exige que esos valores vivan SOLO en
+   tokens.css (allí está la medición completa de --success / --success-strong).
+     · #171717 sobre --success .................. 5,83:1  (punto "completado")
+     · --ok sobre blanco ........................ 5,41:1  (estado "Completado")
+     · --ok sobre el greige #F1F1EF ............. 4,78:1  (mismo texto en el rail)
+     · --danger (#C8401A) sobre blanco .......... 5,00:1  (mensajes de error, que
+                                                   solo viven sobre .adm-box-b)
+     · --text-2 (#4D4D4D) sobre --n-100 ......... 7,35:1  (chip "en breve")
+   ========================================================================== */
+.adm{display:flex;flex-direction:column;gap:18px}
+.adm-loading{padding:40px 0;text-align:center;color:var(--text-2);font-size:14px}
+
+/* --- Bienvenida y pantalla final: la única superficie negra de la pantalla --- */
+.adm-hero,.adm-done{padding:clamp(30px,5vw,54px) clamp(22px,4vw,40px);border-radius:var(--r-lg)}
+.adm-hero-h{margin:10px 0 0;font-size:clamp(30px,5vw,52px);font-weight:800;letter-spacing:-.035em;line-height:1.04}
+.adm-hero-p{margin:16px 0 0;max-width:52ch;font-size:16px;line-height:1.55;color:rgba(255,255,255,.82)}
+.adm-hero-cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:26px}
+.adm-hero-meta{font-size:13px;color:rgba(255,255,255,.6)}
+/* Botón blanco sobre negro (17,9:1) que al hover se invierte conservando el borde. */
+.adm-btn-invert{background:#fff;color:var(--otr-black);border:2px solid #fff}
+.adm-btn-invert:hover{background:transparent;color:#fff}
+.adm-btn-onDark{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.32)}
+.adm-btn-onDark:hover{border-color:#fff;background:rgba(255,255,255,.08)}
+
+/* --- Cabecera de progreso -------------------------------------------------- */
+.adm-top{display:flex;flex-direction:column;gap:10px}
+.adm-top-r{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.adm-top-n{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--text)}
+.adm-top-p{margin-left:auto;font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--ok)}
+.adm-support{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text-2)}
+.adm-support .ic{width:15px;height:15px}
+/* La pista va en --n-200 y no en --n-100: esta barra vive sobre el canvas greige
+   (--bg #F1F1EF), donde el gris del kit para cards se desvanecía. La punta verde
+   contra esta pista mide 4,02:1 — por encima del 3:1 de WCAG 1.4.11. */
+.adm-bar{height:8px;border-radius:var(--r-pill);background:var(--n-200);overflow:hidden}
+.adm-bar > i{display:block;height:100%;border-radius:var(--r-pill);background:var(--success-strong);transition:width .4s var(--ease)}
+
+/* --- Cuerpo: rail + panel -------------------------------------------------- */
+.adm-body{display:flex;gap:32px;align-items:flex-start}
+.adm-rail{width:286px;flex:none}
+.adm-rail-l{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.adm-rail-b{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 13px;
+  border-radius:var(--r-md);border:1px solid transparent;background:transparent;font-family:inherit;cursor:pointer;
+  transition:background .15s var(--ease),border-color .15s}
+.adm-rail-b:hover:not([disabled]){background:var(--surface)}
+.adm-rail-b--active{background:var(--surface);border-color:var(--border);box-shadow:var(--sh-1)}
+.adm-rail-b[disabled]{opacity:.55;cursor:not-allowed}
+.adm-dot{width:30px;height:30px;border-radius:var(--r-pill);flex:none;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;border:2px solid var(--border-field);color:var(--text-2);background:transparent}
+.adm-dot .ic{width:16px;height:16px}
+.adm-rail-b--done .adm-dot{background:var(--success);border-color:var(--success);color:var(--text-on-accent)}
+.adm-rail-b--active .adm-dot{background:var(--otr-black);border-color:var(--otr-black);color:#fff}
+.adm-rail-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adm-rail-n{font-size:13.5px;font-weight:700;letter-spacing:-.01em;line-height:1.2;color:var(--text)}
+.adm-rail-b--locked .adm-rail-n{color:var(--text-2)}
+.adm-rail-s{font-size:11px;font-weight:600;color:var(--text-2)}
+.adm-rail-b--done .adm-rail-s{color:var(--ok)}
+
+/* --- Panel del paso -------------------------------------------------------- */
+.adm-panel{flex:1;min-width:0}
+.adm-panel-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.adm-step-h{margin:0 0 8px;font-size:clamp(21px,3vw,26px);font-weight:800;letter-spacing:-.03em;line-height:1.12;color:var(--text)}
+.adm-step-h:focus-visible{box-shadow:var(--ring)}
+.adm-step-tag{margin:0 0 4px;font-size:15px;font-weight:700;color:var(--text)}
+.adm-step-desc{margin:0 0 22px;max-width:62ch;font-size:15px;line-height:1.6;color:var(--text-2)}
+
+/* --- Caja de contenido (formulario / agenda / comunidad / grabador) --------- */
+.adm-box{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;background:var(--surface);margin-bottom:22px}
+.adm-box-h{display:flex;align-items:center;gap:9px;padding:12px 18px;background:var(--surface-2);
+  border-bottom:1px solid var(--border);font-size:12.5px;font-weight:700;color:var(--text)}
+.adm-box-dot{width:8px;height:8px;border-radius:var(--r-pill);background:var(--otr-black);flex:none}
+.adm-box-b{padding:22px 20px 24px;display:flex;flex-direction:column;gap:22px}
+.adm-box-f{display:flex;justify-content:flex-end}
+
+/* --- Secciones numeradas del formulario ------------------------------------ */
+.adm-sec{display:flex;flex-direction:column;gap:16px;padding-top:22px;border-top:1px solid var(--border)}
+.adm-sec:first-of-type{padding-top:0;border-top:0}
+.adm-sec[hidden]{display:none}
+.adm-sec-h{display:flex;align-items:center;gap:10px}
+.adm-sec-n{width:24px;height:24px;border-radius:var(--r-xs);background:var(--otr-black);color:#fff;flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.adm-sec-t{margin:0;font-size:15px;font-weight:800;letter-spacing:-.01em;color:var(--text)}
+.adm-sec-note{margin:-6px 0 0;font-size:12.5px;color:var(--text-2)}
+.adm-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.adm-field{gap:6px}
+
+/* Fecha de nacimiento: patrón GOV.UK (tres casillas con etiqueta propia sr-only
+   y una leyenda visible), que para una fecha de nacimiento se completa mejor que
+   un <input type=date> y no depende del selector nativo del navegador. */
+.adm-birth{display:flex;align-items:center;gap:10px;max-width:300px}
+.adm-birth-i{width:64px;text-align:center;padding:0 8px}
+.adm-birth-i--y{width:88px}
+.adm-birth-sep{color:var(--text-2);font-weight:700}
+/* Teléfono con prefijo fijo de RD (sin bandera: el kit no usa emoji). */
+.adm-phone{display:flex;align-items:stretch;border:1px solid var(--border-field);border-radius:var(--r-md);overflow:hidden;background:var(--otr-white)}
+.adm-phone:focus-within{border-color:var(--otr-sky);box-shadow:var(--ring)}
+.adm-phone.err{border-color:var(--danger)}
+.adm-phone-cc{display:flex;align-items:center;padding:0 12px;border-right:1px solid var(--border-field);
+  font-size:13px;font-weight:700;color:var(--text-2);background:var(--surface-2);white-space:nowrap}
+.adm-phone .input{border:0;border-radius:0;flex:1}
+.adm-phone .input:focus{box-shadow:none}
+
+/* --- Grupos de opciones (radios como tarjeta) ------------------------------ */
+.adm-group{border:0;padding:0;margin:0;min-width:0}
+.adm-group > legend.label{padding:0;margin-bottom:8px}
+.adm-opts{display:flex;flex-wrap:wrap;gap:8px}
+.adm-opts--stack{flex-direction:column;max-width:360px}
+.adm-opts--cols{display:grid;grid-template-columns:repeat(3,1fr)}
+.adm-opt{position:relative;display:flex;align-items:center;gap:10px;padding:11px 15px;min-height:44px;
+  border:1px solid var(--border-field);border-radius:var(--r-md);background:var(--otr-white);
+  font-size:13.5px;font-weight:600;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s}
+/* El radio nativo sigue en el árbol de accesibilidad (no display:none) y sigue
+   siendo enfocable: solo se le quita la pintura, que la hace la tarjeta. */
+.adm-opt > input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.adm-opt-key{width:20px;height:20px;border-radius:var(--r-xs);flex:none;display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:800;background:var(--n-100);color:var(--text)}
+.adm-opt:hover{border-color:var(--otr-black)}
+.adm-opt:has(input:checked){border-color:var(--otr-black);box-shadow:inset 0 0 0 1px var(--otr-black)}
+.adm-opt:has(input:checked) .adm-opt-key{background:var(--otr-black);color:#fff}
+.adm-opt:has(input:focus-visible){box-shadow:var(--ring)}
+
+/* --- Consentimiento: casilla NATIVA y visible (es el control legal) --------- */
+.adm-consent{padding:16px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2)}
+/* El clausulado que se FIRMA vive pegado al campo de firma (una firma sin texto no
+   prueba nada). El texto es el mismo que registra la API como evidencia. */
+.adm-consent--sign{display:flex;flex-direction:column;gap:12px}
+.adm-consent-t{margin:0;font-size:13px;line-height:1.5;color:var(--text-2)}
+.adm-notice{margin-bottom:18px}
+.adm-consent.err{border-color:var(--danger);background:var(--danger-soft)}
+.adm-consent-l{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;line-height:1.45;color:var(--text)}
+.adm-consent-l input{width:18px;height:18px;margin-top:1px;flex:none;accent-color:var(--otr-black);cursor:pointer}
+
+/* --- Mensajes: error junto al campo, nunca un toast genérico ---------------- */
+.adm-err{display:flex;align-items:flex-start;gap:6px;margin:2px 0 0;font-size:12.5px;font-weight:600;color:var(--danger)}
+.adm-err .ic{width:14px;height:14px;flex:none;margin-top:1px}
+.adm-alert{display:flex;align-items:flex-start;gap:8px;margin:0;padding:11px 13px;border-radius:var(--r-md);
+  border:1px solid var(--danger);background:var(--danger-soft);color:var(--danger);font-size:13px;font-weight:600}
+.adm-alert:focus-visible{box-shadow:var(--ring)}
+.adm-alert--soft{border-color:var(--border);background:var(--surface-2);color:var(--text-2);font-weight:500}
+.adm-alert .ic{width:15px;height:15px;flex:none;margin-top:1px}
+.adm-ok{display:flex;align-items:center;gap:8px;margin:0;font-size:13.5px;font-weight:700;color:var(--ok)}
+.adm-ok .ic{width:17px;height:17px;flex:none}
+
+/* --- Paso 2 · agenda ------------------------------------------------------- */
+.adm-sched{display:grid;grid-template-columns:1.15fr .85fr;align-items:stretch}
+.adm-cal{padding:18px}
+.adm-cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.adm-cal-h b{font-size:15px;font-weight:800;letter-spacing:-.01em;text-transform:capitalize}
+.adm-cal-nav{display:flex;gap:6px}
+.adm-cal-b{width:30px;height:30px;border-radius:var(--r-xs);border:1px solid var(--border-field);background:var(--otr-white);
+  color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.adm-cal-b:hover{background:var(--bg-sunken)}
+.adm-cal-dow,.adm-cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.adm-cal-dow{margin-bottom:6px}
+.adm-cal-dow span{text-align:center;font-size:11px;font-weight:700;color:var(--text-2);padding:2px 0}
+.adm-cal-c{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:0;border-radius:var(--r-xs);
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--text);background:var(--n-100);cursor:pointer}
+.adm-cal-c:hover:not([disabled]){background:var(--n-150)}
+.adm-cal-c[disabled]{background:transparent;color:var(--n-400);cursor:default}
+.adm-cal-c--pad{background:transparent}
+.adm-cal-c.is-sel{background:var(--otr-black);color:#fff}
+.adm-slots{padding:18px;background:var(--surface-2);border-left:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.adm-slots-h{margin:0;font-size:12px;font-weight:700;color:var(--text-2)}
+.adm-slots-l{display:flex;flex-direction:column;gap:8px}
+.adm-slot{width:100%;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);
+  border:2px solid var(--border-field);background:transparent;font-family:inherit;font-size:14px;font-weight:700;color:var(--text);cursor:pointer}
+.adm-slot:hover{border-color:var(--otr-black)}
+.adm-slot.is-sel{background:var(--otr-black);border-color:var(--otr-black);color:#fff}
+.adm-slot-msg{margin:0;font-size:13px;color:var(--text-2)}
+.adm-sched-cta{margin-top:auto}
+
+/* --- Paso 3 · comunidad ---------------------------------------------------- */
+.adm-comm{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.adm-soon{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 16px;border-radius:var(--r-md);
+  background:var(--n-100);color:var(--text-2);font-size:13.5px;font-weight:700}
+.adm-soon .ic{width:16px;height:16px}
+
+/* --- Paso 4 · DPP ---------------------------------------------------------- */
+.adm-stage{position:relative;aspect-ratio:16/9;border-radius:var(--r-md);overflow:hidden;background:var(--ink-800);
+  display:flex;align-items:center;justify-content:center}
+.adm-stage-empty{display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(255,255,255,.6);font-size:13px}
+.adm-stage-empty .ic{width:40px;height:40px}
+.adm-vid{width:100%;border-radius:var(--r-md);background:var(--ink-800);display:block}
+.adm-vid--live{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.adm-rec-badge{position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:7px;padding:5px 11px;
+  border-radius:var(--r-pill);background:rgba(0,0,0,.6);color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em}
+.adm-rec-badge > i{width:8px;height:8px;border-radius:var(--r-pill);background:var(--danger);display:block}
+.adm-dpp-acts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.adm-rubric{padding-top:16px;border-top:1px solid var(--border)}
+.adm-rubric-l{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.adm-rubric-l li{display:flex;align-items:flex-start;gap:10px;font-size:13.5px;line-height:1.45;color:var(--text-2)}
+.adm-rubric-l .ic{width:15px;height:15px;flex:none;margin-top:2px;color:var(--ok)}
+
+/* --- Pie de navegación del paso -------------------------------------------- */
+.adm-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding-top:20px;border-top:1px solid var(--border)}
+.adm-foot-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* --- Pantalla final -------------------------------------------------------- */
+.adm-done{text-align:center;display:flex;flex-direction:column;align-items:center}
+.adm-done-h{margin:0 0 12px;font-size:clamp(28px,4.5vw,40px);font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.adm-done-p{margin:0 0 26px;max-width:52ch;font-size:16px;line-height:1.55;color:rgba(255,255,255,.8)}
+.adm-done-l{list-style:none;margin:0 0 24px;padding:0;display:flex;flex-direction:column;gap:10px;width:100%;max-width:420px}
+.adm-done-i{display:flex;align-items:center;gap:12px;padding:12px 15px;border-radius:var(--r-md);text-align:left;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);font-size:14px;font-weight:700;color:#fff}
+.adm-done-c{width:24px;height:24px;border-radius:var(--r-pill);flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--success);color:var(--text-on-accent)}
+.adm-done-c .ic{width:14px;height:14px}
+.adm-done-note{display:flex;align-items:center;gap:9px;margin:0 0 24px;padding:11px 16px;border-radius:var(--r-md);
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);font-size:13.5px;color:rgba(255,255,255,.9)}
+.adm-done-note .ic{width:17px;height:17px;flex:none}
+.adm-done-cta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* --- 375px: el rail pasa a fila compacta (como el "Móvil" del mockup) ------- */
+@media (max-width:760px){
+  .adm-body{flex-direction:column;gap:16px}
+  .adm-rail{width:100%}
+  .adm-rail-l{flex-direction:row;gap:4px}
+  .adm-rail-i{flex:1;min-width:0}
+  .adm-rail-b{flex-direction:column;justify-content:center;gap:6px;padding:8px 2px;text-align:center}
+  .adm-rail-t{display:none}
+  .adm-dot{width:34px;height:34px}
+  .adm-grid,.adm-opts--cols{grid-template-columns:1fr}
+  .adm-sched{grid-template-columns:1fr}
+  .adm-slots{border-left:0;border-top:1px solid var(--border)}
+  .adm-comm,.adm-foot{flex-direction:column;align-items:stretch}
+  .adm-foot-r{justify-content:space-between}
+  .adm-comm .btn,.adm-soon,.adm-foot .btn{justify-content:center}
+  .adm-top-p{font-size:22px}
+}
+/* === FIN ADMISIÓN (Isaac) ================================================== */

@@ -506,11 +506,34 @@ function activeItemsFlat() {
         </div>
       </section>` : '';
 
+      /* ---- ②bis INVITACIÓN AL PLACEMENT (solo mientras no lo haya hecho) ----
+         [ADM] El placement DEJÓ DE SER UN MURO: hasta hoy el arranque del Aula interceptaba al
+         alumno sin `placedAt` y lo mandaba a la auto-evaluación antes de dejarlo entrar. Ahora
+         la puerta es la ADMISIÓN (ver Aula.tsx) y la evaluación se OFRECE aquí. Sin esta
+         tarjeta la pantalla quedaría huérfana —ninguna otra vista enlaza a 'placement'— y el
+         alumno no poblaría nunca su radar de habilidades.
+         Sitio: bajo el hero y sobre "Próximos eventos". Es el primer bloque de la columna
+         principal que no compite con la próxima clase, y desaparece solo en cuanto hay
+         placedAt. Kit actual: card blanca del sistema, botón negro, sin acento naranja y sin
+         emoji; no añade CSS nuevo. */
+      const placementCard = DB.me?.needsPlacement ? `
+      <section class="card card-pad fade-up" style="--d:1">
+        <div class="row between vcenter wrap" style="gap:14px">
+          <div style="min-width:0">
+            <span class="lbl">${t('core.dashPlacementEyebrow')}</span>
+            <h2 style="font-size:19px;font-weight:800;letter-spacing:-.02em;margin:4px 0">${t('core.dashPlacementTitle')}</h2>
+            <p class="faint" style="font-size:13px;margin:0;max-width:56ch">${t('core.dashPlacementBody')}</p>
+          </div>
+          ${C.btn(t('core.dashPlacementCta'), 'primary', { icRight: 'arrowR', attrs: 'data-go="placement"' })}
+        </div>
+      </section>` : '';
+
       return `
       ${head}
       <div class="dash-grid">
         <div class="dash-main">
           ${hero}
+          ${placementCard}
           ${eventsSection}
           ${standings}
           ${highlightsSection}

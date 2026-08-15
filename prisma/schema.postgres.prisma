@@ -85,6 +85,7 @@ model User {
   guardiansAsParent  Guardianship[]  @relation("GuardianParent")
   guardiansAsStudent Guardianship[]  @relation("GuardianStudent")
   listings           Listing[]       @relation("TeacherListings") // [F-MKT] ofertas del marketplace abierto
+  admission          Admission?      @relation("StudentAdmission") // [ADM] flujo de admisión de 4 pasos (1-1)
 
   // [PERF] El leaderboard (findMany where leaderboardOptIn orderBy debateRating desc) y el
   // rank (count where debateRating gt me) escaneaban toda la tabla en cada carga de app-data.
@@ -589,6 +590,9 @@ model ConsultationBooking {
   status      String   @default("CONFIRMED") // CONFIRMED | CANCELLED | COMPLETED
   userId      String?  // si reservó con sesión iniciada
   createdAt   DateTime @default(now())
+  // [ADM] Inverso del enlace desde Admission: el paso 2 (llamada de descubrimiento) se
+  // satisface con UNA reserva de estas. Solo relación — no añade columna.
+  admissions  Admission[] @relation("AdmissionDiscovery")
 
   @@index([slotAt])
   @@index([status])
@@ -637,6 +641,9 @@ model Guardianship {
   // reserva; N = auto-aprueba reservas de hasta N centavos (sobre N requiere OK).
   approveUnderCents Int?
   createdAt    DateTime @default(now())
+  // [ADM] Inverso del enlace desde Admission (el formulario de admisión declara al tutor y
+  // apunta AQUÍ en vez de abrir un sistema paralelo). Solo relación — no añade columna.
+  admissions   Admission[] @relation("AdmissionGuardianship")
 
   @@unique([parentId, studentId])
   @@index([studentId])
@@ -963,3 +970,102 @@ model Listing {
   @@index([category, status]) // buscador del alumno: por materia, solo ACTIVE
   @@index([teacherId])        // "mis listings" del profesor
 }
+
+// ============================================================
+//  [ADM] Admisión — flujo de 4 pasos del alumno nuevo (mockup de Isaac;
+//  plan docs/superpowers/plans/2026-08-10-onboarding-admision.md).
+//    1 Formulario · 2 Llamada de descubrimiento · 3 Comunidad WhatsApp · 4 Vídeo DPP 30 s
+//  Se completan EN ORDEN y el progreso se lee como "N de 4".
+// ============================================================
+
+// UNA admisión por estudiante (1-1 expresado con @unique sobre studentId — no @@unique
+// suelto: la unicidad ES la cardinalidad de la relación).
+//
+// Qué NO vive aquí: nombre, apellido y correo. Eso ya es User (el POST del formulario
+// actualiza User.name / birthYear / ageBand explícitamente y no guarda una segunda copia).
+// Nada de JSON blob: cada respuesta del formulario es una columna tipada y consultable.
+model Admission {
+  id        String @id @default(cuid())
+  studentId String @unique
+  student   User   @relation("StudentAdmission", fields: [studentId], references: [id], onDelete: Cascade)
+
+  // --- Progreso AUDITABLE: cuándo se completó cada paso (no un booleano: el "cuándo"
+  // es justamente el dato que hay que poder demostrar). null = pendiente.
+  formCompletedAt      DateTime? // paso 1 · formulario de admisión
+  callCompletedAt      DateTime? // paso 2 · llamada de descubrimiento
+  communityCompletedAt DateTime? // paso 3 · comunidad de WhatsApp
+  videoCompletedAt     DateTime? // paso 4 · vídeo DPP de 30 s
+
+  // Estado derivado, materializado para poder FILTRAR sin recomputar 4 timestamps por fila
+  // (el panel del coach lista "quién sigue a medias"). IN_PROGRESS | COMPLETED.
+  status      String    @default("IN_PROGRESS")
+  completedAt DateTime? // los 4 pasos cerrados
+
+  // --- Paso 1 · datos del ESTUDIANTE que el formulario aporta de NUEVO ---
+  birthDate  DateTime? // fecha COMPLETA; User solo guarda birthYear (día y mes son nuevos)
+  phone      String?   // móvil / WhatsApp (RD) — User no tiene teléfono
+  school     String?   // institución educativa
+  gradeLevel String?   // SECUNDARIA | BACHILLERATO | UNIVERSIDAD | GRADUADO
+
+  // --- Paso 1 · tutor. La academia lo pide si el alumno tiene MENOS DE 21; las protecciones
+  // de privacidad de menores siguen atadas a <18 (User.ageBand) y no se mezclan con esto.
+  guardianName      String?
+  guardianDocument  String?   // cédula o pasaporte
+  guardianRelation  String?   // PADRE_MADRE | TUTOR_LEGAL | TUTOR
+  guardianPhone     String?
+  guardianEmail     String?   // NO está en el mockup: es la única llave que alcanza a un User(PARENT)
+  guardianSignature String?   // firma = nombre completo ESCRITO por el tutor
+  guardianSignedAt  DateTime? // cuándo se firmó (el texto firmado vive en AdmissionConsent)
+  // Enlace con el modelo que YA existe (Guardianship), no un sistema paralelo. Queda null
+  // mientras no haya cuenta PARENT que enlazar; sobre un MENOR el vínculo nace PENDING y solo
+  // el padre lo pasa a ACTIVE (POST /api/guardianship) — regla de seguridad §11.3 intacta.
+  guardianshipId String?
+  guardianship   Guardianship? @relation("AdmissionGuardianship", fields: [guardianshipId], references: [id], onDelete: SetNull)
+
+  // --- Paso 1 · programa y preferencias ---
+  program         String?  // DEBATE_COMPETITIVO | ORATORIA | TALLER_INTENSIVO
+  priorExperience Boolean? // experiencia previa en debate (null = sin responder)
+  preferredDays   String?  // LUN_MIE | MAR_JUE | OTRO
+
+  // --- Paso 2 · QUÉ reserva satisfizo la llamada. Referencia, no copia: los datos de la
+  // llamada (slot, estado, duración) siguen viviendo en ConsultationBooking. El paso queda
+  // marcado por callCompletedAt aunque la reserva se cancele después — el hecho ocurrió.
+  discoveryBookingId String?
+  discoveryBooking   ConsultationBooking? @relation("AdmissionDiscovery", fields: [discoveryBookingId], references: [id], onDelete: SetNull)
+
+  // --- Paso 4 · vídeo DPP. El ARCHIVO se sube por /api/uploads; aquí solo su ruta pública.
+  dppVideoUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([status]) // panel de coach/admin: "quién va a medias"
+}
+
+// [ADM · COPPA / Ley 172-13 RD] Evidencia INMUTABLE de consentimiento del flujo de admisión.
+// Un booleano no sirve: hay que poder demostrar dentro de DOS AÑOS qué texto exacto se
+// aceptó, en qué versión, cuándo y quién lo aceptó. Una fila por (admisión, tipo, versión):
+// re-guardar el formulario NO duplica evidencia, y cambiar el texto OBLIGA a subir la versión
+// (el @@unique lo fuerza), que es justo lo que hace defendible el registro.
+//
+// Sin FK a User ni a Admission — misma doctrina que ConsentRecord y AuditLog en este esquema:
+// la evidencia sobrevive al borrado/anonimización del actor (por eso guarda un SNAPSHOT del
+// nombre). Es una tabla de solo-inserción: nunca se actualiza ni se borra.
+model AdmissionConsent {
+  id          String @id @default(cuid())
+  admissionId String
+  studentId   String // alumno (menor o no) sobre quien recae el consentimiento
+  kind        String // data_processing (checkbox del alumno) | guardian_signature (firma del tutor)
+  version     String // versión del texto aceptado — subirla es obligatorio si el texto cambia
+  text        String // TEXTO EXACTO que se mostró y se aceptó, palabra por palabra
+  // Quién aceptó: id de la sesión que envió el formulario + snapshot del nombre real del
+  // firmante (el alumno, o el tutor cuya firma se escribió) + en qué calidad lo hizo.
+  acceptedByUserId String?
+  acceptedByName   String
+  acceptedByRole   String // student | guardian
+  createdAt        DateTime @default(now())
+
+  @@unique([admissionId, kind, version])
+  @@index([studentId])
+}
+

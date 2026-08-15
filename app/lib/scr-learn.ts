@@ -243,7 +243,11 @@ function priorQuizAttempt() {
       if (fileInput) fileInput.addEventListener('change', async () => {
         const f = fileInput.files && fileInput.files[0];
         if (!f) return;
-        if (f.size > 50 * 1024 * 1024) { (window as any).toast && window.toast(t("learn.fileTooBig"), 'danger'); fileInput.value = ''; return; }
+        // [A5] Espejo de MAX_UPLOAD_BYTES (app/lib/uploads.ts). Decía 50 MB —el DOBLE de lo
+        // que el servidor acepta—, así que el alumno subía la entrega entera para que se la
+        // rechazaran al final. No sustituye al tope del servidor, que sigue mandando; sólo
+        // avisa antes de gastar la subida. La sincronía la vigila tests/uploads-body-limit.
+        if (f.size > 25 * 1024 * 1024) { (window as any).toast && window.toast(t("learn.fileTooBig"), 'danger'); fileInput.value = ''; return; }
         filePrev.style.display = 'block';
         filePrev.innerHTML = `<div class="row vcenter" style="gap:8px;font-size:13px;color:var(--text-2)"><span class="spinner" style="width:14px;height:14px"></span> Subiendo ${esc(f.name)}…</div>`;
         try {

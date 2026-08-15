@@ -127,6 +127,12 @@ export const dict = {
     "core.dashNoClassTitle": "Aún no tienes clases agendadas",
     "core.dashNoClassSub": "Explora los programas y reserva tu lugar.",
     "core.dashExploreCourses": "Explorar cursos",
+    // [ADM] Invitación al placement: el arranque ya no obliga a hacerlo (la puerta es la
+    // admisión), así que la evaluación se OFRECE desde el dashboard mientras no haya placedAt.
+    "core.dashPlacementEyebrow": "Tu punto de partida",
+    "core.dashPlacementTitle": "Ubícate en 3 minutos",
+    "core.dashPlacementBody": "Mueve seis barras hasta donde estás hoy y tu radar de habilidades queda listo. No hay respuestas incorrectas, y podrás afinarlo después con tu coach.",
+    "core.dashPlacementCta": "Hacer mi evaluación",
     "core.dashEventsTitle": "Próximos eventos",
     "core.dashFilterAll": "Todos",
     "core.dashFilterClasses": "Clases",
@@ -455,6 +461,10 @@ export const dict = {
     "core.dashNoClassTitle": "No classes scheduled yet",
     "core.dashNoClassSub": "Explore the programs and book your spot.",
     "core.dashExploreCourses": "Explore courses",
+    "core.dashPlacementEyebrow": "Your starting point",
+    "core.dashPlacementTitle": "Find your level in 3 minutes",
+    "core.dashPlacementBody": "Move six sliders to where you stand today and your skill radar is ready. There are no wrong answers, and you can fine-tune it later with your coach.",
+    "core.dashPlacementCta": "Take my assessment",
     "core.dashEventsTitle": "Upcoming events",
     "core.dashFilterAll": "All",
     "core.dashFilterClasses": "Classes",

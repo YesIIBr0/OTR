@@ -12,6 +12,11 @@
 import { C } from "./components";
 import { IC } from "./icons";
 import { esc } from "./esc";
+// [ADM] La lista de usuarios sigue viniendo de /api/admin/users; la admisión NO. Viaja en el
+// payload del Aula (DB.adminAdmissions, solo para ADMIN) porque es dato derivado de lectura,
+// no una entidad que esta pantalla mute — y así no hay que ampliar el endpoint de usuarios
+// con datos de menores que la mayoría de sus consumidores no necesita.
+import { DB } from "./data";
 import { t, registerDict } from "./i18n";
 // [F4.1] Registra el diccionario de esta pantalla en SU chunk (fuera del inicial): au.*. Ver app/lib/i18n.ts.
 import { dict as d_au } from "./i18n-keys/au";
@@ -66,6 +71,85 @@ function roleBadge(role) {
   return `<span class="chip chip--outline">${esc(ROLE_LABEL[r] || r || "—")}</span>`;
 }
 
+/* ---------------- [ADM] admisión y consentimiento ----------------
+   Qué resuelve: operar legalmente con menores exige poder responder "¿quién tiene el
+   consentimiento firmado?" sin abrir la base de datos. El caso crítico —y el único que esta
+   pantalla destaca— es MENOR con el formulario enviado y SIN la firma de su tutor.
+
+   Qué NO se pinta, y tampoco viaja en el payload (ver ADMISSION_SELECT en queries.ts):
+   el nombre, la cédula, la relación, el teléfono y el correo del tutor; la firma; el texto
+   del consentimiento aceptado (su evidencia literal vive en AdmissionConsent y se pide por la
+   vía de auditoría, no por una pantalla); la fecha de nacimiento, el colegio, el programa,
+   los días preferidos y la URL del vídeo DPP del alumno. Aquí solo hay progreso y BOOLEANOS. */
+const ADM_STEP_KEYS = ["au.admStepForm", "au.admStepCall", "au.admStepCommunity", "au.admStepVideo"];
+const admStepLabel = (n) => t(ADM_STEP_KEYS[Math.min(Math.max(Number(n) || 1, 1), 4) - 1]);
+const admData = () => (DB.adminAdmissions && Array.isArray(DB.adminAdmissions.rows)) ? DB.adminAdmissions : null;
+// Índice por usuario para poder anotar la fila de la lista sin recorrer el array por card.
+function admByUser() {
+  const w = window as any;
+  const data = admData();
+  if (!data) return null;
+  if (!w.__admIndex || w.__admIndexSrc !== data.rows) {
+    w.__admIndex = new Map(data.rows.map((r) => [r.id, r]));
+    w.__admIndexSrc = data.rows;
+  }
+  return w.__admIndex;
+}
+
+/* Estado de consentimiento de UNA persona, en chips del kit: verde = firmado (completado),
+   negro = falta la firma del tutor de un menor (el que hay que perseguir), outline = el
+   formulario ni se ha enviado. Sin naranja: no es un estado "en vivo". */
+function consentChips(r) {
+  if (!r.consentData) return C.chip(t("au.admConsentNone"), "outline");
+  const out = [C.chip(t("au.admConsentData"), "accent", { ic: "check" })];
+  if (r.consentGuardian) out.push(C.chip(t("au.admConsentGuardian"), "accent", { ic: "check" }));
+  else if (r.minor) out.push(C.chip(t("au.admConsentGuardianMissing"), "black"));
+  return out.join(" ");
+}
+
+function admissionSection() {
+  const data = admData();
+  if (!data) return "";
+  /* Orden de la lista = orden de urgencia, y NUNCA se esconde a nadie: primero los menores
+     sin firma del tutor (lo que hay que perseguir), luego las admisiones a medias y al final
+     las completas. Que las completas sigan en la lista es el punto: la pregunta que esta
+     pantalla responde es "¿quién tiene el consentimiento firmado?", no solo "¿quién no?". */
+  const rank = (r) => (r.consentPending ? 0 : !r.complete ? 1 : 2);
+  const ordered = data.rows.slice().sort((a, b) => rank(a) - rank(b) || a.done - b.done);
+  const pending = data.rows.filter((r) => r.consentPending);
+  const incomplete = data.rows.filter((r) => !r.complete);
+  // El título nombra LO QUE ENCABEZA la lista: sin firmas pendientes ni admisiones a medias,
+  // la lista ya no es un pendiente sino el registro de consentimiento por alumno.
+  const listTitle = pending.length ? t("au.admPendingTitle") : incomplete.length ? t("au.admInProgressTitle") : t("au.admAllTitle");
+  const row = (r) => `
+    <div class="evrow">
+      <div class="date-box">${C.avatar(esc(ini(r.n)), { size: "sm" })}</div>
+      <div class="ev-main">
+        <div class="ev-title">${r.n}${r.minor ? ` <span class="faint" style="font-weight:600">· ${t("au.minorSuffix")}</span>` : ""}</div>
+        <div class="ev-meta">${t("au.admStepOf").split("{done}").join(String(r.done)).split("{total}").join(String(r.total))}${r.complete ? "" : ` · ${t("au.admNextStep").split("{step}").join(admStepLabel(r.step))}`}</div>
+      </div>
+      <div class="ev-actions">${consentChips(r)}</div>
+    </div>`;
+  return `
+  <div class="sec-title sec-title--sm"><h3>${t("au.admTitle")}</h3></div>
+  <div class="grid g-4 fade-up" style="--d:2;margin-bottom:14px">
+    <div class="tile">${C.kpi(t("au.admKpiTotal"), String(data.total), { ic: "users" })}</div>
+    <div class="tile">${C.kpi(t("au.admKpiComplete"), String(data.complete), { ic: "check" })}</div>
+    <div class="tile">${C.kpi(t("au.admKpiInProgress"), String(data.inProgress), { ic: "clock" })}</div>
+    <div class="tile"${data.consentPending ? ' style="border-color:color-mix(in srgb,var(--danger) 32%,transparent);background:var(--danger-soft)"' : ""}>${C.kpi(t("au.admKpiConsentPending"), String(data.consentPending), { ic: "shield" })}</div>
+  </div>
+  <div class="card adj-list fade-up" style="--d:2;margin-bottom:18px">
+    <div class="adj-head">${C.secTitle(listTitle, {
+      sm: true,
+      right: pending.length ? C.chip(String(pending.length), "black")
+        : incomplete.length ? C.chip(String(incomplete.length), "black")
+        : C.chip(t("au.admAllDoneTitle"), "accent", { ic: "check" }),
+    })}</div>
+    ${ordered.slice(0, 12).map(row).join("")}
+    ${ordered.length ? "" : `<div class="empty"><div class="ill">${IC.checkCircle}</div><h4>${t("au.admAllDoneTitle")}</h4><p>${t("au.admAllDoneBody")}</p></div>`}
+  </div>`;
+}
+
 /* ---------------- card de usuario ---------------- */
 function userCard(u, d) {
   const role = String(u.role || "").toUpperCase();
@@ -106,6 +190,12 @@ function userCard(u, d) {
             ${roleBadge(role)}
             ${isCoachRole(role) && verified ? `<span class="chip chip--accent">${IC.check} ${t("au.verifiedBadge")}</span>` : ""}
             ${suspended ? `<span class="chip chip--tint">${t("au.suspendedBadge")}</span>` : ""}
+            ${/* [ADM] Estado de admisión de ESTA persona, para que el admin no tenga que
+                  cruzar dos listas al buscar a alguien. Solo aparece si hay admisión. */""}
+            ${(() => { const r = admByUser()?.get(u.id); if (!r) return "";
+              return r.complete
+                ? C.chip(t("au.admComplete"), "accent", { ic: "check" })
+                : C.chip(t("au.admStepOf").split("{done}").join(String(r.done)).split("{total}").join(String(r.total)), "outline"); })()}
           </div>
           <div class="faint" style="font-size:12px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}${u.ageBand === "minor" ? " · " + t("au.minorSuffix") : ""}</div>
         </div>
@@ -200,6 +290,10 @@ S.adminUsers = {
         <a class="btn btn-outline btn--sm" href="/api/admin/export?entity=users" download>${IC.doc} ${t("au.exportCsv")}</a>
       </div>
     </div>
+
+    ${/* [ADM] Va ANTES de la lista de usuarios: el consentimiento pendiente de un menor es
+          más urgente que administrar roles, y así se ve sin scrollear la lista entera. */""}
+    ${admissionSection()}
 
     <div class="sec-title sec-title--sm"><h3>${t("au.kpiUsers")}</h3></div>
     <div class="fade-up" style="--d:3" id="au-body">${viewBody()}${more}</div>`;

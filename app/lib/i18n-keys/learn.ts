@@ -43,12 +43,14 @@ export const dict = {
     "learn.uploadFile": "Sube un archivo",
     "learn.fileTypesBadge": "Audio / video / PDF",
     "learn.selectYourFile": "Selecciona tu archivo",
-    "learn.fileHint": "Audio, video, PDF o documento (máx. 50 MB)",
+    // [A5] El número es el del servidor (MAX_UPLOAD_BYTES). Decía 50 MB: el DOBLE de lo que
+    // /api/uploads acepta, así que prometía una entrega que iba a fallar.
+    "learn.fileHint": "Audio, video, PDF o documento (máx. 25 MB)",
     "learn.selectFileBtn": "Seleccionar archivo",
     "learn.fileReady": "Archivo listo",
     "learn.uploadFailed": "No se pudo subir",
     "learn.tryAgain": "Intenta de nuevo",
-    "learn.fileTooBig": "El archivo supera 50 MB",
+    "learn.fileTooBig": "El archivo supera 25 MB. Elige uno más ligero.",
 
     // respuesta de texto
     "learn.writeYourAnswer": "Escribe tu respuesta",
@@ -179,12 +181,12 @@ export const dict = {
     "learn.uploadFile": "upload a file",
     "learn.fileTypesBadge": "Audio / video / PDF",
     "learn.selectYourFile": "Select your file",
-    "learn.fileHint": "Audio, video, PDF or document (max 50 MB)",
+    "learn.fileHint": "Audio, video, PDF or document (max 25 MB)",
     "learn.selectFileBtn": "Choose file",
     "learn.fileReady": "File ready",
     "learn.uploadFailed": "Upload failed",
     "learn.tryAgain": "Try again",
-    "learn.fileTooBig": "The file exceeds 50 MB",
+    "learn.fileTooBig": "The file exceeds 25 MB. Choose a lighter one.",
 
     // text answer
     "learn.writeYourAnswer": "write your answer",
