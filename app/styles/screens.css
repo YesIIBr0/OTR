@@ -2203,6 +2203,29 @@ a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
 .adm-consent--sign{display:flex;flex-direction:column;gap:12px}
 .adm-consent-t{margin:0;font-size:13px;line-height:1.5;color:var(--text-2)}
 .adm-notice{margin-bottom:18px}
+
+/* --- Aviso de privacidad (Ley 172-13: informar ANTES de pedir el consentimiento) ---------
+   Va abierto por defecto y con su propio scroll: tiene que estar A LA VISTA —esconderlo
+   tras un enlace es no informar— pero son ~700 palabras y empujarían el formulario tres
+   pantallas hacia abajo. El bloque es focusable (tabindex="0" en el builder) para que se
+   pueda recorrer con el teclado, que es la única forma de leerlo sin ratón. */
+.adm-notice-s{cursor:pointer;list-style:none;font-size:13px;font-weight:700;color:var(--text);
+  padding:11px 13px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2)}
+.adm-notice-s::-webkit-details-marker{display:none}
+.adm-notice-s::after{content:"";float:right;width:7px;height:7px;margin:4px 2px 0 0;
+  border-right:2px solid var(--text-2);border-bottom:2px solid var(--text-2);transform:rotate(45deg);transition:transform .18s}
+.adm-notice[open] .adm-notice-s::after{transform:rotate(-135deg);margin-top:7px}
+.adm-notice-s:focus-visible{box-shadow:var(--ring);outline:none}
+.adm-notice-b{max-height:230px;overflow-y:auto;margin-top:8px;padding:14px 15px;
+  border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface)}
+.adm-notice-b:focus-visible{box-shadow:var(--ring);outline:none}
+.adm-notice-b p{margin:0 0 11px;font-size:12.5px;line-height:1.55;color:var(--text-2)}
+.adm-notice-b p:last-child{margin-bottom:0}
+
+/* La casilla de imagen es OPCIONAL y tiene que verse que lo es: si se lee como un requisito
+   más, se marca por inercia y el consentimiento deja de ser libre. */
+.adm-consent--opt{margin-top:12px;background:transparent}
+.adm-consent-opt{color:var(--text-2);font-weight:700}
 .adm-consent.err{border-color:var(--danger);background:var(--danger-soft)}
 .adm-consent-l{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;line-height:1.45;color:var(--text)}
 .adm-consent-l input{width:18px;height:18px;margin-top:1px;flex:none;accent-color:var(--otr-black);cursor:pointer}

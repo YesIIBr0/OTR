@@ -5,7 +5,7 @@
 
    Sin emoji en ninguna cadena (regla del kit): la bandera 🇩🇴 del prefijo telefónico
    del mockup se sustituye por el texto "+1 · RD". */
-import { CONSENT_TEXT_DATA, CONSENT_TEXT_GUARDIAN } from "../consent";
+import { CONSENT_TEXT_DATA, CONSENT_TEXT_GUARDIAN, CONSENT_TEXT_MEDIA } from "../consent";
 
 export const dict = {
   es: {
@@ -104,6 +104,9 @@ export const dict = {
     "adm.dayTT": "Martes y jueves",
     "adm.dayOther": "Otro / Personalizado",
     "adm.consent": CONSENT_TEXT_DATA, // mismo criterio: se enseña lo que se registra
+    "adm.noticeTitle": "Aviso de privacidad — léelo antes de aceptar",
+    "adm.consentMedia": CONSENT_TEXT_MEDIA,
+    "adm.mediaOptional": "Opcional:",
     "adm.consentLabel": "Consentimiento de datos",
     "adm.formSave": "Guardar y continuar",
     "adm.formSaving": "Guardando…",
@@ -270,8 +273,11 @@ export const dict = {
     "adm.gEmailHint": "Optional. With it we can link their family account to yours.",
     "adm.gSign": "Signature (full name)",
     "adm.gSignHint": "Typing the full name counts as signing.",
+    // Traducción de CORTESÍA: el texto vinculante es el español (CONSENT_BINDING_LANG), que
+    // es el que se registra como evidencia. Esta versión existe para que se entienda antes
+    // de firmar, y por eso dice lo mismo — si el español cambia, esto cambia con él.
     "adm.consentGuardian":
-      "As the student's parent or legal guardian, I authorize their enrollment at OTR Academy and consent to the processing of their personal data for admission, training and communication purposes. I sign by typing my full name.",
+      "I declare that I am the student's parent or legal guardian, that I hold parental authority or guardianship over them, and that the information I have provided is true. I have read the privacy notice and, in that capacity, I authorize their enrollment at OTR Debating Academy and consent to the processing of their personal data for the admission, training and communication purposes described therein. I understand that I may exercise on their behalf the rights of access, rectification, erasure and objection, and withdraw this consent, by writing to privacidad@otr-academy.com. I sign by typing my full name, and I accept that doing so carries the value of my signature under Law 126-02 on Electronic Commerce, Documents and Digital Signatures.",
     "adm.emailLocked": "This is your OTR account email: it can't be changed from here.",
 
     "adm.sec3": "Which program are you signing up for?",
@@ -286,8 +292,12 @@ export const dict = {
     "adm.dayTT": "Tuesday and Thursday",
     "adm.dayOther": "Other / Custom",
     "adm.consent":
-      "I give my consent for OTR Academy to use my personal data for admission and communication purposes.",
+      "I have read the privacy notice above and give my free, express and informed consent for OTR Debating Academy to process the personal data I provide here, for the admission, training and communication purposes described in that notice. I know that I may access my data, correct it, request its erasure and withdraw this consent at any time by writing to privacidad@otr-academy.com.",
     "adm.consentLabel": "Data consent",
+    "adm.noticeTitle": "Privacy notice — please read before accepting",
+    "adm.mediaOptional": "Optional:",
+    "adm.consentMedia":
+      "In addition, and voluntarily, I authorize OTR Debating Academy to capture and use the student's image and voice in photographs and videos of classes, tournaments and activities, and to publish them on its channels — social media, website and promotional materials — to showcase the academy's work and its students' achievements. This authorization does not include transferring the material to third parties for commercial purposes, is unpaid, and does not condition enrollment: if I do not grant it, the student takes part in everything just the same. I may revoke it at any time by writing to privacidad@otr-academy.com, and from that moment the material will no longer be published, without affecting what was already published beforehand.",
     "adm.formSave": "Save and continue",
     "adm.formSaving": "Saving…",
     "adm.formSaved": "Form saved",

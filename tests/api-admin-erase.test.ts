@@ -188,16 +188,30 @@ describe("POST /api/admin/erase — AdmissionConsent: el rastro sobrevive, la id
   it("anonimiza al firmante (nombre → 'Usuario eliminado', acceptedByUserId → null)", async () => {
     await erase(TARGET_ID);
     expect(db.fn("admissionConsent.updateMany")).toHaveBeenCalledWith({
-      where: { studentId: TARGET_ID },
+      where: { studentId: TARGET_ID, kind: { not: "media_release" } },
       data: { acceptedByName: "Usuario eliminado", acceptedByUserId: null },
     });
   });
 
-  it("NO borra la fila: kind/version/createdAt/text son la prueba de que hubo consentimiento", async () => {
+  it("NO borra la prueba de datos ni la firma: kind/version/createdAt/text la sostienen", async () => {
     await erase(TARGET_ID);
-    expect(db.fn("admissionConsent.deleteMany")).not.toHaveBeenCalled();
     const data = db.fn("admissionConsent.updateMany").mock.calls[0][0].data;
     for (const k of ["kind", "version", "text", "createdAt"]) expect(data).not.toHaveProperty(k);
+    // Y lo que se borra es SOLO la de imagen (siguiente test): ninguna otra.
+    for (const c of db.fn("admissionConsent.deleteMany").mock.calls) {
+      expect(c[0].where.kind).toBe("media_release");
+    }
+  });
+
+  it("la autorización de IMAGEN sí se borra: es un permiso vivo, no la prueba de un hecho", async () => {
+    // Las otras dos acreditan algo que ocurrió —se consintió, en tal fecha— y eso no se
+    // deshace. La de imagen autoriza a PUBLICAR de aquí en adelante: anonimizarla dejaría
+    // escrito "hay permiso para publicar" sin decir de quién, que es justo lo contrario de
+    // lo que pide quien ejerce su derecho de supresión.
+    await erase(TARGET_ID);
+    expect(db.fn("admissionConsent.deleteMany")).toHaveBeenCalledWith({
+      where: { studentId: TARGET_ID, kind: "media_release" },
+    });
   });
 });
 

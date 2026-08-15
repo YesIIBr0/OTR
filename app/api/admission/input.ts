@@ -10,6 +10,7 @@
 // use se deja fuera a propósito (ver el reporte de la tarea para lo que se descartó y por qué).
 import { clean, safeUrl } from "../../lib/api";
 import { esc } from "../../lib/esc";
+import { normalizePhoneNumber } from "../../lib/phone";
 
 // ============================================================
 //  Reglas de edad — DOS umbrales distintos que NO se mezclan
@@ -45,8 +46,12 @@ export {
   CONSENT_VERSION,
   CONSENT_TEXT_DATA,
   CONSENT_TEXT_GUARDIAN,
+  CONSENT_TEXT_MEDIA,
+  CONSENT_EVIDENCE_DATA,
+  PRIVACY_NOTICE_TEXT,
   CONSENT_KIND_DATA,
   CONSENT_KIND_GUARDIAN,
+  CONSENT_KIND_MEDIA,
 } from "../../lib/consent";
 
 // ============================================================
@@ -116,15 +121,11 @@ export function birthDateISO(d?: Date | string | null): string {
  * (+1809…) — el formato que necesita cualquier envío por WhatsApp. Se admite además un
  * internacional explícito con "+" para la familia que vive fuera. Cualquier otra cosa → null.
  */
-const RD_AREA = ["809", "829", "849"];
+/* [FUENTE ÚNICA] La regla vive en app/lib/phone.ts porque la PANTALLA valida con ella
+   mientras el alumno escribe. Cuando cada lado tenía la suya, el formulario rechazaba los
+   teléfonos que la propia plataforma había guardado. */
 export function normalizePhone(v: unknown): string | null {
-  const raw = clean(v, 40);
-  if (!raw) return null;
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 10 && RD_AREA.includes(digits.slice(0, 3))) return `+1${digits}`;
-  if (digits.length === 11 && digits[0] === "1" && RD_AREA.includes(digits.slice(1, 4))) return `+${digits}`;
-  if (raw.startsWith("+") && digits.length >= 8 && digits.length <= 15) return `+${digits}`;
-  return null;
+  return normalizePhoneNumber(clean(v, 40));
 }
 
 /**
@@ -177,10 +178,14 @@ export interface CleanedForm {
   /** Nombre y apellido: NO se guardan en Admission (User.name es el dueño del dato). */
   firstName: string;
   lastName: string;
+  /** Autorización de imagen: voluntaria y revocable, así que NO es columna de Admission —
+   *  vive como fila de AdmissionConsent mientras esté viva. false = no la dio (o la retiró). */
+  mediaConsent: boolean;
 }
 
 const fail = (error: string): CleanedForm => ({
   data: null, error, age: 0, isMinor: false, needsGuardian: false, firstName: "", lastName: "",
+  mediaConsent: false,
 });
 
 /**
@@ -246,9 +251,15 @@ export function cleanAdmissionForm(body: Record<string, unknown>, now: Date = ne
   // menor). Se exige explícitamente `true`, no un valor "truthy" cualquiera.
   if (b.consent !== true) return fail("Debes aceptar el consentimiento de datos personales");
 
+  // El de IMAGEN sí es opcional, y por eso no se valida ni se exige: se recoge tal cual, y
+  // su ausencia significa NO. Meterlo dentro del anterior sería un consentimiento ni libre
+  // ni específico — y aquí se publica de verdad (los highlights enlazan a Instagram).
+  const mediaConsent = b.mediaConsent === true;
+
   const school = clean(b.school, 160) || null;
 
   return {
+    mediaConsent,
     data: {
       birthDate,
       phone,

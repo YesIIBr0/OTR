@@ -22,6 +22,10 @@ import {
   CONSENT_KIND_DATA,
   CONSENT_KIND_GUARDIAN,
   CONSENT_TEXT_DATA,
+  CONSENT_EVIDENCE_DATA,
+  CONSENT_KIND_MEDIA,
+  CONSENT_TEXT_MEDIA,
+  PRIVACY_NOTICE_TEXT,
   CONSENT_TEXT_GUARDIAN,
   CONSENT_VERSION,
   ageFromBirthDate,
@@ -637,7 +641,12 @@ describe("consentimiento — la prueba legal", () => {
     const calls = db.fn("admissionConsent.upsert").mock.calls;
     expect(calls).toHaveLength(1);
     const { where, update, create } = calls[0][0];
-    expect(create.text).toBe(CONSENT_TEXT_DATA);
+    // Se registra el AVISO ENTERO más la declaración, no solo la frase de la casilla: lo que
+    // la ley pide acreditar es que la familia fue INFORMADA, y una frase suelta prueba que
+    // marcó algo, no que se le informó de qué.
+    expect(create.text).toBe(CONSENT_EVIDENCE_DATA);
+    expect(create.text).toContain(CONSENT_TEXT_DATA);
+    expect(create.text).toContain(PRIVACY_NOTICE_TEXT);
     expect(create.version).toBe(CONSENT_VERSION);
     expect(create.kind).toBe(CONSENT_KIND_DATA);
     expect(create.acceptedByRole).toBe("student");
@@ -823,5 +832,59 @@ describe("helpers puros de input.ts", () => {
     expect(p.form!.school).not.toContain("<img");
     expect(p.form!.school).toContain("&lt;img");
     expect(p.guardian!.name).toBe("Rosa &amp; Cía");
+  });
+});
+
+/* ============================================================================
+   [LEGAL] AUTORIZACIÓN DE IMAGEN — separada, voluntaria y revocable
+   La plataforma PUBLICA: los "highlights" de la temporada enlazan a Instagram, y el
+   paso 4 es un video del estudiante, que muchas veces es menor. Meter esa difusión
+   dentro del consentimiento que hace falta para inscribirse lo volvería no libre y no
+   específico — quien quiere entrenar tendría que aceptar salir publicado. Así que va
+   aparte, no condiciona nada, y se puede retirar.
+   ========================================================================== */
+describe("[LEGAL] la autorización de imagen es voluntaria, separada y se puede retirar", () => {
+  const consentCalls = () => db.fn("admissionConsent.upsert").mock.calls.map((c: any) => c[0].create);
+
+  it("sin marcarla, la admisión se completa igual y NO se registra autorización de imagen", async () => {
+    const { status } = await post(ADULT_FORM);          // ADULT_FORM no trae mediaConsent
+    expect(status).toBe(200);
+    expect(consentCalls().some((c: any) => c.kind === CONSENT_KIND_MEDIA)).toBe(false);
+  });
+
+  it("al marcarla se registra con su texto exacto, su versión y quién la dio", async () => {
+    await post({ ...ADULT_FORM, mediaConsent: true });
+    const media = consentCalls().find((c: any) => c.kind === CONSENT_KIND_MEDIA);
+    expect(media).toBeTruthy();
+    expect(media.text).toBe(CONSENT_TEXT_MEDIA);
+    expect(media.version).toBe(CONSENT_VERSION);
+    expect(media.acceptedByRole).toBe("student");
+  });
+
+  it("si el estudiante es MENOR, quien autoriza su imagen es el TUTOR que firma", async () => {
+    await post({ ...MINOR_FORM, mediaConsent: true });
+    const media = consentCalls().find((c: any) => c.kind === CONSENT_KIND_MEDIA);
+    expect(media.acceptedByRole).toBe("guardian");
+    expect(media.acceptedByName).toBe("Rosa Fermín");
+  });
+
+  it("al desmarcarla se BORRA: el expediente dice lo que vale hoy, no lo que valía antes", async () => {
+    // Las otras dos son insert-only porque prueban un hecho pasado que no se deshace. Esta
+    // no: retirarla cambia lo que la academia puede publicar a partir de ahora, y si la fila
+    // se quedara, el expediente diría que hay permiso cuando ya no lo hay.
+    await post({ ...ADULT_FORM, mediaConsent: false });
+    const borrados = db.fn("admissionConsent.deleteMany").mock.calls;
+    expect(borrados.length).toBeGreaterThan(0);
+    expect(borrados[borrados.length - 1][0].where.kind).toBe(CONSENT_KIND_MEDIA);
+    // Y solo alcanza a la de imagen: las pruebas de datos y de firma no se tocan jamás.
+    expect(borrados.every((c: any) => c[0].where.kind === CONSENT_KIND_MEDIA)).toBe(true);
+  });
+
+  it("el texto dice las tres cosas que lo hacen válido: voluntario, revocable y sin condicionar", () => {
+    expect(CONSENT_TEXT_MEDIA).toMatch(/voluntaria/i);
+    expect(CONSENT_TEXT_MEDIA).toMatch(/revocar/i);
+    expect(CONSENT_TEXT_MEDIA).toMatch(/no condiciona la inscripción/i);
+    // Y nombra dónde se publicaría, que es lo que lo hace específico.
+    expect(CONSENT_TEXT_MEDIA).toMatch(/redes sociales/i);
   });
 });

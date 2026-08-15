@@ -20,8 +20,10 @@ import { hashPassword } from "../app/lib/auth-crypto";
 import {
   CONSENT_KIND_DATA,
   CONSENT_KIND_GUARDIAN,
-  CONSENT_TEXT_DATA,
+  CONSENT_KIND_MEDIA,
+  CONSENT_EVIDENCE_DATA,
   CONSENT_TEXT_GUARDIAN,
+  CONSENT_TEXT_MEDIA,
   CONSENT_VERSION,
 } from "../app/api/admission/input";
 
@@ -1943,10 +1945,14 @@ async function main() {
   // Evidencia de consentimiento — el texto EXACTO y su versión, tal como los registra la API.
   await db.admissionConsent.createMany({
     data: [
-      { id: "admc-df-1", admissionId: "adm-df", studentId: "u-df", kind: CONSENT_KIND_DATA, version: CONSENT_VERSION, text: CONSENT_TEXT_DATA, acceptedByUserId: "u-df", acceptedByName: "Diego Fermín", acceptedByRole: "student", createdAt: daysAgo(14) },
+      { id: "admc-df-1", admissionId: "adm-df", studentId: "u-df", kind: CONSENT_KIND_DATA, version: CONSENT_VERSION, text: CONSENT_EVIDENCE_DATA, acceptedByUserId: "u-df", acceptedByName: "Diego Fermín", acceptedByRole: "student", createdAt: daysAgo(14) },
       { id: "admc-df-2", admissionId: "adm-df", studentId: "u-df", kind: CONSENT_KIND_GUARDIAN, version: CONSENT_VERSION, text: CONSENT_TEXT_GUARDIAN, acceptedByUserId: "u-df", acceptedByName: "Rosa Fermín", acceptedByRole: "guardian", createdAt: daysAgo(14) },
-      { id: "admc-ar-1", admissionId: "adm-ar", studentId: "u-ar", kind: CONSENT_KIND_DATA, version: CONSENT_VERSION, text: CONSENT_TEXT_DATA, acceptedByUserId: "u-ar", acceptedByName: "Analía Reyes", acceptedByRole: "student", createdAt: daysAgo(6) },
+      { id: "admc-ar-1", admissionId: "adm-ar", studentId: "u-ar", kind: CONSENT_KIND_DATA, version: CONSENT_VERSION, text: CONSENT_EVIDENCE_DATA, acceptedByUserId: "u-ar", acceptedByName: "Analía Reyes", acceptedByRole: "student", createdAt: daysAgo(6) },
       { id: "admc-ar-2", admissionId: "adm-ar", studentId: "u-ar", kind: CONSENT_KIND_GUARDIAN, version: CONSENT_VERSION, text: CONSENT_TEXT_GUARDIAN, acceptedByUserId: "u-ar", acceptedByName: "Marisol Reyes", acceptedByRole: "guardian", createdAt: daysAgo(6) },
+      // Autorización de imagen de Diego, dada por su tutora: es lo que hace legítimo que sus
+      // highlights de la temporada enlacen a Instagram. Analía NO la dio a propósito — así el
+      // seed contiene los dos casos y se ve que uno entrena igual sin autorizarla.
+      { id: "admc-df-3", admissionId: "adm-df", studentId: "u-df", kind: CONSENT_KIND_MEDIA, version: CONSENT_VERSION, text: CONSENT_TEXT_MEDIA, acceptedByUserId: "u-df", acceptedByName: "Rosa Fermín", acceptedByRole: "guardian", createdAt: daysAgo(14) },
     ],
   });
 
