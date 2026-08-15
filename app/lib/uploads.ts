@@ -99,42 +99,26 @@ function safeExt(original: string, mime: string): string {
    así que el archivo de un MENOR queda privado por defecto (dueño, admin, coach vinculado
    o tutor con guardianship ACTIVE). Un kind "público" como "image" lo dejaría ver a
    cualquier autenticado: la pantalla de admisión debe mandar EXACTAMENTE esta constante. */
-export const DPP_VIDEO_KIND = "dpp-video";
+/* [FUENTE ÚNICA] El contrato del vídeo del DPP —kind, formatos, tope y duración— vive en
+   app/lib/dpp-video.ts porque la PANTALLA que se lo pide al alumno también lo necesita y no
+   puede importar este módulo (arrastra fs y prisma). Se re-exporta para que todo lo que ya
+   importaba desde aquí siga igual.
 
-/* Allowlist EXACTA (la común acepta cualquier `video/*`). Se limita a los contenedores que
-   (a) produce un navegador o un móvil y (b) app/uploads/[...path] ya sirve INLINE — un tipo
-   que no se puede previsualizar es un tipo que el alumno no puede revisar antes de enviar:
-     · video/webm     → MediaRecorder en Chrome/Firefox/Edge y Android
-     · video/mp4      → MediaRecorder en Safari 17+, y el mp4 del carrete de Android/iOS
-     · video/quicktime→ .mov del carrete de iOS
-   Fuera queda a propósito video/3gpp (Android antiguo): habría que ampliar INLINE_OK y
-   EXT_BY_MIME —tocar el camino común por un formato heredado— y el grabador del navegador
-   cubre ese caso sin ampliar nada. */
-export const DPP_VIDEO_MIME = new Set<string>(["video/webm", "video/mp4", "video/quicktime"]);
+   El tope de 16 MB se decide así: ① GRABAR en el navegador pide ~1,6 Mbps → 35 s ≈ 7,0 MB;
+   ② SUBIR desde el móvil, 30 s a ~4 Mbps (1080p recomprimido) ≈ 15 MB, que cabe; un clip
+   CRUDO de iPhone a 17 Mbps (≈64 MB) queda fuera a propósito. ③ Sigue muy por debajo de
+   MAX_UPLOAD_BYTES y MAX_BODY_BYTES, así que el alumno lee siempre el mensaje específico.
+   El margen de 40 s sobre los 30 pedidos está explicado en dpp-video.ts. */
+export {
+  DPP_VIDEO_KIND,
+  DPP_VIDEO_MAX_BYTES,
+  DPP_VIDEO_TARGET_SECONDS,
+  DPP_VIDEO_MAX_SECONDS,
+} from "./dpp-video";
+import { DPP_VIDEO_KIND, DPP_VIDEO_MAX_BYTES, DPP_VIDEO_MAX_SECONDS, DPP_VIDEO_TARGET_SECONDS, DPP_VIDEO_MIME as DPP_MIME_LIST } from "./dpp-video";
 
-/* Tope de 16 MB.
-   [A5] Antes eran 8 MB, y NO por criterio de producto: el techo real de la plataforma estaba
-   en 10 MB (Next truncaba el cuerpo clonado para el middleware) y el tope del DPP tenía que
-   quedarse por debajo para que el alumno leyera un mensaje honesto en vez del críptico
-   "Esperaba multipart/form-data". Ese techo ya está arreglado —MAX_BODY_BYTES / 26 MB, ver
-   next.config.mjs— así que el tope vuelve a decidirse por el vídeo, que es lo que toca.
-   ① GRABAR en el navegador: el grabador pide 1,5 Mbps de vídeo + 96 kbps de audio (ver
-      media-recorder.ts) ≈ 1,6 Mbps → 35 s (los 30 s objetivo + el margen de parada) ≈ 7,0 MB.
-      Con 8 MB ya iba justo si el bitrate real subía; 16 MB le da holgura de sobra.
-   ② SUBIR un archivo del móvil, que es el caso que 8 MB dejaba fuera: 30 s a ~4 Mbps (1080p
-      exportado/recomprimido) ≈ 15 MB. Cabe. Un clip CRUDO de iPhone a 17 Mbps (≈64 MB) sigue
-      fuera a propósito: 30 s de presentación no necesitan eso y el alumno recibe un mensaje
-      claro con el número.
-   ③ Sigue MUY por debajo de MAX_UPLOAD_BYTES y de MAX_BODY_BYTES, así que el mensaje que ve
-      el alumno es siempre el específico ("máx 16MB para 30 segundos"), no el genérico. */
-export const DPP_VIDEO_MAX_BYTES = 16 * 1024 * 1024;
-
-/* Objetivo 30 s; el servidor rechaza a partir de 40 s. El margen no es decorativo: una
-   grabación real de 30 s desde Chrome llegó declarando 30,48 s (latencia de parada +
-   redondeo del contenedor). Sólo se aplica cuando el contenedor DECLARA su duración —que en
-   la práctica es el caso tanto en MP4 como en el WebM de MediaRecorder, medido— y si no la
-   declara NO se inventa: ver el contrato en lib/video-probe.ts. */
-export const DPP_VIDEO_MAX_SECONDS = 40;
+/* Allowlist EXACTA (la común acepta cualquier `video/*`): se usa como Set en la validación. */
+export const DPP_VIDEO_MIME = new Set<string>(DPP_MIME_LIST);
 
 /**
  * Reglas extra por `kind`. Devuelve el mensaje de error, o null si pasa.
@@ -203,7 +187,10 @@ export async function saveUpload(file: File, userId: string, kind: string): Prom
   if (kindNorm === DPP_VIDEO_KIND) {
     const secs = probeVideoDurationSec(buffer);
     if (secs !== null && secs > DPP_VIDEO_MAX_SECONDS) {
-      throw new Error(`El vídeo dura ${Math.round(secs)}s; el máximo es ${DPP_VIDEO_MAX_SECONDS}s`);
+      // El número que se le dice al alumno es el que la pantalla le pidió (30 s), no el umbral
+      // interno con margen (40 s): leer "el máximo es 40s" después de que se le pidieran 30
+      // solo genera la duda de cuál de los dos es verdad.
+      throw new Error(`El vídeo dura ${Math.round(secs)}s; el máximo son ${DPP_VIDEO_TARGET_SECONDS} segundos`);
     }
   }
 

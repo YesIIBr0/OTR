@@ -62,6 +62,7 @@ import { ROUTES } from "../app/lib/screens";
 import { t } from "../app/lib/i18n";
 import { dict as admDict } from "../app/lib/i18n-keys/adm";
 import { CONSENT_TEXT_DATA, CONSENT_TEXT_GUARDIAN, CONSENT_BINDING_LANG } from "../app/lib/consent";
+import { DPP_VIDEO_KIND, DPP_VIDEO_MIME, DPP_VIDEO_MAX_BYTES } from "../app/lib/dpp-video";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel: string) => readFileSync(path.join(ROOT, rel), "utf8");
@@ -539,14 +540,17 @@ describe("⑥ paso 2 (agenda) y paso 4 (DPP) reusan lo que YA existe en el repo"
     expect(html).not.toContain('id="adm-book"');
   });
 
-  it("el DPP acepta SOLO vídeo y con el tope de /api/uploads (25 MB)", () => {
-    expect(ADM_MAX_VIDEO_BYTES).toBe(25 * 1024 * 1024);
+  // El tope del DPP es el SUYO (16 MB), no el genérico de la plataforma (25 MB): un vídeo de
+  // 30 s no necesita más, y anunciar 25 haría al alumno esperar la subida entera para leer
+  // que el máximo era otro. Ver app/lib/dpp-video.ts.
+  it("el DPP acepta SOLO vídeo y con SU tope (16 MB)", () => {
+    expect(ADM_MAX_VIDEO_BYTES).toBe(16 * 1024 * 1024);
     const f = (type: string, size = 1024) => ({ type, size, name: "dpp" }) as unknown as File;
     expect(admVideoReject(f("video/mp4"))).toBe("");
     expect(admVideoReject(f("video/webm"))).toBe("");
     expect(admVideoReject(f("image/png"))).toBe("adm.dppBadType");
     expect(admVideoReject(f("application/pdf"))).toBe("adm.dppBadType");
-    expect(admVideoReject(f("video/mp4", 26 * 1024 * 1024))).toBe("adm.dppTooBig");
+    expect(admVideoReject(f("video/mp4", 17 * 1024 * 1024))).toBe("adm.dppTooBig");
     expect(admVideoReject(null)).toBe("adm.dppBadType");
   });
 
@@ -783,5 +787,42 @@ describe("[ADM · LEGAL] el clausulado que se firma es el que se registra", () =
       expect(en).not.toBe(t(k, "es"));
     }
     expect(t("adm.consentGuardian", "en")).toMatch(/guardian|authorize/i);
+  });
+});
+
+/* ============================================================================
+   ⑧ EL VÍDEO SE SUBE CON EL `kind` QUE EL SERVIDOR VALIDA
+   Esto se escapó de 1451 tests verdes y solo apareció con clicks: la pantalla subía
+   con kind:"video" mientras el servidor aplicaba la política del DPP —duración, tope,
+   formatos— sólo a kind:"dpp-video". Un vídeo de 45 s entró sin una queja, con la
+   pantalla prometiendo 30. Cada lado era coherente consigo mismo; el contrato entre
+   ambos no existía. Ahora hay uno, y esto lo vigila.
+   ========================================================================== */
+describe("[ADM · DPP] la pantalla y el servidor hablan del mismo vídeo", () => {
+  it("sube con el kind EXACTO que selecciona la política del servidor", () => {
+    const src = read("app/lib/scr-admission.ts");
+    expect(src).toContain("window.otrUpload(file, DPP_VIDEO_KIND)");
+    // Un kind literal aquí volvería a partir el contrato sin que nada se queje.
+    expect(src).not.toMatch(/otrUpload\([^)]*,\s*["'][a-z-]+["']\s*\)/);
+    expect(DPP_VIDEO_KIND).toBe("dpp-video");
+  });
+
+  it("anuncia el tope REAL: el alumno no espera a que suban 25 MB para leer que eran 16", () => {
+    expect(ADM_MAX_VIDEO_BYTES).toBe(DPP_VIDEO_MAX_BYTES);
+    expect(Math.round(ADM_MAX_VIDEO_BYTES / (1024 * 1024))).toBe(16);
+    const st = admDefaultState();
+    st.view = "wizard"; st.step = 3; st.done = [true, true, true, false];
+    expect(admPanel(st, NOW)).toContain("16 MB");
+  });
+
+  it("acepta exactamente los formatos que el servidor sabe guardar y previsualizar", () => {
+    expect([...ADM_VIDEO_MIME].sort()).toEqual([...DPP_VIDEO_MIME].sort());
+  });
+
+  it("rechaza en el navegador lo que el servidor rechazaría, sin gastar la subida", () => {
+    const big = { type: "video/mp4", size: DPP_VIDEO_MAX_BYTES + 1 };
+    expect(admVideoReject(big)).toBe("adm.dppTooBig");
+    expect(admVideoReject({ type: "video/avi", size: 1000 })).toBe("adm.dppBadType");
+    expect(admVideoReject({ type: "video/mp4", size: DPP_VIDEO_MAX_BYTES })).toBe("");
   });
 });

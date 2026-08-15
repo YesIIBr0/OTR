@@ -43,6 +43,12 @@ import { IC } from "./icons";
 import { esc } from "./esc";
 import { t, registerDict, fmtMonthNameYear, fmtDayMonthYearTimeRD } from "./i18n";
 import { dict as d_adm } from "./i18n-keys/adm";
+import {
+  DPP_VIDEO_KIND,
+  DPP_VIDEO_MIME,
+  DPP_VIDEO_MAX_BYTES,
+  DPP_VIDEO_TARGET_SECONDS,
+} from "./dpp-video";
 registerDict(d_adm);
 
 /* ============================================================================
@@ -191,11 +197,14 @@ export function admCommunityUrl(raw) {
   return s;
 }
 
-/* Vídeo del DPP. Espejo (más estrecho) de lo que acepta /api/uploads: aquí solo
-   vídeo. El tope real lo vuelve a aplicar el servidor. */
-export const ADM_VIDEO_MIME = ["video/mp4", "video/webm", "video/quicktime"];
-export const ADM_MAX_VIDEO_BYTES = 25 * 1024 * 1024;
-export const ADM_MAX_VIDEO_SECONDS = 30;
+/* Vídeo del DPP. NO se redefine nada aquí: el contrato —qué formatos, cuánto pesa, cuánto
+   dura y con qué `kind` hay que subirlo— es el de app/lib/dpp-video.ts, el mismo que aplica
+   el servidor. Cuando esta pantalla tenía sus propias copias, subía con `kind:"video"` y el
+   servidor no aplicaba NINGUNA de las reglas del DPP: un vídeo de 45 s entraba sin queja
+   mientras la pantalla prometía 30 s, y el tope anunciado (25 MB) no era el real (16 MB). */
+export const ADM_VIDEO_MIME = [...DPP_VIDEO_MIME];
+export const ADM_MAX_VIDEO_BYTES = DPP_VIDEO_MAX_BYTES;
+export const ADM_MAX_VIDEO_SECONDS = DPP_VIDEO_TARGET_SECONDS;
 
 /** Motivo por el que un archivo NO sirve como vídeo del DPP, o "" si sirve. */
 export function admVideoReject(file) {
@@ -1110,7 +1119,7 @@ async function admSendVideo(st, file, repaint) {
   }
   st.dppBusy = true; st.dppMsg = t("adm.dppUploading"); repaint();
   try {
-    const up = await window.otrUpload(file, "video");
+    const up = await window.otrUpload(file, DPP_VIDEO_KIND);
     st.videoUrl = String(up?.url || "");
     st.dppMsg = "";
     // Registrar el vídeo NO completa el paso 4 (la regla de orden vive en el
