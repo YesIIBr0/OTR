@@ -293,6 +293,9 @@ describe("R4 · guard de rol: cada rol alcanza LO SUYO y lo compartido, nada má
     "my-listings":    ["teacher", "admin"],
     parent:           ["parent"],               // [R4] antes: abierta a todos
     placement:        ["student"],              // [R4] antes: abierta a todos
+    // [ADMISIÓN · Isaac] El wizard recoge los datos personales del ALUMNO y de su tutor
+    // (con firma y consentimiento). Es suyo y de nadie más: mismo criterio que 'placement'.
+    admission:        ["student"],
     admin:            ["admin"],
     "admin-users":    ["admin"],
     "admin-metrics":  ["admin"],

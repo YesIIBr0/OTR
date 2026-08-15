@@ -40,6 +40,8 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   // [UI-CURSOS U4] scr-mybookings ya NO es una pantalla enrutable: es el panel que scr-core
   // embebe bajo los cursos, así que viaja en el chunk de 'core' y no necesita loader propio.
   placement:   () => import("./scr-placement"),
+  // [ADMISIÓN · Isaac] Wizard de 4 pasos del alumno nuevo → scr-admission.ts.
+  admission:   () => import("./scr-admission"),
   settings:    () => import("./scr-settings"),
   events:      () => import("./scr-events"),
   room:        () => import("./scr-room"),
@@ -61,7 +63,7 @@ const SCREEN_MODULE: Record<string, string> = {
   debateHub:'debate', marketplace:'marketplace', listings:'listings', listing:'listing', myListings:'myListings', parentPortal:'parent',
   lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
   adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp',
-  placement:'placement', settings:'settings', events:'events', room:'room',
+  placement:'placement', admission:'admission', settings:'settings', events:'events', room:'room',
   highlights:'highlights',
 };
 
@@ -102,7 +104,7 @@ export async function ensureScreen(name: string): Promise<unknown> {
 // Prefetch en segundo plano (fire-and-forget) de las pantallas probables de un rol, para que
 // la navegación se sienta instantánea sin inflar el primer paint.
 const ROLE_PREFETCH: Record<string, string[]> = {
-  student: ['debateHub','marketplace','listings','lifetimeProfile','events','grades','settings','profile','placement'],
+  student: ['debateHub','marketplace','listings','lifetimeProfile','events','grades','settings','profile','placement','admission'],
   teacher: ['teacher','participants','manage','coachwork','marketplace','myListings','messages','profile','settings'],
   parent:  ['parentPortal','marketplace','listings','messages','membership','profile','settings'],
   admin:   ['adminConsole','adminUsers','adminMetrics','adminWhatsapp','marketplace','debateHub','profile','settings'],
@@ -208,6 +210,12 @@ export const ROUTES: Record<string, RouteDef> = {
   // `role`, un coach que escribiera '#placement' podía RESPONDERLA y escribir un skill graph de
   // estudiante en su propia cuenta. Cerrada al alumno, que es de quien es.
   placement:      { screen:'placement',    nav:'dashboard',    crumbs:['Inicio','Tu punto de partida'], role:'student' },
+  // [ADMISIÓN · Isaac] Wizard de 4 pasos del alumno recién registrado (formulario +
+  // consentimiento, llamada de descubrimiento, comunidad y vídeo DPP). Es del ALUMNO
+  // —recoge SUS datos y los de su tutor— así que va cerrada a `student`, igual que el
+  // placement: un coach que escribiera '#admission' a mano no debe poder responderla.
+  // El progreso para coach/admin es otra superficie (panel del coach), no esta pantalla.
+  admission:      { screen:'admission',    nav:'dashboard',    crumbs:['Inicio','Admisión'], role:'student' },
   certificate:    { screen:'certificate',  nav:'badges',       crumbs:['Logros','Certificado'] },
   // Debate Hub (flagship, PRD §6) → pantalla real S.debateHub.
   debate:         { screen:'debateHub',    nav:'debate',       crumbs:['Debate Hub'] },
