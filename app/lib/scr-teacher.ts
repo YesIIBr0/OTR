@@ -16,6 +16,30 @@ export const S = {};
   const spark = (vals,color='var(--n-600)') => `<div class="spark">${vals.map(v=>`<i style="height:${v}%;background:${color}"></i>`).join('')}</div>`;
 
   /* ============================================================
+     [ADM] ADMISIÓN — lo que el coach ve de sus alumnos
+     El alumno nuevo entra por un wizard de 4 pasos (formulario · llamada · comunidad ·
+     vídeo DPP) y hasta terminarlo no está del todo dentro de la academia. El coach necesita
+     saber a quién le falta y por dónde va, así que el roster gana una columna y el rail una
+     lista de pendientes.
+
+     LO QUE EL COACH NO VE, a propósito: nada del formulario. queries.ts le manda solo
+     {done,total,step,complete} — ni el nombre/cédula/teléfono del tutor, ni la firma, ni la
+     fecha de nacimiento, ni el estado del consentimiento (eso es de la consola del admin).
+     s.adm === null significa "el flujo de admisión no está activo en este despliegue": la
+     columna entera desaparece en vez de pintar ceros que mentirían. */
+  const ADM_STEP_KEYS = ["teacher.admStepForm","teacher.admStepCall","teacher.admStepCommunity","teacher.admStepVideo"];
+  const admStepLabel = (n) => t(ADM_STEP_KEYS[Math.min(Math.max(Number(n)||1,1),4)-1]);
+  // ¿Hay datos de admisión en este roster? Basta con que UN alumno los traiga.
+  const admOn = () => (DB.students||[]).some(s=>s.adm);
+  // Celda del roster: verde con check cuando está completa (kit: completado = verde), y el
+  // paso que TOCA cuando no — que es justo lo que el coach necesita para empujar.
+  const admCell = (s) => {
+    if (!s.adm) return `<span class="faint">—</span>`;
+    if (s.adm.complete) return C.chip(t("teacher.admComplete"), "accent", { ic: "check" });
+    return `<span class="row vcenter" style="gap:6px"><b class="tnum">${s.adm.done}/${s.adm.total}</b><span class="faint" style="font-size:12px">${admStepLabel(s.adm.step)}</span></span>`;
+  };
+
+  /* ============================================================
      Helpers comunes del panel del profesor (gestión real)
      ============================================================ */
 
@@ -62,6 +86,9 @@ export const S = {};
   S.teacher = {
     render() {
       const atRisk = DB.students.filter(s=>s.risk);
+      // [ADM] Alumnos con la admisión a medias, del que menos ha avanzado al que más:
+      // el que sigue en el paso 1 es el que más riesgo tiene de no entrar nunca.
+      const admPending = DB.students.filter(s=>s.adm && !s.adm.complete).sort((a,b)=>a.adm.done-b.adm.done);
       const k = DB.teacherKpis || {avg:0,attendance:0,onTime:0,atRisk:0};
       const courses = DB.teacherCourses || [];
       const courseCount = courses.length;
@@ -103,11 +130,12 @@ export const S = {};
           </div>
           <div class="table-wrap scroll-m">
             <table class="tbl">
-              <thead><tr><th>${t("teacher.thStudent")}</th><th>${t("teacher.thLevel")}</th><th class="num">${t("teacher.thGrade")}</th><th class="num">${t("teacher.thAttendance")}</th><th>${t("teacher.thEngagement")}</th><th class="center">${t("teacher.thTrend")}</th><th class="num">${t("teacher.thLastAccess")}</th></tr></thead>
+              <thead><tr><th>${t("teacher.thStudent")}</th><th>${t("teacher.thLevel")}</th>${admOn()?`<th>${t("teacher.thAdmission")}</th>`:''}<th class="num">${t("teacher.thGrade")}</th><th class="num">${t("teacher.thAttendance")}</th><th>${t("teacher.thEngagement")}</th><th class="center">${t("teacher.thTrend")}</th><th class="num">${t("teacher.thLastAccess")}</th></tr></thead>
               <tbody id="tr-body">
                 ${DB.students.map(s=>`<tr data-name="${esc(String(s.n).toLowerCase())}" data-risk="${s.risk?'1':'0'}">
                   <td><div class="cell-user">${C.avatar(s.i,{size:'sm'})}<div class="nm">${esc(s.n)}</div>${s.risk?C.chip(t("teacher.riskBadge"), 'accent'):''}</div></td>
                   <td>${C.levelBadge(s.lvl)}</td>
+                  ${admOn()?`<td>${admCell(s)}</td>`:''}
                   <td class="num">${s.grade==null?'<span class="faint">—</span>':`<b style="color:${s.grade>=85?'var(--ok)':s.grade>=70?'var(--warn)':'var(--danger)'}">${s.grade}%</b>`}</td>
                   <td class="num tnum">${s.att==null?'—':`${s.att}%`}</td>
                   ${/* [auditoría] "—" (sin ActivityEvent aún) no es una clase eng-Alto/Medio/Bajo válida en CSS → se mapea a eng-none */""}
@@ -142,6 +170,21 @@ export const S = {};
               </div>`).join('')}
             ${atRisk.length?'':'<div class="empty"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.noAlertsTitle")+'</h4><p>'+t("teacher.noAlertsBody")+'</p></div>'}
           </div>
+          ${/* [ADM] Admisión a medias: quién no ha terminado de entrar y qué paso le toca.
+                Solo aparece si el flujo está activo (admOn) — si no, ni la card existe. */""}
+          ${admOn() ? `<div class="card adj-list adj-list--rail fade-up" style="--d:2">
+            <div class="adj-head">${C.secTitle(t("teacher.admPendingTitle"), { sm: true, right: admPending.length ? C.chip(String(admPending.length), "black") : C.chip(t("teacher.admAllIn"), "accent", { ic: "check" }) })}</div>
+            ${admPending.map(s=>`<div class="evrow">
+                <div class="date-box">${C.avatar(s.i,{size:'sm'})}</div>
+                <div class="ev-main">
+                  <span class="adj-tag">${t("teacher.admStepOf").split("{done}").join(String(s.adm.done)).split("{total}").join(String(s.adm.total))}</span>
+                  <div class="ev-title">${esc(s.n)}</div>
+                  <div class="ev-meta">${t("teacher.admNextStep").split("{step}").join(admStepLabel(s.adm.step))}</div>
+                </div>
+                <div class="ev-actions"><button class="btn btn-outline btn--sm" data-go="messages" aria-label="${t("teacher.sendMessageTo").split("{name}").join(s.n)}" title="${t("teacher.sendMessage")}">${IC.msg}</button></div>
+              </div>`).join('')}
+            ${admPending.length?'':'<div class="empty"><div class="ill">'+IC.checkCircle+'</div><h4>'+t("teacher.admAllInTitle")+'</h4><p>'+t("teacher.admAllInBody")+'</p></div>'}
+          </div>` : ''}
           <div class="card adj-list adj-list--rail fade-up" style="--d:2">
             <div class="adj-head">${C.secTitle(t("teacher.pendingGradingTitle"), { sm: true, right: C.chip(String(DB.pendingSubs ?? 0), "black") })}</div>
             ${(DB.pendingSubs ?? 0) > 0

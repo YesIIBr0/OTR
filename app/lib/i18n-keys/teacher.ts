@@ -41,6 +41,21 @@ export const dict = {
     "teacher.riskBadge": "Riesgo",
     "teacher.noStudentsFilter": "Sin alumnos para este filtro.",
 
+    /* [ADM] Admisión de 4 pasos: el coach ve el PROGRESO de sus alumnos (por qué paso van),
+       nunca el contenido del formulario ni los datos del tutor. */
+    "teacher.thAdmission": "Admisión",
+    "teacher.admComplete": "Completa",
+    "teacher.admStepForm": "Formulario",
+    "teacher.admStepCall": "Llamada",
+    "teacher.admStepCommunity": "Comunidad",
+    "teacher.admStepVideo": "Vídeo",
+    "teacher.admPendingTitle": "Admisión a medias",
+    "teacher.admStepOf": "{done} de {total}",
+    "teacher.admNextStep": "Le toca: {step}",
+    "teacher.admAllIn": "Al día",
+    "teacher.admAllInTitle": "Todos adentro",
+    "teacher.admAllInBody": "Tu grupo completó la admisión.",
+
     // Requieren atención
     "teacher.needAttention": "Requieren atención",
     "teacher.lowAttendance": "Asistencia baja",
@@ -263,6 +278,20 @@ export const dict = {
     "teacher.thLastAccess": "Last access",
     "teacher.riskBadge": "At risk",
     "teacher.noStudentsFilter": "No students match this filter.",
+
+    // [ADM] Admission (4 steps): the coach sees PROGRESS only.
+    "teacher.thAdmission": "Admission",
+    "teacher.admComplete": "Complete",
+    "teacher.admStepForm": "Form",
+    "teacher.admStepCall": "Call",
+    "teacher.admStepCommunity": "Community",
+    "teacher.admStepVideo": "Video",
+    "teacher.admPendingTitle": "Admission in progress",
+    "teacher.admStepOf": "{done} of {total}",
+    "teacher.admNextStep": "Up next: {step}",
+    "teacher.admAllIn": "All set",
+    "teacher.admAllInTitle": "Everyone is in",
+    "teacher.admAllInBody": "Your group completed admission.",
 
     // Need attention
     "teacher.needAttention": "Need attention",

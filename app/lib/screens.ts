@@ -208,6 +208,14 @@ export const ROUTES: Record<string, RouteDef> = {
   // `role`, un coach que escribiera '#placement' podía RESPONDERLA y escribir un skill graph de
   // estudiante en su propia cuenta. Cerrada al alumno, que es de quien es.
   placement:      { screen:'placement',    nav:'dashboard',    crumbs:['Inicio','Tu punto de partida'], role:'student' },
+  // [ADM] Wizard de admisión de 4 pasos (plan 2026-08-10-onboarding-admision). Es la PUERTA:
+  // el arranque manda aquí al estudiante cuya admisión no está completa (ver Aula.tsx), así que
+  // el guard de rol importa doblemente — recoge datos personales del alumno y de su tutor y
+  // ningún otro rol tiene nada que hacer dentro. `role:'student'` cerrado desde el día uno (el
+  // sondeo R4 ya nos costó tres pantallas abiertas por omitirlo).
+  // El loader del chunk (LOADERS/SCREEN_MODULE, 'admission' → ./scr-admission) lo aporta la
+  // fase F1: esta entrada declara la RUTA y su dueño; sin el builder la pantalla no pinta.
+  admission:      { screen:'admission',    nav:'dashboard',    crumbs:['Inicio','Admisión'], role:'student' },
   certificate:    { screen:'certificate',  nav:'badges',       crumbs:['Logros','Certificado'] },
   // Debate Hub (flagship, PRD §6) → pantalla real S.debateHub.
   debate:         { screen:'debateHub',    nav:'debate',       crumbs:['Debate Hub'] },

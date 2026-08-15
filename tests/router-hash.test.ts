@@ -293,6 +293,9 @@ describe("R4 · guard de rol: cada rol alcanza LO SUYO y lo compartido, nada má
     "my-listings":    ["teacher", "admin"],
     parent:           ["parent"],               // [R4] antes: abierta a todos
     placement:        ["student"],              // [R4] antes: abierta a todos
+    // [ADM] El wizard de admisión recoge datos personales del alumno y de su tutor (firma
+    // incluida) y es la PUERTA del alumno nuevo: nace cerrada a 'student'.
+    admission:        ["student"],
     admin:            ["admin"],
     "admin-users":    ["admin"],
     "admin-metrics":  ["admin"],

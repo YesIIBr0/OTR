@@ -75,6 +75,38 @@ export function resolveHashRoute(hash: string, role: string): string {
 }
 
 /**
+ * [ADM] Ruta de ARRANQUE del Aula: qué pantalla se pinta al montar, con el hash ya resuelto.
+ *
+ * Vivía suelta dentro del useEffect de Aula.tsx y es la regla de producto más cara del
+ * arranque —decide si alguien puede entrar o no—, así que se extrae aquí: pura, sin DOM y
+ * testeable (tests/admision-enganche.test.ts).
+ *
+ * Prioridades, de mayor a menor:
+ *   1. ADMISIÓN INCOMPLETA (estudiante) → el wizard. Es la PUERTA: sin admisión no hay clases.
+ *      `needsAdmission` lo calcula queries.ts y es false también cuando el subsistema de
+ *      admisión no existe en el despliegue, así que nunca se enruta a un wizard ausente.
+ *   2. Registro recién hecho → 'onboarding' (flag de sessionStorage; se consume igual).
+ *   3. Lo que pida la URL (deep-link / F5), que resolveHashRoute ya filtró por rol.
+ *
+ * Lo que YA NO está en esta lista: el PLACEMENT. Hasta hoy el alumno sin `placedAt` era
+ * interceptado aquí y no entraba al Aula hasta responder la auto-evaluación. Dejó de ser un
+ * muro: se ofrece DENTRO, como tarjeta del dashboard (scr-core.ts). Lo que bloquea es el
+ * trámite formal —admisión y consentimiento—, no una autoevaluación de 3 minutos.
+ */
+export function startRoute(opts: {
+  role: string;
+  hashRoute: string;
+  needsAdmission?: boolean;
+  justRegistered?: boolean;
+}): string {
+  // isRouteAllowed also covers "la ruta ni existe": si el wizard no está registrado (fase F1
+  // sin desplegar) nadie queda encerrado fuera del Aula por una pantalla que no pinta.
+  if (opts.role === "student" && opts.needsAdmission && isRouteAllowed("admission", opts.role)) return "admission";
+  if (opts.justRegistered) return "onboarding";
+  return opts.hashRoute;
+}
+
+/**
  * ¿El hash es un ANCLA IN-PAGE y no una ruta? El propio producto los usa: el skip-link
  * `href="#content"` (shell.ts, primer tab-stop de toda pantalla) y el índice de lección
  * `#s1/#s2/#s3` (scr-core.ts). Un hashchange así NO es navegación: ni repinta ni redirige
