@@ -1,6 +1,11 @@
 // OTR · /api/admission — progreso de admisión (4 pasos) y paso 1 (formulario) [ADM].
-//   GET  — progreso PROPIO del estudiante, o el de un alumno para el staff
-//          (TEACHER | COACH | ADMIN) vía ?studentId=. Staff = SOLO LECTURA.
+//   GET  — progreso PROPIO del estudiante, o el de un alumno para el staff vía ?studentId=.
+//          Staff = SOLO LECTURA, y en DOS capas [A4 · SEC]: (1) un coach solo entra al
+//          expediente de un alumno CON EL QUE TIENE VÍNCULO (reserva con él o inscrito en su
+//          curso — el criterio que ya usan /uploads y /api/debates); ADMIN entra a cualquiera.
+//          (2) cada rol recibe SOLO lo que necesita: el coach, progreso y estado del
+//          consentimiento; el admin, el expediente del alumno y quién firmó; el documento de
+//          identidad y el contacto del TUTOR, solo su dueño. Ver `admissionPayloadFor`.
 //   POST — guarda el formulario del paso 1 (solo el STUDENT dueño). Validado ENTERO en
 //          servidor, registra la evidencia de consentimiento y enlaza con Guardianship.
 //
@@ -26,21 +31,36 @@ import {
   CONSENT_VERSION,
   MINOR_AGE,
   admissionPayload,
+  admissionPayloadFor,
   cleanAdmissionForm,
   initialsFor,
   type AdmissionRow,
+  type AdmissionScope,
 } from "./input";
 
 /** Roles con lectura sobre la admisión de un alumno. Nunca escritura. */
 const STAFF = ["TEACHER", "COACH", "ADMIN"] as const;
 
-/** Admisión + su evidencia de consentimiento, en la forma que consume el front. */
-async function loadAdmission(studentId: string) {
+/** Admisión + su evidencia de consentimiento, recortada para quien pregunta (ver §minimización). */
+async function loadAdmission(studentId: string, scope: AdmissionScope) {
   const admission = (await db.admission.findUnique({ where: { studentId } })) as AdmissionRow | null;
   const consents = admission
     ? await db.admissionConsent.findMany({ where: { admissionId: admission.id }, orderBy: { createdAt: "asc" } })
     : [];
-  return admissionPayload(admission, consents);
+  return admissionPayloadFor(scope, admission, consents);
+}
+
+/**
+ * [A4 · SEC] ¿Este coach tiene VÍNCULO REAL con este alumno? Es el mismo criterio que ya usa
+ * el repo para dejar que un coach toque material o rating de un menor —reserva con él, o
+ * inscripción en un curso que imparte— en app/uploads/[...path]/route.ts y en /api/debates.
+ * Se reutiliza tal cual, incluido el corto-circuito: si hay reserva, no se consulta matrícula.
+ */
+async function coachTieneVinculo(coach: { id: string; email: string }, studentId: string): Promise<boolean> {
+  const booked = await db.booking.count({ where: { coachId: coach.id, studentId } });
+  if (booked > 0) return true;
+  const enrolled = await db.enrollment.count({ where: { userId: studentId, course: { teacher: { email: coach.email } } } });
+  return enrolled > 0;
 }
 
 export async function GET(req: Request) {
@@ -53,7 +73,7 @@ export async function GET(req: Request) {
     // Un estudiante solo ve la SUYA. Pedir la de otro es 403, no un 404 silencioso: el
     // intento existe y el cliente tiene que enterarse de que no está autorizado.
     if (asked && asked !== user.id) return bad("Solo puedes ver tu propia admisión", 403);
-    return ok({ admission: await loadAdmission(user.id), student: { id: user.id, name: user.name } });
+    return ok({ admission: await loadAdmission(user.id, "owner"), student: { id: user.id, name: user.name } });
   }
 
   if (!requireRole(user, ...STAFF)) return bad("No autorizado", 403);
@@ -65,7 +85,23 @@ export async function GET(req: Request) {
   });
   if (!student || student.role !== "STUDENT") return bad("Estudiante no encontrado", 404);
 
-  return ok({ admission: await loadAdmission(student.id), student });
+  // [A4 · SEC] Authz de RELACIÓN, no solo de rol. El gate anterior daba por bueno el ROL:
+  // cualquier cuenta TEACHER/COACH —incluida una que no imparte nada— podía pedir el
+  // expediente de CUALQUIER menor y recibir la cédula de su tutor. El rol dice qué clase de
+  // cuenta eres; no dice de quién eres coach.
+  if (user.role !== "ADMIN") {
+    if (!(await coachTieneVinculo(user, student.id))) {
+      return bad("Solo puedes ver la admisión de tus alumnos (con reserva contigo o inscritos en tu curso)", 403);
+    }
+    // Con vínculo, pero SOLO progreso y estado de consentimiento (ver admissionPayloadFor):
+    // ni el correo del alumno hace falta para dar clase — la mensajería vive en la plataforma.
+    return ok({
+      admission: await loadAdmission(student.id, "coach"),
+      student: { id: student.id, name: student.name, ageBand: student.ageBand },
+    });
+  }
+
+  return ok({ admission: await loadAdmission(student.id, "admin"), student });
 }
 
 /**

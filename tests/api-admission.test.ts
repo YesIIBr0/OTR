@@ -158,6 +158,7 @@ describe("guards de rol — quién puede leer", () => {
   it("coach (TEACHER) lee la de un alumno suyo → 200", async () => {
     box.user = COACH;
     db.fn("user.findUnique").mockResolvedValue({ id: "s1", name: "Analía", email: "a@x.com", role: "STUDENT", ageBand: "adult" });
+    db.fn("booking.count").mockResolvedValue(1); // VÍNCULO real: el alumno tiene reserva con él
     const { status, json } = await get("?studentId=s1");
     expect(status).toBe(200);
     expect(json.student.id).toBe("s1");
@@ -174,6 +175,160 @@ describe("guards de rol — quién puede leer", () => {
     db.fn("user.findUnique").mockResolvedValue({ id: "t1", role: "TEACHER", name: "Saúl", email: "s@x.com" });
     const { status } = await get("?studentId=t1");
     expect(status).toBe(404);
+  });
+});
+
+// ============================================================
+// [A4 · SEC] El guard de arriba comprobaba el ROL, no la RELACIÓN: CUALQUIER cuenta
+// TEACHER/COACH podía leer el expediente de CUALQUIER menor — cédula del tutor incluida.
+// Dos capas: (1) quién puede leer, (2) qué se le entrega a cada quien.
+describe("[A4 · SEC] quién puede leer: authz de RELACIÓN, no solo de rol", () => {
+  const MENOR = { id: "s-menor", name: "Diego Fermín", email: "diego@x.com", role: "STUDENT", ageBand: "minor" };
+
+  beforeEach(() => {
+    db.fn("user.findUnique").mockResolvedValue(MENOR);
+    db.fn("booking.count").mockResolvedValue(0);
+    db.fn("enrollment.count").mockResolvedValue(0);
+  });
+
+  it("coach SIN vínculo con el alumno → 403 y NO llega a leer la admisión", async () => {
+    box.user = COACH;
+    const { status, json } = await get(`?studentId=${MENOR.id}`);
+    expect(status).toBe(403);
+    expect(json.error).toMatch(/tus alumnos/i);
+    expect(db.fn("admission.findUnique")).not.toHaveBeenCalled();
+  });
+
+  it("rol COACH sin vínculo → 403 igual que TEACHER (mismo tipo de cuenta)", async () => {
+    box.user = { ...COACH, id: "c9", role: "COACH" };
+    const { status } = await get(`?studentId=${MENOR.id}`);
+    expect(status).toBe(403);
+    expect(db.fn("admission.findUnique")).not.toHaveBeenCalled();
+  });
+
+  it("coach CON vínculo por RESERVA → 200 (la relación se busca por coachId + studentId)", async () => {
+    box.user = COACH;
+    db.fn("booking.count").mockResolvedValue(2);
+    const { status } = await get(`?studentId=${MENOR.id}`);
+    expect(status).toBe(200);
+    expect(db.fn("booking.count")).toHaveBeenCalledWith({ where: { coachId: COACH.id, studentId: MENOR.id } });
+  });
+
+  it("coach CON vínculo por INSCRIPCIÓN en un curso que imparte → 200", async () => {
+    box.user = COACH;
+    db.fn("enrollment.count").mockResolvedValue(1);
+    const { status } = await get(`?studentId=${MENOR.id}`);
+    expect(status).toBe(200);
+    expect(db.fn("enrollment.count")).toHaveBeenCalledWith({
+      where: { userId: MENOR.id, course: { teacher: { email: COACH.email } } },
+    });
+  });
+
+  it("ADMIN no necesita vínculo: lee sin consultar reservas ni inscripciones", async () => {
+    box.user = ADMIN;
+    const { status } = await get(`?studentId=${MENOR.id}`);
+    expect(status).toBe(200);
+    expect(db.fn("booking.count")).not.toHaveBeenCalled();
+    expect(db.fn("enrollment.count")).not.toHaveBeenCalled();
+  });
+});
+
+describe("[A4 · SEC] qué se entrega: minimización por rol", () => {
+  const MENOR = { id: "s-menor", name: "Diego Fermín", email: "diego@x.com", role: "STUDENT", ageBand: "minor" };
+  // Expediente COMPLETO de un menor: todo lo que la fuga entregaba.
+  const EXPEDIENTE = admissionRow({
+    studentId: MENOR.id,
+    formCompletedAt: new Date("2026-08-01"), callCompletedAt: new Date("2026-08-03"),
+    birthDate: new Date("2011-04-18"), phone: "+18095550188", school: "Colegio Santa Teresita",
+    gradeLevel: "SECUNDARIA", program: "DEBATE_COMPETITIVO", priorExperience: false, preferredDays: "MAR_JUE",
+    guardianName: "Rosa Fermín", guardianDocument: "402-1234567-8", guardianRelation: "PADRE_MADRE",
+    guardianPhone: "+18095550190", guardianEmail: "rosa@otr.do", guardianSignature: "Rosa Fermín",
+    guardianSignedAt: new Date("2026-08-01"), guardianshipId: "g-1",
+    discoveryBookingId: "cb-1", dppVideoUrl: "/uploads/dpp-diego.mp4",
+  });
+  const CONSENTS = [
+    { kind: CONSENT_KIND_DATA, version: CONSENT_VERSION, text: CONSENT_TEXT_DATA, acceptedByName: "Diego Fermín", acceptedByRole: "student", createdAt: new Date("2026-08-01") },
+    { kind: CONSENT_KIND_GUARDIAN, version: CONSENT_VERSION, text: CONSENT_TEXT_GUARDIAN, acceptedByName: "Rosa Fermín", acceptedByRole: "guardian", createdAt: new Date("2026-08-01") },
+  ];
+
+  beforeEach(() => {
+    db.fn("user.findUnique").mockResolvedValue(MENOR);
+    db.fn("admission.findUnique").mockResolvedValue(EXPEDIENTE);
+    db.fn("admissionConsent.findMany").mockResolvedValue(CONSENTS);
+    db.fn("booking.count").mockResolvedValue(1); // con vínculo, para aislar la capa 2
+    db.fn("enrollment.count").mockResolvedValue(0);
+  });
+
+  // El texto crudo de la respuesta: si un dato NO aparece aquí, no salió de la API. Es la
+  // comprobación honesta (una clave anidada nueva no se escapa por no haberla mirado).
+  const cuerpo = (json: unknown) => JSON.stringify(json);
+
+  it("COACH con vínculo: 200 con progreso y estado del consentimiento, y CERO PII", async () => {
+    box.user = COACH;
+    const { status, json } = await get(`?studentId=${MENOR.id}`);
+    expect(status).toBe(200);
+
+    // Lo que SÍ necesita para dar clase.
+    expect(json.admission.stepsDone).toBe(2);
+    expect(json.admission.percent).toBe(50);
+    expect(json.admission.steps[1].completedAt).toBeTruthy();
+    expect(json.admission.consents.map((c: any) => c.kind)).toEqual([CONSENT_KIND_DATA, CONSENT_KIND_GUARDIAN]);
+    expect(json.admission.consents[1].acceptedAt).toBeTruthy();
+    expect(json.admission.consents[1].version).toBe(CONSENT_VERSION);
+    expect(json.student.ageBand).toBe("minor"); // saber que es un MENOR es una protección, no un dato de más
+
+    // Lo que NO puede salir NUNCA hacia un coach.
+    const raw = cuerpo(json);
+    for (const secreto of [
+      "402-1234567-8",              // cédula del tutor
+      "+18095550190", "rosa@otr.do", // teléfono y correo del tutor
+      "Rosa Fermín",                 // el nombre del tutor tampoco
+      "+18095550188",                // teléfono del alumno
+      "Colegio Santa Teresita",      // su colegio
+      "2011-04-18",                  // su fecha de nacimiento
+      "DEBATE_COMPETITIVO",          // su programa
+      "dpp-diego.mp4",               // el vídeo del menor
+      "diego@x.com",                 // su correo
+    ]) {
+      expect(raw, `el coach NO debe recibir: ${secreto}`).not.toContain(secreto);
+    }
+    expect(json.admission.guardian).toBeNull();
+    expect(json.admission.form).toBeNull();
+  });
+
+  it("ADMIN: recibe el expediente del ALUMNO y la evidencia completa, pero NUNCA el documento ni el contacto del TUTOR", async () => {
+    box.user = ADMIN;
+    const { status, json } = await get(`?studentId=${MENOR.id}`);
+    expect(status).toBe(200);
+
+    // Opera la academia: necesita el bloque del alumno y quién firmó.
+    expect(json.admission.form.school).toBe("Colegio Santa Teresita");
+    expect(json.admission.form.birthDateISO).toBe("2011-04-18");
+    expect(json.admission.guardian.name).toBe("Rosa Fermín");
+    expect(json.admission.guardian.relation).toBe("PADRE_MADRE");
+    expect(json.admission.guardian.signedAt).toBeTruthy();
+    expect(json.admission.guardian.hasDocument).toBe(true); // consta que existe…
+    expect(json.admission.consents[1].text).toBe(CONSENT_TEXT_GUARDIAN);
+
+    // …pero el valor no viaja. Identificación y contacto del TUTOR = solo su dueño.
+    const raw = cuerpo(json);
+    for (const secreto of ["402-1234567-8", "+18095550190", "rosa@otr.do"]) {
+      expect(raw, `el admin NO debe recibir: ${secreto}`).not.toContain(secreto);
+    }
+    expect(json.admission.guardian.document).toBe("");
+    expect(json.admission.guardian.phone).toBe("");
+    expect(json.admission.guardian.email).toBe("");
+  });
+
+  it("EL PROPIO ALUMNO: su expediente ENTERO, cédula del tutor incluida (es suyo)", async () => {
+    box.user = { ...STUDENT, id: MENOR.id };
+    const { status, json } = await get();
+    expect(status).toBe(200);
+    expect(json.admission.guardian.document).toBe("402-1234567-8");
+    expect(json.admission.guardian.phone).toBe("+18095550190");
+    expect(json.admission.guardian.email).toBe("rosa@otr.do");
+    expect(json.admission.form.phone).toBe("+18095550188");
+    expect(json.admission.dppVideoUrl).toBe("/uploads/dpp-diego.mp4");
   });
 });
 

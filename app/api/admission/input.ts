@@ -419,6 +419,73 @@ export function admissionPayload(a: AdmissionRow | null, consents: ConsentRow[] 
   };
 }
 
+/** Quién pregunta. El expediente es de su dueño; los demás reciben una vista recortada. */
+export type AdmissionScope = "owner" | "admin" | "coach";
+
+/**
+ * [A4 · SEC] MINIMIZACIÓN POR ROL. `admissionPayload` construye el expediente COMPLETO; esta
+ * función es la única puerta por la que sale hacia alguien que no es su dueño, y recorta según
+ * para qué necesita mirarlo:
+ *
+ *  · "owner" — el alumno: todo. Es su expediente.
+ *  · "admin" — opera la academia (matrícula, supresión, incidencias): progreso, el bloque del
+ *      ALUMNO, la evidencia de consentimiento completa y QUIÉN firmó. Lo que NO recibe es el
+ *      documento de identidad ni el contacto del TUTOR: el tutor es un tercero que no tiene
+ *      sesión aquí, y ningún trámite de la plataforma necesita su cédula circulando por un GET.
+ *      Consta que existe (`hasDocument`) — que es lo que hace falta para saber si el expediente
+ *      está completo. Si un trámite legal exige el valor, será una superficie aparte y con su
+ *      propio rastro en AuditLog, no un campo más de este payload.
+ *  · "coach" — da clase: progreso y ESTADO del consentimiento (qué, versión, cuándo, en qué
+ *      calidad). Ni teléfono, ni colegio, ni fecha de nacimiento, ni programa, ni el vídeo,
+ *      ni una sola línea del tutor. Para dar clase no hace falta nada de eso; el rail de
+ *      "quién va a medias" se pinta con `steps`.
+ *
+ * Se recorta SOBRE el payload completo (no se construye una segunda vez) para que un campo
+ * nuevo en `admissionPayload` no se cuele por una rama que nadie actualizó.
+ */
+export function admissionPayloadFor(
+  scope: AdmissionScope,
+  a: AdmissionRow | null,
+  consents: ConsentRow[] = [],
+) {
+  const full = admissionPayload(a, consents);
+  if (scope === "owner") return full;
+
+  if (scope === "admin") {
+    return {
+      ...full,
+      guardian: full.guardian
+        ? {
+            ...full.guardian,
+            // El valor NO viaja; solo consta que el expediente lo tiene.
+            document: "",
+            phone: "",
+            email: "",
+            hasDocument: !!a?.guardianDocument,
+          }
+        : null,
+    };
+  }
+
+  // coach
+  return {
+    ...full,
+    form: null,
+    guardian: null,
+    guardianshipId: null,
+    discoveryBookingId: null,
+    dppVideoUrl: "",
+    // Estado del consentimiento, no su contenido: el texto y el nombre del firmante son
+    // evidencia legal, y quien la necesita para demostrar algo es el admin, no el coach.
+    consents: full.consents.map((c) => ({
+      kind: c.kind,
+      version: c.version,
+      acceptedByRole: c.acceptedByRole,
+      acceptedAt: c.acceptedAt,
+    })),
+  };
+}
+
 /** Iniciales para User.initials — mismo cálculo que el registro. */
 export function initialsFor(name: string): string {
   return name.split(/\s+/).map((p) => p[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
