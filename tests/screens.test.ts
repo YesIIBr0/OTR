@@ -47,6 +47,7 @@ import { S as SListings } from "../app/lib/scr-listings";
 import { S as SListing } from "../app/lib/scr-listing";
 import { S as SMyListings } from "../app/lib/scr-my-listings";
 import { S as SAdmin } from "../app/lib/scr-admin";
+import { S as SAdmission } from "../app/lib/scr-admission";
 import { S as SArsenal } from "../app/lib/scr-arsenal";
 import { S as SCertificate } from "../app/lib/scr-certificate";
 import { S as SCoachwork } from "../app/lib/scr-coachwork";
@@ -74,6 +75,7 @@ const SCREENS: Record<string, Record<string, any>> = {
   "scr-listing": SListing,
   "scr-my-listings": SMyListings,
   "scr-admin": SAdmin,
+  "scr-admission": SAdmission,
   "scr-arsenal": SArsenal,
   "scr-certificate": SCertificate,
   "scr-coachwork": SCoachwork,

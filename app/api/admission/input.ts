@@ -37,29 +37,17 @@ export function ageFromBirthDate(birth: Date, now: Date = new Date()): number {
 //  Consentimiento — TEXTO EXACTO + VERSIÓN (evidencia legal)
 // ============================================================
 
-/**
- * Versión del clausulado vigente. REGLA INNEGOCIABLE: si cambia una coma de los textos de
- * abajo, hay que subir esta versión. El @@unique([admissionId, kind, version]) de
- * AdmissionConsent lo obliga: con la versión intacta, el texto nuevo NO se registraría y la
- * evidencia guardada dejaría de corresponder con lo que la familia vio en pantalla.
- */
-export const CONSENT_VERSION = "2026-08";
-
-/** Checkbox del alumno — copiado LITERAL del mockup de Isaac. */
-export const CONSENT_TEXT_DATA =
-  "Doy mi consentimiento para el uso de mis datos personales por OTR Academy con fines de admisión y comunicación.";
-
-/**
- * Firma del tutor. El mockup solo dibuja el campo "Firma (nombre completo)" sin decir QUÉ se
- * firma — y una firma sin texto no prueba nada. Este clausulado es el mínimo defendible y
- * está PENDIENTE de validación legal (plan §"Lo que hace falta de Isaac"); al reemplazarlo,
- * subir CONSENT_VERSION.
- */
-export const CONSENT_TEXT_GUARDIAN =
-  "Como padre, madre o tutor legal del estudiante, autorizo su inscripción en OTR Academy y consiento el tratamiento de sus datos personales con fines de admisión, formación y comunicación. Firmo escribiendo mi nombre completo.";
-
-export const CONSENT_KIND_DATA = "data_processing";
-export const CONSENT_KIND_GUARDIAN = "guardian_signature";
+/* [FUENTE ÚNICA] El clausulado y su versión viven en app/lib/consent.ts porque la PANTALLA
+   que se lo enseña a la familia también los necesita. Se re-exportan aquí para que todo lo
+   que ya importaba desde este módulo siga funcionando, pero el texto se edita en un solo
+   sitio: enseñar uno y registrar otro invalidaría la evidencia. */
+export {
+  CONSENT_VERSION,
+  CONSENT_TEXT_DATA,
+  CONSENT_TEXT_GUARDIAN,
+  CONSENT_KIND_DATA,
+  CONSENT_KIND_GUARDIAN,
+} from "../../lib/consent";
 
 // ============================================================
 //  Los 4 pasos (orden fijo — se completan en secuencia)
