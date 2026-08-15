@@ -2,7 +2,7 @@
 import { ok, bad, clean } from "../../lib/api";
 import { getSessionUser } from "../../lib/auth";
 import { rateLimit } from "../../lib/rate-limit";
-import { saveUpload, isAllowedMime, MAX_UPLOAD_BYTES } from "../../lib/uploads";
+import { saveUpload, isAllowedMime, MAX_UPLOAD_BYTES, checkKindPolicy } from "../../lib/uploads";
 
 export async function POST(req: Request) {
   const user = await getSessionUser();
@@ -35,6 +35,11 @@ export async function POST(req: Request) {
     // [F5-fix] Tope derivado de la constante real (antes decía "50MB" con tope efectivo de 25MB).
     return bad(`Archivo demasiado grande (máx ${Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))}MB)`);
   }
+  // Reglas ESTRECHAS por kind (hoy: el vídeo DPP del paso 4 de admisión). Sólo puede rechazar
+  // lo que los gates comunes ya aceptaron — el resto de kinds pasa sin cambios. La lib lo
+  // revalida con el tamaño real, porque `f.size` lo declara el cliente.
+  const kindErr = checkKindPolicy(kind, f.type || "", typeof f.size === "number" ? f.size : 0);
+  if (kindErr) return bad(kindErr);
 
   try {
     const saved = await saveUpload(f, user.id, kind);
