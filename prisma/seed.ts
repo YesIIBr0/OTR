@@ -14,6 +14,16 @@
 import { PrismaClient } from "@prisma/client";
 import { randomBytes } from "crypto";
 import { hashPassword } from "../app/lib/auth-crypto";
+// [ADM] El texto y la versión del consentimiento se IMPORTAN, nunca se copian: si el
+// clausulado cambia y el seed guardara una copia vieja, la demo enseñaría una evidencia que
+// no corresponde con lo que la plataforma hace firmar de verdad.
+import {
+  CONSENT_KIND_DATA,
+  CONSENT_KIND_GUARDIAN,
+  CONSENT_TEXT_DATA,
+  CONSENT_TEXT_GUARDIAN,
+  CONSENT_VERSION,
+} from "../app/api/admission/input";
 
 const db = new PrismaClient();
 
@@ -98,6 +108,11 @@ async function main() {
   await db.coachPackage.deleteMany();
   await db.coachAvailability.deleteMany();
   await db.coachProfile.deleteMany();
+  // [ADM] Admisión: la evidencia de consentimiento va PRIMERO porque —a propósito— no tiene
+  // FK a Admission (sobrevive al borrado del actor, igual que ConsentRecord/AuditLog), así
+  // que nadie la arrastra por cascada y quedaría huérfana.
+  await db.admissionConsent.deleteMany();
+  await db.admission.deleteMany();
   await db.guardianship.deleteMany();
   await db.user.deleteMany();
 
@@ -1846,6 +1861,96 @@ async function main() {
   });
 
   // ----------------------------------------------------------------
+  //  ADMISIÓN (flujo de 4 pasos) — dos casos para poder VER la UI
+  // ----------------------------------------------------------------
+  //  · Diego Fermín (u-df, 15 años ⇒ MENOR): admisión COMPLETA (4 de 4). Trae datos y firma
+  //    de su madre Rosa y ENLAZA con el Guardianship ACTIVE que ya existe (g-rosa-df) — el
+  //    caso que demuestra el circuito legal entero.
+  //  · Analía Reyes (u-ar, 19 años ⇒ ADULTA pero menor de 21): admisión A MEDIAS (2 de 4:
+  //    formulario + llamada). Enseña el rail con pasos pendientes y bloqueados, y la regla
+  //    que más se confunde: se le piden datos de tutor por política de la academia (<21) y
+  //    aun así su ageBand sigue siendo 'adult' — las protecciones de menor NO se le aplican.
+  const admissionNow = new Date();
+  const daysAgo = (n: number) => new Date(admissionNow.getTime() - n * 86400000);
+  // Las reservas demo se borran POR ID, nunca con un deleteMany de la tabla: ConsultationBooking
+  // guarda leads reales de visitantes y el seed no tiene por qué tocarlos.
+  await db.consultationBooking.deleteMany({ where: { id: { in: ["cb-adm-df", "cb-adm-ar"] } } });
+  await db.consultationBooking.createMany({
+    data: [
+      { id: "cb-adm-df", name: "Diego Fermín", email: "diego.fermin@otr.do", phone: "+18095550188", slotAt: daysAgo(12), status: "COMPLETED", userId: "u-df", format: "PF", level: "algo" },
+      { id: "cb-adm-ar", name: "Analía Reyes", email: "analia.reyes@otr.do", phone: "+18095550101", slotAt: daysAgo(5), status: "COMPLETED", userId: "u-ar", format: "PF", level: "competidor" },
+    ],
+  });
+
+  await db.admission.create({
+    data: {
+      id: "adm-df",
+      studentId: "u-df",
+      formCompletedAt: daysAgo(14),
+      callCompletedAt: daysAgo(12),
+      communityCompletedAt: daysAgo(11),
+      videoCompletedAt: daysAgo(9),
+      status: "COMPLETED",
+      completedAt: daysAgo(9),
+      birthDate: new Date(2011, 3, 18, 12, 0, 0, 0), // 18/04/2011 — mediodía local (ver parseBirthDate)
+      phone: "+18095550188",
+      school: "Colegio Santa Teresita",
+      gradeLevel: "SECUNDARIA",
+      guardianName: "Rosa Fermín",
+      guardianDocument: "402-1234567-8",
+      guardianRelation: "PADRE_MADRE",
+      guardianPhone: "+18095550190",
+      guardianEmail: "rosa.fermin@otr.do",
+      guardianSignature: "Rosa Fermín",
+      guardianSignedAt: daysAgo(14),
+      guardianshipId: "g-rosa-df",
+      program: "DEBATE_COMPETITIVO",
+      priorExperience: false,
+      preferredDays: "MAR_JUE",
+      discoveryBookingId: "cb-adm-df",
+      dppVideoUrl: "/uploads/demo/dpp-diego.mp4",
+      createdAt: daysAgo(14),
+    },
+  });
+
+  await db.admission.create({
+    data: {
+      id: "adm-ar",
+      studentId: "u-ar",
+      formCompletedAt: daysAgo(6),
+      callCompletedAt: daysAgo(5),
+      status: "IN_PROGRESS",
+      birthDate: new Date(2007, 2, 9, 12, 0, 0, 0), // 09/03/2007 — 19 años: adulta, pero <21
+      phone: "+18095550101",
+      school: "Liceo Ulises Francisco Espaillat",
+      gradeLevel: "UNIVERSIDAD",
+      guardianName: "Marisol Reyes",
+      guardianDocument: "031-0987654-3",
+      guardianRelation: "PADRE_MADRE",
+      guardianPhone: "+18295550177",
+      guardianSignature: "Marisol Reyes",
+      guardianSignedAt: daysAgo(6),
+      // Sin guardianshipId a propósito: Analía es ADULTA (19). Se le piden datos de tutor por
+      // política de la academia, pero no se le cuelga un vínculo de tutela.
+      program: "ORATORIA",
+      priorExperience: true,
+      preferredDays: "LUN_MIE",
+      discoveryBookingId: "cb-adm-ar",
+      createdAt: daysAgo(6),
+    },
+  });
+
+  // Evidencia de consentimiento — el texto EXACTO y su versión, tal como los registra la API.
+  await db.admissionConsent.createMany({
+    data: [
+      { id: "admc-df-1", admissionId: "adm-df", studentId: "u-df", kind: CONSENT_KIND_DATA, version: CONSENT_VERSION, text: CONSENT_TEXT_DATA, acceptedByUserId: "u-df", acceptedByName: "Diego Fermín", acceptedByRole: "student", createdAt: daysAgo(14) },
+      { id: "admc-df-2", admissionId: "adm-df", studentId: "u-df", kind: CONSENT_KIND_GUARDIAN, version: CONSENT_VERSION, text: CONSENT_TEXT_GUARDIAN, acceptedByUserId: "u-df", acceptedByName: "Rosa Fermín", acceptedByRole: "guardian", createdAt: daysAgo(14) },
+      { id: "admc-ar-1", admissionId: "adm-ar", studentId: "u-ar", kind: CONSENT_KIND_DATA, version: CONSENT_VERSION, text: CONSENT_TEXT_DATA, acceptedByUserId: "u-ar", acceptedByName: "Analía Reyes", acceptedByRole: "student", createdAt: daysAgo(6) },
+      { id: "admc-ar-2", admissionId: "adm-ar", studentId: "u-ar", kind: CONSENT_KIND_GUARDIAN, version: CONSENT_VERSION, text: CONSENT_TEXT_GUARDIAN, acceptedByUserId: "u-ar", acceptedByName: "Marisol Reyes", acceptedByRole: "guardian", createdAt: daysAgo(6) },
+    ],
+  });
+
+  // ----------------------------------------------------------------
   //  Resumen
   // ----------------------------------------------------------------
   const [users, courses, lessons, quizzes, reviews, resources, enrollments, debates, tournaments, coachProfiles, bookings, certificates, journeyEvents] = await Promise.all([
@@ -1874,6 +1979,8 @@ async function main() {
   console.log(`  · Debate Hub:    ${debates} rondas · ${tournaments} torneos`);
   console.log(`  · Marketplace:   ${coachProfiles} coaches · ${bookings} bookings (escrow demo)`);
   console.log(`  · Lifetime §8:   ${certificates} certificados · ${journeyEvents} eventos de journey (con el mes en curso)`);
+  const [admissions, admissionConsents] = await Promise.all([db.admission.count(), db.admissionConsent.count()]);
+  console.log(`  · Admisión:      ${admissions} (Diego 4 de 4 · Analía 2 de 4) · ${admissionConsents} consentimientos registrados`);
   console.log("  · Membresía §13: Analía PRO (simulada) · perfil público /p/analia-reyes");
   console.log("  · Login demo:    saul@otr.do / analia.reyes@otr.do — password: ver arriba (SEED_PASSWORD o la generada)");
 }
