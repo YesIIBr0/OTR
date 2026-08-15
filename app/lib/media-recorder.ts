@@ -78,10 +78,12 @@ const VIDEO_TYPES = [
 const AUDIO_TYPES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
 
 /* Bitrate PEDIDO explícitamente, no el que le apetezca al navegador. Sin esto, MediaRecorder
-   sube a ~2,5 Mbps en 720p y 30 s se acercan al tope del servidor; peor aún, el techo real de
-   la plataforma son 10 MB (Next trunca el cuerpo por middleware) y pasarse da un error que no
-   explica nada. A 1,5 Mbps + 96 kbps ≈ 1,6 Mbps → 30 s ≈ 6,0 MB y 35 s ≈ 7,0 MB, por debajo
-   de DPP_VIDEO_MAX_BYTES (8 MB), con calidad de sobra para una cabeza parlante en 720p. */
+   sube a ~2,5 Mbps en 720p y el peso de 30 s queda a merced del navegador de turno.
+   A 1,5 Mbps + 96 kbps ≈ 1,6 Mbps → 30 s ≈ 6,0 MB y 35 s ≈ 7,0 MB, con calidad de sobra para
+   una cabeza parlante en 720p y muy por debajo de DPP_VIDEO_MAX_BYTES (16 MB).
+   [A5] El comentario original citaba además un techo de plataforma de 10 MB —Next truncaba el
+   cuerpo por haber middleware— que ya está arreglado (MAX_BODY_BYTES, next.config.mjs). El
+   bitrate no cambia: no lo dictaba ese techo, sino la calidad que necesita el vídeo. */
 const VIDEO_BPS = 1_500_000;
 const AUDIO_BPS = 96_000;
 

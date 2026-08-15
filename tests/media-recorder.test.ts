@@ -155,7 +155,9 @@ describe("createRecorder — grabar, cortar y subir", () => {
     const o = FakeMediaRecorder.last!.opts;
     expect(o.videoBitsPerSecond).toBe(1_500_000);
     expect(o.audioBitsPerSecond).toBe(96_000);
-    // 35 s (30 objetivo + margen) al bitrate pedido deben caber en DPP_VIDEO_MAX_BYTES (8 MB).
+    // 35 s (30 objetivo + margen) al bitrate pedido deben pesar ≈7 MB. El presupuesto se
+    // mantiene en 8 MB —MÁS estricto que DPP_VIDEO_MAX_BYTES, que hoy son 16 MB— porque lo que
+    // se protege aquí es que el GRABADOR no dependa del margen que le deje el servidor.
     const bytes35s = ((o.videoBitsPerSecond + o.audioBitsPerSecond) / 8) * 35;
     expect(bytes35s).toBeLessThan(8 * 1024 * 1024);
     rec.destroy();

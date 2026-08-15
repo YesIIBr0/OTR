@@ -11,6 +11,18 @@ import { probeVideoDurationSec } from "./video-probe";
 
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25 MB (video grande → usar YouTube/Cloudflare)
 
+/* [A5] Techo del CUERPO de la petición, que no es el mismo que el del archivo: el multipart
+   añade boundaries, cabeceras de parte y el campo `kind`, así que un archivo de 25 MB viaja
+   dentro de un cuerpo de algo más de 25 MB. Este número va SINCRONIZADO con
+   `experimental.middlewareClientMaxBodySize` (next.config.mjs), que es el punto donde Next
+   trunca el cuerpo clonado para el middleware — por debajo de él el archivo NO llega entero.
+   Sirve para rechazar por Content-Length ANTES de parsear, con un mensaje que dice la verdad
+   ("demasiado grande") en vez del "Esperaba multipart/form-data" que salía del truncamiento. */
+export const MAX_BODY_BYTES = 26 * 1024 * 1024; // 25 MB de archivo + 1 MB de sobre
+
+/** Mensaje único del tope de archivo: el mismo texto en la ruta y en la lib. */
+export const tooBigMsg = () => `Archivo demasiado grande (máx ${Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))}MB)`;
+
 // Directorio de subidas (persistente, montado por volumen en Docker). Configurable.
 export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), "var", "uploads");
 
@@ -100,19 +112,22 @@ export const DPP_VIDEO_KIND = "dpp-video";
    cubre ese caso sin ampliar nada. */
 export const DPP_VIDEO_MIME = new Set<string>(["video/webm", "video/mp4", "video/quicktime"]);
 
-/* Tope de 8 MB. Sale de dos límites, y manda el más pequeño:
-   ① TECHO REAL DE LA PLATAFORMA (medido, no teórico): este proyecto tiene middleware.ts, y
-      Next trunca el cuerpo de cualquier petición que pase por él a partir de 10 MB
-      (`middlewareClientMaxBodySize`, default). Con el cuerpo truncado, `req.formData()`
-      revienta y /api/uploads responde "Esperaba multipart/form-data" — un error que no dice
-      nada al alumno. Es decir: el MAX_UPLOAD_BYTES de 25 MB NO es alcanzable hoy (afecta a
-      TODAS las subidas, no sólo al vídeo; ver el reporte de la tarea). El tope del DPP se
-      queda por DEBAJO de ese techo para que el alumno reciba siempre el mensaje correcto.
-   ② ARITMÉTICA DE 30 s: el grabador pide 1,5 Mbps de vídeo + 96 kbps de audio (ver
+/* Tope de 16 MB.
+   [A5] Antes eran 8 MB, y NO por criterio de producto: el techo real de la plataforma estaba
+   en 10 MB (Next truncaba el cuerpo clonado para el middleware) y el tope del DPP tenía que
+   quedarse por debajo para que el alumno leyera un mensaje honesto en vez del críptico
+   "Esperaba multipart/form-data". Ese techo ya está arreglado —MAX_BODY_BYTES / 26 MB, ver
+   next.config.mjs— así que el tope vuelve a decidirse por el vídeo, que es lo que toca.
+   ① GRABAR en el navegador: el grabador pide 1,5 Mbps de vídeo + 96 kbps de audio (ver
       media-recorder.ts) ≈ 1,6 Mbps → 35 s (los 30 s objetivo + el margen de parada) ≈ 7,0 MB.
-      Con 720p de "cabeza parlante" ese bitrate da sobrada calidad para presentarse.
-   8 MB cubre ②, deja margen para el overhead del multipart y no llega a ①. */
-export const DPP_VIDEO_MAX_BYTES = 8 * 1024 * 1024;
+      Con 8 MB ya iba justo si el bitrate real subía; 16 MB le da holgura de sobra.
+   ② SUBIR un archivo del móvil, que es el caso que 8 MB dejaba fuera: 30 s a ~4 Mbps (1080p
+      exportado/recomprimido) ≈ 15 MB. Cabe. Un clip CRUDO de iPhone a 17 Mbps (≈64 MB) sigue
+      fuera a propósito: 30 s de presentación no necesitan eso y el alumno recibe un mensaje
+      claro con el número.
+   ③ Sigue MUY por debajo de MAX_UPLOAD_BYTES y de MAX_BODY_BYTES, así que el mensaje que ve
+      el alumno es siempre el específico ("máx 16MB para 30 segundos"), no el genérico. */
+export const DPP_VIDEO_MAX_BYTES = 16 * 1024 * 1024;
 
 /* Objetivo 30 s; el servidor rechaza a partir de 40 s. El margen no es decorativo: una
    grabación real de 30 s desde Chrome llegó declarando 30,48 s (latencia de parada +
@@ -165,7 +180,7 @@ export async function saveUpload(file: File, userId: string, kind: string): Prom
   // Rechaza por tamaño declarado antes de leer en memoria (defensa contra DoS).
   const declared = (file as File).size;
   if (typeof declared === "number" && declared > MAX_UPLOAD_BYTES) {
-    throw new Error("Archivo demasiado grande (máx 25MB)");
+    throw new Error(tooBigMsg());
   }
 
   // Regla extra por kind ANTES de leer el archivo a memoria (mismo criterio que el tope común).
@@ -176,7 +191,7 @@ export async function saveUpload(file: File, userId: string, kind: string): Prom
   const buffer = Buffer.from(await file.arrayBuffer());
   const size = buffer.byteLength;
   if (size <= 0) throw new Error("Archivo vacío");
-  if (size > MAX_UPLOAD_BYTES) throw new Error("Archivo demasiado grande (máx 25MB)");
+  if (size > MAX_UPLOAD_BYTES) throw new Error(tooBigMsg());
 
   // Revalidación con el tamaño REAL: `file.size` lo declara el cliente y puede mentir.
   const kindErr = checkKindPolicy(kindNorm, mime, size);
