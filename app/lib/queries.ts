@@ -57,6 +57,83 @@ function lifecycleState(events: Array<{ createdAt: Date }>, isNew: boolean): { s
   return { state, daysAway };
 }
 
+/* ============================================================================
+   [ADM] ADMISIÓN — progreso de los 4 pasos (plan 2026-08-10-onboarding-admision).
+   Los pasos se completan EN ORDEN: 1 formulario · 2 llamada de descubrimiento ·
+   3 comunidad (WhatsApp) · 4 vídeo DPP. La fuente es el modelo `Admission` (A0), que
+   guarda un timestamp por paso — null = pendiente.
+
+   Esta reducción es PURA (no toca la DB) para poder testearla directo, igual que
+   computeRosterMetrics. La consumen las TRES vistas: el alumno (enrutado al wizard),
+   el coach (progreso de su roster) y el admin (plataforma + consentimiento).
+
+   PRIVACIDAD: aquí NO entra ni un dato personal del formulario. El `select` de las
+   consultas (ver ADMISSION_SELECT) trae SOLO timestamps; el nombre/cédula/teléfono
+   del tutor, la fecha de nacimiento, el colegio y la URL del vídeo NUNCA salen de la
+   base hacia el payload de nadie. El consentimiento viaja como BOOLEANO, no como texto.
+   ============================================================================ */
+export const ADMISSION_STEPS = ["form", "call", "community", "video"] as const;
+export type AdmissionStepKey = (typeof ADMISSION_STEPS)[number];
+
+/** Fila de `Admission` tal como la lee este archivo: solo lo que hace falta para el progreso. */
+export interface AdmissionRow {
+  formCompletedAt?: Date | string | null;
+  callCompletedAt?: Date | string | null;
+  communityCompletedAt?: Date | string | null;
+  videoCompletedAt?: Date | string | null;
+  completedAt?: Date | string | null;
+  status?: string | null;
+  guardianSignedAt?: Date | string | null;
+}
+
+export interface AdmissionProgress {
+  /** Un booleano por paso, en el orden del wizard. */
+  steps: Record<AdmissionStepKey, boolean>;
+  done: number;     // pasos cerrados (0-4)
+  total: number;    // 4
+  pct: number;      // 0-100, redondeado
+  step: number;     // el paso que TOCA (1-4); con la admisión completa se queda en 4
+  complete: boolean;
+  /** Consentimientos como BOOLEANO (jamás el texto ni la firma). */
+  consent: { data: boolean; guardian: boolean };
+}
+
+/**
+ * Reduce una fila de `Admission` (o su ausencia) al progreso que consume la UI.
+ * Sin fila = alumno recién registrado: 0 de 4, toca el paso 1.
+ *
+ * `step` es el PRIMER paso pendiente, no `done + 1`: si alguien cerrara el 1 y el 3, lo que
+ * toca sigue siendo el 2. `complete` exige los CUATRO timestamps — no se fía de `status`,
+ * que es un derivado materializado para filtrar y podría quedarse atrás.
+ *
+ * El consentimiento de datos se deriva de `formCompletedAt`: el paso 1 no se puede enviar sin
+ * aceptarlo (es campo obligatorio del formulario), y la evidencia literal vive en
+ * AdmissionConsent, que este archivo NO lee a propósito (el texto aceptado no es dato de
+ * pantalla). La firma del tutor sí tiene columna propia con su fecha.
+ */
+export function admissionProgress(row?: AdmissionRow | null): AdmissionProgress {
+  const at = (v: Date | string | null | undefined): boolean => v != null && v !== "";
+  const steps = {
+    form: at(row?.formCompletedAt),
+    call: at(row?.callCompletedAt),
+    community: at(row?.communityCompletedAt),
+    video: at(row?.videoCompletedAt),
+  } as Record<AdmissionStepKey, boolean>;
+  const done = ADMISSION_STEPS.filter((k) => steps[k]).length;
+  const total = ADMISSION_STEPS.length;
+  const firstPending = ADMISSION_STEPS.findIndex((k) => !steps[k]);
+  const complete = firstPending === -1;
+  return {
+    steps,
+    done,
+    total,
+    pct: Math.round((done / total) * 100),
+    step: complete ? total : firstPending + 1,
+    complete,
+    consent: { data: steps.form, guardian: at(row?.guardianSignedAt) },
+  };
+}
+
 // [BUG-ROSTER-REAL] La analítica del roster del coach (grade/attendance/engagement/trend/
 // risk) vivía en columnas Enrollment con @default sembrado (0/"Medio"/"flat"/false) que NUNCA
 // se recalculaban → el panel del profesor mostraba datos de seed, no la realidad del alumno.
@@ -251,6 +328,36 @@ async function optionalRows<T>(label: string, run: () => Promise<T[]>): Promise<
     return [];
   }
 }
+/* [ADM] SELECT único de `Admission` para las tres vistas. Es la lista blanca de privacidad
+   del flujo: SOLO timestamps. Todo lo demás que guarda el modelo —nombre, cédula, teléfono y
+   firma del tutor, correo del tutor, fecha de nacimiento, colegio, programa, días preferidos y
+   la URL del vídeo DPP— se queda en la base: no lo necesita ni el coach ni el admin para saber
+   por qué paso va alguien, y son datos de un MENOR y de su tutor. Añadir un campo aquí es
+   una decisión de privacidad, no un detalle de implementación. */
+const ADMISSION_SELECT = {
+  formCompletedAt: true, callCompletedAt: true, communityCompletedAt: true, videoCompletedAt: true,
+  completedAt: true, status: true, guardianSignedAt: true,
+} as const;
+
+/**
+ * [ADM] Consulta de admisión TOLERANTE, con una diferencia clave respecto a optionalRows:
+ * distingue "no hay filas" (devuelve []) de "el subsistema no existe todavía" (devuelve null).
+ *
+ * Esa distinción es la que evita el peor fallo posible de este enganche: si el modelo/tabla
+ * `Admission` aún no está migrado y degradáramos a [], TODO estudiante parecería tener la
+ * admisión a 0 de 4 y el arranque lo mandaría a un wizard que no existe — el Aula entera
+ * quedaría inalcanzable. Con null, `me.admission` viaja como null y el arranque no redirige
+ * a nadie: la plataforma se comporta exactamente como antes de este cambio.
+ */
+async function admissionRows<T>(label: string, run: () => Promise<T[]>): Promise<T[] | null> {
+  try {
+    return await run();
+  } catch (err) {
+    console.warn(`[app-data] admisión '${label}' no disponible — el flujo queda apagado (¿falta migrar o regenerar el cliente?):`, err);
+    return null;
+  }
+}
+
 // [GOAL A2 · F2] Los cuatro labels de fecha del payload reciben ahora el idioma de la
 // request y delegan en los formateadores de i18n.ts (ES: "jun 2026" / EN: "Jun 2026").
 // Antes eran tablas en español fijo → con otr_lang=en la UI salía en inglés y las fechas
@@ -690,6 +797,14 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
   const monthEnd = new Date(nowForMonth.getFullYear(), nowForMonth.getMonth() + 1, 1);
   const monthKey = `${nowForMonth.getFullYear()}-${nowForMonth.getMonth() + 1}`;
 
+  /* [ADM] ¿Existe ya el subsistema de admisión en ESTE despliegue? El modelo `Admission` lo
+     añade la fase F0; mientras el Prisma Client no se haya regenerado, `db.admission` es
+     undefined y llamarlo lanzaría "Cannot read properties of undefined (reading 'findMany')"
+     DENTRO del Promise.all — el mismo fallo que documenta optionalRows, pero con las 30
+     consultas de la ola por delante. Se comprueba UNA vez y las tres lecturas se saltan enteras
+     (no se lanza una query condenada a fallar). Ver también admissionRows(). */
+  const admissionModel = (db as unknown as { admission?: { findMany(args: unknown): Promise<any[]> } }).admission;
+
   const [
     myProgress, mySubs, myQuizzes, enrolledLessons, pendingSubs, quizRows, studentModules,
     coachPrograms, myReviewRow, activityEvents,
@@ -699,6 +814,7 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     rosterGradeAgg, rosterQuizRows, rosterBookingAgg, rosterProgressRows, rosterLastEventAgg, rosterRecentEvents,
     monthXpBoard, streakRows, myReviewedRows,
     coachHeldAgg, coachRelAgg, coachMonthRelAgg, coachCompletedCount, coachByStudentAgg,
+    myAdmissionRows, rosterAdmissionRows, platformAdmissionRows,
   ] = await Promise.all([
     // [PERF-P] select: del progreso solo se usan el lessonId (doneSet) y el nº de filas.
     me ? db.lessonProgress.findMany({ where: { userId: me.id, done: true }, select: { lessonId: true } }) : Promise.resolve([] as Array<{ lessonId: string }>),
@@ -935,6 +1051,28 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     isTeacher && me
       ? db.booking.groupBy({ by: ["studentId"], where: { coachId: me.id }, _count: { studentId: true } })
       : Promise.resolve([] as any[]),
+    /* [ADM] Las TRES lecturas del flujo de admisión viajan en ESTA ola (no en una serie nueva):
+       las tres dependen solo de `me` y de `rosterIds`, que ya están resueltos antes del
+       Promise.all, así que no cuestan un round-trip extra — comparten el de la ola. */
+    // (a) La admisión del PROPIO alumno: es lo que decide si el arranque lo lleva al wizard.
+    admissionModel && me && me.role === "STUDENT"
+      ? admissionRows("me", () => admissionModel.findMany({ where: { studentId: me.id }, take: 1, select: ADMISSION_SELECT }))
+      : Promise.resolve(null),
+    // (b) Progreso del ROSTER del coach: solo sus alumnos (mismos ids que el resto del panel),
+    //     y solo timestamps → el coach ve por qué paso va cada quien, nada del formulario.
+    admissionModel && isTeacher && rosterIds.length
+      ? admissionRows("roster", () => admissionModel.findMany({ where: { studentId: { in: rosterIds } }, select: { studentId: true, ...ADMISSION_SELECT } }))
+      : Promise.resolve(null),
+    // (c) Plataforma (SOLO ADMIN): las 200 admisiones movidas más recientemente, con el nombre
+    //     del alumno y su ageBand —el admin ya administra ambos— para poder señalar el caso
+    //     que importa legalmente: MENOR con el formulario enviado y SIN firma del tutor.
+    admissionModel && me?.role === "ADMIN"
+      ? admissionRows("platform", () => admissionModel.findMany({
+          orderBy: { updatedAt: "desc" },
+          take: 200,
+          select: { studentId: true, ...ADMISSION_SELECT, student: { select: { id: true, name: true, initials: true, ageBand: true } } },
+        }))
+      : Promise.resolve(null),
   ]);
 
   // Entregas calificadas (GRADED) derivadas en JS de la consulta única de entregas.
@@ -987,6 +1125,13 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
     const bucket = daysAgo < 7 ? rosterLast7ByStudent : rosterPrior7ByStudent;
     bucket.set(e.userId, (bucket.get(e.userId) || 0) + 1);
   });
+
+  /* [ADM] Progreso de admisión del roster del coach, indexado por alumno (O(1) al construir
+     base.students, sin N+1). Un alumno SIN fila no aparece en el Map: se resuelve con
+     admissionProgress(null) = 0 de 4, que es exactamente su estado. */
+  const admissionByStudent = new Map<string, AdmissionProgress>(
+    (rosterAdmissionRows || []).map((r: any) => [r.studentId as string, admissionProgress(r)]),
+  );
 
   // [GAMIFICATION-2 §9] Racha real (con grace de 1 día) — las fechas ya vienen de la ola de
   // arriba (streakRows: últimos 70 días, índice [userId,createdAt]).
@@ -2005,8 +2150,17 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       // [DASHBOARD-ACCESS-2 §4] ciclo de vida para adaptar el saludo y el siguiente paso.
       lifecycle: lifecycle.state, daysAway: lifecycle.daysAway,
       headline: esc(me?.headline), bio: esc(me?.bio), teachingStyle: esc(me?.teachingStyle), formats: esc(me?.formats), location: esc(me?.location), preferences: me?.preferences ?? null,
-      // PRD §11.3 / §2.2: estudiante sin placement aún (placedAt null) → P1/Aula.tsx lo enruta al placement.
+      // PRD §11.3 / §2.2: estudiante sin placement aún (placedAt null). YA NO ES UN MURO: el
+      // arranque no lo intercepta (ver Aula.tsx) — el dashboard le ofrece la evaluación como
+      // invitación. Sigue viajando porque es quien decide si esa invitación se pinta.
       needsPlacement: me?.role === "STUDENT" && !me?.placedAt,
+      /* [ADM] Progreso de la admisión de 4 pasos. null tiene un significado PROPIO y distinto
+         de "0 de 4": el subsistema de admisión no está disponible en este despliegue (modelo
+         sin migrar) o el usuario no es estudiante → nadie se enruta al wizard. Solo timestamps
+         reducidos a booleanos: ni un dato del formulario viaja aquí (ver ADMISSION_SELECT). */
+      admission: (me?.role === "STUDENT" && myAdmissionRows) ? admissionProgress(myAdmissionRows[0]) : null,
+      // Puerta de entrada: sin admisión terminada no hay Aula (Aula.tsx lo lleva al wizard).
+      needsAdmission: !!(me?.role === "STUDENT" && myAdmissionRows && !admissionProgress(myAdmissionRows[0]).complete),
       avatarUrl: safeUrl(me?.avatarUrl),
       ageBand: me?.ageBand || null,
       // [GAMIFICATION-1 §9] estado del opt-in (toggle en Ajustes). [RATING-2 §6.2] speaker rating.
@@ -2290,6 +2444,16 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       return {
         id: uid, n: esc(e.user.name), i: esc(e.user.initials), lvl: e.user.level, xp: e.user.xp,
         grade: m.grade, att: m.att, eng: m.eng, trend: m.trend, risk: m.risk, last: m.last, prog: m.prog,
+        /* [ADM] Admisión del alumno para el panel del coach: SOLO progreso (cuántos pasos van,
+           cuál toca, si terminó). El coach necesita saber a quién le falta terminar de entrar
+           —no se da clase a quien no completó la admisión— pero NO ve el formulario: ni cédula,
+           ni teléfono, ni firma, ni fecha de nacimiento del tutor. Tampoco viaja el estado del
+           CONSENTIMIENTO: es dato legal de la academia y se queda en la consola del admin.
+           null = el subsistema no está disponible → el panel no pinta la columna. */
+        adm: rosterAdmissionRows
+          ? (() => { const p = admissionByStudent.get(uid) || admissionProgress(null);
+              return { done: p.done, total: p.total, step: p.step, complete: p.complete }; })()
+          : null,
       };
     });
 
@@ -2360,6 +2524,42 @@ export async function getAppData(email: string = ME_EMAIL, lang: string = "es", 
       moduleCount: c.modules.length,
       lessonCount: c.modules.reduce((n: number, m: any) => n + (m._count?.lessons || 0), 0),
     }));
+
+    /* [ADM] Admisión a nivel PLATAFORMA (solo ADMIN). Dos cosas que el admin necesita para
+       operar: por qué paso va cada alumno y —lo que de verdad importa legalmente— quién tiene
+       el consentimiento firmado. `consentPending` cuenta el caso crítico: MENOR con el
+       formulario enviado y sin firma de su tutor.
+
+       Lo que NO viaja, a propósito: nombre/cédula/relación/teléfono/correo del tutor, la firma
+       misma, el texto del consentimiento (vive en AdmissionConsent, que este archivo no lee),
+       fecha de nacimiento, colegio, programa, días preferidos y la URL del vídeo DPP. El admin
+       ve un BOOLEANO de consentimiento, no el expediente del menor. Quien necesite la
+       evidencia literal (auditoría/legal) la pide por su vía, no por el payload del Aula. */
+    if (platformAdmissionRows) {
+      const rows = platformAdmissionRows.map((r: any) => {
+        const p = admissionProgress(r);
+        const minor = r.student?.ageBand === "minor";
+        return {
+          id: r.student?.id || r.studentId,
+          n: esc(r.student?.name || ""),
+          i: esc(r.student?.initials || (r.student?.name || "?").slice(0, 2).toUpperCase()),
+          minor,
+          done: p.done, total: p.total, step: p.step, complete: p.complete,
+          consentData: p.consent.data,
+          consentGuardian: p.consent.guardian,
+          // El único cruce que el admin tiene que poder ver de un vistazo.
+          consentPending: minor && p.consent.data && !p.consent.guardian,
+        };
+      });
+      base.adminAdmissions = {
+        rows,
+        total: rows.length,
+        complete: rows.filter((r: any) => r.complete).length,
+        inProgress: rows.filter((r: any) => !r.complete).length,
+        consentSigned: rows.filter((r: any) => r.consentData).length,
+        consentPending: rows.filter((r: any) => r.consentPending).length,
+      };
+    }
   }
 
   return base;

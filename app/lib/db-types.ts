@@ -27,6 +27,15 @@ export interface AppDB {
     location?: string;
     preferences?: any;
     needsPlacement?: boolean;
+    // [ADM] Progreso de la admisión de 4 pasos (queries.ts · admissionProgress). null tiene
+    // significado propio: el subsistema no está disponible en este despliegue o el usuario no
+    // es estudiante → el arranque no enruta a nadie al wizard.
+    admission?: {
+      steps: Record<string, boolean>;
+      done: number; total: number; pct: number; step: number; complete: boolean;
+      consent: { data: boolean; guardian: boolean };
+    } | null;
+    needsAdmission?: boolean;
     avatarUrl?: string | null;
     ageBand?: string | null;
     leaderboardOptIn?: boolean;
@@ -102,6 +111,9 @@ export interface AppDB {
   manage?: any;
   teacherCourses?: any[];
   reviewsReceived?: any[];
+  // [ADM] Solo se añade para ADMIN: progreso de admisión + estado de consentimiento de la
+  // plataforma (booleanos; ningún dato del formulario ni del tutor viaja aquí).
+  adminAdmissions?: any;
   // Válvula de escape: campos aún no enumerados arriba (y los que agreguen las
   // pantallas fuera del alcance de este milestone) siguen compilando.
   [key: string]: any;

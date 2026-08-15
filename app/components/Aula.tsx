@@ -4,7 +4,8 @@ import { renderShell } from "../lib/shell";
 import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
 // [ROUTER-HASH] Mapeo puro ruta↔URL (tests/router-hash.test.ts). La URL manda: sin esto
 // no había deep-link, ni Atrás/Adelante, ni F5 estable en /aula.
-import { parseHash, routeToHash, resolveHashRoute, defaultRouteForRole, isRouteAllowed, isInPageAnchor, routeNeedsContext, contextFallbackRoute, contextGlobalFor, contextParamIsValid } from "../lib/router";
+// [ADM] `startRoute` se importa con alias: la variable local del arranque ya se llama así.
+import { parseHash, routeToHash, resolveHashRoute, defaultRouteForRole, isRouteAllowed, isInPageAnchor, routeNeedsContext, contextFallbackRoute, contextGlobalFor, contextParamIsValid, startRoute as resolveStartRoute } from "../lib/router";
 import { IC, otrCrest } from "../lib/icons";
 import { DB } from "../lib/data";
 import { esc } from "../lib/esc";
@@ -1403,14 +1404,21 @@ export default function Aula({ data, user }: { data: any; user: any }) {
     // [SONDEO 2026-08-09 · R4] El deep-link EN FRÍO también trae su contexto: '#course-detail/
     // PF-101' abierto en una pestaña nueva tiene que pintar esa clase, no el menú.
     const startParam = parseHash(window.location.hash)?.param || "";
-    // [ONBOARDING-1] Orden correcto del arranque: el placement del alumno nuevo (PRD §2.2
-    // Journey A) DEBE ganar sobre el flag de onboarding del registro — antes `otr_onboard`
-    // lo pisaba y el alumno nunca hacía su evaluación inicial (radar vacío para siempre).
-    // Consumimos el flag siempre (no se queda pegado), pero placement tiene prioridad.
+    // [ONBOARDING-1] Orden correcto del arranque: la pantalla del alumno nuevo DEBE ganar
+    // sobre el flag de onboarding del registro — antes `otr_onboard` lo pisaba y el alumno se
+    // saltaba su primer trámite. El flag se consume SIEMPRE (no se queda pegado); quien tiene
+    // prioridad sobre él es ahora la admisión (antes, el placement).
     let justRegistered = false;
     try { justRegistered = !!sessionStorage.getItem("otr_onboard"); sessionStorage.removeItem("otr_onboard"); } catch {}
-    if (state.role === "student" && data?.me?.needsPlacement) startRoute = "placement";
-    else if (justRegistered) startRoute = "onboarding";
+    /* [ADM] LA PUERTA es la ADMISIÓN, no el placement.
+       Antes aquí: `if (student && needsPlacement) startRoute = 'placement'` — el alumno nuevo
+       chocaba con la auto-evaluación antes de existir formalmente en la academia. Ahora, por
+       la decisión del plan de admisión (§Decisiones 3): primero el trámite formal/legal
+       (formulario + consentimiento del tutor, llamada, comunidad, vídeo DPP) y sin él no hay
+       clases; el PLACEMENT deja de bloquear y se ofrece dentro del Aula, como tarjeta del
+       dashboard (scr-core.ts, bajo el hero).
+       La regla vive ahora en router.ts (startRoute), pura y con test propio. */
+    startRoute = resolveStartRoute({ role: state.role, hashRoute: startRoute, needsAdmission: !!data?.me?.needsAdmission, justRegistered });
     // fromHash: el arranque tampoco trae contexto fresco → un F5 sobre #lesson cae a #course
     // en vez de pintar la lección de otra visita. mounted se activa DESPUÉS: durante el primer
     // render todavía no hay entrada de historial propia que retirar.
