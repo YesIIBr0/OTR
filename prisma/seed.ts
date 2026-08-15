@@ -1892,7 +1892,7 @@ async function main() {
       videoCompletedAt: daysAgo(9),
       status: "COMPLETED",
       completedAt: daysAgo(9),
-      birthDate: new Date(2011, 3, 18, 12, 0, 0, 0), // 18/04/2011 — mediodía local (ver parseBirthDate)
+      birthDate: new Date(Date.UTC(2011, 3, 18, 12, 0, 0, 0)), // 18/04/2011 — mediodía UTC (ver FECHA CIVIL en parseBirthDate)
       phone: "+18095550188",
       school: "Colegio Santa Teresita",
       gradeLevel: "SECUNDARIA",
@@ -1920,7 +1920,7 @@ async function main() {
       formCompletedAt: daysAgo(6),
       callCompletedAt: daysAgo(5),
       status: "IN_PROGRESS",
-      birthDate: new Date(2007, 2, 9, 12, 0, 0, 0), // 09/03/2007 — 19 años: adulta, pero <21
+      birthDate: new Date(Date.UTC(2007, 2, 9, 12, 0, 0, 0)), // 09/03/2007 — 19 años: adulta, pero <21
       phone: "+18095550101",
       school: "Liceo Ulises Francisco Espaillat",
       gradeLevel: "UNIVERSIDAD",

@@ -26,6 +26,7 @@ import {
   CONSENT_VERSION,
   ageFromBirthDate,
   admissionPayload,
+  birthDateISO,
   cleanAdmissionForm,
   normalizePhone,
   parseBirthDate,
@@ -730,17 +731,37 @@ describe("enlace con Guardianship (no un sistema paralelo)", () => {
 // ============================================================
 describe("helpers puros de input.ts", () => {
   it("parseBirthDate acepta AAAA-MM-DD y rechaza fechas que no existen", () => {
-    expect(parseBirthDate("2011-04-18")?.getDate()).toBe(18);
-    expect(parseBirthDate("2011-04-18")?.getHours()).toBe(12); // mediodía local: RD es UTC-4
+    expect(parseBirthDate("2011-04-18")?.getUTCDate()).toBe(18);
+    expect(parseBirthDate("2011-04-18")?.getUTCHours()).toBe(12); // mediodía UTC: 12 h de margen a cada lado
     expect(parseBirthDate("2026-02-31")).toBeNull();
     expect(parseBirthDate("18/04/2011")).toBeNull();
     expect(parseBirthDate("")).toBeNull();
   });
 
+  // [FECHA CIVIL] Una fecha de nacimiento es un día del calendario, no un instante, y de ella
+  // dependen dos cosas serias: si el alumno es MENOR y si hace falta tutor. El día que sale
+  // tiene que ser el día que se escribió, venga el dato de donde venga y corra el servidor
+  // donde corra (aquí se desarrolla en UTC-4 y se despliega en UTC).
+  it("la fecha de nacimiento no se corre un día, venga de donde venga el dato", () => {
+    // Las tres formas en que un birthDate llega a la base: el formulario, un `new Date(ISO)`
+    // de una importación o un fixture, y un Date.UTC explícito. Las tres son el mismo día.
+    const delFormulario = parseBirthDate("2011-04-18")!;
+    const deUnaImportacion = new Date("2011-04-18"); // medianoche UTC
+    const explicito = new Date(Date.UTC(2011, 3, 18, 12, 0, 0, 0));
+    for (const d of [delFormulario, deUnaImportacion, explicito]) {
+      expect(birthDateISO(d)).toBe("2011-04-18");
+    }
+    // Y el round-trip cierra: lo que se lee se vuelve a guardar igual.
+    expect(birthDateISO(parseBirthDate(birthDateISO(delFormulario))!)).toBe("2011-04-18");
+    // El 1 de enero es el caso que delata cualquier corrimiento: se iría al año anterior.
+    expect(birthDateISO(parseBirthDate("2008-01-01")!)).toBe("2008-01-01");
+    expect(birthDateISO(parseBirthDate("2008-12-31")!)).toBe("2008-12-31");
+  });
+
   it("ageFromBirthDate cuenta el cumpleaños, no solo el año", () => {
-    const born = new Date(2007, 7, 20, 12); // 20/08/2007
-    expect(ageFromBirthDate(born, new Date(2026, 7, 19))).toBe(18); // un día antes
-    expect(ageFromBirthDate(born, new Date(2026, 7, 20))).toBe(19); // el mismo día
+    const born = parseBirthDate("2007-08-20")!;
+    expect(ageFromBirthDate(born, new Date(Date.UTC(2026, 7, 19)))).toBe(18); // un día antes
+    expect(ageFromBirthDate(born, new Date(Date.UTC(2026, 7, 20)))).toBe(19); // el mismo día
   });
 
   it("normalizePhone lleva el móvil dominicano a E.164 y rechaza basura", () => {

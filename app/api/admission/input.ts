@@ -24,9 +24,12 @@ export const MINOR_AGE = 18;
 
 /** Edad exacta a partir de la fecha COMPLETA de nacimiento (no del año, como el registro). */
 export function ageFromBirthDate(birth: Date, now: Date = new Date()): number {
-  let age = now.getFullYear() - birth.getFullYear();
-  const m = now.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  // La fecha de nacimiento se guarda en componentes UTC (ver FECHA CIVIL en parseBirthDate),
+  // así que se compara en UTC: mezclarlo con componentes locales devolvería una edad distinta
+  // según la zona del servidor, y de esta edad depende si se exige tutor y si es menor.
+  let age = now.getUTCFullYear() - birth.getUTCFullYear();
+  const m = now.getUTCMonth() - birth.getUTCMonth();
+  if (m < 0 || (m === 0 && now.getUTCDate() < birth.getUTCDate())) age--;
   return age;
 }
 
@@ -97,19 +100,26 @@ export function parseBirthDate(v: unknown): Date | null {
   if (!m) return null;
   const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
   if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
-  const date = new Date(y, mo - 1, d, 12, 0, 0, 0);
+  // [FECHA CIVIL] Mediodía UTC, no local. Una fecha de nacimiento no es un instante: es un día
+  // del calendario. Guardarla con componentes locales la ata a la zona de quien la escribe, y
+  // aquí el desarrollo corre en UTC-4 mientras el servidor corre en UTC — el mismo dato leído
+  // en el otro lado se corría un día. El mediodía deja 12 h de margen a cada lado, así que
+  // ninguna zona del mundo cruza de día, y `new Date("YYYY-MM-DD")` (medianoche UTC, que es
+  // como llega un dato importado o un fixture) también aterriza en el día correcto al leerlo.
+  const date = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0, 0));
   // Rechaza fechas que el Date "corrige" sola (31 de febrero → 3 de marzo).
-  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d) return null;
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) return null;
   return date;
 }
 
-/** Date → "YYYY-MM-DD" en componentes LOCALES (round-trip exacto de parseBirthDate). */
+/** Date → "YYYY-MM-DD" en componentes UTC (round-trip exacto de parseBirthDate, sea cual sea
+ *  la zona del servidor). Ver la nota de FECHA CIVIL en parseBirthDate. */
 export function birthDateISO(d?: Date | string | null): string {
   if (!d) return "";
   const date = d instanceof Date ? d : new Date(d);
   if (Number.isNaN(date.getTime())) return "";
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+  return `${date.getUTCFullYear()}-${p(date.getUTCMonth() + 1)}-${p(date.getUTCDate())}`;
 }
 
 /**

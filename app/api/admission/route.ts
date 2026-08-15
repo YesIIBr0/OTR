@@ -203,7 +203,7 @@ export async function POST(req: Request) {
       data: {
         name: fullName,
         initials: initialsFor(fullName),
-        birthYear: data.birthDate.getFullYear(),
+        birthYear: data.birthDate.getUTCFullYear(),
         ageBand: form.age < MINOR_AGE ? "minor" : "adult",
       },
     });
