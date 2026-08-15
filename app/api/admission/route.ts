@@ -26,7 +26,9 @@ import { logActivitySafe } from "../../lib/activity";
 import {
   CONSENT_KIND_DATA,
   CONSENT_KIND_GUARDIAN,
-  CONSENT_TEXT_DATA,
+  CONSENT_EVIDENCE_DATA,
+  CONSENT_KIND_MEDIA,
+  CONSENT_TEXT_MEDIA,
   CONSENT_TEXT_GUARDIAN,
   CONSENT_VERSION,
   MINOR_AGE,
@@ -218,7 +220,9 @@ export async function POST(req: Request) {
         ...consentBase,
         admissionId: row.id,
         kind: CONSENT_KIND_DATA,
-        text: CONSENT_TEXT_DATA,
+        // El aviso ENTERO más la declaración: lo que hay que poder acreditar es que fue
+        // INFORMADA, no solo que marcó una casilla (Ley 172-13, consentimiento informado).
+        text: CONSENT_EVIDENCE_DATA,
         acceptedByName: fullName,
         acceptedByRole: "student",
       },
@@ -238,6 +242,35 @@ export async function POST(req: Request) {
           acceptedByName: data.guardianSignature,
           acceptedByRole: "guardian",
         },
+      });
+    }
+
+    /* [IMAGEN] Voluntario y REVOCABLE, así que no basta con insertar: hay que poder
+       reflejar también que se retiró. La fila EXISTE mientras la autorización esté viva y
+       se borra cuando se desmarca — al contrario que las otras dos, que son insert-only
+       porque prueban un hecho pasado que no se deshace. Retirar el permiso de imagen sí
+       cambia lo que la academia puede hacer a partir de ese momento, y el expediente tiene
+       que decir la verdad de HOY. Lo ya publicado antes no lo alcanza, como avisa el texto.
+       Quien firma es el tutor cuando lo hay: sobre la imagen de un menor decide él. */
+    const mediaWhere = {
+      admissionId_kind_version: { admissionId: row.id, kind: CONSENT_KIND_MEDIA, version: CONSENT_VERSION },
+    };
+    if (form.mediaConsent) {
+      await tx.admissionConsent.upsert({
+        where: mediaWhere,
+        update: {},
+        create: {
+          ...consentBase,
+          admissionId: row.id,
+          kind: CONSENT_KIND_MEDIA,
+          text: CONSENT_TEXT_MEDIA,
+          acceptedByName: data.guardianSignature || fullName,
+          acceptedByRole: data.guardianSignature ? "guardian" : "student",
+        },
+      });
+    } else {
+      await tx.admissionConsent.deleteMany({
+        where: { admissionId: row.id, kind: CONSENT_KIND_MEDIA },
       });
     }
 

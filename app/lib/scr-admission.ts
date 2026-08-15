@@ -43,6 +43,8 @@ import { IC } from "./icons";
 import { esc } from "./esc";
 import { t, registerDict, fmtMonthNameYear, fmtDayMonthYearTimeRD } from "./i18n";
 import { dict as d_adm } from "./i18n-keys/adm";
+import { PRIVACY_NOTICE_TEXT, CONSENT_KIND_MEDIA } from "./consent";
+import { isValidPhoneNumber } from "./phone";
 import {
   DPP_VIDEO_KIND,
   DPP_VIDEO_MIME,
@@ -171,7 +173,7 @@ export function admValidate(form, now = Date.now()) {
   if (!birth) e.birth = "adm.eBirth";
   else if (birth.getTime() > now) e.birth = "adm.eBirthRange";
 
-  if (admDigits(f.phone).length !== 10) e.phone = "adm.ePhone";
+  if (!isValidPhoneNumber(f.phone)) e.phone = "adm.ePhone";
   if (!ADM_EMAIL_RE.test(txt(f.email))) e.email = "adm.eEmail";
   if (!txt(f.program)) e.program = "adm.eProgram";
   // El consentimiento es OBLIGATORIO: sin él no hay base para tratar los datos.
@@ -181,7 +183,7 @@ export function admValidate(form, now = Date.now()) {
     if (txt(f.gName).length < 2) e.gName = "adm.eGName";
     if (txt(f.gDoc).length < 5) e.gDoc = "adm.eGDoc";
     if (!txt(f.gRel)) e.gRel = "adm.eGRel";
-    if (admDigits(f.gPhone).length !== 10) e.gPhone = "adm.eGPhone";
+    if (!isValidPhoneNumber(f.gPhone)) e.gPhone = "adm.eGPhone";
     if (txt(f.gSign).length < 3) e.gSign = "adm.eGSign";
   }
   return e;
@@ -226,7 +228,7 @@ export function admVideoReject(file) {
 const ADM_FORM_KEYS = [
   "firstName", "lastName", "birthM", "birthD", "birthY", "phone", "email", "school", "level",
   "gName", "gDoc", "gRel", "gPhone", "gEmail", "gSign",
-  "program", "experience", "days",
+  "program", "experience", "days", "mediaConsent",
 ];
 
 export const ADM_GRADE_LEVELS = [
@@ -359,6 +361,12 @@ export function admHydrate(st, payload, me, opts = {}) {
   // El progreso lo dice el SERVIDOR (stepsDone/percent), no el cliente.
   st.stepsDone = Number.isFinite(a.stepsDone) ? a.stepsDone : null;
   st.percent = Number.isFinite(a.percent) ? a.percent : null;
+
+  /* [IMAGEN] Se rehidrata desde los consentimientos vivos —fuera del bloque del formulario,
+     porque no viven en él— y esto NO es cosmético: la casilla viaja en CADA guardado y un
+     `false` significa "retírala". Si al volver al paso 1 a corregir un teléfono saliera
+     desmarcada, guardar borraría una autorización que nadie pidió retirar, y en silencio. */
+  st.form.mediaConsent = (a.consents || []).some((c) => c && c.kind === CONSENT_KIND_MEDIA);
 
   const f = a.form && typeof a.form === "object" ? a.form : null;
   if (f) {
@@ -591,13 +599,35 @@ export function admFormBlock(st, now = Date.now()) {
   </div>`;
 
   const consentErr = e.consent ? t(e.consent) : "";
-  const consent = `<div class="adm-consent${consentErr ? " err" : ""}">
+  /* [LEY 172-13] Informar ANTES de pedir el consentimiento, no después y no en otra página:
+     el aviso entero se pinta aquí encima de la casilla, en un bloque con su propio scroll
+     para que no empuje el formulario tres pantallas hacia abajo. Es <details> abierto por
+     defecto —se puede plegar tras leerlo, pero nadie tiene que abrir nada para verlo— y su
+     texto sale de la MISMA constante que la API registra como evidencia. */
+  const aviso = `<details class="adm-notice" open>
+    <summary class="adm-notice-s">${t("adm.noticeTitle")}</summary>
+    <div class="adm-notice-b" tabindex="0" role="region" aria-label="${t("adm.noticeTitle")}">
+      ${PRIVACY_NOTICE_TEXT.split("\n\n").map((p) => `<p>${esc(p)}</p>`).join("")}
+    </div>
+  </details>`;
+
+  const consent = `${aviso}<div class="adm-consent${consentErr ? " err" : ""}">
     <label class="adm-consent-l" for="adm-consent">
       <input type="checkbox" id="adm-consent" data-adm-f="consent"${f.consent ? " checked" : ""}
         ${consentErr ? 'aria-invalid="true" aria-describedby="adm-consent-err"' : ""} required aria-required="true" />
       <span>${t("adm.consent")}</span>
     </label>
     ${consentErr ? `<p class="adm-err" id="adm-consent-err">${IC.info}${consentErr}</p>` : ""}
+  </div>
+  ${/* [IMAGEN] Separada, opcional y sin `required`: la difusión pública de la imagen de un
+       menor no puede ir dentro del consentimiento que hace falta para inscribirse — sería
+       ni libre ni específica. El rótulo dice que es opcional para que no se marque por
+       inercia creyendo que hace falta. */""}
+  <div class="adm-consent adm-consent--opt">
+    <label class="adm-consent-l" for="adm-media">
+      <input type="checkbox" id="adm-media" data-adm-f="mediaConsent"${f.mediaConsent ? " checked" : ""} />
+      <span><b class="adm-consent-opt">${t("adm.mediaOptional")}</b> ${t("adm.consentMedia")}</span>
+    </label>
   </div>`;
 
   return `<div class="adm-box">
@@ -1075,6 +1105,8 @@ export function admFormPayload(form, now = Date.now()) {
     program: txt(f.program),
     preferredDays: txt(f.days),
     consent: f.consent === true,
+    // Voluntario: viaja siempre, y `false` significa "no la doy" o "la retiro".
+    mediaConsent: f.mediaConsent === true,
   };
   if (f.experience === "true" || f.experience === "false") body.priorExperience = f.experience === "true";
 

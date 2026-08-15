@@ -22,7 +22,7 @@ win.toast = () => {};
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 import {
-  fmtDateTimeRD, fmtDayMonth, fmtMonthYear, fmtMonthFull,
+  fmtDateTimeRD, fmtDayMonth, fmtDayMonthYear, fmtMonthYear, fmtMonthFull,
   fmtMonthNameYear, fmtMemberSinceLabel, fmtPlanSinceLabel,
 } from "../app/lib/i18n";
 import { bookingClassTitle } from "../app/lib/queries";
@@ -185,5 +185,51 @@ describe("A4 · el dashboard pinta el título real, no 'Single'", () => {
     (DB as any).myBookings[0].title = "";
     const html = Core.dashboard.render({ role: "student" });
     expect(html).toMatch(/<h2 class="dh-title">.+<\/h2>/);
+  });
+});
+
+/* ============================================================================
+   [ZONA] LAS FECHAS DE CALENDARIO SON LAS DE RD, CORRA DONDE CORRA EL CÓDIGO
+   Estas etiquetas las produce el SERVIDOR (queries.ts arma el journey) y también el
+   NAVEGADOR del alumno. El servidor de producción corre en UTC y la academia está en RD
+   (UTC-4): con componentes locales, el mismo dato salía con DÍAS DISTINTOS según quién lo
+   formateara, y todo lo ocurrido entre las 20:00 y las 23:59 hora dominicana —justo cuando
+   hay clases— se etiquetaba con el día siguiente.
+   ========================================================================== */
+describe("[ZONA] día y mes se leen en hora de RD, no en la del runtime", () => {
+  /** Lunes 10 de agosto de 2026, 8:00 PM en Santo Domingo = martes 11 a las 00:00 UTC. */
+  const CLASE_NOCTURNA = new Date("2026-08-11T00:00:00.000Z");
+
+  it("una clase de las 8 de la noche lleva la fecha del día en que ocurrió, no la del día siguiente", () => {
+    expect(fmtDayMonth(CLASE_NOCTURNA, "es")).toBe("10 ago");
+    expect(fmtDayMonthYear(CLASE_NOCTURNA, "es")).toBe("10 ago 2026");
+    expect(fmtDayMonth(CLASE_NOCTURNA, "en")).toBe("10 Aug");
+  });
+
+  it("el último día del mes a las 9 PM no salta de mes ni de año", () => {
+    // 31 dic 2026, 9:00 PM en RD = 1 de enero de 2027, 01:00 UTC. En UTC se leería 2027.
+    const finDeAno = new Date("2027-01-01T01:00:00.000Z");
+    expect(fmtDayMonthYear(finDeAno, "es")).toBe("31 dic 2026");
+    expect(fmtMonthYear(finDeAno, "es")).toBe("dic 2026");
+    expect(fmtMonthFull(finDeAno, "es")).toBe("Diciembre 2026");
+    expect(fmtMonthNameYear(finDeAno, "en")).toBe("December 2026");
+  });
+
+  it("el resultado NO depende de la zona del proceso: es el mismo en cualquier servidor", () => {
+    // Se comprueba la propiedad de verdad —no que "pasa en mi máquina"— comparando contra el
+    // cálculo explícito en RD, que es lo que la función promete.
+    const enRD = (iso: string) => {
+      const d = new Date(iso);
+      const rd = new Date(d.getTime() - 4 * 3600000);
+      return { dia: rd.getUTCDate(), mes: rd.getUTCMonth() };
+    };
+    const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    for (const iso of [
+      "2026-08-11T00:00:00.000Z", "2026-08-11T03:59:00.000Z", "2026-08-11T04:00:00.000Z",
+      "2027-01-01T01:00:00.000Z", "2026-03-01T02:30:00.000Z", "2026-12-31T23:59:00.000Z",
+    ]) {
+      const { dia, mes } = enRD(iso);
+      expect(fmtDayMonth(iso, "es")).toBe(`${dia} ${MESES[mes]}`);
+    }
   });
 });

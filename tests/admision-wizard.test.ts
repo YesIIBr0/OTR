@@ -61,7 +61,7 @@ import {
 import { ROUTES } from "../app/lib/screens";
 import { t } from "../app/lib/i18n";
 import { dict as admDict } from "../app/lib/i18n-keys/adm";
-import { CONSENT_TEXT_DATA, CONSENT_TEXT_GUARDIAN, CONSENT_BINDING_LANG } from "../app/lib/consent";
+import { CONSENT_TEXT_DATA, CONSENT_TEXT_GUARDIAN, CONSENT_TEXT_MEDIA, CONSENT_BINDING_LANG, PRIVACY_NOTICE_TEXT } from "../app/lib/consent";
 import { DPP_VIDEO_KIND, DPP_VIDEO_MIME, DPP_VIDEO_MAX_BYTES } from "../app/lib/dpp-video";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -824,5 +824,163 @@ describe("[ADM · DPP] la pantalla y el servidor hablan del mismo vídeo", () =>
     expect(admVideoReject(big)).toBe("adm.dppTooBig");
     expect(admVideoReject({ type: "video/avi", size: 1000 })).toBe("adm.dppBadType");
     expect(admVideoReject({ type: "video/mp4", size: DPP_VIDEO_MAX_BYTES })).toBe("");
+  });
+});
+
+/* ============================================================================
+   ⑨ EL AVISO DE PRIVACIDAD DICE LO QUE LA LEY 172-13 EXIGE QUE DIGA
+   No basta con que exista un párrafo bonito: la ley enumera QUÉ hay que informar antes
+   de recoger un consentimiento. Esto lo vigila punto por punto, para que nadie recorte
+   el texto "porque es muy largo" y deje fuera lo que lo hace válido.
+   ========================================================================== */
+describe("[ADM · LEGAL] el aviso de privacidad informa de todo lo que debe", () => {
+  const AVISO = PRIVACY_NOTICE_TEXT;
+
+  it("identifica al responsable del banco de datos y da una vía real de contacto", () => {
+    expect(AVISO).toContain("OTR Debating Academy");
+    expect(AVISO).toContain("Santo Domingo");
+    // Una dirección de contacto que se pueda usar de verdad, y NUNCA el no-reply del
+    // envío automático: si el buzón no se atiende, el derecho de acceso es de mentira.
+    expect(AVISO).toMatch(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+    expect(AVISO).not.toMatch(/no-reply@/i);
+  });
+
+  it("dice QUÉ datos se recogen, PARA QUÉ y con qué base", () => {
+    for (const dato of ["fecha de nacimiento", "cédula o pasaporte", "video"]) {
+      expect(AVISO.toLowerCase()).toContain(dato.toLowerCase());
+    }
+    expect(AVISO).toMatch(/admisión/i);
+    expect(AVISO).toMatch(/voluntari/i);          // carácter facultativo de las respuestas
+    expect(AVISO).toMatch(/no podemos tramitar|no podemos/i); // consecuencia de no darlos
+  });
+
+  it("dice con quién se comparten y que no se venden", () => {
+    expect(AVISO).toMatch(/no vendemos ni cedemos/i);
+    expect(AVISO).toMatch(/proveedor/i);
+    expect(AVISO).toMatch(/fuera del país|transferen/i);
+    expect(AVISO).toMatch(/orden judicial|autoridad/i);
+  });
+
+  it("dice cuánto se conservan y enumera los cuatro derechos, con cómo ejercerlos", () => {
+    expect(AVISO).toMatch(/conserv|tiempo que exijan/i);
+    for (const derecho of ["acceder", "rectificar", "supriman", "oponerte"]) {
+      expect(AVISO.toLowerCase()).toContain(derecho);
+    }
+    expect(AVISO).toMatch(/retirar este consentimiento/i);
+    expect(AVISO).toMatch(/sin que retirarlo afecte/i);  // la retirada no tiene efecto retroactivo
+  });
+
+  it("trata aparte al menor de edad y dice quién consiente por él", () => {
+    expect(AVISO).toMatch(/autoridad parental|tutela/i);
+    expect(AVISO).toMatch(/no se publican/i);
+    expect(AVISO).toMatch(/publicitario/i);
+  });
+
+  it("el video del paso 4 NO se publica salvo autorización aparte — y así se dice", () => {
+    // Es el punto donde más fácil sería mentir sin querer: el video existe, la plataforma
+    // publica highlights, y el alumno tiene que saber exactamente cuál es la frontera.
+    expect(AVISO).toMatch(/NO se publica/);
+    expect(AVISO).toMatch(/consentimiento de imagen/i);
+  });
+
+  it("la pantalla lo enseña ENTERO antes de la casilla, no tras un enlace", () => {
+    const st = admDefaultState();
+    st.form = minorForm(guardianData);
+    const html = admFormBlock(st, NOW);
+    // Cada párrafo del aviso está en el HTML, y el bloque va ABIERTO por defecto.
+    for (const parrafo of AVISO.split("\n\n")) {
+      expect(html).toContain(parrafo.slice(0, 60).replace(/&/g, "&amp;"));
+    }
+    expect(html).toMatch(/<details class="adm-notice" open>/);
+    // Y la casilla obligatoria viene DESPUÉS del aviso: informar y luego preguntar.
+    expect(html.indexOf("adm-notice")).toBeLessThan(html.indexOf('id="adm-consent"'));
+  });
+
+  it("la casilla de imagen es opcional de verdad: sin `required` y marcada como opcional", () => {
+    const st = admDefaultState();
+    st.form = minorForm(guardianData);
+    const html = admFormBlock(st, NOW);
+    const casilla = html.slice(html.indexOf('id="adm-media"'), html.indexOf('id="adm-media"') + 220);
+    expect(casilla).not.toMatch(/required/);
+    expect(html).toContain(t("adm.mediaOptional"));
+    expect(html).toContain(CONSENT_TEXT_MEDIA);
+  });
+});
+
+/* ============================================================================
+   ⑩ VOLVER AL PASO 1 NO RETIRA LA AUTORIZACIÓN DE IMAGEN
+   La casilla viaja en CADA guardado y un `false` significa "retírala". Si al reabrir el
+   formulario para corregir un teléfono saliera desmarcada, guardar borraría en silencio
+   una autorización que nadie pidió retirar. Es el tipo de fallo que nadie reporta porque
+   nadie lo ve pasar.
+   ========================================================================== */
+describe("[ADM · LEGAL] la autorización de imagen sobrevive a reabrir el formulario", () => {
+  const conImagen = { kind: "media_release", version: "2026-09", acceptedByRole: "guardian" };
+
+  it("si estaba dada, la casilla vuelve marcada y el guardado la mantiene", () => {
+    const st = admHydrate(admResetState(), {
+      admission: { steps: [true, false, false, false], form: { phone: "+18095550144" }, consents: [conImagen] },
+    }, null);
+    expect(st.form.mediaConsent).toBe(true);
+    expect(payload(st.form).mediaConsent).toBe(true);
+  });
+
+  it("si NO estaba dada, sigue sin estarlo — no se marca sola por reabrir", () => {
+    const st = admHydrate(admResetState(), {
+      admission: { steps: [true, false, false, false], form: { phone: "+18095550144" }, consents: [] },
+    }, null);
+    expect(st.form.mediaConsent).toBe(false);
+    expect(payload(st.form).mediaConsent).toBe(false);
+  });
+
+  it("las dos casillas reflejan el estado REAL al reabrir, cada una por su vía", () => {
+    // La obligatoria se rehidrata del paso ya completado (si el paso 1 está hecho, el
+    // servidor exigió el consentimiento: consta, con su fecha). La de imagen se rehidrata
+    // de los consentimientos vivos. Ninguna de las dos puede salir en un estado que
+    // contradiga lo que hay guardado — ahí es donde se pierden autorizaciones.
+    const st = admHydrate(admResetState(), {
+      admission: { steps: [true, false, false, false], consents: [{ kind: "data_processing" }, conImagen] },
+    }, null);
+    expect(st.form.consent).toBe(true);
+    expect(st.form.mediaConsent).toBe(true);
+    // Y re-guardar así no retira nada: ambas viajan en true.
+    const body = payload(st.form);
+    expect(body.consent).toBe(true);
+    expect(body.mediaConsent).toBe(true);
+  });
+});
+
+/* ============================================================================
+   ⑪ REABRIR EL PASO 1 NO DEJA AL ALUMNO ENCERRADO
+   La pantalla exigía "exactamente 10 dígitos" y el servidor guarda en E.164 (once, con el
+   +1 de RD). Cada regla era razonable por su lado; juntas hacían que, al volver al paso 1
+   a corregir cualquier cosa, el formulario rechazara SUS PROPIOS teléfonos con "Revisa 2
+   campos" señalando dos campos correctos, sin forma de guardar. Se vio con clicks.
+   ========================================================================== */
+describe("[ADM] el formulario acepta los teléfonos que la propia plataforma guardó", () => {
+  it("un teléfono ya normalizado (E.164) es válido al reabrir el formulario", () => {
+    const guardado = { ...minorForm(guardianData), phone: "+18095550177", gPhone: "+18295550188" };
+    const e = errs(guardado);
+    expect(e.phone).toBeUndefined();
+    expect(e.gPhone).toBeUndefined();
+  });
+
+  it("sigue aceptando las formas en que una familia lo escribe", () => {
+    for (const bueno of ["(809) 555-0123", "829 555 0177", "1 849 555 0100", "+34 600 123 456"]) {
+      expect(errs({ ...adultForm(), phone: bueno }).phone).toBeUndefined();
+    }
+  });
+
+  it("y sigue rechazando lo que no es un teléfono", () => {
+    for (const malo of ["555-0123", "123", "no soy un teléfono", "", "8095550123456789"]) {
+      expect(errs({ ...adultForm(), phone: malo }).phone).toBe("adm.ePhone");
+    }
+  });
+
+  it("cliente y servidor comparten la MISMA regla, no dos parecidas", () => {
+    // Si alguien vuelve a escribir una regla propia en la pantalla, esto se pone rojo.
+    const src = read("app/lib/scr-admission.ts");
+    expect(src).toContain("isValidPhoneNumber(f.phone)");
+    expect(src).not.toMatch(/admDigits\(f\.g?[Pp]hone\)\.length/);
   });
 });

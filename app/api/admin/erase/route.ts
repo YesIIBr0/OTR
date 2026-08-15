@@ -53,6 +53,7 @@ import { getSessionUser } from "../../../lib/auth";
 import { ok, bad, readJson, clean } from "../../../lib/api";
 import { requireRole } from "../../../lib/authz";
 import { hashPassword } from "../../../lib/auth-crypto";
+import { CONSENT_KIND_MEDIA } from "../../../lib/consent";
 import { UPLOAD_DIR } from "../../../lib/uploads";
 import { audit } from "../../../lib/audit";
 
@@ -145,8 +146,16 @@ export async function POST(req: Request) {
     }),
     // [A4] Consentimiento: se conserva la PRUEBA, se le quita la IDENTIDAD.
     db.admissionConsent.updateMany({
-      where: { studentId: userId },
+      where: { studentId: userId, kind: { not: CONSENT_KIND_MEDIA } },
       data: { acceptedByName: ANON_NAME, acceptedByUserId: null },
+    }),
+    /* [IMAGEN] Esta NO se anonimiza: se BORRA. Las otras dos acreditan un hecho pasado que
+       no se deshace —se consintió, y en tal fecha—, pero la de imagen es un permiso VIVO
+       para publicar de aquí en adelante. Anonimizarla dejaría escrito "hay autorización
+       para publicar" sin decir de quién, que es exactamente lo contrario de lo que pide
+       quien ejerce su derecho de supresión. */
+    db.admissionConsent.deleteMany({
+      where: { studentId: userId, kind: CONSENT_KIND_MEDIA },
     }),
     // [A4] Llamada de descubrimiento: copia propia de PII (no derivada del User). Por correo
     // además de por userId, porque la reserva pudo hacerse antes de existir la cuenta — es la
