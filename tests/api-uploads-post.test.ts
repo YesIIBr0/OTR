@@ -70,11 +70,14 @@ describe("POST /api/uploads — validación previa a disco", () => {
     expect(saveUpload).not.toHaveBeenCalled();
   });
 
-  it("tamaño declarado > MAX_UPLOAD_BYTES → 4xx, sin guardar", async () => {
+  it("tamaño declarado > MAX_UPLOAD_BYTES → 413, sin guardar", async () => {
     const big = Buffer.alloc(MAX_UPLOAD_BYTES + 1); // 1 byte por encima del tope real
     const res = await POST(uploadReq(new File([big], "grande.mp4", { type: "video/mp4" }), "video"));
     const json = await res.json();
-    expect(res.status).toBe(400);
+    // [A5] 413 (Payload Too Large) y no 400: los TRES caminos que rechazan por tamaño
+    // —Content-Length, tamaño declarado del File y bytes reales en la lib— responden igual,
+    // para que el status no dependa de en qué capa se detectó.
+    expect(res.status).toBe(413);
     expect(json.error).toMatch(/demasiado grande/i);
     expect(saveUpload).not.toHaveBeenCalled();
   });
