@@ -122,15 +122,20 @@ export function admBirthDate(form) {
   return dt;
 }
 
-/** Edad cumplida en años, o null si la fecha no es utilizable. */
+/** Edad cumplida en años, o null si la fecha no es utilizable.
+ *  Se comparan dos cosas de naturaleza distinta, y por eso se leen distinto: el NACIMIENTO es
+ *  un día del calendario, que se guarda y se lee en UTC (ver app/api/admission/input.ts), y
+ *  "hoy" es el día en el reloj DEL ALUMNO, porque esto se pinta en su navegador. Leer ambos en
+ *  UTC hacía que, en zonas muy al este, el día de su cumpleaños número 21 la pantalla siguiera
+ *  pidiéndole tutor. */
 export function admAge(form, now = Date.now()) {
   const dt = admBirthDate(form);
   if (!dt) return null;
   const ref = new Date(now);
-  let age = ref.getUTCFullYear() - dt.getUTCFullYear();
+  let age = ref.getFullYear() - dt.getUTCFullYear();
   const beforeBirthday =
-    ref.getUTCMonth() < dt.getUTCMonth() ||
-    (ref.getUTCMonth() === dt.getUTCMonth() && ref.getUTCDate() < dt.getUTCDate());
+    ref.getMonth() < dt.getUTCMonth() ||
+    (ref.getMonth() === dt.getUTCMonth() && ref.getDate() < dt.getUTCDate());
   if (beforeBirthday) age--;
   return age;
 }
