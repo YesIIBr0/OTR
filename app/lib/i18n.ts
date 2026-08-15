@@ -930,11 +930,26 @@ export function fmtRelativeAgo(d?: Date | string | number | null, lang?: string 
   return en ? `${years} ${years === 1 ? "year" : "years"} ago` : `hace ${years} ${years === 1 ? "año" : "años"}`;
 }
 
+/* ── FECHAS DE CALENDARIO: SIEMPRE EN HORA DE RD ─────────────────────────────────────────
+   Las cinco funciones de aquí abajo daban el día del RUNTIME que las ejecutara: componentes
+   locales. Suena inocente, pero estas etiquetas las produce tanto el SERVIDOR (queries.ts
+   arma el journey del Lifetime Profile) como el NAVEGADOR del alumno — y el servidor de
+   producción corre en UTC mientras la academia y sus estudiantes están en RD (UTC-4). Todo
+   lo que ocurriera entre las 20:00 y las 23:59 hora dominicana —justo la franja en la que
+   hay clases— caía en el día siguiente en UTC y el servidor lo etiquetaba con la fecha
+   equivocada, distinta de la que pintaba el navegador para el mismo dato.
+
+   Se anclan a RD con el mismo mecanismo que ya usaban fmtDateTimeRD y fmtClockRD: desplazar
+   el instante y leerlo en UTC. Así el servidor y el cliente dicen lo mismo, y lo que dicen
+   es el día que la familia vivió. RD no tiene horario de verano, así que el desfase fijo es
+   exacto todo el año. */
+
 /** Día + mes corto: es → "11 ago" · en → "11 Aug" (mismo orden que fmtDateTimeRD). */
 export function fmtDayMonth(d?: Date | string | number | null, lang?: string | null): string {
   const date = toDate(d);
   if (!date) return "";
-  return `${date.getDate()} ${DATE_MONTHS_SHORT[dateLangOf(lang)][date.getMonth()]}`;
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  return `${rd.getUTCDate()} ${DATE_MONTHS_SHORT[dateLangOf(lang)][rd.getUTCMonth()]}`;
 }
 
 /* ── [GOAL E5] Fechas ABSOLUTAS con año, para la consola de moderación ────────────────────
@@ -944,12 +959,13 @@ export function fmtDayMonth(d?: Date | string | number | null, lang?: string | n
    módulo (mismo output en cualquier runtime, con o sin ICU). Orden día-mes-año en ambos
    idiomas, igual que fmtDateTimeRD y por la misma razón documentada allí. */
 
-/** Día + mes corto + año: es → "8 ago 2026" · en → "8 Aug 2026". Hora LOCAL del navegador,
- *  como el `toLocaleDateString` al que sustituye (es un timestamp, no una franja reservada). */
+/** Día + mes corto + año: es → "8 ago 2026" · en → "8 Aug 2026". En hora de RD, como todo
+ *  lo que lleva día (ver la nota de FECHAS DE CALENDARIO). */
 export function fmtDayMonthYear(d?: Date | string | number | null, lang?: string | null): string {
   const date = toDate(d);
   if (!date) return "";
-  return `${date.getDate()} ${DATE_MONTHS_SHORT[dateLangOf(lang)][date.getMonth()]} ${date.getFullYear()}`;
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  return `${rd.getUTCDate()} ${DATE_MONTHS_SHORT[dateLangOf(lang)][rd.getUTCMonth()]} ${rd.getUTCFullYear()}`;
 }
 
 /** Día + mes + año + hora de una franja reservada, en hora RD: es → "8 ago 2026 · 4:00 PM"
@@ -968,15 +984,17 @@ export function fmtDayMonthYearTimeRD(d?: Date | string | number | null, lang?: 
 export function fmtMonthYear(d?: Date | string | number | null, lang?: string | null): string {
   const date = toDate(d);
   if (!date) return "";
-  return `${DATE_MONTHS_SHORT[dateLangOf(lang)][date.getMonth()]} ${date.getFullYear()}`;
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  return `${DATE_MONTHS_SHORT[dateLangOf(lang)][rd.getUTCMonth()]} ${rd.getUTCFullYear()}`;
 }
 
 /** Mes completo capitalizado + año: es → "Agosto 2026" · en → "August 2026". */
 export function fmtMonthFull(d?: Date | string | number | null, lang?: string | null): string {
   const date = toDate(d);
   if (!date) return "";
-  const m = DATE_MONTHS_FULL[dateLangOf(lang)][date.getMonth()];
-  return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${date.getFullYear()}`;
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  const m = DATE_MONTHS_FULL[dateLangOf(lang)][rd.getUTCMonth()];
+  return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${rd.getUTCFullYear()}`;
 }
 
 /** Mes completo + año TAL COMO SE LEE DENTRO DE UNA FRASE: es → "agosto 2026" (minúscula,
@@ -984,7 +1002,8 @@ export function fmtMonthFull(d?: Date | string | number | null, lang?: string | 
 export function fmtMonthNameYear(d?: Date | string | number | null, lang?: string | null): string {
   const date = toDate(d);
   if (!date) return "";
-  return `${DATE_MONTHS_FULL[dateLangOf(lang)][date.getMonth()]} ${date.getFullYear()}`;
+  const rd = new Date(date.getTime() + RD_OFFSET_H * 3600000);
+  return `${DATE_MONTHS_FULL[dateLangOf(lang)][rd.getUTCMonth()]} ${rd.getUTCFullYear()}`;
 }
 
 /* Prefijos de las dos etiquetas de antigüedad del payload. Viven aquí —y no como llaves de
