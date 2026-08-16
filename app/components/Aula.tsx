@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { renderShell } from "../lib/shell";
+import { renderShell, renderAdmissionShell } from "../lib/shell";
 import { ROUTES, ensureScreen, prefetchForRole } from "../lib/screens";
 // [ROUTER-HASH] Mapeo puro ruta↔URL (tests/router-hash.test.ts). La URL manda: sin esto
 // no había deep-link, ni Atrás/Adelante, ni F5 estable en /aula.
@@ -178,7 +178,13 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       }
 
       // Render COMPLETO: primer paint o navegación real (go). Reconstruye el shell entero.
-      root.innerHTML = renderShell(def.nav, def.crumbs, screen.render(state), state.role);
+      /* [ADM] La admisión se pinta en SU shell, sin la barra del Aula: el alumno que aún no
+         ha sido admitido no tiene nada que hacer en Cursos ni en el marketplace, y el mockup
+         de Isaac tampoco los dibuja. Todo lo demás del ciclo de render (foco al #content,
+         título, anuncio de ruta) sigue igual porque ese shell conserva el mismo <main>. */
+      root.innerHTML = def.screen === "admission"
+        ? renderAdmissionShell(screen.render(state))
+        : renderShell(def.nav, def.crumbs, screen.render(state), state.role);
       const content = root.querySelector<HTMLElement>("#content");
       screen.mount?.(content, state);
       if (content) content.scrollTop = 0;

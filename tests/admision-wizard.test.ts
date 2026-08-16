@@ -984,3 +984,51 @@ describe("[ADM] el formulario acepta los teléfonos que la propia plataforma gua
     expect(src).not.toMatch(/admDigits\(f\.g?[Pp]hone\)\.length/);
   });
 });
+
+/* ============================================================================
+   ⑫ FIDELIDAD AL MOCKUP: portal propio y bienvenida a sangre
+   El wizard vivía dentro del shell del Aula, con su barra de Cursos / Debate Hub /
+   marketplace, y la bienvenida era una tarjeta más. El mockup de Isaac dibuja otra cosa:
+   una cabecera de "Portal del estudiante" sin navegación —el alumno que aún no ha sido
+   admitido no tiene dónde ir— y una portada a pantalla completa con la foto de marca.
+   ========================================================================== */
+describe("[ADM · UI] el portal de admisión se pinta como el mockup", () => {
+  it("la admisión NO usa el shell del Aula: tiene el suyo, sin barra de navegación", () => {
+    const aula = read("app/components/Aula.tsx");
+    expect(aula).toMatch(/def\.screen === "admission"[\s\S]{0,120}renderAdmissionShell/);
+    const shell = read("app/lib/shell.ts");
+    const fn = shell.slice(shell.indexOf("export function renderAdmissionShell"), shell.indexOf("export function renderShell"));
+    // Nada de links de navegación ni tabbar dentro del portal.
+    expect(fn).not.toMatch(/tn-links|tabbar|data-go="course"|data-go="debate"/);
+    // Pero sí lo que el mockup SÍ enseña: marca, portal, soporte y quién eres.
+    expect(fn).toContain("PORTAL DEL ESTUDIANTE");
+    expect(fn).toMatch(/Soporte 24\/7/);
+    expect(fn).toContain('id="content"');          // el <main> que el resto del Aula necesita
+    expect(fn).toContain("skip-link");             // y el salto al contenido, que no se pierde
+  });
+
+  it("la bienvenida es un héroe a sangre con la foto de marca, no una tarjeta", () => {
+    const html = admWelcome(admDefaultState());
+    expect(html).toContain("adm-hero-bg");
+    expect(html).not.toContain("card--dark");
+    const css = read("app/styles/screens.css");
+    expect(css).toMatch(/\.adm-hero\{[^}]*width:100vw/);
+    expect(css).toMatch(/\.adm-hero-bg\{[^}]*hero-speaking\.jpg/);
+    // 100vw no descuenta la barra de scroll: sin recorte, abre una barra horizontal.
+    expect(css).toMatch(/\.shell--adm\{[^}]*overflow-x:clip/);
+  });
+
+  it("el portal deja scrollear la página entera: el formulario no se corta", () => {
+    // `html,body{height:100%}` recorta a la altura de la pantalla cualquier shell que crezca
+    // con su contenido, y media página quedaba inalcanzable. Aquí el scroll es el del documento.
+    const css = read("app/styles/screens.css");
+    expect(css).toMatch(/\.shell--adm \.content\{[^}]*overflow:visible/);
+    expect(css).toMatch(/\.shell--adm\{[^}]*min-height:100dvh/);
+  });
+
+  it("'Soporte 24/7' aparece UNA vez: en la cabecera, no repetido en la barra de progreso", () => {
+    const st = admDefaultState();
+    st.view = "wizard"; st.step = 0;
+    expect(admProgressBar(st)).not.toContain(t("adm.support"));
+  });
+});

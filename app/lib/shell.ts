@@ -176,6 +176,52 @@ const TOPNAV_GROUP: Partial<Record<Role, { gk: string; items: string[] }>> = {
 // Llaves i18n YA existentes (las usa el tabbar móvil) — no se inventa vocabulario.
 const TOPNAV_LABEL: Record<string, string> = { course: 'nav.course' };
 
+/* ============================================================================
+   SHELL DEL PORTAL DE ADMISIÓN — sin la barra del Aula
+   El mockup de Isaac no dibuja la navegación del Aula en el flujo de admisión, y tiene
+   razón de producto: el alumno que todavía no ha sido admitido no tiene nada que hacer en
+   Cursos, Debate Hub ni el marketplace. Ofrecerle esos destinos es invitarlo a abandonar
+   un trámite de cuatro pasos que la academia necesita completo.
+
+   Lo que sí lleva, tal cual el mockup: el escudo con "OTR Academy · Portal del estudiante",
+   el enlace de Soporte 24/7 y quién es. Se mantiene el skip-link y el <main id="content">
+   porque el resto del Aula (foco, anuncios de ruta, scroll) depende de ellos.
+   ========================================================================== */
+export function renderAdmissionShell(content: string) {
+  const lang = getLang();
+  const u = DB.me;
+  const en = lang === "en";
+  return `
+  <a href="#content" class="skip-link">${en ? "Skip to content" : "Saltar al contenido"}</a>
+  <div class="shell shell--adm">
+    <div class="main">
+      <header class="topnav topnav--adm">
+        <div class="topnav-in">
+          <div class="tn-left">
+            <span class="tn-logo tn-logo--adm" aria-hidden="true">${otrCrest({ id: "adm", attrs: 'class="crest"' })}</span>
+            <span class="adm-brand">
+              <span class="adm-brand-n">OTR Academy</span>
+              <span class="adm-brand-s">${en ? "STUDENT PORTAL" : "PORTAL DEL ESTUDIANTE"}</span>
+            </span>
+          </div>
+          <div class="tn-right">
+            <a class="adm-support" href="#messages" data-go="messages">${IC.headset}${en ? "24/7 Support" : "Soporte 24/7"}</a>
+            <div class="adm-who">
+              <span class="adm-who-t">
+                <span class="adm-who-n">${u?.name || ""}</span>
+                <span class="adm-who-s">${en ? "New student" : "Nueva estudiante"}</span>
+              </span>
+              <span class="avatar tn-av" style="background:var(--n-600)">${u?.initials || ""}</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="content" id="content" tabindex="-1" aria-label="${en ? "Main content" : "Contenido principal"}"><div class="page rise">${content}</div></main>
+    </div>
+  </div>`;
+}
+
 export function renderShell(activeNav: string, _crumbs: string[], content: string, role: Role = 'student') {
   const nav = NAV[role] || NAV.student;
   const lang = getLang();
