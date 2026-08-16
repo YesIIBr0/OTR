@@ -2088,8 +2088,55 @@ a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
 .adm-loading{padding:40px 0;text-align:center;color:var(--text-2);font-size:14px}
 
 /* --- Bienvenida y pantalla final: la única superficie negra de la pantalla --- */
-.adm-hero,.adm-done{padding:clamp(30px,5vw,54px) clamp(22px,4vw,40px);border-radius:var(--r-lg)}
-.adm-hero-h{margin:10px 0 0;font-size:clamp(30px,5vw,52px);font-weight:800;letter-spacing:-.035em;line-height:1.04}
+/* --- Portal de admisión: scroll de PÁGINA, no de contenedor -----------------------------
+   El shell del Aula acota la ventana y hace scrollear un contenedor interno, que es lo que
+   toca con una barra lateral fija. Este portal no tiene barra: es una página larga de un
+   trámite, y forzarle un contenedor con scroll propio dejaba media pantalla recortada e
+   inalcanzable —el formulario se cortaba a la mitad—. Aquí el scroll es el del documento,
+   como en cualquier página, y por eso #content deja de tener el suyo. */
+.shell--adm{min-height:100dvh;overflow-x:hidden;overflow-x:clip}
+.shell--adm .content{overflow:visible;flex:none}
+html:has(.shell--adm),body:has(.shell--adm){height:auto;overflow:visible}
+
+/* --- Portal de admisión: cabecera propia (sin la barra del Aula) -------------------------
+   El alumno todavía no admitido no tiene destinos que visitar: la cabecera solo lo sitúa
+   —marca, soporte y quién es— igual que el mockup. */
+.topnav--adm .topnav-in{justify-content:space-between}
+.topnav--adm .tn-left{gap:11px}
+.tn-logo--adm{display:inline-flex;align-items:center}
+.adm-brand{display:flex;flex-direction:column;line-height:1.15}
+.adm-brand-n{font-size:14.5px;font-weight:800;letter-spacing:-.015em;color:var(--text)}
+.adm-brand-s{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:var(--text-3)}
+.adm-support{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--otr-orange-ink);text-decoration:none}
+.adm-support:hover{text-decoration:underline}
+.adm-support .ic{width:15px;height:15px}
+.adm-who{display:flex;align-items:center;gap:10px;margin-left:14px}
+.adm-who-t{display:flex;flex-direction:column;align-items:flex-end;line-height:1.2}
+.adm-who-n{font-size:13px;font-weight:700;color:var(--text)}
+.adm-who-s{font-size:11.5px;color:var(--text-3)}
+@media (max-width:560px){.adm-who-t{display:none}.adm-brand-s{display:none}}
+
+/* --- Bienvenida: héroe A SANGRE con la foto de marca -------------------------------------
+   Rompe el ancho del contenido a propósito (100vw desde el centro): en el mockup la foto
+   llega de borde a borde, y encajarla dentro de la caja del contenido la convertía en una
+   tarjeta más. El degradado NO es decorativo: sostiene el contraste del texto blanco sobre
+   las zonas claras de la foto. */
+.adm-hero{position:relative;left:50%;right:50%;width:100vw;margin-left:-50vw;margin-right:-50vw;
+  /* 100vw NO descuenta la barra de scroll vertical: sin el clip del shell, esos ~15px de más
+     abrían una barra horizontal en toda la pantalla. */
+  display:flex;align-items:center;overflow:hidden;background:var(--otr-black);
+  /* Pega con la cabecera y llega al fondo: el .page que lo envuelve tiene su propio aire, y
+     con él la foto quedaba flotando como una tarjeta más en vez de abrir la pantalla. El
+     alto se calcula descontando la cabecera (64px) para que ocupe exactamente lo que queda. */
+  margin-top:-30px;margin-bottom:-80px;min-height:calc(100vh - 64px)}
+.adm-hero-bg{position:absolute;inset:0;background:
+  linear-gradient(90deg,rgba(0,0,0,.94) 0%,rgba(0,0,0,.86) 38%,rgba(0,0,0,.55) 72%,rgba(0,0,0,.42) 100%),
+  url("/img/hero-speaking.jpg") center/cover no-repeat;}
+.adm-hero-in{position:relative;width:100%;max-width:1180px;margin:0 auto;padding:clamp(34px,6vw,76px) 30px}
+@media (max-width:760px){.adm-hero{margin-top:-16px;margin-bottom:-90px;min-height:calc(100vh - 56px)}
+  .adm-hero-in{padding:clamp(28px,7vw,48px) 15px}}
+.adm-done{padding:clamp(30px,5vw,54px) clamp(22px,4vw,40px);border-radius:var(--r-lg)}
+.adm-hero-h{margin:0;color:#fff;font-size:clamp(30px,5vw,52px);font-weight:800;letter-spacing:-.035em;line-height:1.04}
 .adm-hero-p{margin:16px 0 0;max-width:52ch;font-size:16px;line-height:1.55;color:rgba(255,255,255,.82)}
 .adm-hero-cta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:26px}
 .adm-hero-meta{font-size:13px;color:rgba(255,255,255,.6)}
@@ -2137,6 +2184,11 @@ a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
 .adm-panel{flex:1;min-width:0}
 .adm-panel-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .adm-step-h{margin:0 0 8px;font-size:clamp(21px,3vw,26px);font-weight:800;letter-spacing:-.03em;line-height:1.12;color:var(--text)}
+/* Al cambiar de paso, el foco salta a este título para que un lector de pantalla anuncie
+   dónde está. Ese foco es PROGRAMÁTICO: el navegador le dibujaba su outline por defecto y
+   el título quedaba recuadrado tras un simple click de ratón. Se apaga ESE, no el del
+   teclado: la línea siguiente sigue marcando el foco real de quien navega tabulando. */
+.adm-step-h:focus{outline:none}
 .adm-step-h:focus-visible{box-shadow:var(--ring)}
 .adm-step-tag{margin:0 0 4px;font-size:15px;font-weight:700;color:var(--text)}
 .adm-step-desc{margin:0 0 22px;max-width:62ch;font-size:15px;line-height:1.6;color:var(--text-2)}

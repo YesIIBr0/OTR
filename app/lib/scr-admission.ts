@@ -468,13 +468,20 @@ function admRadioGroup(name, legendKey, options, value, opts = {}) {
 /* ---------------------------------------------------------------- bienvenida */
 export function admWelcome(st) {
   const resumed = (st && st.done || []).some(Boolean);
-  return `<section class="adm-hero card--dark" aria-labelledby="adm-welcome-h">
-    <span class="lbl">${t("adm.welcomeEyebrow")}</span>
-    <h1 class="adm-hero-h" id="adm-welcome-h">${t("adm.welcomeTitle")}</h1>
-    <p class="adm-hero-p">${t("adm.welcomeLead")}</p>
-    <div class="adm-hero-cta">
-      <button class="btn btn-lg adm-btn-invert" id="adm-start">${resumed ? t("adm.welcomeResume") : t("adm.welcomeCta")} ${IC.arrowR}</button>
-      <span class="adm-hero-meta">${t("adm.welcomeMeta")}</span>
+  /* Héroe A SANGRE con la foto de marca detrás, como lo dibuja el mockup: es la primera
+     pantalla que ve el alumno nuevo y ahí el producto se presenta, no se administra. La foto
+     es la misma /img/hero-speaking.jpg que ya usan los otros héroes del Aula (no se añade un
+     asset nuevo), y el degradado sobre ella es lo que sostiene el contraste AA del texto
+     blanco: sin él, el titular caería sobre las zonas claras de la butaca. */
+  return `<section class="adm-hero" aria-labelledby="adm-welcome-h">
+    <div class="adm-hero-bg" aria-hidden="true"></div>
+    <div class="adm-hero-in">
+      <h1 class="adm-hero-h" id="adm-welcome-h">${t("adm.welcomeTitle")}</h1>
+      <p class="adm-hero-p">${t("adm.welcomeLead")}</p>
+      <div class="adm-hero-cta">
+        <button class="btn btn-lg adm-btn-invert" id="adm-start">${resumed ? t("adm.welcomeResume") : t("adm.welcomeCta")} ${IC.arrowR}</button>
+        <span class="adm-hero-meta">${t("adm.welcomeMeta")}</span>
+      </div>
     </div>
   </section>`;
 }
@@ -507,8 +514,10 @@ export function admProgressBar(st) {
   const text = t("adm.progressCount").replace("{n}", String(count));
   return `<div class="adm-top">
     <div class="adm-top-r">
+      ${/* "Soporte 24/7" vivía aquí cuando el wizard iba dentro del shell del Aula y no
+           había otro sitio donde ponerlo. Ahora la cabecera del portal lo lleva, como en el
+           mockup, y repetirlo dos veces en la misma pantalla solo restaba peso al número. */""}
       <p class="adm-top-n" id="adm-progress-label">${text}</p>
-      <span class="adm-support">${IC.headset}${t("adm.support")}</span>
       <b class="adm-top-p">${percent}%</b>
     </div>
     <div class="adm-bar" role="progressbar" aria-labelledby="adm-progress-label"
