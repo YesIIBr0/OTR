@@ -2248,6 +2248,27 @@ html:has(.shell--adm),body:has(.shell--adm){height:auto;overflow:visible}
 .adm-opt:has(input:checked) .adm-opt-key{background:var(--otr-black);color:#fff}
 .adm-opt:has(input:focus-visible){box-shadow:var(--ring)}
 
+/* --- Programas: TARJETAS con foto, como el mockup -------------------------- */
+/* Tres tarjetas iguales en fila. La foto manda arriba (relación 4/3, que es la que
+   dibuja el artifact) y el rótulo va en una banda blanca abajo separada por su borde.
+   El hueco de la imagen se queda en greige hasta que lleguen las fotos reales: es un
+   vacío que se lee como "falta la foto", no como un error. */
+.adm-prog{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.adm-prog-t{position:relative;display:flex;flex-direction:column;overflow:hidden;
+  border:1px solid var(--border-field);border-radius:var(--r-md);background:var(--otr-white);
+  cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.adm-prog-t > input{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
+.adm-prog-img{display:block;aspect-ratio:4/3;background:var(--n-100);
+  background-size:cover;background-position:center}
+.adm-prog-b{display:flex;align-items:center;gap:10px;padding:11px 13px;min-height:44px;
+  border-top:1px solid var(--border-field);font-size:13.5px;font-weight:600;color:var(--text)}
+.adm-prog-n{min-width:0}
+.adm-prog-t:hover{border-color:var(--otr-black)}
+.adm-prog-t:has(input:checked){border-color:var(--otr-black);box-shadow:inset 0 0 0 1px var(--otr-black)}
+.adm-prog-t:has(input:checked) .adm-opt-key{background:var(--otr-black);color:#fff}
+.adm-prog-t:has(input:focus-visible){box-shadow:var(--ring)}
+.adm-prog.err .adm-prog-t{border-color:var(--danger)}
+
 /* --- Consentimiento: casilla NATIVA y visible (es el control legal) --------- */
 .adm-consent{padding:16px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface-2)}
 /* El clausulado que se FIRMA vive pegado al campo de firma (una firma sin texto no
@@ -2373,6 +2394,10 @@ html:has(.shell--adm),body:has(.shell--adm){height:auto;overflow:visible}
   .adm-rail-t{display:none}
   .adm-dot{width:34px;height:34px}
   .adm-grid,.adm-opts--cols{grid-template-columns:1fr}
+  /* Las tarjetas de programa se apilan: a tres columnas en un móvil la foto queda
+     tan pequeña que deja de aportar, que es justo lo que la tarjeta venía a dar. */
+  .adm-prog{grid-template-columns:1fr}
+  .adm-prog-img{aspect-ratio:16/9}
   .adm-sched{grid-template-columns:1fr}
   .adm-slots{border-left:0;border-top:1px solid var(--border)}
   .adm-comm,.adm-foot{flex-direction:column;align-items:stretch}

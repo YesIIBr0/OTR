@@ -42,7 +42,7 @@ export const dict = {
     "adm.s2Tag": "Agenda tu sesión 1-a-1 con un coach.",
     "adm.s2Desc":
       "Agenda una llamada con uno de nuestros coaches. Esta será para saber más de tus debilidades y los puntos exactos en los que tenemos que trabajar para que aproveches al máximo nuestra mentoría.",
-    "adm.s3Short": "Comunidad de la academia",
+    "adm.s3Short": "Join OTR Academy Community Chat",
     "adm.s3Title": "Únete al chat de la comunidad",
     "adm.s3Tag": "El grupo donde están todos los estudiantes de la academia.",
     "adm.s3Desc": "Ahí van los avisos de clase, los recordatorios y las dudas del día a día.",
@@ -53,7 +53,7 @@ export const dict = {
 
     /* ---------------- Paso 1 · formulario ---------------- */
     "adm.formHeader": "Formulario de Admisión · llénalo aquí",
-    "adm.formPlaceholder": "Escribe aquí tu respuesta",
+    "adm.formPlaceholder": "Escribe aquí tu respuesta…",
     "adm.sec1": "Información del estudiante",
     "adm.fName": "Nombre",
     "adm.fLastName": "Apellido",
@@ -228,7 +228,7 @@ export const dict = {
     "adm.s2Tag": "Book your 1-on-1 session with a coach.",
     "adm.s2Desc":
       "Book a call with one of our coaches. It is where we learn about your weak spots and the exact points we have to work on so you get the most out of our mentoring.",
-    "adm.s3Short": "Academy community",
+    "adm.s3Short": "Join OTR Academy Community Chat",
     "adm.s3Title": "Join the community chat",
     "adm.s3Tag": "The group where every student in the academy hangs out.",
     "adm.s3Desc": "Class notices, reminders and day-to-day questions all go there.",
@@ -239,7 +239,7 @@ export const dict = {
 
     /* ---------------- Step 1 · form ---------------- */
     "adm.formHeader": "Admission Form · fill it in here",
-    "adm.formPlaceholder": "Type your answer here",
+    "adm.formPlaceholder": "Type your answer here…",
     "adm.sec1": "Student information",
     "adm.fName": "First name",
     "adm.fLastName": "Last name",

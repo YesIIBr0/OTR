@@ -1032,3 +1032,58 @@ describe("[ADM · UI] el portal de admisión se pinta como el mockup", () => {
     expect(admProgressBar(st)).not.toContain(t("adm.support"));
   });
 });
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PARIDAD CON EL ARTIFACT 1e19da45 (mockup de Isaac, 11/08/2026).
+   Comparación hecha pantalla a pantalla contra el artifact abierto en Chrome.
+   Aquí se fija lo que el mockup dicta y nosotros habíamos derivado; las tres
+   divergencias DELIBERADAS (tutor condicional, clausulado Ley 172-13 y guardado
+   real en vez de "marcar como completado") NO se tocan y viven en sus propios
+   casos más arriba.
+   ────────────────────────────────────────────────────────────────────────── */
+describe("[ADMISIÓN] paridad con el mockup de Isaac", () => {
+  beforeEach(() => { admResetState(); });
+
+  it("el panel NO pinta el chip 'Paso N de 4': el mockup enseña el título a secas", () => {
+    const st = admDefaultState();
+    st.loaded = true; st.view = "wizard"; st.step = 0;
+    const html = admPanel(st, NOW);
+    expect(html).not.toContain(t("adm.stepOf").replace("{n}", "1"));
+    // …pero el rail SÍ lo conserva en su aria-label: es la única pista de orden
+    // que tiene quien navega a ciegas, y ahí no estorba a nadie.
+    expect(admRail(st)).toContain(t("adm.stepOf").replace("{n}", "1"));
+  });
+
+  it("el paso 3 se llama en el rail como lo escribió Isaac", () => {
+    expect(admDict.es["adm.s3Short"]).toBe("Join OTR Academy Community Chat");
+    expect(admDict.en["adm.s3Short"]).toBe("Join OTR Academy Community Chat");
+  });
+
+  it("los 3 programas son TILES con hueco de imagen, no chips de texto", () => {
+    const st = admDefaultState();
+    st.loaded = true; st.view = "wizard"; st.step = 0;
+    const html = admFormBlock(st, NOW);
+    expect((html.match(/class="adm-prog-t"/g) || []).length).toBe(3);
+    // El hueco de la foto es parte de la tarjeta: el mockup lo deja marcado
+    // ("Suelta una imagen") porque las fotos de los programas están pendientes.
+    expect((html.match(/class="adm-prog-img"/g) || []).length).toBe(3);
+    // Siguen siendo radios de verdad: el tile es la etiqueta, no un div clicable.
+    expect((html.match(/name="adm-program"/g) || []).length).toBe(3);
+  });
+
+  it("el placeholder genérico termina en puntos suspensivos, como el mockup", () => {
+    expect(admDict.es["adm.formPlaceholder"]).toMatch(/…$/);
+    expect(admDict.en["adm.formPlaceholder"]).toMatch(/…$/);
+  });
+
+  it("Curso / Nivel va en su propia fila a lo ancho, no a media columna", () => {
+    const st = admDefaultState();
+    st.loaded = true; st.view = "wizard"; st.step = 0;
+    const html = admFormBlock(st, NOW);
+    const sec1 = html.slice(0, html.indexOf('id="adm-guardian"'));
+    // En la sección 1 solo queda UNA rejilla de dos columnas: Nombre + Apellido.
+    expect((sec1.match(/class="adm-grid"/g) || []).length).toBe(1);
+    expect(sec1).toContain('id="adm-level"');
+    expect(sec1).toContain('id="adm-school"');
+  });
+});
