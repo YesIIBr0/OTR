@@ -1087,3 +1087,55 @@ describe("[ADMISIÓN] paridad con el mockup de Isaac", () => {
     expect(sec1).toContain('id="adm-school"');
   });
 });
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ⑬ EL PORTAL TIENE SALIDA (reporte de Isaac, 2026-08-19).
+   Isaac abrió el enlace y cayó directo en el wizard con una sesión ajena
+   —la cuenta QA que le pasamos el 9 de agosto— y no encontró forma de llegar
+   a "iniciar sesión o crear cuenta". El enrutado era correcto; lo que faltaba
+   era la PUERTA DE VUELTA: la cabecera del portal no tenía cerrar sesión y el
+   chip del usuario era un <span> muerto. Quedar encerrado en la sesión de otro
+   es peor aquí que en el resto del Aula, porque este formulario recoge datos
+   personales de un menor y de su tutor.
+   ────────────────────────────────────────────────────────────────────────── */
+describe("[ADM · UI] el portal de admisión no encierra a nadie", () => {
+  const admFn = () => {
+    const shell = read("app/lib/shell.ts");
+    return shell.slice(shell.indexOf("export function renderAdmissionShell"), shell.indexOf("export function renderShell"));
+  };
+
+  it("la cabecera lleva cerrar sesión, con el MISMO data-action que ya delega Aula.tsx", () => {
+    expect(admFn()).toContain('data-action="logout"');
+    // El delegador global (root.addEventListener("click", onClick)) cubre este shell:
+    // si el atributo cambiara, el botón quedaría muerto sin que nada lo avisara.
+    expect(read("app/components/Aula.tsx")).toContain('[data-action="logout"]');
+  });
+
+  it("cerrar sesión es un <button>, no un enlace a '#'", () => {
+    expect(admFn()).toMatch(/<button[^>]*data-action="logout"/);
+  });
+
+  it("el chip del usuario es interactivo y dice de QUIÉN es la sesión", () => {
+    const fn = admFn();
+    expect(fn).toContain("<summary");        // se puede abrir: ya no es un <span> muerto
+    expect(fn).toMatch(/adm-acct/);
+    expect(fn).toMatch(/u\?\.email/);        // el correo, para reconocer que la sesión es ajena
+  });
+
+  it("sigue sin barra de navegación: la salida no es una excusa para meter el menú del Aula", () => {
+    expect(admFn()).not.toMatch(/tn-links|tabbar|data-go="course"|data-go="debate"/);
+  });
+});
+
+/* ⑭ El wordmark del login: Isaac pidió el 08/08 "quítale el Aula, deja el logo y ya".
+   Se arregló en el shell del Aula pero el LOGIN se quedó con "OTR Aula". */
+describe("[LOGIN] la marca del login es solo el escudo", () => {
+  it("el bloque login-mark ya no pinta el wordmark 'Aula'", () => {
+    const auth = read("app/components/Auth.tsx");
+    const i = auth.indexOf('className="login-mark"');
+    expect(i).toBeGreaterThan(-1);
+    const block = auth.slice(i, auth.indexOf('className="login-form"'));
+    expect(block).not.toMatch(/Aula/);
+    expect(block).toContain("otrCrest");     // el escudo SÍ se queda
+  });
+});

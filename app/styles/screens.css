@@ -2115,6 +2115,20 @@ html:has(.shell--adm),body:has(.shell--adm){height:auto;overflow:visible}
 .adm-who-n{font-size:13px;font-weight:700;color:var(--text)}
 .adm-who-s{font-size:11.5px;color:var(--text-3)}
 @media (max-width:560px){.adm-who-t{display:none}.adm-brand-s{display:none}}
+/* --- Salida del portal: menú de cuenta sobre <details> ---------------------- */
+/* Sin JS propio: <details>/<summary> ya abre con ratón y teclado. El marcador
+   nativo del triángulo se retira porque el chip ES el disparador. */
+.adm-acct{position:relative}
+.adm-acct > summary{cursor:pointer;list-style:none;border-radius:var(--r-sm)}
+.adm-acct > summary::-webkit-details-marker{display:none}
+.adm-acct > summary:focus-visible{box-shadow:var(--ring);outline:none}
+.adm-acct-m{position:absolute;right:0;top:calc(100% + 8px);z-index:40;min-width:220px;
+  display:flex;flex-direction:column;gap:4px;padding:10px;
+  border:1px solid var(--border);border-radius:var(--r-md);background:var(--otr-white);
+  box-shadow:0 10px 28px rgba(0,0,0,.14)}
+.adm-acct-e{margin:0 0 4px;padding:0 8px;font-size:12px;color:var(--text-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 
 /* --- Bienvenida: héroe A SANGRE con la foto de marca -------------------------------------
    Rompe el ancho del contenido a propósito (100vw desde el centro): en el mockup la foto
