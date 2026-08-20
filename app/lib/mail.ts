@@ -1,8 +1,16 @@
 // OTR Debating Academy · Email helper. Usa nodemailer si SMTP_URL está definido; si no,
 // hace fallback a console.log (desarrollo real). Nunca lanza: cualquier fallo se
 // loguea y se traga para no romper el flujo de la API que lo invoca.
+//
+// [20/08] El fallback silencioso resultó PELIGROSO en producción: con SMTP_URL vacía la
+// plataforma se comportaba como si enviara correos —recuperar contraseña, recordatorios,
+// avisos de reserva, tutela— y no enviaba ninguno, sin que nada lo dijera. Ahora se
+// CONTABILIZA y se expone en /api/health, para que el hueco se vea desde fuera en vez de
+// descubrirse cuando un alumno no recibe su enlace de contraseña.
 import { createHash } from "crypto";
 import nodemailer from "nodemailer";
+
+const mailStats = { sent: 0, failed: 0, skipped: 0, lastSkippedAt: "" as string };
 
 export interface MailInput {
   to: string;
@@ -15,15 +23,31 @@ export async function sendMail({ to, subject, html }: MailInput): Promise<void> 
   try {
     const smtpUrl = process.env.SMTP_URL;
     if (!smtpUrl) {
-      console.log("[mail]", to, subject, html);
+      mailStats.skipped += 1;
+      mailStats.lastSkippedAt = new Date().toISOString();
+      console.warn(`[mail] SMTP_URL NO configurado — correo NO enviado a ${to} (asunto: ${subject}). Van ${mailStats.skipped} sin enviar.`);
       return;
     }
     const transport = nodemailer.createTransport(smtpUrl);
     const from = process.env.MAIL_FROM || "OTR Debating Academy <no-reply@otr-academy.com>";
     await transport.sendMail({ from, to, subject, html });
+    mailStats.sent += 1;
   } catch (err) {
+    mailStats.failed += 1;
     console.error("[mail] error al enviar:", err);
   }
+}
+
+/** Estado del subsistema de correo, para que /api/health lo pueda enseñar.
+ *  `configured:false` significa que NINGÚN correo está saliendo de la plataforma. */
+export function mailHealth() {
+  return {
+    configured: !!process.env.SMTP_URL,
+    sent: mailStats.sent,
+    failed: mailStats.failed,
+    skipped: mailStats.skipped,
+    lastSkippedAt: mailStats.lastSkippedAt,
+  };
 }
 
 /** sha256 hex de un token (para guardar el reset hasheado, nunca en claro). */

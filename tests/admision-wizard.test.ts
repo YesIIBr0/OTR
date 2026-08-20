@@ -28,6 +28,7 @@ win.otrUpload = async () => ({});
 
 import {
   ADM_STEPS,
+  ADM_GRADE_LEVELS,
   ADM_GUARDIAN_MAX_AGE,
   ADM_VIDEO_MIME,
   ADM_MAX_VIDEO_BYTES,
@@ -1230,5 +1231,58 @@ describe("[ADM · cola 20/08] comunidad, pantalla final y bloques", () => {
     const css = read("app/styles/screens.css");
     expect(css).not.toMatch(/\.hl-grid\{[^}]*repeat\(4,1fr\)/);
     expect(css).toMatch(/\.hl-grid\{[^}]*repeat\(2,1fr\)/);
+  });
+});
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ⑰ ARREGLOS DEL 20/08 — lo que se pudo cerrar sin depender de terceros.
+   ────────────────────────────────────────────────────────────────────────── */
+describe("[ARREGLOS 20/08] huecos cerrados sin dependencias externas", () => {
+  it("el nivel académico ofrece 'No aplica' — el curso es obligatorio y un adulto no escolarizado se quedaba fuera", () => {
+    expect(ADM_GRADE_LEVELS.map((o: { v: string }) => o.v)).toContain("NO_APLICA");
+    expect(admDict.es["adm.lvNA"]).toBe("No aplica");
+    expect(admDict.en["adm.lvNA"]).toBe("Not applicable");
+  });
+
+  it("CONTRATO: la lista de niveles del cliente y la del servidor son la MISMA", () => {
+    // Son dos copias de la misma constante en archivos distintos. Este repo ya se quemó
+    // con eso: una suite verde no ve que divergen, y el guardado falla en producción
+    // con un valor que la pantalla sí ofrecía.
+    const server = read("app/api/admission/input.ts");
+    const m = server.match(/export const GRADE_LEVELS = \[([^\]]+)\]/);
+    expect(m).toBeTruthy();
+    const serverList = (m![1].match(/"([A-Z_]+)"/g) || []).map((s) => s.replace(/"/g, ""));
+    expect(ADM_GRADE_LEVELS.map((o: { v: string }) => o.v)).toEqual(serverList);
+  });
+
+  it("el correo ya NO degrada en silencio: se cuenta y se expone en /api/health", () => {
+    const mail = read("app/lib/mail.ts");
+    expect(mail).toContain("mailStats.skipped");
+    expect(mail).toContain("export function mailHealth");
+    expect(mail).toMatch(/console\.warn\([^)]*SMTP_URL NO configurado/);
+    expect(read("app/api/health/route.ts")).toContain("mailHealth()");
+  });
+
+  it("el portal de admisión lleva selector de idioma: nadie se queda atrapado en un idioma", () => {
+    const shell = read("app/lib/shell.ts");
+    const fn = shell.slice(shell.indexOf("export function renderAdmissionShell"), shell.indexOf("export function renderShell"));
+    expect(fn).toContain("otrSetLang");
+    expect(fn).toContain("adm-acct-lang");
+  });
+
+  it("el menú de cuenta se cierra al clickear fuera (un <details> nativo no lo hace solo)", () => {
+    expect(read("app/components/Aula.tsx")).toMatch(/details\.adm-acct\[open\]/);
+  });
+
+  it("el título de la pestaña ya no dice 'Aula' — ni el dinámico ni el estático", () => {
+    // Había DOS: el que fija Aula.tsx al navegar y el metadata de layout.tsx. El segundo
+    // se me escapó en la primera pasada y solo se vio abriendo la pestaña de verdad.
+    expect(read("app/components/Aula.tsx")).not.toContain("· OTR Aula`");
+    expect(read("app/layout.tsx")).not.toContain("· Aula`");
+  });
+
+  it("ADMISSION_COMMUNITY_URL está documentado, no solo puesto a mano en el servidor", () => {
+    expect(read(".env.example")).toContain("ADMISSION_COMMUNITY_URL");
+    expect(read(".env.production.example")).toContain("ADMISSION_COMMUNITY_URL");
   });
 });

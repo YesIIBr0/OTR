@@ -71,7 +71,11 @@ export const TOTAL_STEPS = ADMISSION_STEPS.length;
 //  Allowlists de los desplegables del formulario
 // ============================================================
 
-export const GRADE_LEVELS = ["SECUNDARIA", "BACHILLERATO", "UNIVERSIDAD", "GRADUADO"] as const;
+/* [20/08] NO_APLICA entra porque el curso pasó a obligatorio en el formulario: sin él, un
+   adulto no escolarizado no podía guardar. Esta lista y ADM_GRADE_LEVELS (cliente) son DOS
+   COPIAS de la misma constante — tests/admision-wizard.test.ts las compara para que no
+   vuelvan a divergir en silencio, que ya pasó antes en este repo. */
+export const GRADE_LEVELS = ["SECUNDARIA", "BACHILLERATO", "UNIVERSIDAD", "GRADUADO", "NO_APLICA"] as const;
 export const GUARDIAN_RELATIONS = ["PADRE_MADRE", "TUTOR_LEGAL", "TUTOR"] as const;
 export const PROGRAMS = ["DEBATE_COMPETITIVO", "ORATORIA", "TALLER_INTENSIVO"] as const;
 export const PREFERRED_DAYS = ["LUN_MIE", "MAR_JUE", "OTRO"] as const;
