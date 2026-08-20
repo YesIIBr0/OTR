@@ -1274,8 +1274,11 @@ describe("[ARREGLOS 20/08] huecos cerrados sin dependencias externas", () => {
     expect(read("app/components/Aula.tsx")).toMatch(/details\.adm-acct\[open\]/);
   });
 
-  it("el título de la pestaña ya no dice 'OTR Aula'", () => {
+  it("el título de la pestaña ya no dice 'Aula' — ni el dinámico ni el estático", () => {
+    // Había DOS: el que fija Aula.tsx al navegar y el metadata de layout.tsx. El segundo
+    // se me escapó en la primera pasada y solo se vio abriendo la pestaña de verdad.
     expect(read("app/components/Aula.tsx")).not.toContain("· OTR Aula`");
+    expect(read("app/layout.tsx")).not.toContain("· Aula`");
   });
 
   it("ADMISSION_COMMUNITY_URL está documentado, no solo puesto a mano en el servidor", () => {
