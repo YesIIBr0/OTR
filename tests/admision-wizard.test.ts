@@ -88,6 +88,12 @@ const adultForm = () => ({
   phone: "(809) 555-0123",
   email: "camila@ejemplo.com",
   program: "DEBATE_COMPETITIVO",
+  // [C3 · 20/08] Institución, curso, experiencia y días son obligatorios desde el
+  // cambio de Wilser: un "formulario completo" de verdad tiene que traerlos.
+  school: "New Horizons",
+  level: "BACHILLERATO",
+  experience: "true",
+  days: "LUN_MIE",
   consent: true,
 });
 
@@ -387,9 +393,12 @@ describe("② el bloque del tutor aparece SOLO si el estudiante es menor de 21",
 
 /* ================= ③ validación real, error junto al campo ================= */
 describe("③ la validación es real y el error viaja pegado a su campo", () => {
-  it("un formulario vacío marca los 6 campos obligatorios del mockup + el consentimiento", () => {
+  it("un formulario vacío marca los 10 campos obligatorios + el consentimiento", () => {
+    // [C3 · 20/08] Eran 6 del mockup; Wilser subió a obligatorios institución, curso,
+    // experiencia y días, así que un formulario vacío marca 10 + el consentimiento.
     const e = errs(admDefaultState().form, NOW);
-    expect(Object.keys(e).sort()).toEqual(["birth", "consent", "email", "firstName", "lastName", "phone", "program"]);
+    expect(Object.keys(e).sort()).toEqual(
+      ["birth", "consent", "days", "email", "experience", "firstName", "lastName", "level", "phone", "program", "school"]);
   });
 
   it("rechaza correos y teléfonos que no lo son", () => {
@@ -421,7 +430,7 @@ describe("③ la validación es real y el error viaja pegado a su campo", () => 
     // …y un resumen enfocable arriba que dice CUÁNTOS quedan
     expect(html).toContain('id="adm-form-alert"');
     expect(html).toContain('role="alert"');
-    expect(html).toContain(t("adm.errSummary").replace("{n}", "7"));
+    expect(html).toContain(t("adm.errSummary").replace("{n}", "11"));
   });
 
   it("el estado de carga es honesto: al guardar, el botón lo dice y queda deshabilitado", () => {
@@ -647,15 +656,21 @@ describe("⑨ i18n ES+EN y kit visual", () => {
     expect(w).toContain("4 pasos · aprox. 15 minutos");
 
     const d = admDoneScreen();
-    expect(d).toContain("Estás dentro de");
+    expect(d).toContain("Bienvenido a OTR Academy");
     expect(d).toContain("Completaste los 4 pasos");
     expect(d).toContain(t("adm.doneReview"));
     ADM_STEPS.forEach((s) => expect(d).toContain(t(s.short)));
   });
 
-  it("sin emoji en ninguna cadena (la bandera del prefijo va como texto)", () => {
+  it("sin emoji en ninguna cadena, salvo el aplauso de la pantalla final", () => {
+    // [20/08] La regla del kit sigue en pie: ningún emoji decorativo en la UI —por eso el
+    // prefijo telefónico lleva "+1 · RD" y no la bandera—. La ÚNICA excepción es
+    // `adm.doneClap`, que Wilser pidió expresamente para celebrar el fin de la admisión.
+    // Se estrecha la regla en vez de borrarla: si mañana se cuela otro emoji, esto lo caza.
+    const ALLOW = new Set(["adm.doneClap"]);
     const emoji = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
     const offenders = [...Object.entries(admDict.es), ...Object.entries(admDict.en)]
+      .filter(([k]) => !ALLOW.has(k))
       .filter(([, v]) => emoji.test(String(v)))
       .map(([k]) => k);
     expect(offenders).toEqual([]);
@@ -1137,5 +1152,83 @@ describe("[LOGIN] la marca del login es solo el escudo", () => {
     const block = auth.slice(i, auth.indexOf('className="login-form"'));
     expect(block).not.toMatch(/Aula/);
     expect(block).toContain("otrCrest");     // el escudo SÍ se queda
+  });
+});
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ⑮ COLA DE CAMBIOS 2026-08-20 (Wilser, sobre capturas marcadas).
+   C1/C4 · fuera la descripción de los 4 pasos, y también la negrita del paso 1.
+   C2   · dos rótulos: "Institución" y el tuteo en la pregunta de experiencia.
+   C3   · Institución, Curso, experiencia y días pasan a OBLIGATORIOS. No basta
+          pintar el asterisco: si la validación no los exige, el asterisco miente.
+   ────────────────────────────────────────────────────────────────────────── */
+describe("[ADM · cola 20/08] textos y obligatoriedad", () => {
+  beforeEach(() => { admResetState(); });
+
+  const panelFor = (step: number) => {
+    const st = admDefaultState();
+    st.loaded = true; st.view = "wizard"; st.step = step;
+    st.done = [true, true, true, false].map((_, i) => i < step);
+    return admPanel(st, NOW);
+  };
+
+  it("C1/C4 · ningún paso pinta ya la descripción", () => {
+    for (let i = 0; i < 4; i++) expect(panelFor(i)).not.toContain("adm-step-desc");
+  });
+
+  it("C1 · el paso 1 tampoco pinta la negrita; los pasos 2-4 la conservan", () => {
+    expect(panelFor(0)).not.toContain("adm-step-tag");
+    for (let i = 1; i < 4; i++) expect(panelFor(i)).toContain("adm-step-tag");
+  });
+
+  it("C2 · los dos rótulos que pediste", () => {
+    expect(admDict.es["adm.fSchool"]).toBe("Institución");
+    expect(admDict.en["adm.fSchool"]).toBe("Institution");
+    expect(admDict.es["adm.sec4"]).toBe("¿Tienes experiencia previa en debate?");
+    expect(admDict.en["adm.sec4"]).toBe("Do you have previous debate experience?");
+  });
+
+  it("C3 · la validación EXIGE institución, curso, experiencia y días", () => {
+    const e = errs({}, NOW);
+    expect(Object.keys(e)).toEqual(expect.arrayContaining(["school", "level", "experience", "days"]));
+    // Y un formulario que sí los trae no los marca.
+    const ok = errs(adultForm(), NOW);
+    expect(Object.keys(ok)).not.toEqual(expect.arrayContaining(["school", "level", "experience", "days"]));
+  });
+
+  it("C3 · y los cuatro llevan el asterisco en pantalla", () => {
+    const st = admDefaultState(); st.loaded = true; st.view = "wizard"; st.step = 0;
+    const html = admFormBlock(st, NOW);
+    // El asterisco del kit es <abbr class="req">: se cuenta, no se busca a ojo.
+    const reqs = (html.match(/class="req"/g) || []).length;
+    // nombre, apellido, nacimiento, teléfono, correo, institución, curso,
+    // programa, experiencia, días = 10
+    expect(reqs).toBe(10);
+  });
+});
+
+/* ⑯ C5, C7 y C8 de la cola del 20/08. */
+describe("[ADM · cola 20/08] comunidad, pantalla final y bloques", () => {
+  it("C7 · la pantalla final saluda con el aplauso y va a sangre", () => {
+    expect(admDict.es["adm.doneClap"]).toBe("\u{1F44F}");
+    expect(admDict.es["adm.doneTitle"]).toBe("¡Bienvenido a OTR Academy!");
+    expect(admDict.en["adm.doneTitle"]).toBe("Welcome to OTR Academy!");
+    const d = admDoneScreen();
+    expect(d).toContain("adm-done-clap");
+    // A sangre: la misma técnica del héroe (100vw con márgenes negativos).
+    const css = read("app/styles/screens.css");
+    expect(css).toMatch(/\.adm-done\{[^}]*width:100vw/);
+  });
+
+  it("C5 · el enlace de la comunidad viaja en el payload del servidor", () => {
+    const route = read("app/api/admission/route.ts");
+    expect(route).toContain("ADMISSION_COMMUNITY_URL");
+    expect(route).toContain("communityUrl");
+  });
+
+  it("C8 · los highlights del dashboard son bloques grandes, no 4 en fila", () => {
+    const css = read("app/styles/screens.css");
+    expect(css).not.toMatch(/\.hl-grid\{[^}]*repeat\(4,1fr\)/);
+    expect(css).toMatch(/\.hl-grid\{[^}]*repeat\(2,1fr\)/);
   });
 });
