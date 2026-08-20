@@ -176,6 +176,13 @@ export function admValidate(form, now = Date.now()) {
   if (!isValidPhoneNumber(f.phone)) e.phone = "adm.ePhone";
   if (!ADM_EMAIL_RE.test(txt(f.email))) e.email = "adm.eEmail";
   if (!txt(f.program)) e.program = "adm.eProgram";
+  /* [C3 · 20/08] Institución, curso, experiencia y días pasan a obligatorios. Se exigen
+     AQUÍ y no solo con el asterisco: un asterisco que no bloquea el guardado es una
+     promesa falsa, y estos cuatro son justo los que usa la academia para asignar grupo. */
+  if (!txt(f.school)) e.school = "adm.eSchool";
+  if (!txt(f.level)) e.level = "adm.eLevel";
+  if (!txt(f.experience)) e.experience = "adm.eExperience";
+  if (!txt(f.days)) e.days = "adm.eDays";
   // El consentimiento es OBLIGATORIO: sin él no hay base para tratar los datos.
   if (f.consent !== true) e.consent = "adm.eConsent";
 
@@ -578,12 +585,14 @@ export function admFormBlock(st, now = Date.now()) {
   };
 
   // El <option> guarda el CÓDIGO del contrato (SECUNDARIA…), no la etiqueta visible.
+  const levelErr = e.level ? t(e.level) : "";
   const levelSel = `<div class="field adm-field">
-    <label class="label" for="adm-level">${t("adm.fLevel")}</label>
+    <label class="label" for="adm-level">${t("adm.fLevel")}${admReq}</label>
     <select class="select" id="adm-level" data-adm-f="level">
       <option value="">${t("adm.lvPick")}</option>
       ${ADM_GRADE_LEVELS.map((o) => `<option value="${esc(o.v)}"${f.level === o.v ? " selected" : ""}>${t(o.labelKey)}</option>`).join("")}
     </select>
+    ${levelErr ? `<p class="adm-err" id="adm-level-err">${IC.info}${levelErr}</p>` : ""}
   </div>`;
 
   /* [PARIDAD] Los 3 programas son TARJETAS GRANDES con la foto arriba y el rótulo
@@ -687,7 +696,7 @@ export function admFormBlock(st, now = Date.now()) {
              mockup: son los dos campos con las respuestas más largas del formulario y a
              media columna se quedaban estrechos. La única rejilla de 2 columnas que
              sobrevive en esta sección es Nombre + Apellido. */""}
-        ${admField("adm-school", "adm.fSchool", f.school, { key: "school" })}
+        ${admField("adm-school", "adm.fSchool", f.school, { key: "school", err: e.school, required: true })}
         ${levelSel}
       </div>
 
@@ -699,13 +708,13 @@ export function admFormBlock(st, now = Date.now()) {
       </div>
 
       <div class="adm-sec">
-        ${sec(n(4), "adm.sec4")}
-        ${admRadioGroup("adm-exp", "adm.sec4", ADM_EXPERIENCE, f.experience, { key: "experience", legendSr: true })}
+        ${sec(n(4), "adm.sec4", admReq)}
+        ${admRadioGroup("adm-exp", "adm.sec4", ADM_EXPERIENCE, f.experience, { key: "experience", err: e.experience, legendSr: true })}
       </div>
 
       <div class="adm-sec">
-        ${sec(n(5), "adm.sec5")}
-        ${admRadioGroup("adm-days", "adm.sec5", ADM_DAYS, f.days, { key: "days", stack: true, legendSr: true })}
+        ${sec(n(5), "adm.sec5", admReq)}
+        ${admRadioGroup("adm-days", "adm.sec5", ADM_DAYS, f.days, { key: "days", err: e.days, stack: true, legendSr: true })}
       </div>
 
       ${consent}
@@ -883,7 +892,10 @@ export function admPanel(st, now = Date.now()) {
          la vista. El chip de "Completado" sí se queda: eso el rail no lo grita. */""}
     ${done ? `<div class="adm-panel-chips"><span class="chip chip--done">${IC.check}${t("adm.stDone")}</span></div>` : ""}
     <h2 class="adm-step-h" id="adm-step-h" tabindex="-1">${t(s.title)}</h2>
-    <p class="adm-step-tag">${t(s.tag)}</p>
+    ${/* [C1] Vacío = no se pinta. El paso 1 se quedó sin negrita ni descripción por
+         pedido de Wilser (20/08); los demás conservan la suya. Guardado igual que la
+         descripción de abajo, para no dejar un <p> huérfano ocupando espacio. */""}
+    ${t(s.tag) ? `<p class="adm-step-tag">${t(s.tag)}</p>` : ""}
     ${t(s.desc) ? `<p class="adm-step-desc">${t(s.desc)}</p>` : ""}
     ${/* El aviso del último fallo del servidor se ve EN el paso, no en un toast que
          se va: si la API dice "agenda tu llamada antes", el alumno tiene que leerlo. */""}
@@ -906,6 +918,10 @@ export function admPanel(st, now = Date.now()) {
 export function admDoneScreen() {
   const rows = ADM_STEPS.map((s) => `<li class="adm-done-i"><span class="adm-done-c" aria-hidden="true">${IC.check}</span>${t(s.short)}</li>`).join("");
   return `<section class="adm-done card--dark" aria-labelledby="adm-done-h">
+    ${/* [C7 · 20/08] El aplauso es la ÚNICA excepción a la regla de "sin emoji" del kit:
+         lo pidió Wilser para cerrar la admisión con celebración. Va aria-hidden porque no
+         aporta nada a quien usa lector de pantalla — el titular ya dice la noticia. */""}
+    <span class="adm-done-clap" aria-hidden="true">${t("adm.doneClap")}</span>
     <h1 class="adm-done-h" id="adm-done-h">${t("adm.doneTitle")}</h1>
     <p class="adm-done-p">${t("adm.doneLead")}</p>
     <ul class="adm-done-l">${rows}</ul>
