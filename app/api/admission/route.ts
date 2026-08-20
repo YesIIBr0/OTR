@@ -18,6 +18,7 @@
 // aquí el alumno escribe sobre su propia ficha; la trazabilidad legal la da AdmissionConsent
 // (evidencia inmutable) y el ledger universal ActivityEvent.
 import { db } from "../../lib/db";
+import { settingValue } from "../admin/settings/route";
 import { getSessionUser } from "../../lib/auth";
 import { ok, bad, readJson, clean } from "../../lib/api";
 import { requireRole } from "../../lib/authz";
@@ -44,14 +45,15 @@ import {
 const STAFF = ["TEACHER", "COACH", "ADMIN"] as const;
 
 /** Admisión + su evidencia de consentimiento, recortada para quien pregunta (ver §minimización). */
-/* [C5 · 20/08] Enlace del grupo de la comunidad (paso 3). Vive en el entorno, no en la
-   base ni en el código: cambia por despliegue (staging y producción no comparten grupo) y
-   no es dato de ningún alumno. Sin él, la pantalla pinta su estado honesto
-   ("seguimos montando el grupo") en vez de un enlace roto — por eso NO se inventa un valor
-   por defecto. Solo se acepta http(s) absoluto; el cliente vuelve a validarlo con
-   admCommunityUrl() antes de pintarlo. */
-function communityUrl(): string {
-  const raw = String(process.env.ADMISSION_COMMUNITY_URL || "").trim();
+/* [C5 · 20/08] Enlace del grupo de la comunidad (paso 3).
+   [ADMIN · 20/08] Ahora sale del ajuste `admission.communityUrl`, editable desde la consola
+   de admin, y la variable de entorno ADMISSION_COMMUNITY_URL queda de RESPALDO: lo que ya
+   estaba configurado en el servidor sigue funcionando sin que nadie copie nada a mano.
+   Sin ninguno de los dos, la pantalla pinta su estado honesto ("seguimos montando el
+   grupo") en vez de un enlace roto — por eso NO se inventa un valor por defecto.
+   El cliente vuelve a validarlo con admCommunityUrl() antes de pintarlo. */
+async function communityUrl(): Promise<string> {
+  const raw = await settingValue("admission.communityUrl");
   return /^https?:\/\//i.test(raw) ? raw : "";
 }
 
@@ -86,7 +88,7 @@ export async function GET(req: Request) {
     // Un estudiante solo ve la SUYA. Pedir la de otro es 403, no un 404 silencioso: el
     // intento existe y el cliente tiene que enterarse de que no está autorizado.
     if (asked && asked !== user.id) return bad("Solo puedes ver tu propia admisión", 403);
-    return ok({ admission: await loadAdmission(user.id, "owner"), student: { id: user.id, name: user.name }, communityUrl: communityUrl() });
+    return ok({ admission: await loadAdmission(user.id, "owner"), student: { id: user.id, name: user.name }, communityUrl: await communityUrl() });
   }
 
   if (!requireRole(user, ...STAFF)) return bad("No autorizado", 403);
@@ -300,5 +302,5 @@ export async function POST(req: Request) {
   }
 
   const consents = await db.admissionConsent.findMany({ where: { admissionId: admission.id }, orderBy: { createdAt: "asc" } });
-  return ok({ admission: admissionPayload(admission, consents), communityUrl: communityUrl() });
+  return ok({ admission: admissionPayload(admission, consents), communityUrl: await communityUrl() });
 }

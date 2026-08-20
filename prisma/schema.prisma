@@ -1067,3 +1067,19 @@ model AdmissionConsent {
   @@unique([admissionId, kind, version])
   @@index([studentId])
 }
+
+/* [ADMIN · 20/08] Configuración de plataforma editable desde la UI.
+   Nace porque el enlace del grupo de WhatsApp vivía en una variable de entorno: cambiarlo
+   exigía entrar por SSH y redesplegar, o sea que el sitio no se podía administrar sin un
+   desarrollador. Clave/valor a propósito —no una columna por ajuste— para que añadir uno
+   nuevo no obligue a migrar la base cada vez.
+   Guarda QUIÉN lo cambió y CUÁNDO: son ajustes que afectan a lo que ve un menor de edad
+   (el enlace al grupo), así que un cambio silencioso y sin dueño no es aceptable. */
+model PlatformSetting {
+  key         String   @id
+  value       String
+  updatedById String?
+  updatedByName String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}

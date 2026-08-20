@@ -2071,6 +2071,16 @@ a.hlv-link:hover .hlv-cta .ic{transform:translate(2px,-2px)}
 .dbt-staff .stat-group{gap:26px}
 /* === FIN RONDA3 · DEBATE TIERS ============================================= */
 
+/* === ADMIN · AJUSTES DE PLATAFORMA ======================================== */
+.aset-list{display:flex;flex-direction:column;gap:18px;max-width:720px}
+.aset-row{padding:16px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--otr-white)}
+.aset-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.aset-help{margin:0 0 8px}
+.aset-ctl{display:flex;gap:8px;align-items:center;margin:8px 0 6px}
+.aset-ctl .input{flex:1;min-width:0}
+.aset-by{margin-top:6px;color:var(--text-3)}
+@media (max-width:560px){.aset-ctl{flex-direction:column;align-items:stretch}}
+
 /* === ADMISIÓN (Isaac) ======================================================
    Flujo de admisión de 4 pasos (app/lib/scr-admission.ts). Kit actual: negro y
    blanco dominantes, VERDE (--success/--success-strong) para completado y

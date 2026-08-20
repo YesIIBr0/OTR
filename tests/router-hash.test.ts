@@ -301,6 +301,7 @@ describe("R4 · guard de rol: cada rol alcanza LO SUYO y lo compartido, nada má
     "admin-users":    ["admin"],
     "admin-metrics":  ["admin"],
     "admin-whatsapp": ["admin"],
+    "admin-settings": ["admin"],
   };
 
   it("las tres que el sondeo encontró abiertas están cerradas", () => {

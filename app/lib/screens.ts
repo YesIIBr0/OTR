@@ -37,6 +37,7 @@ const LOADERS: Record<string, () => Promise<ScreenModuleExports>> = {
   adminUsers:  () => import("./scr-admin-users"),
   adminMetrics: () => import("./scr-admin-metrics"),
   adminWhatsapp: () => import("./scr-admin-whatsapp"),
+  adminSettings: () => import("./scr-admin-settings"),
   // [UI-CURSOS U4] scr-mybookings ya NO es una pantalla enrutable: es el panel que scr-core
   // embebe bajo los cursos, así que viaja en el chunk de 'core' y no necesita loader propio.
   placement:   () => import("./scr-placement"),
@@ -63,6 +64,7 @@ const SCREEN_MODULE: Record<string, string> = {
   debateHub:'debate', marketplace:'marketplace', listings:'listings', listing:'listing', myListings:'myListings', parentPortal:'parent',
   lifetimeProfile:'lifetime', membership:'lifetime', coachwork:'coachwork',
   adminConsole:'admin', adminUsers:'adminUsers', adminMetrics:'adminMetrics', adminWhatsapp:'adminWhatsapp',
+  adminSettings:'adminSettings',
   placement:'placement', admission:'admission', settings:'settings', events:'events', room:'room',
   highlights:'highlights',
 };
@@ -107,7 +109,7 @@ const ROLE_PREFETCH: Record<string, string[]> = {
   student: ['debateHub','marketplace','listings','lifetimeProfile','events','grades','settings','profile','placement','admission'],
   teacher: ['teacher','participants','manage','coachwork','marketplace','myListings','messages','profile','settings'],
   parent:  ['parentPortal','marketplace','listings','messages','membership','profile','settings'],
-  admin:   ['adminConsole','adminUsers','adminMetrics','adminWhatsapp','marketplace','debateHub','profile','settings'],
+  admin:   ['adminConsole','adminUsers','adminMetrics','adminWhatsapp','adminSettings','marketplace','debateHub','profile','settings'],
 };
 let didPrefetch = false;
 // `role` acepta string (no un union Role importado de shell.ts): Aula.tsx pasa
@@ -249,4 +251,7 @@ export const ROUTES: Record<string, RouteDef> = {
   'admin-metrics': { screen:'adminMetrics', nav:'admin-metrics', crumbs:['Administración','Métricas'], role:'admin' },
   // Admin → WhatsApp Business (Meta Cloud API, Fase 1): bandeja del equipo, entrada + respuesta 1 a 1 → scr-admin-whatsapp.ts.
   'admin-whatsapp': { screen:'adminWhatsapp', nav:'admin-whatsapp', crumbs:['Administración','WhatsApp'], role:'admin' },
+  // [ADMIN 20/08] Ajustes editables: sacan de las variables de entorno lo que el admin
+  // tiene que poder cambiar sin un desarrollador (hoy, el enlace del grupo del paso 3).
+  'admin-settings': { screen:'adminSettings', nav:'admin-settings', crumbs:['Administración','Ajustes'], role:'admin' },
 };
