@@ -206,13 +206,30 @@ export function renderAdmissionShell(content: string) {
           </div>
           <div class="tn-right">
             <a class="adm-support" href="#messages" data-go="messages">${IC.headset}${en ? "24/7 Support" : "Soporte 24/7"}</a>
-            <div class="adm-who">
-              <span class="adm-who-t">
-                <span class="adm-who-n">${u?.name || ""}</span>
-                <span class="adm-who-s">${en ? "New student" : "Nueva estudiante"}</span>
-              </span>
-              <span class="avatar tn-av" style="background:var(--n-600)">${u?.initials || ""}</span>
-            </div>
+            ${/* [SALIDA · reporte de Isaac 19/08] El chip de usuario era un <span> MUERTO: quien
+                 abría el enlace con la sesión de otro —le pasó a él con la cuenta QA que le
+                 pasamos el 9 de agosto— se quedaba encerrado en el wizard, sin forma de llegar
+                 a "iniciar sesión o crear cuenta". Aquí importa más que en el resto del Aula:
+                 este formulario recoge datos de un menor y de su tutor, y quien lo llena tiene
+                 que poder comprobar que la sesión es SUYA (de ahí el correo) y salirse si no.
+                 Es un <details> nativo —sin JS propio, accesible por teclado— y el botón usa el
+                 MISMO data-action="logout" que ya delega Aula.tsx. Sigue sin haber navegación:
+                 la única acción es salir. */""}
+            <details class="adm-acct">
+              <summary class="adm-who">
+                <span class="adm-who-t">
+                  <span class="adm-who-n">${u?.name || ""}</span>
+                  <span class="adm-who-s">${en ? "New student" : "Nueva estudiante"}</span>
+                </span>
+                <span class="avatar tn-av" style="background:var(--n-600)">${u?.initials || ""}</span>
+              </summary>
+              ${/* El correo va CRUDO, como el nombre de arriba: queries.ts ya escapó el texto
+                   de usuario una vez y re-escaparlo aquí sacaría "&amp;amp;". */""}
+              <div class="adm-acct-m">
+                <p class="adm-acct-e">${u?.email || ""}</p>
+                <button type="button" class="tn-mi" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></button>
+              </div>
+            </details>
           </div>
         </div>
       </header>

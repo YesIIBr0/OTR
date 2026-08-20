@@ -586,6 +586,35 @@ export function admFormBlock(st, now = Date.now()) {
     </select>
   </div>`;
 
+  /* [PARIDAD] Los 3 programas son TARJETAS GRANDES con la foto arriba y el rótulo
+     (letra + nombre) en una banda abajo, como los dibuja el mockup; antes eran tres
+     chips de texto en fila, que era la diferencia más visible contra el artifact.
+     Siguen siendo <input type="radio"> envueltos en <label>: la tarjeta ES la etiqueta,
+     así que se clica entera y el teclado la recorre como un grupo de radios normal —no
+     es un <div> con onclick—. Los ids y el name no cambian (adm-program / adm-program-N),
+     así que mount() sigue enganchando igual.
+     El hueco de la foto se pinta VACÍO a propósito: en el repo solo existe una foto de
+     marca (img/hero-speaking.jpg) y repetirla en tres programas distintos sería mentir.
+     Cuando lleguen las fotos de Isaac basta con darle un `src` a .adm-prog-img. */
+  const progErr = e.program ? t(e.program) : "";
+  const programTiles = `<fieldset class="adm-group"${progErr ? ' aria-describedby="adm-program-err"' : ""}>
+    <legend class="sr-only">${t("adm.sec3")}</legend>
+    <div class="adm-prog${progErr ? " err" : ""}">
+      ${ADM_PROGRAMS.map((o, i) => {
+        const id = `adm-program-${i}`;
+        return `<label class="adm-prog-t" for="${id}">
+          <input type="radio" id="${id}" name="adm-program" value="${esc(o.v)}" data-adm-f="program"${f.program === o.v ? " checked" : ""} />
+          <span class="adm-prog-img" aria-hidden="true"></span>
+          <span class="adm-prog-b">
+            <span class="adm-opt-key" aria-hidden="true">${esc(o.k)}</span>
+            <span class="adm-prog-n">${t(o.labelKey)}</span>
+          </span>
+        </label>`;
+      }).join("")}
+    </div>
+    ${progErr ? `<p class="adm-err" id="adm-program-err">${IC.info}${progErr}</p>` : ""}
+  </fieldset>`;
+
   const guardianBlock = `<div class="adm-sec" id="adm-guardian"${guardian ? "" : " hidden"}>
     ${sec(2, "adm.sec2")}
     <p class="adm-sec-note">${t("adm.sec2Why")}</p>
@@ -654,17 +683,19 @@ export function admFormBlock(st, now = Date.now()) {
         ${birth}
         ${phone("adm-phone", "phone", "adm.fPhone", f.phone, e.phone, true)}
         ${admField("adm-email", "adm.fEmail", f.email, { key: "email", err: e.email, required: true, type: "email", autocomplete: "email", placeholder: "nombre@ejemplo.com", readonly: !!String(f.email || "").trim(), hintKey: String(f.email || "").trim() ? "adm.emailLocked" : "" })}
-        <div class="adm-grid">
-          ${admField("adm-school", "adm.fSchool", f.school, { key: "school" })}
-          ${levelSel}
-        </div>
+        ${/* [PARIDAD] Institución y Curso van una debajo de otra y a lo ancho, como el
+             mockup: son los dos campos con las respuestas más largas del formulario y a
+             media columna se quedaban estrechos. La única rejilla de 2 columnas que
+             sobrevive en esta sección es Nombre + Apellido. */""}
+        ${admField("adm-school", "adm.fSchool", f.school, { key: "school" })}
+        ${levelSel}
       </div>
 
       ${guardianBlock}
 
       <div class="adm-sec">
         ${sec(n(3), "adm.sec3", admReq)}
-        ${admRadioGroup("adm-program", "adm.sec3", ADM_PROGRAMS, f.program, { key: "program", err: e.program, cols: true, legendSr: true })}
+        ${programTiles}
       </div>
 
       <div class="adm-sec">
@@ -846,10 +877,11 @@ export function admPanel(st, now = Date.now()) {
   const last = st.step === ADM_STEPS.length - 1;
 
   return `<section class="adm-panel" aria-labelledby="adm-step-h">
-    <div class="adm-panel-chips">
-      <span class="chip chip--outline">${t("adm.stepOf").replace("{n}", String(st.step + 1))}</span>
-      ${done ? `<span class="chip chip--done">${IC.check}${t("adm.stDone")}</span>` : ""}
-    </div>
+    ${/* [PARIDAD] El mockup abre el panel con el TÍTULO a secas. El chip "Paso N de 4"
+         que había aquí repetía lo que el rail ya dice a la izquierda —y que su
+         aria-label sigue diciendo para quien navega a ciegas—, así que se retira de
+         la vista. El chip de "Completado" sí se queda: eso el rail no lo grita. */""}
+    ${done ? `<div class="adm-panel-chips"><span class="chip chip--done">${IC.check}${t("adm.stDone")}</span></div>` : ""}
     <h2 class="adm-step-h" id="adm-step-h" tabindex="-1">${t(s.title)}</h2>
     <p class="adm-step-tag">${t(s.tag)}</p>
     ${t(s.desc) ? `<p class="adm-step-desc">${t(s.desc)}</p>` : ""}

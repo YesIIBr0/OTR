@@ -404,7 +404,9 @@ export default function Auth() {
        display:grid, y <main> es block-level igual que el <div>: el layout no se mueve. */
     <main className="login">
       {/* [R5] El lockup se queda arriba a la izquierda, ahora sobre el greige claro:
-          mismo escudo + "OTR Aula", con la tinta por defecto de otrCrest (#171717,
+          mismo escudo SOLO (Isaac, 08/08: "quítale el Aula, deja el logo y ya" — ya se
+          había hecho en el shell del Aula y el login se quedó atrás), con la tinta por
+          defecto de otrCrest (#171717,
           igual que el del shell) porque el fondo dejó de ser el panel oscuro. Es un
           <div>, no un <header>: la pantalla ya declara su landmark con <main>. */}
       <div className="login-mark">
@@ -413,7 +415,6 @@ export default function Auth() {
           style={{ display: "flex", flex: "none" }}
           dangerouslySetInnerHTML={{ __html: otrCrest({ id: "auth", attrs: 'class="crest" style="width:34px;height:36px"' }) }}
         />
-        <span className="brand-font" style={{ fontSize: 16 }}>OTR <span style={{ opacity: 0.5, fontWeight: 600 }}>Aula</span></span>
       </div>
       <div className="login-form">
         <div className="lf-card" style={cardEnter}>

@@ -1032,3 +1032,110 @@ describe("[ADM · UI] el portal de admisión se pinta como el mockup", () => {
     expect(admProgressBar(st)).not.toContain(t("adm.support"));
   });
 });
+
+/* ──────────────────────────────────────────────────────────────────────────
+   PARIDAD CON EL ARTIFACT 1e19da45 (mockup de Isaac, 11/08/2026).
+   Comparación hecha pantalla a pantalla contra el artifact abierto en Chrome.
+   Aquí se fija lo que el mockup dicta y nosotros habíamos derivado; las tres
+   divergencias DELIBERADAS (tutor condicional, clausulado Ley 172-13 y guardado
+   real en vez de "marcar como completado") NO se tocan y viven en sus propios
+   casos más arriba.
+   ────────────────────────────────────────────────────────────────────────── */
+describe("[ADMISIÓN] paridad con el mockup de Isaac", () => {
+  beforeEach(() => { admResetState(); });
+
+  it("el panel NO pinta el chip 'Paso N de 4': el mockup enseña el título a secas", () => {
+    const st = admDefaultState();
+    st.loaded = true; st.view = "wizard"; st.step = 0;
+    const html = admPanel(st, NOW);
+    expect(html).not.toContain(t("adm.stepOf").replace("{n}", "1"));
+    // …pero el rail SÍ lo conserva en su aria-label: es la única pista de orden
+    // que tiene quien navega a ciegas, y ahí no estorba a nadie.
+    expect(admRail(st)).toContain(t("adm.stepOf").replace("{n}", "1"));
+  });
+
+  it("el paso 3 se llama en el rail como lo escribió Isaac", () => {
+    expect(admDict.es["adm.s3Short"]).toBe("Join OTR Academy Community Chat");
+    expect(admDict.en["adm.s3Short"]).toBe("Join OTR Academy Community Chat");
+  });
+
+  it("los 3 programas son TILES con hueco de imagen, no chips de texto", () => {
+    const st = admDefaultState();
+    st.loaded = true; st.view = "wizard"; st.step = 0;
+    const html = admFormBlock(st, NOW);
+    expect((html.match(/class="adm-prog-t"/g) || []).length).toBe(3);
+    // El hueco de la foto es parte de la tarjeta: el mockup lo deja marcado
+    // ("Suelta una imagen") porque las fotos de los programas están pendientes.
+    expect((html.match(/class="adm-prog-img"/g) || []).length).toBe(3);
+    // Siguen siendo radios de verdad: el tile es la etiqueta, no un div clicable.
+    expect((html.match(/name="adm-program"/g) || []).length).toBe(3);
+  });
+
+  it("el placeholder genérico termina en puntos suspensivos, como el mockup", () => {
+    expect(admDict.es["adm.formPlaceholder"]).toMatch(/…$/);
+    expect(admDict.en["adm.formPlaceholder"]).toMatch(/…$/);
+  });
+
+  it("Curso / Nivel va en su propia fila a lo ancho, no a media columna", () => {
+    const st = admDefaultState();
+    st.loaded = true; st.view = "wizard"; st.step = 0;
+    const html = admFormBlock(st, NOW);
+    const sec1 = html.slice(0, html.indexOf('id="adm-guardian"'));
+    // En la sección 1 solo queda UNA rejilla de dos columnas: Nombre + Apellido.
+    expect((sec1.match(/class="adm-grid"/g) || []).length).toBe(1);
+    expect(sec1).toContain('id="adm-level"');
+    expect(sec1).toContain('id="adm-school"');
+  });
+});
+
+/* ──────────────────────────────────────────────────────────────────────────
+   ⑬ EL PORTAL TIENE SALIDA (reporte de Isaac, 2026-08-19).
+   Isaac abrió el enlace y cayó directo en el wizard con una sesión ajena
+   —la cuenta QA que le pasamos el 9 de agosto— y no encontró forma de llegar
+   a "iniciar sesión o crear cuenta". El enrutado era correcto; lo que faltaba
+   era la PUERTA DE VUELTA: la cabecera del portal no tenía cerrar sesión y el
+   chip del usuario era un <span> muerto. Quedar encerrado en la sesión de otro
+   es peor aquí que en el resto del Aula, porque este formulario recoge datos
+   personales de un menor y de su tutor.
+   ────────────────────────────────────────────────────────────────────────── */
+describe("[ADM · UI] el portal de admisión no encierra a nadie", () => {
+  const admFn = () => {
+    const shell = read("app/lib/shell.ts");
+    return shell.slice(shell.indexOf("export function renderAdmissionShell"), shell.indexOf("export function renderShell"));
+  };
+
+  it("la cabecera lleva cerrar sesión, con el MISMO data-action que ya delega Aula.tsx", () => {
+    expect(admFn()).toContain('data-action="logout"');
+    // El delegador global (root.addEventListener("click", onClick)) cubre este shell:
+    // si el atributo cambiara, el botón quedaría muerto sin que nada lo avisara.
+    expect(read("app/components/Aula.tsx")).toContain('[data-action="logout"]');
+  });
+
+  it("cerrar sesión es un <button>, no un enlace a '#'", () => {
+    expect(admFn()).toMatch(/<button[^>]*data-action="logout"/);
+  });
+
+  it("el chip del usuario es interactivo y dice de QUIÉN es la sesión", () => {
+    const fn = admFn();
+    expect(fn).toContain("<summary");        // se puede abrir: ya no es un <span> muerto
+    expect(fn).toMatch(/adm-acct/);
+    expect(fn).toMatch(/u\?\.email/);        // el correo, para reconocer que la sesión es ajena
+  });
+
+  it("sigue sin barra de navegación: la salida no es una excusa para meter el menú del Aula", () => {
+    expect(admFn()).not.toMatch(/tn-links|tabbar|data-go="course"|data-go="debate"/);
+  });
+});
+
+/* ⑭ El wordmark del login: Isaac pidió el 08/08 "quítale el Aula, deja el logo y ya".
+   Se arregló en el shell del Aula pero el LOGIN se quedó con "OTR Aula". */
+describe("[LOGIN] la marca del login es solo el escudo", () => {
+  it("el bloque login-mark ya no pinta el wordmark 'Aula'", () => {
+    const auth = read("app/components/Auth.tsx");
+    const i = auth.indexOf('className="login-mark"');
+    expect(i).toBeGreaterThan(-1);
+    const block = auth.slice(i, auth.indexOf('className="login-form"'));
+    expect(block).not.toMatch(/Aula/);
+    expect(block).toContain("otrCrest");     // el escudo SÍ se queda
+  });
+});
