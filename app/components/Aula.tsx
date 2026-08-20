@@ -195,7 +195,7 @@ export default function Aula({ data, user }: { data: any; user: any }) {
       // robarle el foco a un diálogo todavía visible.
       const heading = root.querySelector<HTMLElement>("h1, .page-title");
       const pageName = (heading?.textContent || "").trim();
-      if (pageName) { document.title = `${pageName} · OTR Aula`; announceRoute(pageName); }
+      if (pageName) { document.title = `${pageName} · OTR Academy`; announceRoute(pageName); }
       if (content && typeof content.focus === "function" && !document.querySelector(".modal-scrim")) { try { content.focus({ preventScroll: true } as any); } catch { content.focus(); } }
       // [PERF] Tras el primer paint, prefetch (idle, fire-and-forget) de las pantallas probables
       // del rol → navegación instantánea sin inflar el bundle inicial.
@@ -1094,6 +1094,12 @@ export default function Aula({ data, user }: { data: any; user: any }) {
           document.querySelector("[data-user-menu]")?.setAttribute("aria-expanded", "false");
         }
       }
+
+      /* [20/08] El menú de cuenta del portal de admisión es un <details> nativo, y esos NO
+         se cierran al clickear fuera. Se cierra aquí, junto al del shell del Aula, para que
+         los dos se comporten igual. */
+      const acct = document.querySelector<HTMLDetailsElement>("details.adm-acct[open]");
+      if (acct && !t.closest("details.adm-acct")) acct.open = false;
 
       if (t.closest('[data-action="logout"]')) { e.preventDefault(); api("/api/auth/logout").finally(() => location.reload()); return; }
       const enrollEl = t.closest("[data-enroll]") as HTMLElement | null;

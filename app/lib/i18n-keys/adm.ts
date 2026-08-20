@@ -72,6 +72,7 @@ export const dict = {
     "adm.lvBachillerato": "Bachillerato",
     "adm.lvUniversidad": "Universidad",
     "adm.lvGraduado": "Graduado",
+    "adm.lvNA": "No aplica",
 
     "adm.sec2": "Información del padre/madre o tutor",
     "adm.sec2Why": "Lo pedimos porque el estudiante es menor de 21 años.",
@@ -262,6 +263,7 @@ export const dict = {
     "adm.lvBachillerato": "High school",
     "adm.lvUniversidad": "University",
     "adm.lvGraduado": "Graduate",
+    "adm.lvNA": "Not applicable",
 
     "adm.sec2": "Parent or guardian information",
     "adm.sec2Why": "We ask for it because the student is under 21.",

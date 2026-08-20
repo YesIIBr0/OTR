@@ -227,6 +227,14 @@ export function renderAdmissionShell(content: string) {
                    de usuario una vez y re-escaparlo aquí sacaría "&amp;amp;". */""}
               <div class="adm-acct-m">
                 <p class="adm-acct-e">${u?.email || ""}</p>
+                ${/* [20/08] Selector de idioma. Isaac se quedó atrapado en inglés: cambió el
+                     idioma en el login, la cookie otr_lang persistió, y DENTRO del portal no
+                     había forma de volver a español porque esta cabecera no tiene barra de
+                     navegación. Es la misma trampa que "no había forma de salir", en otra
+                     forma. Usa el MISMO window.otrSetLang que el shell del Aula. */""}
+                <div class="tn-lang adm-acct-lang" role="group" aria-label="${t('top.lang', lang)}">
+                  ${['es','en'].map(lg => `<button type="button" class="${lg===lang?'on':''}" data-lang="${lg}" onclick="window.otrSetLang&&window.otrSetLang('${lg}')">${lg.toUpperCase()}</button>`).join('')}
+                </div>
                 <button type="button" class="tn-mi" data-action="logout">${IC.logout}<span class="lbl">${t('nav.logout', lang)}</span></button>
               </div>
             </details>

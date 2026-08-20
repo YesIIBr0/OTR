@@ -238,11 +238,15 @@ const ADM_FORM_KEYS = [
   "program", "experience", "days", "mediaConsent",
 ];
 
+/* [20/08] "No aplica" existe porque el curso pasó a OBLIGATORIO: sin esta salida, un
+   adulto que ya no estudia se quedaba sin poder guardar el formulario. Es una respuesta
+   válida, no un hueco: la academia sabe que esa persona no está escolarizada. */
 export const ADM_GRADE_LEVELS = [
   { v: "SECUNDARIA", labelKey: "adm.lvSecundaria" },
   { v: "BACHILLERATO", labelKey: "adm.lvBachillerato" },
   { v: "UNIVERSIDAD", labelKey: "adm.lvUniversidad" },
   { v: "GRADUADO", labelKey: "adm.lvGraduado" },
+  { v: "NO_APLICA", labelKey: "adm.lvNA" },
 ];
 export const ADM_PROGRAMS = [
   { v: "DEBATE_COMPETITIVO", k: "A", labelKey: "adm.progDebate" },
